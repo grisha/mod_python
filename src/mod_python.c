@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.80 2002/10/01 22:04:54 grisha Exp $
+ * $Id: mod_python.c,v 1.81 2002/10/04 21:31:05 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1152,20 +1152,12 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     resultobject = PyObject_CallMethod(idata->obcallback, "FilterDispatch", "O", 
                                        filter);
 
+    /* clean up */
+    Py_XDECREF(resultobject);
+
     /* release interpreter */
     release_interpreter();
     
-    if (! resultobject) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
-                      "python_filter: FilterDispatch() returned NULL");
-        if (APR_STATUS_IS_SUCCESS(filter->rc))
-            /* this means it's a Python error not caused by Apache */
-            return APR_EGENERAL;
-    }
-    else {
-        /* clean up */
-        Py_XDECREF(resultobject);
-    }
     return filter->rc;
 }
 

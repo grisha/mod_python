@@ -220,15 +220,14 @@ class CallBack:
 
                 # call the object
                 if config.has_key("PythonEnablePdb"):
-                    result = pdb.runcall(object, filter)
+                    pdb.runcall(object, filter)
                 else:
-                    result = object(filter)
+                    object(filter)
 
-                # always flush the filter
+                # always flush the filter. without a FLUSH or EOS bucket,
+                # the content is never written to the network.
+                # XXX an alternative is to tell the user to flush() always
                 filter.flush()
-
-                assert (type(result) == type(int())), \
-                       "Filter '%s' returned invalid return code: %s" % (filter.handler, `result`)
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -273,7 +272,7 @@ class CallBack:
             finally:
                 exc_traceback = None
 
-	return result
+	return OK
 
     def HandlerDispatch(self, req):
         """
