@@ -1,4 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!-- $id$ -->
+
 <html>
   <head>
     <title>Python Functions and Objects and Apache Configuration Directives</title>
@@ -8,26 +11,41 @@
     <h1>Apache Configuration Directives</h1>
 
     <hr>
-    Note on multiple interpreters XXX<br>
-    Note on scope of directives XXX<br>
-    Note on current directories XXX<br>
-    Note on DSO XXX<br>
-    Process/Child start end<br>
 
+    <ul>
+      <li><a href="#PythonPath">PythonPath</a>
+      <li><a href="#PythonInterpreter">PythonInterpreter</a>
+      <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
+      <li><a href="#PythonDebug">PythonDebug</a>
+      <li><a href="#PythonNoReload">PythonNoReload</a>
+      <li><a href="#PythonOption">PythonOption</a>
+      <li><a href="#PythonPostReadRequestHandler">PythonPostReadRequestHandler</a>
+      <li><a href="#PythonTransHandler">PythonTransHandler</a>
+      <li><a href="#PythonHeaderParserHandler">PythonHeaderParserHandler</a>
+      <li><a href="#PythonAccessHandler">PythonAccessHandler</a>
+      <li><a href="#PythonAuthenHandler">PythonAuthenHAndler</a>
+      <li><a href="#PythonAuthzHandlerPath">PythonAuthzHandler</a>
+      <li><a href="#PythonTypeHandler">PythonTypeHandler</a>
+      <li><a href="#PythonFixupHandler">PythonFixupHandler</a>
+      <li><a href="#PythonHandler">PythonHandler</a>
+      <li><a href="#PythonLogHandler">PythonLogHandler</a>
+    </ul>
+    <hr>
     <p>
       <a name="HandlerSyntax">
 	<h3>Python*Handler Directive Syntax</h3>
-      All <b>Python*Handler</b> directives have the following syntax:
+	All <b>Python*Handler</b> directives have the following syntax:
+	
     <blockquote>
       <pre>Python*Handler <em>handler [handler] ...</em></pre>
-
+      
       Where <em>handler</em> is a callable object (e.g. a function) that accepts a
       single argument - <em>request</em> object. Multiple handlers can be specified,
       in which case they will be called sequentially, from left to right.
       <p>
 	A <em>handler</em> has the following syntax:
       <pre><em>module[::object] [module::[object]] ...</em></pre>
-
+      
       Where <em>module</em> can be a full module name (package dot notation is
       accepted), and the optional <em>object</em> is the name of an object inside the
       module. 
@@ -55,76 +73,8 @@
       <p>
     </blockquote>
 
-
-    <h3>Objects and Functions</h3>
-
-    Mod_python's <code>apache</code> module defines the following objects and functions.
-    For a more in-depth look at Apache internals, see the 
-    <a href="http://dev.apache.org/API.html">Shambhala API Notes</a>.
-
-    <blockquote>
-
-
-      XXX Server object?
-
-      <h4>Table Object</h4>
-
-      The <code>table</code> object is a Python mapping to the Apache <code>
-	<a href="http://dev.apache.org/apidoc/apidoc_table.html">table</a>
-      </code>. The <code>table</code> object performs just like
-      a dictionary, with the only difference that key lookups are case
-      insensitive.
-      <p>
-	Much of the information that Apache uses is stored in tables. For
-	example, <code>request.header_in</code> and 
-	<code>request.headers_out</code>.
-      <p>
-	All the talbles that mod_python provides inside the <code>request</code>
-	object are actual mappings to the Apache structures, so changing the Python
-	table also changes the underlying Apache table.
-
-      <h4>Request Object</h4>
-
-      The <code>request</code> object is a Python mapping to the Apache <code>
-	<a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a>
-      </code> structure.
-
-      XXX request functions?
-
-
-      <h4>Connection Object</h4>
-
-      The <code>connection</code> object is a Python mapping to the Apache <code>
-      <a href="http://dev.apache.org/apidoc/apidoc_conn_rec.html">conn_rec</a>
-      </code> structure.
-
-      
-
-    </blockquote>
-
-    
-
       </a>
 
-    <hr>
-
-    <ul>
-      <li><a href="#PythonPath">PythonPath</a>
-      <li><a href="#PythonInterpreter">PythonInterpreter</a>
-      <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
-      <li><a href="#PythonDebug">PythonDebug</a>
-      <li><a href="#PythonNoReload">PythonNoReload</a>
-      <li><a href="#PythonPostReadRequestHandler">PythonPostReadRequestHandler</a>
-      <li><a href="#PythonTransHandler">PythonTransHandler</a>
-      <li><a href="#PythonHeaderParserHandler">PythonHeaderParserHandler</a>
-      <li><a href="#PythonAccessHandler">PythonAccessHandler</a>
-      <li><a href="#PythonAuthenHandler">PythonAuthenHAndler</a>
-      <li><a href="#PythonAuthzHandlerPath">PythonAuthzHandler</a>
-      <li><a href="#PythonTypeHandler">PythonTypeHandler</a>
-      <li><a href="#PythonHandler">PythonHandler</a>
-      <li><a href="#PythonFixupHandler">PythonFixupHandler</a>
-      <li><a href="#PythonLogHandler">PythonLogHandler</a>
-    </ul>
     <hr>
 
 <h2><a name="PythonPath">PythonPath</a></h2>
@@ -135,7 +85,7 @@
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
 <strong>Override:</strong></a> not None<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c<p>
+<strong>Module:</strong></a> mod_python.c
 
 <p>
 PythonPath directive sets the PythonPath. The path must be specified
@@ -158,7 +108,7 @@ within the scripts.
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
 <strong>Override:</strong></a> not None<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c<p>
+<strong>Module:</strong></a> mod_python.c
 
 <p>
 Forces the subinterpreter name to be <em>name</em>, instead of the
@@ -178,7 +128,7 @@ subinterpreters, can be forced to execute in the same subinterpreter.
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
 <strong>Override:</strong></a> not None<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c<p>
+<strong>Module:</strong></a> mod_python.c
 
 <p>
 Instructs mod_python to name subinterpreters using the directory of
@@ -209,7 +159,7 @@ different interpreters, one for each directory.
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
 <strong>Override:</strong></a> not None<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c<p>
+<strong>Module:</strong></a> mod_python.c
 
 <p>
 Normally, the traceback output resulting from uncaught Python errors is sent to
@@ -229,14 +179,12 @@ sensitive security information.
 <h2><a name="PythonNoReload">PythonNoReload</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> PythonNoReload<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<!--<strong>Default:</strong></A> <code>AccessConfig conf/access.conf</code><br>-->
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
 <strong>Override:</strong></a> not None<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c<p>
+<strong>Module:</strong></a> mod_python.c
 
 <p>
 Instructs mod_python not to check the modification date of the module file.
@@ -247,10 +195,27 @@ This options is useful in production environment where the modules do not change
 it will save some processing time and give a small performance gain.
 
 <hr>
+<h2><a name="PythonOption">PythonOption</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonOption key value<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+Assigns a key value pair to a table that can be later retrieved by the <code>
+request.get_options()</code> function. This is useful to pass information
+between the apache configuration files (httpd.conf, .htaccess, etc) and the Python
+programs.
+
+<hr>
 
 <h2><a name="PythonPostReadRequestHandler">PythonPostReadRequestHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> PythonPostReadRequestHandler <em>module[::object]</em><br>
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
 <strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
@@ -258,12 +223,171 @@ it will save some processing time and give a small performance gain.
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
 <strong>Override:</strong></a> not None<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c<p>
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+      This routine is called after the request has been read but before any
+      other phases have been processed.  This is useful to make decisions
+      based upon the input header fields.
+<hr>
+<h2><a name="PythonTransHandler">PythonTransHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine gives allows for an opportunity to translate the
+      URI into an actual filename, before the server's default rules 
+      (Alias directives and the like) are followed.
+    <hr>
+<h2><a name="PythonHeaderParserHandler">PythonHeaderParserHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+    <a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+      This handler is called to give the module a chance to look at the request
+      headers and take any appropriate specific actions early in the processing
+      sequence.
+<hr>
+<h2><a name="PythonAccessHandler">PythonAccessHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine is called to check for any module-specific restrictions placed
+      upon the requested resource.
+    <p>
+      For example, this can be used to restrict access by IP numer. To do so,
+      you would return HTTP_FORBIDDEN or some such to indicate that access is not
+      allowed.
+<hr>
+<h2><a name="PythonAuthenHandler">PythonAuthenHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine is called to check the authentication information sent with
+      the request (such as looking up the user in a database and verifying that
+      the [encrypted] password sent matches the one in the database).
+
+<hr>
+<h2><a name="PythonAuthzHandler">PythonAuthzHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+    
+    <p>
+      This routine is called to check to see if the resource being requested
+      requires authorization.
+<hr>
+<h2><a name="PythonTypeHandler">PythonTypeHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine is called to determine and/or set the various document type
+      information bits, like Content-type (via r->content_type), language, et
+      cetera.
+<hr>
+<h2><a name="PythonFixupHandler">PythonFixupHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This routine is called to perform any module-specific fixing of header
+      fields, et cetera.  It is invoked just before any content-handler.
+<hr>
+<h2><a name="PythonHandler">PythonHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This is the main request handler. 99.99% of your applications will only
+      provide this one handler. 
+
+<hr>
+<h2><a name="PythonLogHandler">PythonLogHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This routine is called to perform any module-specific logging activities
+      over and above the normal server things.
 
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon May  8 19:23:51 EDT 2000
+Last modified: Thu May 11 18:25:37 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

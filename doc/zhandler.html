@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!-- $id$ -->
+
+<html>
+  <head>
+    <title>Z Handler</title>
+  </head>
+
+  <body bgcolor=white>
+    <h1>Z Handler</h1>
+
+<pre>
+ 
+ This handler allows one to use the Z Object Publisher (formerly Bobo) with
+ mod_python. This gives you the power of Zope Object Publishing along with the
+ speed of mod_python. It doesn't get any better than this!
+
+ WHAT IS ZPublisher?
+
+ ZPublisher is a component of Zope. While I don't profess at Zope itself as it
+ seems to be designed for different type of users than me, I do think that the
+ ZPublisher provides an ingenously simple way of writing WWW applications in
+ Python.
+
+ A quick example do demonstrate the power of ZPublisher.
+
+ Suppose you had a file called zhello.py like this:
+
+    """A simple Bobo application"""
+
+    def sayHello( name = "World" ):
+        """ Sais Hello  (this comment is required)"""
+        return "Hello %s!" % name
+
+.Notice it has one method defined in it. Through ZPublisher, that method can be 
+ invoked through the web via a URL similar to this: 
+
+ http://www.domain.tld/site/zhello/sayHello and
+ http://www.domain.tld/site/zhello/sayHello?name=Joe
+
+ Note how the query keyword "name" converted to a keyword argument to the function.
+
+ If the above didn't "click" for you, go read the ZPublisher documentation at
+ <a href="http://classic.zope.org:8080/Documentation/Reference/ObjectPublishingIntro">http://classic.zope.org:8080/Documentation/Reference/ObjectPublishingIntro</a>
+ for a more in-depth explanation.
+
+ QUICK START
+
+ 1. Download and install Zope. 
+ 2. Don't start it. You're only interested in ZPublisher, and in order for
+    it to work, Zope doesn't need to be running.
+ 3. Pick a www directory where you want to use ZPublisher. For our purposes
+    let's imagine it is accessible via http://www.domain.tld/site. 
+ 4. Make sure that the FollowSymLinks option is on for this directory 
+    in httpd.conf.
+ 5. Make a symlink in this directory to the ZPublisher directory:
+    cd site
+    ln -s /usr/local/src/Zope-2.1.0-src/lib/python/ZPublisher .
+ 5. Verify that it is correct:
+    ls -l
+    lrwxr-xr-x  1 uid group    53 Dec 13 12:15 ZPublisher -> /usr/local/src/Zope-2.1.0-src/lib/python/ZPublisher
+ 6. Create an .htaccess file with this in it:
+      SetHandler python-program
+      PythonHandler mod_python.zhandler
+      PythonDebug
+ 7. Create an above mentioned zhello.py file.
+ 8. Look at http://www.domain.tld/site/zhello/sayHello?name=Joe
+
+ Noteworthy:
+ 
+ This module automatically reloads modules just like any other mod_python
+ module. But modules that are imported by your code will not get reloaded. 
+ There are ways around having to restart the server for script changes to 
+ take effect. For example, let's say you have a module called mycustomlib.py 
+ and you have a module that imports it. If you make a changes to 
+ mycustomlib.py, you can force the changes to take effect by requesting
+ http://www.domain.tld/site/mycustomlib/.  You will get a server error, but
+ mycustomelib should get reloaded.
+ 
+ P.S.: ZPublisher is not Zope, but only part of it. As of right now, as far
+ as I know, Zope will not work with mod_python. This is because of locking 
+ issues. Older versions of Zope had no locking, so different children of 
+ apache would corrupt the database by trying to access it at the same time. 
+ Starting with version 2 Zope does have locking, however, it seems that the 
+ first child locks the database without ever releasing it and after that no 
+ other process can acess it.
+
+ If this is incorrect, and you can manage to get Zope to work without problems,
+ please send me an e-mail and I will correct this docuemtnation.
+
+    </pre>
+
+    <hr>
+<!-- Created: Thu May 11 18:28:35 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Thu May 11 18:42:20 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>

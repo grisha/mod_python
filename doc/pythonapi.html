@@ -1,0 +1,343 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!-- $Id: pythonapi.html,v 1.1 2000/05/11 22:54:39 grisha Exp $ -->
+
+<html>
+  <head>
+    <title>Python API</title>
+  </head>
+
+  <body bgcolor="white">
+    <h1>Python API</h1>
+
+
+    <h3>Multiple Interpreters</h3>
+
+    <blockquote>
+
+      When working with mod_python, it is important to be aware of a feature of
+      Python that is normally not used when using the language for writing scripts to be
+      run from command line.
+      <p>
+	Python C API provides the ability to create <em>subinterpreters</em>. A more
+	detailed description of a subintepreter is given in the documentation for the
+	<a href="http://www.python.org/doc/current/api/initialization.html#l2h-439">Py_NewInterpreter</a> 
+	function. For this discussion, it will suffice to say that each
+	subinterpreter has its own separate namespace, not accessible from other
+	subinterpreters.
+	<p>
+	At server start-up or mod_python initialization time, mod_python 
+	initializes the global interpeter. The global interpreter contains a 
+	dictionary of subinterpreters. Initially, this dictionary is empty. With
+	every hit, as needed, subinterpreters are created, and references to them
+	are stored in this dictionary. The key, also known as <em>interpreter name</em>,
+	is a string representing the path where the Handler directive was encountered,
+	or where the the actual file is (this depends on whether the
+	<code>PythonInterpPerDirectory</code> directive is in effect).
+	<p>
+	Once created, a subinterpreter will be reused for subsequent requests, but
+	it is never destroyed until the Apache child process dies. 
+
+    </blockquote>
+
+    <h3>Internal Callback Object</h4>
+
+    <blockquote>
+
+      The Apache server interfaces with the Python interpreter via a callback
+      object <code>obCallBack</code>. When a subinterpreter is created, an instance of
+      <code>obCallBack</code> is created in this subinterpreter. Interestingly, 
+      <code>obCallBack</code> is not written in C, it is written in Python and the code
+      for it is in the <code>apache</code> module. Mod_python only uses the C API to 
+      import <code>apache</code> and then instantiate <code>obCallBack</code>,
+      storing a reference to the instance in the interpreter dictionary described above.
+      Thus, the values in the interpreter dictionary are callback object instances.
+      <p>
+	When a request handler is invoked by Apache, mod_python uses the
+	<code>obCallBack</code> referenece to call its method <code>Dispatch</code>, 
+	passing it the name of the handler being invoked as a string. 
+      <p>
+	The <code>Dispatch</code> method then does the rest of the work of importing
+	the user module, resolving the callable object in it and calling it passing it
+	a <code>request</code> object.
+
+    </blockquote>
+
+    <h3>Overview of a handler</h3>
+    
+    <blockquote>
+      A <em>handler</em> is a function that processes a particular
+      stage of a request.  Apache processes requests in stages - read
+      the request, processs headers, provide content, etc. For evey
+      stage, it will call handlers, provided by either the Apache core
+      or one of its modules, such as mod_python, which passes control
+      to functions provided b the user and written in Python.  A
+      handler written in Python is not any different than a handler
+      written in C, and follows these rules:
+      <p>
+	A handler function will always be passed a reference to a <code>request</code>
+	object.
+      <p>
+	Every handler can return
+	<ul>
+	<li><code>apache.OK</code>, meaning this stage of the request was handled by this
+	  handler and no errors occured.
+	<li><code>apache.DECLINED</code>, meaning this handler refused to handle this
+	  stage of the request and Apache needs to look for another handler.
+	<li><code>apache.<em>HTTP_ERROR</em></code>, meaning an HTTP error occured. 
+	    <code><em>HTTP_ERROR</em></code> can be:
+	  <pre>
+                HTTP_CONTINUE                     = 100
+                HTTP_SWITCHING_PROTOCOLS          = 101
+                HTTP_PROCESSING                   = 102
+                HTTP_OK                           = 200
+                HTTP_CREATED                      = 201
+                HTTP_ACCEPTED                     = 202
+                HTTP_NON_AUTHORITATIVE            = 203
+                HTTP_NO_CONTENT                   = 204
+                HTTP_RESET_CONTENT                = 205
+                HTTP_PARTIAL_CONTENT              = 206
+                HTTP_MULTI_STATUS                 = 207
+                HTTP_MULTIPLE_CHOICES             = 300
+                HTTP_MOVED_PERMANENTLY            = 301
+                HTTP_MOVED_TEMPORARILY            = 302
+                HTTP_SEE_OTHER                    = 303
+                HTTP_NOT_MODIFIED                 = 304
+                HTTP_USE_PROXY                    = 305
+                HTTP_TEMPORARY_REDIRECT           = 307
+                HTTP_BAD_REQUEST                  = 400
+                HTTP_UNAUTHORIZED                 = 401
+                HTTP_PAYMENT_REQUIRED             = 402
+                HTTP_FORBIDDEN                    = 403
+                HTTP_NOT_FOUND                    = 404
+                HTTP_METHOD_NOT_ALLOWED           = 405
+                HTTP_NOT_ACCEPTABLE               = 406
+                HTTP_PROXY_AUTHENTICATION_REQUIRED= 407
+                HTTP_REQUEST_TIME_OUT             = 408
+                HTTP_CONFLICT                     = 409
+                HTTP_GONE                         = 410
+                HTTP_LENGTH_REQUIRED              = 411
+                HTTP_PRECONDITION_FAILED          = 412
+                HTTP_REQUEST_ENTITY_TOO_LARGE     = 413
+                HTTP_REQUEST_URI_TOO_LARGE        = 414
+                HTTP_UNSUPPORTED_MEDIA_TYPE       = 415
+                HTTP_RANGE_NOT_SATISFIABLE        = 416
+                HTTP_EXPECTATION_FAILED           = 417
+                HTTP_UNPROCESSABLE_ENTITY         = 422
+                HTTP_LOCKED                       = 423
+                HTTP_FAILED_DEPENDENCY            = 424
+                HTTP_INTERNAL_SERVER_ERROR        = 500
+                HTTP_NOT_IMPLEMENTED              = 501
+                HTTP_BAD_GATEWAY                  = 502
+                HTTP_SERVICE_UNAVAILABLE          = 503
+                HTTP_GATEWAY_TIME_OUT             = 504
+                HTTP_VERSION_NOT_SUPPORTED        = 505
+                HTTP_VARIANT_ALSO_VARIES          = 506
+                HTTP_INSUFFICIENT_STORAGE         = 507
+                HTTP_NOT_EXTENDED                 = 510
+	  </pre>
+      </ul>
+      <p>
+	As an alternative to returning an HTTP error code,
+	handlers can signal an error by raising the <code>apache.SERVER_RETURN</code> 
+	exception, and providing an HTTP error code as the exception value, e.g.
+	<pre>
+          raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+        </pre>
+      <p>
+	Handlers can send content to the client using the <code>request.write()</code>
+	function. Before sending the body of the response, headers must be sent
+	using the <code>request.send_http_header()</code> function.
+      <p>
+	Client data, such as POST requests, can be read by using the 
+	<code>req.read()</code> function.
+      <p>
+	<em>NOTE:</em>The current working directory of the process in which a handler
+	is executed is that of the Apache Python*Handler directive in effect. If the
+	directive was specified in a server config file outside any &lt;Directory&gt;,
+	then the current working directory could be anything.
+      <p>
+	An example of a minimalistic handler might be:
+<pre>	  from mod_python import apache
+
+	  def requesthandler(req):
+              req.content_type = "text/plain"
+	      req.send_http_header()
+	      req.write("Hello World!")
+	      return apache.OK</pre>
+    </blockquote>
+
+    <h3>apache module</h3>
+
+    <blockquote>
+
+    The Python Application Programmer interface to Apache internals is conatined 
+      in a module appropriately named <code>apache</code>, located 
+      inside the <code>mod_python</code> package. This module provides some important
+      objects that map to Apache internal structures, as well as some useful functions,
+      all documented below.
+    <p>
+      The <code>apache</code> module can only be imported by a script
+      running under mod_python. This is because it depends on a
+      builtin module <code>_apache</code> provided by mod_python. It
+      is best imported like this:
+
+      <pre>from mod_python import apache</pre>
+
+      Mod_python's <code>apache</code> module defines the following objects and 
+      functions. For a more in-depth look at Apache internals, see the 
+      <a href="http://dev.apache.org/API.html">Shambhala API Notes</a>.
+
+      <p>
+      <b>log_error(message, [level=level], [server=server])</b><br>
+      An interface to the Apache <code>
+      <a href="http://dev.apache.org/apidoc/apidoc_ap_log_error.html">ap_log_error</a>
+      </code> function. <em>message</em> is a string with the error message, 
+      <em>level</em> is one of the following constants:
+      <pre>
+                APLOG_EMERG
+                APLOG_ALERT
+                APLOG_CRIT
+                APLOG_ERR
+                APLOG_WARNING
+                APLOG_NOTICE
+                APLOG_INFO
+                APLOG_DEBUG
+                APLOG_NOERRNO
+      </pre>
+      <em>server</em> is a reference to a <code>server</code> object which is passed
+      as a member of the request, <code>request.server</code>. If <em>server</em> is
+      not specified, then the error will be logged to the default error log, otherwise
+      it will be written to the error log for the appropriate virtual server.
+      <p>
+      <b>make_table()</b><br>
+	Returns a new empty <code>table</code> object.
+
+      <h4>Table Object</h4>
+
+      The <code>table</code> object is a Python mapping to the Apache <code>
+	<a href="http://dev.apache.org/apidoc/apidoc_table.html">table</a>
+      </code>. The <code>table</code> object performs just like
+      a dictionary, with the only difference that key lookups are case
+      insensitive.
+      <p>
+	Much of the information that Apache uses is stored in tables. For
+	example, <code>request.header_in</code> and 
+	<code>request.headers_out</code>.
+      <p>
+	All the talbles that mod_python provides inside the <code>request</code>
+	object are actual mappings to the Apache structures, so changing the Python
+	table also changes the underlying Apache table.
+
+      <h4>Request Object</h4>
+
+      The <code>request</code> object is a Python mapping to the Apache <code>
+	<a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a>
+      </code> structure.
+      <p>
+	When a handler is envoked, it is always passed a single argument - the 
+	<code>request</code> object. Here is an outline of the most important
+	attributes of the <code>request</code> object:
+      <blockquote>
+
+	<h4>Functions</h4>
+
+	<b>send_http_header()</b><br>
+	Starts the output from the request by sending
+	the HTTP headers. This function has no effect when called more than
+	once within the same request. Any manipulation of 
+	<code>request.headers_out</code> after this function has been called is 
+	pointless since the headers have already been sent to the client.
+	<p>
+	  <b>get_basic_auth_pw()</b><br>
+	  Returns a string containing the password when basic authentication is used.
+	<p>
+	  <b>write(string)</b><br>
+	  Writes <em>string</em> directly to the client, then flushes the buffer.
+	<p>
+	  <b>read()</b><br>
+	  Reads directly from the client, returning a string with the data read. When
+	  there is nothing more to read, None is returned.
+	<p>
+	  <b>get_config()</b><br>
+	  Returns a reference to the <code>table</code> object containing the 
+	  configuration in effect for this request. The table has directives as keys,
+	  and their values, if any, as values.
+	<p>
+	  <b>get_options()</b><br>
+	  Returns a reference to the <code>table</code> object containing the options
+	  set by the PythonOption drectives.
+	<p>
+	  <b>get_dirs()</b><br> Returns a reference to the
+	  <code>table</code> object keyed by directives currently in
+	  effect and having directory names of where the particular
+	  directive was last encountered as values. For every key in
+	  the table returned by get_config(), there will be a key in
+	  this table. If the directive was in one of the server config
+	  files outside of any &lt;Directory&gt;, then the value will
+	  be an empty string.
+	<p>
+	  <b>add_common_vars()</b><br>
+	  Calls the Apache 
+	  <a href="http://dev.apache.org/apidoc/apidoc_ap_add_common_vars.html">ap_add_common_vars</a> function. After a call to this function, <code>request.subprocess_env</code> will contain a lot of CGI information.
+
+	  <h4>Other Members</h4>
+
+	The request object contains most of the members of the underlying
+	<code><a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a></code>.
+	Only the most important or frequently used ones are mentioned here.
+	<p>
+	  <b>status</b><br>
+	  An integer, whose value will be used in building the status line of the
+	  HTTP reply headers. Normally, there is no reason to change this. The correct
+	  way to provide status is to return the status code from the handler.
+	<p>
+	  <b>content_type</b><br>
+	  A string, representing the response content type.
+	<p>
+	  <b>headers_in</b><br>
+	  A <code>table</code> object containing the headers send by the client.
+	<p>
+	  <b>headers_out</b>
+	  A <code>table</code> object representing the headers to be sent to the
+	  client. Note that manipulating this table after the 
+	  <code>request.send_http_headers()</code> has been called is meaningless,
+	  since the headers have already gone out to the client.
+	<p>
+	  <b>connection</b>
+	  A <code>connection</code> object associated with this request.
+	<p>
+	  <b>subprocess_env</b><br>
+	  A <code>table</code> representing the subprocess environmanet. See also
+	  <code>request.add_common_vars()</code>.
+	<p>
+
+      </blockquote>
+
+      <h4>Connection Object</h4>
+
+      The <code>connection</code> object is a Python mapping to the Apache <code>
+      <a href="http://dev.apache.org/apidoc/apidoc_conn_rec.html">conn_rec</a>
+      </code> structure.
+
+      <h4>Server Object</h4>
+
+      The <code>request</code> object is a Python mapping to the Apache <code>
+	<a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a>
+      </code> structure.
+
+      
+
+    </blockquote>
+
+    
+
+
+
+    <hr>
+<!-- Created: Tue May  9 08:24:45 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Thu May 11 18:27:39 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!-- $id$ -->
+
+<html>
+  <head>
+    <title>Installation</title>
+  </head>
+
+  <body bgcolor=white>
+    <h1>Installation</h1>
+
+    <hr>
+    <blockquote>
+      <pre>
+
+Presently, mod_python is installed by statically linking mod_python into
+Apache. There are still some issues that I am trying to resolve with DSO
+support. It will work, but I do not have a clean installation procedure
+that works across platforms.
+
+Please join the mod_python mailing list by sending an e-mail with the word
+"subscribe" in the subject to mod_python-request@modpython.org.
+
+
+To install:
+
+
+
+1. Untar the file in some directory.
+2. copy mod_python/src/mod_python.c to src/modules/extra/ in the Apache sources.
+3. cd into the apache source directory
+
+then either
+
+    4. ./configure --activate-module=src/modules/extra/mod_python.c
+    5. make
+OR
+
+    4. cd src
+    5. edit Configuration and add "AddModule modules/extra/mod_python.o"
+    6. ./Configure
+    7. make
+
+lastly, you need to install the Python package:
+
+ [as root]
+
+1. cp lib/python/mod_python to /usr/local/lib/python1.5/site-packages/
+2. python /usr/local/lib/python/compileall.py /usr/local/lib/python1.5/site-packages/mod_python
+
+ [end as root]
+
+Now, see if it works:
+
+    1. ./httpd -l should list mod_python.c
+    2. pick some directory on yout website
+    3. make sure that AllowOverride isn't None for that directory
+    4. edit .htaccess so that it has:
+
+    AddHandler python-program .py
+    PythonDebug
+    PythonHandler test
+
+    5. put a file named test.py in this directory with this in it:
+
+    from mod_python import apache
+
+    def handler(req):
+        req.send_http_header()
+        req.write("Hello World!")
+        return apache.OK
+
+    6. point your browser to the URL referring to this file
+
+    7. If this didn't work, either study the error output in your browser,
+       or look at the error log. Make sure you followed all the steps.
+
+    8. If that fails, e-mail me or the mod_python@modpython.org list.
+
+      </pre>
+    </blockquote>
+
+    <hr>
+<!-- Created: Wed May 10 09:06:54 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Thu May 11 18:24:19 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>
