@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.33 2003/06/30 18:04:35 grisha Exp $
+ # $Id: test.py,v 1.34 2003/08/01 01:53:13 grisha Exp $
  #
 
 """
@@ -163,10 +163,12 @@ import os
 import shutil
 import time
 import socket
+import tempfile
 
 HTTPD = testconf.HTTPD
 TESTHOME = testconf.TESTHOME
 MOD_PYTHON_SO = testconf.MOD_PYTHON_SO
+AB = os.path.join(os.path.split(HTTPD)[0], "ab")
 
 SERVER_ROOT = TESTHOME
 CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
@@ -185,6 +187,14 @@ def findUnusedPort():
     s.close()
 
     return port
+
+def quoteIfSpace(s):
+
+    # Windows doesn't like quotes when there are
+    # no spaces, but needs them otherwise
+    if s.find(" ") != -1:
+        s = '"%s"' % s
+    return s
 
 class HttpdCtrl:
     # a mixin providing ways to control httpd
@@ -218,32 +228,32 @@ class HttpdCtrl:
 
         s = Container(
             IfModule("prefork.c",
-                     StartServers("1"),
+                     StartServers("3"),
                      MaxSpareServers("1")),
             IfModule("worker.c",
-                     StartServers("1"),
-                     MaxClients("1"),
+                     StartServers("2"),
+                     MaxClients("6"),
                      MinSpareThreads("1"),
                      MaxSpareThreads("1"),
-                     ThreadsPerChild("1"),
+                     ThreadsPerChild("3"),
                      MaxRequestsPerChild("0")),
             IfModule("perchild.c",
-                     NumServers("1"),
-                     StartThreads("1"),
+                     NumServers("2"),
+                     StartThreads("2"),
                      MaxSpareThreads("1"),
                      MaxThreadsPerChild("2")),
             IfModule("mpm_winnt.c",
-                     ThreadsPerChild("3"),
+                     ThreadsPerChild("5"),
                      MaxRequestsPerChild("0")),
             IfModule("!mod_mime.c",
                      LoadModule("mime_module %s" %
-                                self.quoteIfSpace(os.path.join(modpath, "mod_mime.so")))),
+                                quoteIfSpace(os.path.join(modpath, "mod_mime.so")))),
             IfModule("!mod_log_config.c",
                      LoadModule("log_config_module %s" %
-                                self.quoteIfSpace(os.path.join(modpath, "mod_log_config.so")))),
+                                quoteIfSpace(os.path.join(modpath, "mod_log_config.so")))),
             IfModule("!mod_dir.c",
                      LoadModule("dir_module %s" %
-                                self.quoteIfSpace(os.path.join(modpath, "mod_dir.so")))),
+                                quoteIfSpace(os.path.join(modpath, "mod_dir.so")))),
             ServerRoot(SERVER_ROOT),
             ErrorLog("logs/error_log"),
             LogLevel("debug"),
@@ -261,19 +271,11 @@ class HttpdCtrl:
         f.write("\n# --APPENDED-- \n\n"+append)
         f.close()
 
-    def quoteIfSpace(self, s):
-
-        # Windows doesn't like quotes when there are
-        # no spaces, but needs them otherwise
-        if s.find(" ") != -1:
-            s = '"%s"' % s
-        return s
-
     def startHttpd(self):
 
         print "  Starting Apache...."
-        httpd = self.quoteIfSpace(HTTPD)
-        config = self.quoteIfSpace(CONFIG)
+        httpd = quoteIfSpace(HTTPD)
+        config = quoteIfSpace(CONFIG)
         cmd = '%s -k start -f %s' % (httpd, config)
         print "    ", cmd
         os.system(cmd)
@@ -283,8 +285,8 @@ class HttpdCtrl:
     def stopHttpd(self):
 
         print "  Stopping Apache..."
-        httpd = self.quoteIfSpace(HTTPD)
-        config = self.quoteIfSpace(CONFIG)
+        httpd = quoteIfSpace(HTTPD)
+        config = quoteIfSpace(CONFIG)
         cmd = '%s -k stop -f %s' % (httpd, config)
         print "    ", cmd
         os.system(cmd)
@@ -843,7 +845,6 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing mod_python.psp"
 
         rsp = self.vhost_get("test_psphandler", path="/psptest.psp")
-
         if (rsp[-8:] != "test ok\n"):
             self.fail("test failed")
 
@@ -908,6 +909,48 @@ class PerRequestTestCase(unittest.TestCase):
         if rsp != "test ok" or setcookie != mc:
             self.fail("cookie parsing failed")
 
+    def test_Session_Session_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_Session_Session"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("tests::Session_Session"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_Session_Session(self):
+
+        print "\n  * Testing Session.Session"
+
+        tempf = tempfile.mktemp()
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py?%s" % tempf, skip_host=1)
+        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.endheaders()
+        response = conn.getresponse()
+        setcookie = response.getheader("set-cookie", None)
+        rsp = response.read()
+        conn.close()
+
+        if rsp != "test ok" or setcookie == None:
+            self.fail("session did not set a cookie")
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py?%s" % tempf, skip_host=1)
+        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.putheader("Cookie", setcookie)
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if rsp != "test ok":
+            self.fail("session did not accept our cookie")
+
+
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
     # restart of httpd (e.g. we're using a fancy config)
@@ -929,8 +972,43 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.failUnless(server_hdr.find("Python") > -1,
                         "%s does not appear to load, Server header does not contain Python"
                         % MOD_PYTHON_SO)
+    def test_global_lock(self):
 
+        print "\n  * Testing _global_lock"
 
+        c = Directory(DOCUMENT_ROOT,
+                      SetHandler("python-program"),
+                      PythonHandler("tests::global_lock"),
+                      PythonDebug("On"))
+
+        self.makeConfig(str(c))
+
+        self.startHttpd()
+
+        f = urllib.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        rsp = f.read()
+        f.close()
+
+        if (rsp != "test ok"):
+            self.fail("test failed")
+
+        # if the mutex works, this test will take at least 5 secs
+        t1 = time.time()
+        print "    ", time.ctime()
+        ab = quoteIfSpace(AB)
+        if os.name == "nt":
+            cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > null' \
+                  % (ab, PORT)
+        else:
+            cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > /dev/null' \
+                  % (ab, PORT)
+        print "    ", cmd
+        os.system(cmd)
+        print "    ", time.ctime()
+        t2 = time.time()
+        if (t2 - t1) < 5:
+            self.fail("global_lock is broken (too quick)")
+         
     def testPerRequestTests(self):
 
         print "\n* Running the per-request test suite..."
@@ -958,6 +1036,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_psphandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_Cookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_MarshalCookie"))
+        perRequestSuite.addTest(PerRequestTestCase("test_Session_Session"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
@@ -1001,6 +1080,7 @@ def suite():
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(PerInstanceTestCase("testLoadModule"))
     mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
+    mpTestSuite.addTest(PerInstanceTestCase("test_global_lock"))
     mpTestSuite.addTest(PerInstanceTestCase("testPerRequestTests"))
     return mpTestSuite
 

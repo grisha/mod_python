@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.92 2003/07/22 20:13:12 grisha Exp $
+ * $Id: mod_python.c,v 1.93 2003/08/01 01:53:13 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -320,6 +320,109 @@ apr_status_t python_cleanup(void *data)
     return APR_SUCCESS;
 }
 
+static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
+{
+    int max_threads;
+    int max_procs;
+    int max_clients;
+    int locks;
+    int n;
+
+    /* figre out maximum possible concurrent connections */
+    ap_mpm_query(AP_MPMQ_MAX_THREADS, &max_threads);
+    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &max_procs);
+    max_clients = (((!max_threads) ? 1 : max_threads) *
+		   ((!max_procs) ? 1 : max_procs));
+    locks = max_clients; /* XXX this is completely out of the blue */
+
+    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
+		 "mod_python: Creating %d session mutexes based "
+		 "on %d max processes and %d max threads.", 
+		 locks, max_procs, max_threads);
+
+    glb->g_locks = (apr_global_mutex_t **) 
+	apr_palloc(s->process->pool, locks * sizeof(apr_global_mutex_t *));
+    glb->nlocks = locks;
+
+    for (n=0; n<locks; n++) {
+	apr_status_t rc;
+	apr_global_mutex_t **mutex = glb->g_locks;
+
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+	char fname[255];
+	sprintf(fname, "/tmp/mp_mutex%d", n);
+#else
+	char *fname = NULL;
+#endif
+	rc = apr_global_mutex_create(&mutex[n], fname, APR_LOCK_DEFAULT, 
+				     s->process->pool);
+	if (rc != APR_SUCCESS) {
+	    ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, s,
+			 "mod_python: Failed to create global mutex %s.",
+			 (!fname) ? "<null>" : fname);
+	    return rc;
+	}
+    }
+    return APR_SUCCESS;
+}
+
+static apr_status_t reinit_mutexes(server_rec *s, py_global_config *glb)
+{
+    int n;
+
+    for (n=0; n< glb->nlocks; n++) {
+	apr_status_t rc;
+	apr_global_mutex_t **mutex = glb->g_locks;
+
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+        char fname[255];
+        sprintf(fname, "/tmp/mp_mutex%d", n);
+#else
+        char *fname = NULL;
+#endif
+	rc = apr_global_mutex_child_init(&mutex[n], fname,
+					 s->process->pool);
+	if (rc != APR_SUCCESS) {
+	    ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, s,
+			 "mod_python: Failed to reinit global modutex %s.",
+			 (!fname) ? "<null>" : fname);
+	    return rc;
+	}
+    }
+    return APR_SUCCESS;
+}
+
+/**
+ ** python_create_global_config
+ **
+ *      This creates the part of config that survives
+ *  server restarts
+ *
+ */
+
+static py_global_config *python_create_global_config(server_rec *s)
+{
+    apr_pool_t *pool = s->process->pool;
+    py_global_config *glb;
+
+    /* do we already have it in s->process->pool? */
+    apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY, pool);
+
+    if (glb) {
+        return glb; 
+    }
+
+    /* otherwise, create it */
+
+    glb = (py_global_config *)apr_palloc(pool, sizeof(*glb));
+
+    apr_pool_userdata_set(glb, MP_CONFIG_KEY,
+                          apr_pool_cleanup_null,
+                          pool);
+
+    return glb;
+}
+
 /**
  ** python_init()
  **
@@ -329,10 +432,11 @@ apr_status_t python_cleanup(void *data)
 static int python_init(apr_pool_t *p, apr_pool_t *ptemp, 
                        apr_pool_t *plog, server_rec *s)
 {
-
     char buff[255];
     void *data;
+    py_global_config *glb;
     const char *userdata_key = "python_init";
+    apr_status_t rc;
 
     apr_pool_userdata_get(&data, userdata_key, s->process->pool);
     if (!data) {
@@ -347,6 +451,12 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     /* Python version */
     sprintf(buff, "Python/%.200s", strtok((char *)Py_GetVersion(), " "));
     ap_add_version_component(p, buff);
+
+    /* global config */
+    glb = python_create_global_config(s);
+    if ((rc = init_mutexes(s, glb)) != APR_SUCCESS) {
+	return rc;
+    }
 
     /* initialize global Python interpreter if necessary */
     if (! Py_IsInitialized()) 
@@ -375,7 +485,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* release the lock; now other threads can run */
         PyEval_ReleaseLock();
 #endif
-/* XXX		PSP_PG(files) = PyDict_New(); */
+
     }
     return OK;
 }
@@ -1579,9 +1689,9 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
 
     hl_entry *hle;
-
     py_config *conf = ap_get_module_config(s->module_config, &python_module);
-    
+    py_global_config *glb;
+
     /* accordig Py C Docs we must do this after forking */
 
 #ifdef WITH_THREAD
@@ -1594,10 +1704,19 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
     /*
      * Cleanups registered first will be called last. This will
-     * end the Python enterpreter *after* all other cleanups.
+     * end the Python interpreter *after* all other cleanups.
      */
 
     apr_pool_cleanup_register(p, NULL, python_finalize, apr_pool_cleanup_null);
+
+    /*
+     * Reinit mutexes
+     */
+
+    /* this will return it if it already exists */
+    glb = python_create_global_config(s);
+
+    reinit_mutexes(s, glb);
 
     /*
      * remember the pool in a global var. we may use it

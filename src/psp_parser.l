@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.11 2003/07/25 05:07:57 grisha Exp $
+ * $Id: psp_parser.l,v 1.12 2003/08/01 01:53:13 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -83,7 +83,7 @@
 
 %%
 
-[\r\n] {
+\r\n|\n {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
     yyless(0);
@@ -111,7 +111,7 @@
     BEGIN PYCODE;
 }
 
-<TEXT>[\r\n] {
+<TEXT>\r\n|\n {
     psp_string_appendc(&PSP_PG(pycode), '\n');
 }
 
@@ -128,7 +128,7 @@
     yyterminate();
 }
 
-<PYCODE>[\r\n] {
+<PYCODE>\r\n|\n {
     psp_string_appendc(&PSP_PG(pycode), '\n');
         
     PSP_PG(seen_newline) = 1;
@@ -184,7 +184,7 @@
     BEGIN PYCODE;
 }
 
-<INDENT>[\r\n] {
+<INDENT>\r\n|\n {
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     yyless(0);
     BEGIN PYCODE;

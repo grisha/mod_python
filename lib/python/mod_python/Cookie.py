@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.8 2003/07/26 19:25:18 grisha Exp $
+ # $Id: Cookie.py,v 1.9 2003/08/01 01:53:13 grisha Exp $
 
 """
 
@@ -151,7 +151,7 @@ class Cookie(object):
         header name, only the value.
         """
 
-        dict = _parseCookie(str, Class)
+        dict = _parse_cookie(str, Class)
         return dict
 
     parse = classmethod(parse)
@@ -210,9 +210,9 @@ class SignedCookie(Cookie):
     is still plainly visible as part of the cookie.
     """
 
-    def parse(Class, secret, s):
+    def parse(Class, s, secret):
 
-        dict = _parseCookie(s, Class)
+        dict = _parse_cookie(s, Class)
 
         for k in dict:
             c = dict[k]
@@ -281,9 +281,9 @@ class MarshalCookie(SignedCookie):
     http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&selm=7xn0hcugmy.fsf%40ruckus.brouhaha.com
     """
 
-    def parse(Class, secret, s):
+    def parse(Class, s, secret):
 
-        dict = _parseCookie(s, Class)
+        dict = _parse_cookie(s, Class)
 
         for k in dict:
             c = dict[k]
@@ -335,7 +335,7 @@ _cookiePattern = re.compile(
     r"\s*;?"                      # probably ending in a semi-colon
     )
 
-def _parseCookie(str, Class):
+def _parse_cookie(str, Class):
 
     # XXX problem is we should allow duplicate
     # strings
@@ -374,7 +374,7 @@ def _parseCookie(str, Class):
 
     return result
 
-def addCookie(req, cookie, value="", **kw):
+def add_cookie(req, cookie, value="", **kw):
     """
     Sets a cookie in outgoing headers and adds a cache
     directive so that caches don't cache the cookie.
@@ -391,7 +391,7 @@ def addCookie(req, cookie, value="", **kw):
 
     req.headers_out.add("Set-Cookie", str(cookie))
 
-def getCookies(req, Class=Cookie, data=None):
+def get_cookies(req, Class=Cookie, **kw):
     """
     A shorthand for retrieveing and parsing cookies given
     a Cookie class. The class must be one of the classes from
@@ -404,8 +404,6 @@ def getCookies(req, Class=Cookie, data=None):
     cookies = req.headers_in["cookie"]
     if type(cookies) == type([]):
         cookies = '; '.join(cookies)
-        
-    if data:
-        return Class.parse(data, cookies)
-    else:
-        return Class.parse(cookies)
+
+    return Class.parse(cookies, **kw)
+

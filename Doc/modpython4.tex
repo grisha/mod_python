@@ -1,3 +1,4 @@
+
 \chapter{Python API\label{pythonapi}}
 
 \section{Multiple Interpreters\label{pyapi-interps}}
@@ -1531,7 +1532,7 @@ specification published by Netscape.
   The \member{expires} attribute is a property whose value is checked
   upon setting to be in format \samp{Wdy, DD-Mon-YYYY HH:MM:SS GMT}
   (as dictated per Netscape cookie specification), or a numeric value
-  representing time in seconds since Epoch (which will be
+  representing time in seconds since beginning of epoch (which will be
   automatically correctly converted to GMT time string). An invalid
   \code{expires} value will raise \exception{ValieError}.
 
@@ -1616,7 +1617,7 @@ if type(spam) is not Cookie.SignedCookie:
 
 \subsection{Functions\label{pyapi-cookie-func}}
 
-\begin{funcdesc}{addCookie}{req, cookie\optional{, value, attributes}}
+\begin{funcdesc}{add_cookie}{req, cookie\optional{, value, attributes}}
   This is a convenience function for setting a cookie in request
   headers. \var{req} is a mod_python \class{Request} object.  If
   \var{cookie} is an instance of \class{Cookie} (or subclass thereof),
@@ -1632,23 +1633,23 @@ if type(spam) is not Cookie.SignedCookie:
   Here is one way to use this function:
   \begin{verbatim}
 c = Cookie.Cookie('spam', 'eggs', expires=time.time()+300)
-Cookie.addCookie(req, c)
+Cookie.add_cookie(req, c)
   \end{verbatim}
   Here is another:
   \begin{verbatim}
-Cookie.addCookie(req, 'spam', 'eggs', expires=time.time()+300)
+Cookie.add_cookie(req, 'spam', 'eggs', expires=time.time()+300)
   \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{getCookies}{req \optional{, Class, data}}
+\begin{funcdesc}{get_cookies}{req \optional{, Class, data}}
   This is a convenience function for retrieving cookies from incoming
   headers. \var{req} is a mod_python \class{Request}
   object. \var{Class} is a class whose \method{parse()} method will be
   used to parse the cookies, it defaults to \code{Cookie}. \var{Data}
-  is an optional argument which, if not \code{None}, will be passed as
-  the first argument to \method{parse()} (This is useful for
-  \class{signedCookie} and \class{MarshalCookie} which require
-  \code{secret} as an additional argument to \method{parse}).
+  can be any number of keyword arguments which, will be passed to
+  \method{parse()} (This is useful for \class{signedCookie} and
+  \class{MarshalCookie} which require \code{secret} as an additional
+  argument to \method{parse}).
 \end{funcdesc}
 
 \subsection{Examples\label{pyapi-cookie-example}}
@@ -1663,7 +1664,7 @@ def handler(req):
 
     cookie = Cookie.Cookie('eggs', 'spam')
     cookie.expires = time.time() + 300
-    Cookie.addCookie(req, cookie)
+    Cookie.add_cookie(req, cookie)
 
     req.write('This response contains a cookie!\n')
     return apache.OK
@@ -1679,8 +1680,8 @@ from mod_python import apache, Cookie
 
 def handler(req):
     
-    cookies = Cookie.getCookie(req, Cookie.MarshalCookie, \
-                                   'secret007')
+    cookies = Cookie.get_cookie(req, Cookie.MarshalCookie,
+                                    secret='secret007')
     if cookies.has_key('spam'):
         spamcookie = cookies['spam']
 
@@ -1697,12 +1698,197 @@ def handler(req):
 
         # MarshaCookie allows value to be any marshallable object
         value = {'egg_count': 32, 'color': 'white'}
-        Cookie.addCookie(req, Cookie.MarshalCookie('spam', value, \
-                         'secret007'))
+        Cookie.add_cookie(req, Cookie.MarshalCookie('spam', value, \
+                          'secret007'))
         req.write('Spam cookie not found, but we just set one!\n')
 
     return apache.OK
 \end{verbatim}
+
+\section{\module{Session} -- Session Management\label{pyapi-sess}}
+\declaremodule[Session]{extension}{Session}
+\modulesynopsis{Session Management}
+\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+
+The \module{Session} module provides objects for maintaining persistent
+sessions across requests.
+
+The module contains a \class{BaseSession} class, which is not meant to
+be used directly (it provides no means of storing a session), and a
+\class{DbmSession} class, which uses a dbm to store sessions. 
+
+The \class{BaseSession} class also provides session locking, both
+across processees and threads. For locking it uses APR global_mutexes
+(a number of them is pre-created at startup) The mutex number is
+computed by using modulus of the session id
+\function{hash()}. (Therefore it's possible that different session
+id's will have the same hash, but the only implication is that those
+two sessions cannot be locked at the same time resulting in a slight
+delay.)
+
+\subsection{Classes\label{pyapi-sess-classes}}
+
+\begin{classdesc}{Session}{}{}
+  This is an alias to \class{DbmSession}. 
+\end{classdesc}
+
+\begin{classdesc}{BaseSession}{req\optional{, sid, secret, timeout, lock, lockfile}}
+
+  This class is meant to be used as a base class for other classes
+  that implement a session storage mechanism. \var{req} is a required
+  reference to a mod_python request object.
+
+  \class{BaseSession} is a subclass of \class{dict}. Data can be
+  stored and retrieved from the session by using it as a
+  dictionary. (A few key names are used by the \class{BaseSession}
+  class itself for storing session metadata, they are preceeded with
+  an underscore, so if you stay away from key names beginning with an
+  underscore, you should be safe.)
+
+  \var{sid} is an optional session id; if provided, such a session
+  must already exist, otherwise it is ignored and a new session with a
+  new sid is created. If \var{sid} is not provided, the object will
+  attempt to look at cookies for session id. If a sid is found in
+  cookies, but it is not previously known or the session has expired,
+  then a new sid is created. Whether a session is ``new'' can be
+  determined by calling the \method{is_new()} method.
+
+  Cookies generated by sessions will have a path attribute which is
+  calculated by comparing the server \code{DocumentRoot} and the
+  directory in which the \code{PythonHandler} directive currently in
+  effect was specified. E.g. if document root is \file{/a/b/c} and
+  \code{PythonHandler} was specified in \file{/a/b/c/d/e}, the path
+  will be set to \file{/d/e}. You can force a specific path by using
+  \code{ApplicationPath} option (\samp{PythonOption ApplicationPath
+  /my/path} in server configuration).
+
+  When a \var{secret} is provided, \class{BaseSession} will use
+  \class{SignedCookie} when generating cookies thereby making the
+  session id almost impossible to fake. The default is to use plain
+  \class{Cookie} (though even if not signed, the session id is
+  generated to be very difficult to guess).
+
+  A session will timeout if it has not been accessed for more than
+  \var{timeout}, which defaults to 30 minutes. An attempt to load an
+  expired session will result in a ``new'' session.
+
+  The \var{lock} argument (defaults to 1) indicates whether locking
+  should be used. When locking is on, only one session object with a
+  particular session id can be instantiated at a time. \var{lockfile}
+  is the name of a file to be used for inter-process locks.
+
+  A session is in ``new'' state when the session id was just
+  generated, as opposed to being passed in via cookies or the
+  \var{sid} argument.
+
+
+  \begin{methoddesc}[BaseSession]{is_new}{}
+    Returns 1 if this session is new. A session will also be ``new''
+    after an attempt to instantiate an expired or non-existent
+    session. It is important to use this method to test whether an
+    attempt to instantiate a session has succeeded, e.g.:
+    \begin{verbatim}
+sess = Session(req, '/tmp/sessions')
+if sess.is_new():
+    # redirect to login
+    req.headers_out['location'] = 'http://www.mysite.com/login'  
+    req.status = apache.HTTP_MOVED_TEMPORARILY
+    return apache.OK
+    \end{verbatim}
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{id}{}
+    Returns the session id.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{created}{}
+    Returns the session creation time in seconds since beginning of
+    epoch.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{last_accessed}{}
+    Returns last access time in seconds since beginning of epoch.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{timeout}{}
+    Returns session timeout interval in seconds.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{set_timeout}{secs}
+    Set timeout to \var{secs}.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{invalidate}{}
+    This method will remove the session from the persistent store and
+    also place a header in outgoing headers to invalidate the session
+    id cookie.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{load}{}
+    Load the session values from storage.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{save}{}
+    This method should write session values to storage. It is a good
+    idea to call this method after you modify session data. (It will
+    be called automatically when the session object is destroyed, but
+    it is best to save data explicitely.) In \class{BaseSession} this
+    is a noop.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{delete}{}
+    Remove the session from storage.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{init_lock}{}
+    This method initializes the session lock. There is no need to ever
+    call this method, it is intended for subclasses that wish to use
+    an alternative locking mechanism.
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{lock}{}
+    Locks this session. If the session is already locked by another
+    thread/process, wait until that lock is released. There is no need
+    to call this method if locking is handled automatically (default).
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{unlock}{}
+    Unlocks this session. (Same as \method{lock()} - when locking is
+    handled automatically (default), there is no need to call this
+    method).
+  \end{methoddesc}
+
+  \begin{methoddesc}[BaseSession]{cleanup}{}
+    This method is for subclasses to implement session storage
+    cleaning mechanism (i.e. deleting expired sessions, etc.). It will
+    be called at random, the chance of it being called is controlled
+    by \constant{CLEANUP_CHANCE} \module{Session} module variable
+    (default 1000). This means that cleanups will be ordered at random
+    and there is 1 in 1000 chance of it happening. Subclasses
+    implementing this method should not perform the (potentially time
+    consuming) cleanup operation in this method, but should instead
+    use \method{req.register_cleanup} to register a cleanup which will
+    be executed after the request has been processed.
+  \end{methoddesc}
+
+\end{classdesc}
+
+\begin{classdesc}{DbmSession}{req, dbm\optional{, sid, secret, dbmtype, timeout}}
+
+This class provides session storage using a dmb file. Generally, dbm
+access is very fast, and most dbm implementations memory-map files for
+faster access, which makes their performance nearly as fast as direct
+shared memory access.  \var{dbm} is the name of the dbm file (the file
+must be writable by the httpd process). This file is not deleted when
+the server process is stopped (a nice side benefit of this is that
+sessions can survive server restarts).
+
+The implementation uses Python \module{anydbm} module, which will
+default to \module{dbhash} on most systems. If you need to use a
+specific dbm implementation (e.g. \module{gdbm}), you can pass that
+module as \var{dbmtype}.
+
+\end{classdesc}
 
 \section{\module{_psp} -- Python Server Pages\label{pyapi-psp}}
 \declaremodule[psp]{extension}{_psp}
@@ -1722,6 +1908,9 @@ and is therefore very fast.
 Unlike other mod_python modules, \module{_psp} is written in such a way
 that it can be imported outside of the Apache httpd process, e.g. in
 stand-alone command-line programs.
+
+Sess Section \ref{hand-psp} (PSP Handler) regarding configuring the
+server to use PSP.
 
 \subsection{PSP Syntax\label{pyapi-psp-syntax}}
 
@@ -1833,5 +2022,6 @@ comments denoting blocks is highly recommended as a good practice.
   of resulting Python code.
 
 \end{funcdesc}
+
 
 

@@ -279,6 +279,14 @@ To use it, simply add this to your httpd configuration:
   PythonHandler mod_python.psp
 \end{verbatim}
 
+The PSP code will be given a local variable \code{req}, and optionally
+\code{session}. A session will be created and a \code{session}
+variable passed in only if it is mentioned in the code (the PSP
+handler examines \code{co_names} of the code object to make that
+determination). Remember that a mere mention of \code{session} will
+generate cookies and turn on session locking, which may or may not be
+what you want.
+
 If \code{PythonDebug} server configuration is \code{On}, then by
 appending an underscore (\samp{_}) to the end of the url you can get a
 nice side-by-side listing of original PSP code and resulting Python
@@ -289,6 +297,19 @@ debugging.
 Leaving debug on in a production environment will allow remote users
 to display source code of your PSP pages!
 \end{notice}
+
+Even though the PSP parser is plenty fast, you can make it even faster
+(2x+) by enabling dbm caching. This can be done via \code{PSPDbmCache}
+Python option, e.g.:
+\begin{verbatim}
+PythonOption PSPDbmCache "/tmp/pspcache.dbm"
+\end{verbatim}
+Note that the dbm cache file is not deleted when the server restarts.
+
+The session information is stored in a dbmfile named
+\file{psp_sess.dbm} and stored in a temporary directory returned by
+\code{tempfile.gettempdir()} standard library function. It can be
+overriden by setting \code{PythonOption PSPSessionDbm filename}.
 
 \section{CGI Handler\label{hand-cgi}}
 
@@ -310,9 +331,11 @@ legacy code away from CGI. It is not recommended that you settle on
 using this handler as the preferred way to use mod_python for the long
 term. This is because the CGI environment was not intended for
 execution within threads (e.g. requires changing of current directory
-with is inherently not thread-safe) and therefore can only be
-implemented in a way that defeats many of the advantages of using
-mod_python in the first place.
+with is inherently not thread-safe, so to overcome this cgihandler
+maintains a thread lock which forces it to process one request at a
+time in a multi-threaded server) and therefore can only be implemented
+in a way that defeats many of the advantages of using mod_python in
+the first place.
 
 To use it, simply add this to your \file{.htaccess} file: 
 
@@ -322,7 +345,7 @@ To use it, simply add this to your \file{.htaccess} file:
 \end{verbatim}
 
 As of version 2.7, the cgihandler will properly reload even indirectly
-imported modules. This is done by saving a list of loaded modules
+imported module. This is done by saving a list of loaded modules
 (sys.modules) prior to executing a CGI script, and then comparing it
 with a list of imported modules after the CGI script is done.  Modules
 (except for whose whose __file__ attribute points to the standard
