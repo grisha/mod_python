@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.10 2000/05/29 00:00:15 grisha Exp $
+ * $Id: mod_python.c,v 1.11 2000/05/29 15:50:59 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -93,7 +93,7 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.0"
+#define VERSION_COMPONENT "mod_python/2.1"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define INTERP_ATTR "__interpreter__"
@@ -1572,9 +1572,6 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
 
 }
 
-
-
-
 /**
  ** make_obcallback
  **
@@ -1604,12 +1601,12 @@ PyObject * make_obcallback()
      */
 
     if (! ((m = PyImport_ImportModule(MODULENAME)))) {
-	fprintf(stderr, "PythonInitFunction: could not import %s.\n", MODULENAME);
+	fprintf(stderr, "make_obcallback(): could not import %s.\n", MODULENAME);
 	exit(1);
     }
     
     if (! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
-	fprintf(stderr, "PythonInitFunction: could not call %s.\n",
+	fprintf(stderr, "make_obcallback(): could not call %s.\n",
 		INITFUNC);
 	exit(1);
     }
@@ -1689,7 +1686,6 @@ PyObject * get_obcallback(const char *name, request_rec * req)
 
       /* save the obCallBack */
       PyDict_SetItemString(interpreters, (char *)name, obcallback);
-      
     }
 
   return  obcallback;
@@ -1748,8 +1744,12 @@ static void del_request_object()
 {
     PyObject *dict;
     dict = PyThreadState_GetDict();
-    if (PyMapping_HasKeyString(dict, "python_request"))
+    if (PyMapping_HasKeyString(dict, "python_request")) {
+	printf("deleting %d\n\n", PyDict_GetItemString(dict, "python_request"));
 	PyDict_DelItemString(dict, "python_request");
+    }
+    else
+	printf("couldn't find what to delete\n\n");
 }
 
 /**
@@ -1771,6 +1771,7 @@ static requestobject *get_request_object(request_rec *req,
 							 "python_request");
     if (request_obj) {
 	/* we have one reference at creation that is shared, no INCREF here*/
+	printf("we already have %d, tstate %d\n", request_obj, tstate);
 	return request_obj;
     }
     else {
@@ -1799,6 +1800,7 @@ static requestobject *get_request_object(request_rec *req,
 	    request_obj = make_requestobject(req);
 	}
 
+	printf("created %d, tstate %d\n", request_obj, tstate);
 	/* store the pointer to this object */
 	PyDict_SetItemString(dict, "python_request", 
 			     (PyObject *)request_obj);
