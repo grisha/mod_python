@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.4 2003/08/06 20:03:29 grisha Exp $
+ # $Id: Session.py,v 1.5 2003/08/13 17:21:32 grisha Exp $
 
 from mod_python import apache, Cookie
 import _apache
@@ -140,6 +140,7 @@ class BaseSession(dict):
         self._accessed = 0
         self._timeout = 0
         self._locked = 0
+        self._invalid = 0
         
         dict.__init__(self)
 
@@ -207,6 +208,8 @@ class BaseSession(dict):
         c = self.make_cookie()
         c.expires = 0
         Cookie.add_cookie(self._req, c)
+        self.delete()
+        self._invalid = 1
 
     def _load_internal(self):
         self._created = self["_created"]
@@ -229,8 +232,9 @@ class BaseSession(dict):
         self["_timeout"] = self._timeout
 
     def save(self):
-        self._save_internal()
-        self.do_save()
+        if not self._invalid:
+            self._save_internal()
+            self.do_save()
 
     def delete(self):
         self.do_delete()
@@ -361,10 +365,12 @@ class DbmSession(BaseSession):
         _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
-            del self._dbm[self._sid]
+            try:
+                del dbm[self._sid]
+            except KeyError: pass
         finally:
             dbm.close()
-            _apache._global_lock(self._req.server, None, 0)
+            _apache._global_unlock(self._req.server, None, 0)
 
 def mem_cleanup(sdict):
     for sid in sdict:
@@ -397,7 +403,9 @@ class MemorySession(BaseSession):
         MemorySession.sdict[self._sid] = self.copy()
 
     def do_delete(self):
-        del MemorySession.sdict[self._sid]
+        try:
+            del MemorySession.sdict[self._sid]
+        except KeyError: pass
 
 def Session(req, sid=0, secret=None, timeout=0):
 
