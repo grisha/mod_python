@@ -82,7 +82,11 @@ class, the Publisher handler will get a list of arguments that the
 object expects. This list is compared with names of fields from HTML
 form data submitted by the client via \code{POST} or
 \code{GET}. Values of fields whose names match the names of callable
-object arguments will be passed as strings.
+object arguments will be passed as strings. Any fields whose names do
+not match the names of callable argument objects will be silently dropped,
+unless the destination callable object has a \code{**kwargs} style
+argument, in which case fields with unmatched names will be passed in the
+\code{**kwargs} argument.
 
 If the destination is not callable or is a class, then its string
 representation is returned to the client.

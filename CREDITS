@@ -35,6 +35,9 @@ Bob Ippolito <bob@redivi.com>
 Miguel Marques <miguel@yorku.ca>
 	[use of req->request_config instead of atol hack]
 
+Robin Munn <rmunn@pobox.com>
+        [patches]
+
 Sean Reifschneider <jafo-rpms@tummy.com> 
 	[RH rpm]
 

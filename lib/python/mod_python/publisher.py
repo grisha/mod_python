@@ -180,11 +180,13 @@ def handler(req):
             fc = object.im_func.func_code
             expected = fc.co_varnames[1:fc.co_argcount]
 
-        # remove unexpected args
-        for name in args.keys():
-            if name not in expected:
-                del args[name]
-
+        # remove unexpected args unless co_flags & 0x08,
+        # meaning function accepts **kw syntax
+        if not (fc.co_flags & 0x08):
+            for name in args.keys():
+                if name not in expected:
+                    del args[name]
+                
         result = apply(object, (), args)
 
     if result:
