@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: util.py,v 1.19 2003/09/15 15:43:33 grisha Exp $
+ # $Id: util.py,v 1.20 2003/09/16 13:48:20 grisha Exp $
 
 import _apache
 import apache
@@ -311,7 +311,7 @@ class FieldStorage:
                     return item
                 else:
                     return StringField(item.value)
-                return default
+        return default
                                                                     
     def getlist(self, key):
         """ return a list of received values """
