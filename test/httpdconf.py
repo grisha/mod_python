@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: httpdconf.py,v 1.8 2003/10/08 03:48:17 grisha Exp $
+ # $Id: httpdconf.py,v 1.9 2003/10/21 21:06:50 grisha Exp $
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
@@ -166,6 +166,10 @@ class LogLevel(Directive):
 class LogFormat(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val, flipslash=0)
+
+class LockFile(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
 
 class MaxClients(Directive):
     def __init__(self, val):
