@@ -1965,6 +1965,9 @@ if sess.is_new():
     Locks this session. If the session is already locked by another
     thread/process, wait until that lock is released. There is no need
     to call this method if locking is handled automatically (default).
+
+    This method registeres a cleanup which always unlocks the session
+    at the end of the request processing.
   \end{methoddesc}
 
   \begin{methoddesc}[BaseSession]{unlock}{}
