@@ -100,7 +100,8 @@ class PSPExtension(Extension):
         Extension.__init__(self, "mod_python._psp",
                                [os.path.join(source_dir, source_file) for source_file in
                                     ("psp_string.c", "psp_parser.c", "_pspmodule.c")],
-                                include_dirs=include_dirs
+                                include_dirs=include_dirs,
+                                define_macros=[('WIN32',None)]
                            )
 
 PSPModule = PSPExtension(getmp_srcdir(), [getmp_includedir()])
