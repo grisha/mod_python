@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.4 2000/05/13 02:22:36 grisha Exp $ -->
+<!-- $Id: directives.html,v 1.5 2000/05/22 12:14:39 grisha Exp $ -->
 
 <html>
   <head>
@@ -162,17 +162,15 @@ different interpreters, one for each directory.
 <strong>Module:</strong></a> mod_python.c
 
 <p>
-Normally, the traceback output resulting from uncaught Python errors is sent to
-the error log. With PythonDebug directive specified, the output will be sent to
-the client, except when the error is IOError while writing, in which case it will
-go to the error log.
-<p>
-A consequence of this directive being specified is that when multiple handlers
-are involved in processing the request, the processing will
+Normally, the traceback output resulting from uncaught Python errors
+is sent to the error log. With PythonDebug directive specified, the
+output will be sent to the client (as well as the log), except when
+the error is IOError while writing, in which case it will go to the
+error log.
 <p>
 This directive is very useful during the development process. It is recommended
 that you do not use it production environment as it may reveal to the client 
-sensitive security information.
+unintended, possibly sensitive security information.
 
 <hr>
 
@@ -187,12 +185,14 @@ sensitive security information.
 <strong>Module:</strong></a> mod_python.c
 
 <p>
-Instructs mod_python not to check the modification date of the module file.
-By default, mod_python checks the time-stamp of the file and reloads the module if the
-module's file modification date is later than the last import or reload.
+Instructs mod_python not to check the modification date of the module
+file.  By default, mod_python checks the time-stamp of the file and
+reloads the module if the module's file modification date is later
+than the last import or reload.
 <p>
-This options is useful in production environment where the modules do not change,
-it will save some processing time and give a small performance gain.
+This options is useful in production environment where the modules do
+not change, it will save some processing time and give a small
+performance gain.
 
 <hr>
 <h2><a name="PythonOption">PythonOption</a></h2>
@@ -387,7 +387,7 @@ programs.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Fri May 12 22:07:03 EDT 2000
+Last modified: Tue May 16 17:27:11 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

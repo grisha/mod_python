@@ -1,16 +1,80 @@
-/*
- * (C) Gregory Trubetskoy <grisha@ispol.com> Nov 1998
+/*====================================================================
+ * Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer. 
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *
+ * 3. All advertising materials mentioning features or use of this
+ *    software must display the following acknowledgment:
+ *    "This product includes software developed by Gregory Trubetskoy
+ *    for use in the mod_python module for Apache HTTP server 
+ *    (http://www.modpython.org/)."
+ *
+ * 4. The names "mod_python", "modpython" or "Gregory Trubetskoy" must not 
+ *    be used to endorse or promote products derived from this software 
+ *    without prior written permission. For written permission, please 
+ *    contact grisha@ispol.com.
+ *
+ * 5. Products derived from this software may not be called "mod_python"
+ *    or "modpython", nor may "mod_python" or "modpython" appear in their 
+ *    names without prior written permission of Gregory Trubetskoy. For 
+ *    written permission, please contact grisha@ispol.com..
+ *
+ * 6. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Gregory Trubetskoy
+ *    for use in the mod_python module for Apache HTTP server 
+ *    (http://www.modpython.org/)."
+ *
+ * THIS SOFTWARE IS PROVIDED BY GREGORY TRUBETSKOY ``AS IS'' AND ANY
+ * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL GREGORY TRUBETSKOY OR
+ * HIS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ * ====================================================================
+ *
+ * This software is based on the original concept
+ * as published in the book "Internet Programming with Python"
+ * by Aaron Watters, Guido van Rossum and James C. Ahlstrom, 
+ * 1996 M&T Books, ISBN: 1-55851-484-8. The book and original
+ * software is Copyright 1996 by M&T Books.
+ *
+ * This software consists of an extension to the Apache http server.
+ * More information about Apache may be found at 
+ *
+ * http://www.apache.org/
+ *
+ * More information on Python language can be found at
+ *
+ * http://www.python.org/
+ *
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.7 2000/05/13 02:25:00 grisha Exp $
+ * $Id: mod_python.c,v 1.8 2000/05/22 12:14:39 grisha Exp $
  *
  * See accompanying documentation and source code comments 
- * for details. See COPYRIGHT file for Copyright. 
+ * for details.
  *
  * Apr 2000 - rename to mod_python and go apache-specific.
  * Nov 1998 - support for multiple interpreters introduced.
- * May 1998 - initial release.
+ * May 1998 - initial release (httpdapy).
  *
  */
 
@@ -29,13 +93,10 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/1.9a"
+#define VERSION_COMPONENT "mod_python/2.0"
 #define MODULENAME "mod_python.apache"
 #define INITSTRING "mod_python.apache.init()"
 #define INTERP_ATTR "__interpreter__"
-
-/* debugging? Use ./httpd -X when on */
-static int debug = 0;
 
 /* Are we in single interpreter mode? */
 static int single_mode = 0;
@@ -295,7 +356,6 @@ static struct memberlist request_memberlist[] = {
 
 /* Apache module declaration */
 module MODULE_VAR_EXPORT python_module;
-extern module python_module;
 
 /* structure describing per directory configuration parameters */
 typedef struct 
@@ -1378,17 +1438,6 @@ void python_dict_merge(PyObject *d1, PyObject *d2)
 
 void python_decref(void *object)
 {
-    if (debug) {
-	PyObject *s, *s2;
-	s = PyObject_Type(object);
-	s2 = PyObject_Repr(s);
-	printf("python_decref(): decrementing %s at %d\n", PyString_AsString(s2), 
-	       (int) object);
-	Py_DECREF(s2);
-	Py_DECREF(s);
-    }
-
-
     Py_XDECREF((PyObject *) object);
 }
 
@@ -1488,8 +1537,6 @@ void python_init(server_rec *s, pool *p)
     requestobjecttype = rot;
     tableobjecttype = tt;
 
-    if (debug) printf("python_init(): adding version component...");
-
     /* mod_python version */
     ap_add_version_component(VERSION_COMPONENT);
 
@@ -1497,15 +1544,10 @@ void python_init(server_rec *s, pool *p)
     sprintf(buff, "Python/%s", strtok((char *)Py_GetVersion(), " "));
     ap_add_version_component(buff);
 
-    if (debug) printf("python_init(): initializing...");
-
-
     /* initialize global Python interpreter if necessary */
     if (! Py_IsInitialized()) 
     {
 
-	if (debug) printf("python_init(): calling Py_Initialize()\n");
-      
 	/* initialze the interpreter */
 	Py_Initialize();
                
@@ -1514,8 +1556,6 @@ void python_init(server_rec *s, pool *p)
 	/* create and acquire the interpreter lock */
 	PyEval_InitThreads();         
 #endif
-	if (debug) printf("python_init(): creating new interpreters dictionary\n");
-
 	/* create the obCallBack dictionary */
 	interpreters = PyDict_New();
 
@@ -1533,28 +1573,21 @@ void python_init(server_rec *s, pool *p)
 	 *  obCallBack)
 	 */
 
-	if (debug) printf("python_init(): calling Py_Init Module() for _apache\n");
-
 	/* make obCallBack */
 	obcallback = make_obcallback(NULL, NULL);
 
 	/* get the current thread state */
 	tstate = PyThreadState_Get();
 
-	if (debug) printf("python_init(): saving PyThreadState %d in obcallback\n", (int) tstate);
-
 	/* cast PyThreadState * to long and save it in obCallBack */
 	x = PyInt_FromLong((long) tstate);
 	PyObject_SetAttrString(obcallback, INTERP_ATTR, x);
 	Py_DECREF(x);
 
-	if (debug) printf("python_init(): saving obcallback in interpreters under \"global_interpreter\"\n");
-
 	/* save the obCallBack */
 	PyDict_SetItemString(interpreters, "global_interpreter", obcallback);
 
 #ifdef WITH_THREAD
-	if (debug) printf("python_init(): calling PyEval_ReleaseLock()\n");
 
 	/* release the lock; now other threads can run */
 	PyEval_ReleaseLock();
@@ -1578,8 +1611,6 @@ static void *python_create_dir_config(pool *p, char *dir)
 
     py_dir_config *conf = 
 	(py_dir_config *) ap_pcalloc(p, sizeof(py_dir_config));
-
-    if (debug) printf("python_create_dir_config(): %s\n", (dir != NULL) ? dir : "(null)");
 
     conf->authoritative = 1;
     conf->config_dir = ap_pstrdup(p, dir);
@@ -1632,10 +1663,6 @@ static void *python_merge_dir_config(pool *p, void *cc, void *nc)
     py_dir_config *current_conf = (py_dir_config *) cc;
     py_dir_config *new_conf = (py_dir_config *) nc;
 
-    if (debug) printf("python_merge_dir_config(): cc->config_dir %s nc->config_dir %s\n", 
-		      (! current_conf->config_dir) ? "null" : current_conf->config_dir , 
-		      (! new_conf->config_dir) ? "null" : new_conf->config_dir);
-
     /* we basically allow the local configuration to override global,
      * by first copying current values and then new values on top
      */
@@ -1686,8 +1713,6 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
     char *s;
     table *directives;
     table *dirs;
-
-    if (debug) printf("python_directive(): %s: %s\n", key, val);
 
     directives = *(table **)(mconfig + directs_offset);
     dirs = *(table **)(mconfig + dirs_offset);
@@ -1750,15 +1775,11 @@ PyObject * make_obcallback(const char *module, const char *initstring)
   if (! initstring)
     initstring = INITSTRING;
 
-  if (debug) printf("make_obcallback(): initializing _apache...\n");
-
   /* This makes _apache appear imported, and subsequent
    * >>> import _apache 
    * will not give an error.
    */
   Py_InitModule("_apache", _apache_module_methods);
-
-  if (debug) printf("make_obcallback(): making callback obj with module %s initstring %s\n", module, initstring);
 
   /* Now execute the equivalent of
    * >>> import sys
@@ -1767,8 +1788,6 @@ PyObject * make_obcallback(const char *module, const char *initstring)
    * in the __main__ module to start up Python.
    */
 
-  if (debug) printf("make_obcallback(): >>> import %s\n", module);
-
   sprintf(buff, "import %s\n", module);
 
   if (PyRun_SimpleString(buff))
@@ -1776,8 +1795,6 @@ PyObject * make_obcallback(const char *module, const char *initstring)
       fprintf(stderr, "PythonInitFunction: could not import %s.\n", module);
       exit(1);
     }
-
-  if (debug) printf("make_obcallback(): >>> %s\n", initstring);
 
   sprintf(buff, "%s\n", initstring);
 
@@ -1806,7 +1823,6 @@ PyObject * make_obcallback(const char *module, const char *initstring)
     }
 
   /* Wow, this worked! */
-  if (debug) printf("make_obcallback(): callback obj made successfully!\n");
 
   return obCallBack;
 
@@ -1860,26 +1876,21 @@ PyObject * get_obcallback(const char *name, server_rec * server)
   obcallback = PyDict_GetItemString(interpreters, (char *) name);
 
   /* if obcallback is NULL at this point, no such interpeter exists */
-  if (! obcallback)
-    {
-
-      if (debug) printf("get_obcallback(): no interprter %s exists, calling Py_NewInterpreter()\n", name);
+  if (! obcallback) {
 
       /* create a new interpeter */
       tstate = Py_NewInterpreter();
 
-      if (! tstate)
-	{ 
+      if (! tstate) {
+
 	  /* couldn't create an interpreter, this is bad */
 	  ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, server,
 		       "get_obcallback: Py_NewInterpreter() returned NULL. No more memory?");
 	  return NULL;
-	}
-	  
+      }
+      
       /* create an obCallBack */
       obcallback = make_obcallback(NULL, NULL);
-
-      if (debug) printf("get_obcallback(): saving interpreter %s (%d) in interprters\n", name, (int) tstate);
 
       /* cast PyThreadState * to long and save it in obCallBack */
       p = PyInt_FromLong((long) tstate);
@@ -1956,8 +1967,6 @@ static PyObject * SetCallBack(PyObject *self, PyObject *args)
     /* see if CallBack is in *args */
     if (! PyArg_ParseTuple(args, "O", &callback)) 
 	return NULL;
-
-    if (debug) printf("SetCallBack(): we are being provided a obCallBack instance of %d\n", (int) callback);
 
     /* store the object, incref */
     obCallBack = callback;  
@@ -2049,14 +2058,11 @@ static int python_handler(request_rec *req, char *handler)
     int result;
     const char * interpreter = NULL;
 
-    if (debug) printf("python_handler(): %s: req->filename %s\n", handler, req->filename);
-
     /* get configuration */
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, &python_module);
   
     /* is there a handler? */
     if (! ap_table_get(conf->directives, handler)) {
-	if (debug) printf("python_handler(): %s: no handler, declining.\n", handler);
 	return DECLINED;
     }
 
@@ -2092,28 +2098,10 @@ static int python_handler(request_rec *req, char *handler)
 	}
     }
 
-    if (debug) 
-    {
-	printf("python_handler(): will use interpreter %s.\n", interpreter);
-#ifdef WITH_THREAD
-	printf("python_handler(): calling PyEval_AcquireLock()...\n"); 
-#endif
-    }
-
 #ifdef WITH_THREAD  
     /* acquire lock */
     PyEval_AcquireLock();
 #endif
-
-    if (debug) 
-    {
-	/* lots of debugging info */
-	printf("python_handler(): %s, configuration in effect *here*:\n", handler);
-	if (interpreter) printf("   interpreter: \t%s\n", interpreter);
-	print_table(conf->directives);
-	print_table(conf->dirs);
-	print_table(conf->options);
-    }
 
     /* get/create obcallback */
     obcallback = get_obcallback(interpreter, req->server);
@@ -2129,16 +2117,13 @@ static int python_handler(request_rec *req, char *handler)
     /* find __interpreter__ in obCallBack */
     tstate = (PyThreadState *) PyInt_AsLong(PyObject_GetAttrString(obcallback, INTERP_ATTR));
 
-    if (debug) printf("python_handler(): got tstate %d, making it current with PyThreadState_Swap()\n", 
-		      (int) tstate); 
-
     /* make this thread state current */
     PyThreadState_Swap(tstate);
 
     /* create/acquire request object */
     get_request_object(req, &request_obj);
 
-    /* XXX This MUST be noted in the documentation clearly!
+    /* 
      * The current directory will be that of the last encountered 
      * Python*Handler directive. If the directive was in httpd.conf,
      * then the directory is null, and cwd could be anything (most
@@ -2149,14 +2134,10 @@ static int python_handler(request_rec *req, char *handler)
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
-     * >>> resultobject = obCallBack.Service(pbo, sno, rqo)
+     * >>> resultobject = obCallBack.Dispatch(request_object, handler)
      */
 
-    if (debug) printf("python_handler(): %s: calling PyObject_CallMethod()\n", handler);
-
     resultobject = PyObject_CallMethod(obcallback, "Dispatch", "Os", request_obj, handler);
-
-    if (debug) printf("python_handler(): %s: user code done.\n", handler); 
 
 #ifdef WITH_THREAD
     /* release the lock */
@@ -2165,7 +2146,7 @@ static int python_handler(request_rec *req, char *handler)
 
     if (! resultobject) {
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req->server, 
-		     "python_handler: Service() returned nothing.");
+		     "python_handler: Dispatch() returned nothing.");
 	return HTTP_INTERNAL_SERVER_ERROR;
     }
     else {
@@ -2173,7 +2154,7 @@ static int python_handler(request_rec *req, char *handler)
 	   result to return */
 	if (! PyInt_Check(resultobject)) {
 	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req->server, 
-			 "python_handler: Service() returned non-integer.");
+			 "python_handler: Dispatch() returned non-integer.");
 	    return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	else {
@@ -2213,9 +2194,6 @@ static int python_handler(request_rec *req, char *handler)
      * of the handle. If the req->status or return code is a weird number that the 
      * server doesn't know, it will default to 500 Internal Server Error.
      */
-
-    if (debug) printf("python_handler(): result %d, req->status %d, req->status_line is %s, bytes_sent %ld\n", 
-		      result, req->status, req->status_line, req->bytes_sent);
 
     /* clean up */
     Py_XDECREF(resultobject);
@@ -2296,8 +2274,6 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
 
     int offset = XtOffsetOf(py_dir_config, options);
     table * options;
-
-    if (debug) printf("directive_PythonOption(): key: %s val: %s\n", key, val);
 
     options = * (table **) (mconfig + offset);
     ap_table_set(options, key, val);
