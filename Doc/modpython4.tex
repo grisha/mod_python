@@ -306,10 +306,9 @@ objects. For a more in-depth look at Apache internals, see the
 \subsection{Functions\label{pyapi-apmeth}}
 
 \begin{funcdesc}{log_error}{message\optional{, level, server}}
-  An interface to the Apache
-  \citetitle[http://dev.apache.org/apidoc/apidoc_ap_log_error.html]{ap_log_error()}
-  function. \var{message} is a string with the error message, \var{level} is
-  one of the following flags constants:
+  An interface to the Apache \code{ap_log_error()}
+  function. \var{message} is a string with the error message,
+  \var{level} is one of the following flags constants:
 
   \begin{verbatim}
     APLOG_EMERG
@@ -570,6 +569,27 @@ between handlers.
   redirect, \code{req.prev} will contain a reference to a request
   object from which it was redirected.
 
+\end{methoddesc}
+
+\begin{methoddesc}{log_error}{message\optional{, level}}
+  An interface to the Apache \code{ap_log_rerror}
+  function. \var{message} is a string with the error message,
+  \var{level} is one of the following flags constants:
+
+  \begin{verbatim}
+    APLOG_EMERG
+    APLOG_ALERT
+    APLOG_CRIT
+    APLOG_ERR
+    APLOG_WARNING
+    APLOG_NOTICE
+    APLOG_INFO
+    APLOG_DEBUG
+    APLOG_NOERRNO
+  \end{verbatim}            
+
+  If you need to write to log and do not have a reference to a request object,
+  use the \function{apache.log_error} function.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{read}{\optional{len}}

@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.47 2003/05/30 17:05:16 grisha Exp $
+ * $Id: requestobject.c,v 1.48 2003/07/03 14:13:36 grisha Exp $
  *
  */
 
@@ -422,7 +422,7 @@ static PyObject * req_log_error(requestobject *self, PyObject *args)
     int level = 0;
     char *message = NULL;
 
-    if (! PyArg_ParseTuple(args, "z|iO", &message, &level))
+    if (! PyArg_ParseTuple(args, "z|i", &message, &level))
         return NULL; /* error */
 
     if (message) {
