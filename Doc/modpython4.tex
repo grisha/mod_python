@@ -790,8 +790,12 @@ require valid-user
 \end{memberdesc}
 
 \begin{memberdesc}[request]{assbackwards}
-  Is this an HTTP/0.9 ``simple'' request? 
-  \emph{(Read-Only})
+  Indicates an HTTP/0.9 ``simple'' request. This means that the
+  response will contain no headers, only the body. Although this
+  exists for backwards compatibility with obsolescent browsers, some
+  people have figred out that setting assbackwards to 1 can be a
+  useful technique when including part of the response from an
+  internal redirect to avoid headers being sent.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{proxyreq}
