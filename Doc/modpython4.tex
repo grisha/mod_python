@@ -517,15 +517,15 @@ between handlers.
   a string containing the name of the directory to be added to the
   pythonpath. If no directory is specified, then, if there is already
   a handler of the same type specified, its directory is inherited,
-  otherwise the directory of the presently executing handler is used.
+  otherwise the directory of the presently executing handler is
+  used. If there is a \code{PythonPath} directive in effect, then
+  \code{sys.path} will be set exactly according to it (no directories
+  added, the \var{dir} argument is ignored).
   
   A handler added this way only persists throughout the life of the
   request. It is possible to register more handlers while inside the
   handler of the same type. One has to be careful as to not to create
   an infinite loop this way.
-
-  The \var{dir} argument will be ignored if there is a
-  \code{PythonPath} directive in effect.
 
   Dynamic handler registration is a useful technique that allows the
   code to dynamically decide what will happen next. A typical example
