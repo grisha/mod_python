@@ -31,6 +31,8 @@
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
 
+static apr_thread_mutex_t* interpreters_lock = 0;
+
 apr_pool_t *child_init_pool = NULL;
 
 /**
@@ -124,6 +126,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
         name = MAIN_INTERPRETER;
 
 #ifdef WITH_THREAD
+    apr_thread_mutex_lock(interpreters_lock);
     PyEval_AcquireLock();
 #endif
 
@@ -149,6 +152,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 
 #ifdef WITH_THREAD
     PyEval_ReleaseLock();
+    apr_thread_mutex_unlock(interpreters_lock);
 #endif
 
     if (! idata) {
@@ -470,6 +474,9 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     const char *userdata_key = "python_init";
     apr_status_t rc;
 
+    /* fudge for Mac OS X with Apache 1.3 where Py_IsInitialized() broke */
+    static int initialized = 0;
+
     apr_pool_userdata_get(&data, userdata_key, s->process->pool);
     if (!data) {
         apr_pool_userdata_set((const void *)1, userdata_key,
@@ -491,13 +498,15 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     }
 
     /* initialize global Python interpreter if necessary */
-    if (! Py_IsInitialized()) 
+    if (initialized == 0 || !Py_IsInitialized()) 
     {
-
+        initialized = 1;
+        
         /* initialze the interpreter */
         Py_Initialize();
 
 #ifdef WITH_THREAD
+        apr_thread_mutex_create(&interpreters_lock,APR_THREAD_MUTEX_UNNESTED,p);
         /* create and acquire the interpreter lock */
         PyEval_InitThreads();
 #endif

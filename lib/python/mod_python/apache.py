@@ -1,6 +1,6 @@
  #
- # Copyright 2004 Apache Software Foundation 
- # 
+ # Copyright 2004 Apache Software Foundation
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -41,7 +41,7 @@ class CallBack:
         The actual stack string lives in the request object so
         it can be manipulated by both apache.py and mod_python.c
         """
-        
+
         def __init__(self, req):
             self.req = req
 
@@ -128,7 +128,7 @@ class CallBack:
             finally:
                 exc_traceback = None
 
-	return result
+    return result
 
     def FilterDispatch(self, filter):
 
@@ -154,7 +154,7 @@ class CallBack:
 
             # add the directory to pythonpath if
             # not there yet, or pythonpath specified
-            
+
             if config.has_key("PythonPath"):
                 # we want to do as little evaling as possible,
                 # so we remember the path in un-evaled form and
@@ -201,7 +201,7 @@ class CallBack:
                         req.status = status
                 else:
                     result = value.args[0]
-                    
+
                 if type(result) != type(7):
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
                     s = s + "%s, but it must be a tuple or an int." % type(result)
@@ -234,7 +234,7 @@ class CallBack:
             finally:
                 exc_traceback = None
 
-	return OK
+    return OK
 
     def HandlerDispatch(self, req):
         """
@@ -304,7 +304,7 @@ class CallBack:
                     # stop cycling through handlers
                     if result != OK:
                         break
-                    
+
                 elif hlist.silent:
                     result = DECLINED
 
@@ -320,7 +320,7 @@ class CallBack:
                         req.status = status
                 else:
                     result = value.args[0]
-                    
+
                 if type(result) != type(7):
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
                     s = s + "%s, but it must be a tuple or an int." % type(result)
@@ -349,16 +349,16 @@ class CallBack:
             finally:
                 exc_traceback = None
 
-	return result
+    return result
 
 
     def ReportError(self, etype, evalue, etb, req=None, filter=None, srv=None,
                     phase="N/A", hname="N/A", debug=0):
-	""" 
-	This function is only used when debugging is on.
-	It sends the output similar to what you'd see
-	when using Python interactively to the browser
-	"""
+    """
+    This function is only used when debugging is on.
+    It sends the output similar to what you'd see
+    when using Python interactively to the browser
+    """
 
         try:       # try/finally
             try:        # try/except
@@ -388,7 +388,7 @@ class CallBack:
                     for e in traceback.format_exception(etype, evalue, etb):
                         s = s + e + '\n'
                     s = s + "</pre>\n"
-                        
+
                     if filter:
                         filter.write(s)
                         filter.flush()
@@ -412,68 +412,74 @@ def import_module(module_name, autoreload=1, log=0, path=None):
     if it has changed since the last import.
     """
 
-    # (Re)import
-    if sys.modules.has_key(module_name):
+    # nlehuen: this is a big lock, we'll have to refine it later to get better performance.
+    # For now, we'll concentrate on thread-safety.
+    imp.acquire_lock()
+    try:
+        # (Re)import
+        if sys.modules.has_key(module_name):
 
-        # The module has been imported already
-        module = sys.modules[module_name]
+            # The module has been imported already
+            module = sys.modules[module_name]
 
-        # but is it in the path?
-        file = module.__dict__.get("__file__")
+            # but is it in the path?
+            file = module.__dict__.get("__file__")
 
-        # the "and not" part of this condition is to prevent execution
-        # of arbitrary already imported modules, such as os. The
-        # reason we use startswith as opposed to exact match is that
-        # modules inside packages are actually in subdirectories.
+            # the "and not" part of this condition is to prevent execution
+            # of arbitrary already imported modules, such as os. The
+            # reason we use startswith as opposed to exact match is that
+            # modules inside packages are actually in subdirectories.
 
-        if not file or (path and not filter(file.startswith, path)):
-            # there is a script by this name already imported, but it's in
-            # a different directory, therefore it's a different script
-            mtime, oldmtime = 0, -1
-        elif autoreload: 
-            oldmtime = module.__dict__.get("__mtime__", 0)
-            mtime = module_mtime(module)
-        else:
-            mtime, oldmtime = 0, 0
-
-    else:
-        mtime, oldmtime = 0, -1
-
-    if mtime > oldmtime:
-
-        # Import the module
-        if log:
-            if path:
-                s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
+            if not file or (path and not filter(file.startswith, path)):
+                # there is a script by this name already imported, but it's in
+                # a different directory, therefore it's a different script
+                mtime, oldmtime = 0, -1
+            elif autoreload:
+                oldmtime = module.__dict__.get("__mtime__", 0)
+                mtime = module_mtime(module)
             else:
-                s = "mod_python: (Re)importing module '%s'" % module_name
-            _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
+                mtime, oldmtime = 0, 0
 
-        parts = module_name.split('.')
-        for i in range(len(parts)):
-            f, p, d = imp.find_module(parts[i], path)
-            try:
-                mname = ".".join(parts[:i+1])
-                module = imp.load_module(mname, f, p, d)
-            finally:
-                if f: f.close()
-            if hasattr(module, "__path__"):
-                path = module.__path__
+        else:
+            mtime, oldmtime = 0, -1
 
-        if mtime == 0:
-            mtime = module_mtime(module)
+        if mtime > oldmtime:
 
-        module.__mtime__ = mtime
+            # Import the module
+            if log:
+                if path:
+                    s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
+                else:
+                    s = "mod_python: (Re)importing module '%s'" % module_name
+                _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
 
-    return module
+            parts = module_name.split('.')
+            for i in range(len(parts)):
+                f, p, d = imp.find_module(parts[i], path)
+                try:
+                    mname = ".".join(parts[:i+1])
+                    module = imp.load_module(mname, f, p, d)
+                finally:
+                    if f: f.close()
+                if hasattr(module, "__path__"):
+                    path = module.__path__
+
+            if mtime == 0:
+                mtime = module_mtime(module)
+
+            module.__mtime__ = mtime
+
+        return module
+    finally:
+        imp.release_lock()
 
 def module_mtime(module):
     """Get modification time of module"""
     mtime = 0
     if module.__dict__.has_key("__file__"):
-        
+
        filepath = module.__file__
-       
+
        try:
            # this try/except block is a workaround for a Python bug in
            # 2.0, 2.1 and 2.1.1. See
@@ -537,7 +543,7 @@ def build_cgi_env(req):
 
     req.add_common_vars()
     env = req.subprocess_env.copy()
-        
+
     if req.path_info and len(req.path_info) > 0:
         env["SCRIPT_NAME"] = req.uri[:-len(req.path_info)]
     else:
@@ -620,28 +626,28 @@ class CGIStdin(NullIO):
             self.buf = self.buf + self.req.read(self.BLOCK)
             if len(self.buf) == x: # nothing read, eof
                 i = x - 1
-                break 
+                break
             i = self.buf.find('\n', x)
-        
+
         # carve out the piece, then shorten the buffer
         result = self.buf[:i+1]
         self.buf = self.buf[i+1:]
         self.pos = self.pos + len(result)
         return result
-        
+
 
 class CGIStdout(NullIO):
 
     """
     Class that allows writing to the socket directly for CGI.
     """
-    
+
     def __init__(self, req):
         self.pos = 0
         self.req = req
         self.headers_sent = 0
         self.headers = ""
-        
+
     def write(self, s):
 
         if not s: return
@@ -661,7 +667,7 @@ class CGIStdout(NullIO):
                     headers_over = 1
             else:
                 headers_over = 1
-                    
+
             if headers_over:
                 # headers done, process them
                 ss[0] = ss[0].replace('\r\n', '\n')
@@ -684,7 +690,7 @@ class CGIStdout(NullIO):
                 self.req.write(ss[1])
         else:
             self.req.write(str(s))
-        
+
         self.pos = self.pos + len(s)
 
     def tell(self): return self.pos
@@ -699,19 +705,19 @@ def setup_cgi(req):
 
     # save env
     save_env = os.environ.copy()
-    
+
     si = sys.stdin
     so = sys.stdout
 
     os.environ.update(build_cgi_env(req))
- 
+
     sys.stdout = CGIStdout(req)
     sys.stdin = CGIStdin(req)
 
     sys.argv = [] # keeps cgi.py happy
 
     return save_env, si, so
-        
+
 def restore_nocgi(sav_env, si, so):
     """ see setup_cgi() """
 
@@ -727,7 +733,7 @@ def restore_nocgi(sav_env, si, so):
     sys.stdin = so
 
 def init():
-    """ 
+    """
         This function is called by the server at startup time
     """
 
@@ -800,7 +806,7 @@ try:
     APLOG_EMERG = syslog.LOG_EMERG     # system is unusable
     APLOG_ALERT = syslog.LOG_ALERT     # action must be taken immediately
     APLOG_CRIT = syslog.LOG_CRIT       # critical conditions
-    APLOG_ERR = syslog.LOG_ERR         # error conditions 
+    APLOG_ERR = syslog.LOG_ERR         # error conditions
     APLOG_WARNING = syslog.LOG_WARNING # warning conditions
     APLOG_NOTICE = syslog.LOG_NOTICE   # normal but significant condition
     APLOG_INFO = syslog.LOG_INFO       # informational
@@ -814,7 +820,7 @@ except ImportError:
     APLOG_NOTICE = 5
     APLOG_INFO = 6
     APLOG_DEBUG = 7
-    
+
 APLOG_NOERRNO = 8
 
 OK = REQ_PROCEED = 0
@@ -829,7 +835,7 @@ REMOTE_DOUBLE_REV = 3
 
 # legacy/mod_python things
 REQ_ABORTED = HTTP_INTERNAL_SERVER_ERROR
-REQ_EXIT = "REQ_EXIT"         
+REQ_EXIT = "REQ_EXIT"
 SERVER_RETURN = _apache.SERVER_RETURN
 PROG_TRACEBACK = "PROG_TRACEBACK"
 
@@ -861,8 +867,8 @@ URI_FRAGMENT = 8
 
 # for req.proxyreq
 PROXYREQ_NONE = 0       # No proxy
-PROXYREQ_PROXY = 1	# Standard proxy
-PROXYREQ_REVERSE = 2	# Reverse proxy
+PROXYREQ_PROXY = 1    # Standard proxy
+PROXYREQ_REVERSE = 2    # Reverse proxy
 
 # methods for req.allow_method()
 M_GET = 0               # RFC 2616: HTTP
@@ -872,9 +878,9 @@ M_DELETE = 3
 M_CONNECT = 4
 M_OPTIONS = 5
 M_TRACE = 6             # RFC 2616: HTTP
-M_PATCH = 7 
+M_PATCH = 7
 M_PROPFIND = 8          # RFC 2518: WebDAV
-M_PROPPATCH = 9         
+M_PROPPATCH = 9
 M_MKCOL = 10
 M_COPY = 11
 M_MOVE = 12
@@ -900,26 +906,26 @@ AP_REQ_DEFAULT_PATH_INFO = 2 # Module's choice for handling path_info
 
 
 # for mpm_query
-AP_MPMQ_NOT_SUPPORTED      = 0  # This value specifies whether 
-                                # an MPM is capable of         
-                                # threading or forking.        
-AP_MPMQ_STATIC             = 1  # This value specifies whether 
+AP_MPMQ_NOT_SUPPORTED      = 0  # This value specifies whether
+                                # an MPM is capable of
+                                # threading or forking.
+AP_MPMQ_STATIC             = 1  # This value specifies whether
                                 # an MPM is using a static # of
-                                # threads or daemons.          
-AP_MPMQ_DYNAMIC            = 2  # This value specifies whether 
+                                # threads or daemons.
+AP_MPMQ_DYNAMIC            = 2  # This value specifies whether
                                 # an MPM is using a dynamic # of
-                                # threads or daemons.          
+                                # threads or daemons.
 
-AP_MPMQ_MAX_DAEMON_USED    = 1  # Max # of daemons used so far 
-AP_MPMQ_IS_THREADED        = 2  # MPM can do threading         
-AP_MPMQ_IS_FORKED          = 3  # MPM can do forking           
-AP_MPMQ_HARD_LIMIT_DAEMONS = 4  # The compiled max # daemons   
-AP_MPMQ_HARD_LIMIT_THREADS = 5  # The compiled max # threads   
-AP_MPMQ_MAX_THREADS        = 6  # # of threads/child by config 
-AP_MPMQ_MIN_SPARE_DAEMONS  = 7  # Min # of spare daemons       
-AP_MPMQ_MIN_SPARE_THREADS  = 8  # Min # of spare threads       
-AP_MPMQ_MAX_SPARE_DAEMONS  = 9  # Max # of spare daemons       
-AP_MPMQ_MAX_SPARE_THREADS  = 10 # Max # of spare threads       
-AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon 
-AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config   
-                                                                                                                                                                                                                                    
+AP_MPMQ_MAX_DAEMON_USED    = 1  # Max # of daemons used so far
+AP_MPMQ_IS_THREADED        = 2  # MPM can do threading
+AP_MPMQ_IS_FORKED          = 3  # MPM can do forking
+AP_MPMQ_HARD_LIMIT_DAEMONS = 4  # The compiled max # daemons
+AP_MPMQ_HARD_LIMIT_THREADS = 5  # The compiled max # threads
+AP_MPMQ_MAX_THREADS        = 6  # # of threads/child by config
+AP_MPMQ_MIN_SPARE_DAEMONS  = 7  # Min # of spare daemons
+AP_MPMQ_MIN_SPARE_THREADS  = 8  # Min # of spare threads
+AP_MPMQ_MAX_SPARE_DAEMONS  = 9  # Max # of spare daemons
+AP_MPMQ_MAX_SPARE_THREADS  = 10 # Max # of spare threads
+AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon
+AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config
+
