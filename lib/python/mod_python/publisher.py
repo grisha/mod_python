@@ -38,6 +38,7 @@ import re
 import base64
 
 import new
+import types
 from types import *
 
 imp_suffixes = " ".join([x[0][1:] for x in imp.get_suffixes()])
@@ -260,21 +261,37 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
 
     return realm, user, passwd
 
-# Those are the traversal and publishing rules
-# It is a dictionary, indexed by type, with tuple values.
+### Those are the traversal and publishing rules ###
+
+# tp_rules is a dictionary, indexed by type, with tuple values.
 # The first item in the tuple is a boolean telling if the object can be traversed (default is True)
 # The second item in the tuple is a boolen telling if the object can be published (default is True)
-tp_rules = {
-    FunctionType        : (False, True),
-    MethodType          : (False, True),
-    BuiltinFunctionType : (False, True),
+tp_rules = {}
+
+# by default, built-in types cannot be traversed, but can be published
+default_builtins_tp_rule = (False,True)
+for t in types.__dict__.values():
+    if isinstance(t, type):
+        tp_rules[t]=default_builtins_tp_rule
+
+# those are the exceptions to the previous rules
+tp_rules.update({
+    # Those are not traversable nor publishable
     ModuleType          : (False, False),
     ClassType           : (False, False),
+    TypeType            : (False, False),
+    
     # XXX Generators should be publishable, see
     # http://issues.apache.org/jira/browse/MODPYTHON-15
     # Until they are, it is not interesting to publish them
     GeneratorType       : (False, False),
-}
+    
+    # Old-style instances are traversable
+    InstanceType        : (True, True),
+})
+
+# types which are not referenced in the tp_rules dictionary will be traversable
+# AND publishables 
 default_tp_rule = (True, True)
 
 def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
@@ -314,9 +331,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     
     # we're going to check if the final object is publishable
     rule = tp_rules.get(type(obj), default_tp_rule)
-    # XXX the isinstance(obj, type) test is required until
-    # we allow the publication of class objects.
-    if (not rule[1]) or isinstance(obj, type):
+    if not rule[1]:
 
          req.log_error('Cannot publish %s in %s because '
                        '%s is not publishable'
