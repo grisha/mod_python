@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.101 2003/09/10 02:11:22 grisha Exp $
+ * $Id: mod_python.c,v 1.102 2003/10/08 03:48:17 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1063,6 +1063,16 @@ static int python_handler(request_rec *req, char *phase)
              * authoritative, let the others handle it
              */
             if (strcmp(phase, "PythonAuthenHandler") == 0) {
+                /* This is a prevention measure for what is likely a bug
+                   in mod_auth.c whereby r->user is used even if null.
+                   XXX Remove in the future
+                */
+                if (!req->user) {
+                    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                                  "python_handler: After PythonAuthenHandler req->user is NULL. "
+                                  "Assign req.user to avoid this error.");
+                    return HTTP_INTERNAL_SERVER_ERROR;
+                }
                 if (result == HTTP_UNAUTHORIZED)
                 {
                     if   (! conf->authoritative)

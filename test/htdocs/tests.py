@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.34 2003/08/09 18:08:17 grisha Exp $
+ # $Id: tests.py,v 1.35 2003/10/08 03:48:17 grisha Exp $
  #
 
 # mod_python tests
@@ -590,6 +590,15 @@ def req_get_basic_auth_pw(req):
     else:
         req.write("test ok")
 
+    return apache.OK
+
+def req_requires(req):
+
+    req.user = "blah" # or else!
+
+    if req.requires() == ('valid-user',):
+        req.write("test ok")
+        return apache.DONE
     return apache.OK
 
 def req_document_root(req):

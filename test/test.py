@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.37 2003/08/09 18:08:17 grisha Exp $
+ # $Id: test.py,v 1.38 2003/10/08 03:48:17 grisha Exp $
  #
 
 """
@@ -414,6 +414,29 @@ class PerRequestTestCase(unittest.TestCase):
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
+
+        if (rsp != "test ok"):
+            self.fail("test failed")
+
+    def test_req_requires_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_requires"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  AuthName("blah"),
+                                  AuthType("basic"),
+                                  Require("valid-user"),
+                                  PythonAuthenHandler("tests::req_requires"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_requires(self):
+
+        print "\n  * Testing req.requires()"
+
+        rsp = self.vhost_get("test_req_requires")
 
         if (rsp != "test ok"):
             self.fail("test failed")
@@ -1016,6 +1039,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_requires"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
