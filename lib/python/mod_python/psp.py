@@ -52,9 +52,12 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # Originally developed by Gregory Trubetskoy.
- #
- # $Id: __init__.py,v 1.9 2003/04/09 14:05:55 grisha Exp $
+ # $Id: psp.py,v 1.1 2003/04/09 14:05:55 grisha Exp $
 
-__all__ = ["apache", "cgihandler", "psp",
-           "publisher", "util"]
+import _psp
+
+def parse(filename):
+	return _psp.parse(filename)
+
+def execute(req, code):
+	exec code
