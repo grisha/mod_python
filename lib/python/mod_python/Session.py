@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.5 2003/08/13 17:21:32 grisha Exp $
+ # $Id: Session.py,v 1.6 2003/08/19 14:41:39 grisha Exp $
 
 from mod_python import apache, Cookie
 import _apache
@@ -238,6 +238,7 @@ class BaseSession(dict):
 
     def delete(self):
         self.do_delete()
+        self.clear()
 
     def init_lock(self):
         pass

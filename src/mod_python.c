@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.97 2003/08/18 20:51:23 grisha Exp $
+ * $Id: mod_python.c,v 1.98 2003/08/19 14:41:39 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -320,7 +320,7 @@ apr_status_t python_cleanup(void *data)
     return APR_SUCCESS;
 }
 
-static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
+static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config *glb)
 {
     int max_threads;
     int max_procs;
@@ -341,7 +341,7 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
 		 locks, max_procs, max_threads);
 
     glb->g_locks = (apr_global_mutex_t **) 
-	apr_palloc(s->process->pool, locks * sizeof(apr_global_mutex_t *));
+	apr_palloc(p, locks * sizeof(apr_global_mutex_t *));
     glb->nlocks = locks;
     glb->parent_pid = getpid();
 
@@ -357,7 +357,7 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
 	char *fname = NULL;
 #endif
 	rc = apr_global_mutex_create(&mutex[n], fname, APR_LOCK_DEFAULT, 
-				     s->process->pool);
+				     p);
 	if (rc != APR_SUCCESS) {
 	    ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
 			 "mod_python: Failed to create global mutex %d of %d (%s).",
@@ -388,7 +388,7 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
     return APR_SUCCESS;
 }
 
-static apr_status_t reinit_mutexes(server_rec *s, py_global_config *glb)
+static apr_status_t reinit_mutexes(server_rec *s, apr_pool_t *p, py_global_config *glb)
 {
     int n;
 
@@ -402,8 +402,8 @@ static apr_status_t reinit_mutexes(server_rec *s, py_global_config *glb)
 #else
         char *fname = NULL;
 #endif
-	rc = apr_global_mutex_child_init(&mutex[n], fname,
-					 s->process->pool);
+	rc = apr_global_mutex_child_init(&mutex[n], fname, p);
+
 	if (rc != APR_SUCCESS) {
 	    ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, s,
 			 "mod_python: Failed to reinit global mutex %s.",
@@ -476,7 +476,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
 
     /* global config */
     glb = python_create_global_config(s);
-    if ((rc = init_mutexes(s, glb)) != APR_SUCCESS) {
+    if ((rc = init_mutexes(s, p, glb)) != APR_SUCCESS) {
 	return rc;
     }
 
@@ -1738,7 +1738,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     /* this will return it if it already exists */
     glb = python_create_global_config(s);
 
-    reinit_mutexes(s, glb);
+    reinit_mutexes(s, p, glb);
 
     /*
      * remember the pool in a global var. we may use it
