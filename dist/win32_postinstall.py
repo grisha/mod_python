@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: win32_postinstall.py,v 1.2 2003/01/09 16:57:06 grisha Exp $
+ # $Id: win32_postinstall.py,v 1.3 2003/07/10 23:21:42 grisha Exp $
  #
  # this script runs at the end of windows install
 
@@ -96,7 +96,7 @@ if len(sys.argv) == 0 or sys.argv[1] != "-remove":
            you must do it manually:
 
            Edit %s,
-           find where other LoadModule lines and add this:
+           find where other LoadModule lines are and add this:
                 LoadModule python_module modules/mod_python.so
 
         2. Now test your installation using the instructions at this link:
