@@ -1,0 +1,5 @@
+
+Jun  7 2000 -	PythonImport now works.
+
+Jun  5 2000 - 	PythonDebug and other on/off type handlers are now of type FLAG
+		so they require an argument of On or Off. 
