@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.17 2002/07/31 21:49:50 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.18 2002/08/03 02:44:07 gtrubetskoy Exp $
  *
  */
 
@@ -410,6 +410,32 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.log_error(req self, string message, int level)
+ **
+ *     calls ap_log_rerror
+ */
+
+static PyObject * req_log_error(requestobject *self, PyObject *args)
+{
+    int level = 0;
+    char *message = NULL;
+
+    if (! PyArg_ParseTuple(args, "z|iO", &message, &level))
+        return NULL; /* error */
+
+    if (message) {
+
+        if (! level)
+            level = APLOG_NOERRNO|APLOG_ERR;
+
+        ap_log_rerror(APLOG_MARK, level, 0, self->request_rec, "%s", message);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
  ** request.read(request self, int bytes)
  **
  *     Reads stuff like POST requests from the client
@@ -730,6 +756,7 @@ static PyMethodDef requestobjectmethods[] = {
     {"get_config",            (PyCFunction) req_get_config,            METH_VARARGS},
     {"get_remote_host",       (PyCFunction) req_get_remote_host,       METH_VARARGS},
     {"get_options",           (PyCFunction) req_get_options,           METH_VARARGS},
+    {"log_error",             (PyCFunction) req_log_error,             METH_VARARGS},
     {"read",                  (PyCFunction) req_read,                  METH_VARARGS},
     {"readline",              (PyCFunction) req_readline,              METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
