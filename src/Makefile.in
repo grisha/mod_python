@@ -81,7 +81,7 @@ mod_python.so: $(SRCS)
 	@echo
 	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS) @EPRINTF_HACK@ @FLOATDIDF_HACK@
 	@rm -f mod_python.so
-	@ln -s .libs/mod_python.so > /dev/null 2>&1
+	@ln -s .libs/mod_python.so
 	@echo
 	@echo 'Now su and make install'
 	@echo '  (or, if you only want to perform a partial install,'

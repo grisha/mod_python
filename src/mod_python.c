@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.82 2002/10/12 05:41:31 grisha Exp $
+ * $Id: mod_python.c,v 1.83 2002/10/15 15:47:31 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -629,6 +629,7 @@ static const char *python_directive_flag(void * mconfig,
     return NULL;
 }
 
+static apr_status_t python_cleanup_handler(void *data);
 
 /**
  ** get_request_object
@@ -815,12 +816,12 @@ static int python_handler(request_rec *req, char *phase)
     /* get file extension */
     if (req->filename) {        /* filename is null until after transhandler */
         /* get rid of preceeding path */
-        if ((ext = ap_strrchr_c(req->filename, '/')) == NULL)
+        if ((ext = (char *)ap_strrchr_c(req->filename, '/')) == NULL)
             ext = req->filename;
         else 
             ++ext;
         /* get extension */
-        ap_getword(req->pool, &ext, '.');
+        ap_getword(req->pool, (const char **)&ext, '.');
         if (*ext != '\0')
             ext = apr_pstrcat(req->pool, ".", ext, NULL);
     }
@@ -1579,9 +1580,9 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     while(hle) {
 
         interpreterdata *idata;
-        char *module_name = hle->handler;
-        char *interp_name = hle->directory;
-        char *ppath = NULL;
+        const char *module_name = hle->handler;
+        const char *interp_name = hle->directory;
+        const char *ppath;
 
         /* get interpreter */
         idata = get_interpreter(interp_name, s);
@@ -1602,7 +1603,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
                 goto err;
 
             PyDict_SetItemString(globals, "sys", sys);
-            newpath = PyRun_String(ppath, Py_eval_input, globals, locals);
+            newpath = PyRun_String((char *)ppath, Py_eval_input, globals, locals);
             if (!newpath)
                 goto err;
 
@@ -1623,7 +1624,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
     success:
         /* now import the specified module */
-        if (! PyImport_ImportModule(module_name)) {
+        if (! PyImport_ImportModule((char *)module_name)) {
             if (PyErr_Occurred())
                 PyErr_Print();
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,

@@ -57,15 +57,16 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.22 2002/09/12 18:24:06 gstein Exp $
+ * $Id: tableobject.c,v 1.23 2002/10/15 15:47:31 grisha Exp $
  *
  */
 
 #include "mod_python.h"
 
-/** XXX ok, so this is a hack */
+/** XXX this is a hack. because apr_table_t 
+    is not available in a header file */
 #define TABLE_HASH_SIZE 32
-static struct apr_table_t {
+struct apr_table_t {
     apr_array_header_t a;
 #ifdef MAKE_TABLE_PROFILE
     void *creator;
@@ -653,17 +654,6 @@ static int table_compare(tableobject *a, tableobject *b)
 }
 
 /**
- ** table_equal
- **
- */
-
-static int table_equal(tableobject *a, tableobject *b)
-{
-    int c = table_compare(a, b);
-    return c == 0;
-}
-
-/**
  ** table_richcompare
  **
  */
@@ -1121,7 +1111,7 @@ static PyObject *tableiter_new(tableobject *table, tableselectfunc select)
     ti->table = table;
     ti->ti_nelts = table->table->a.nelts;
     ti->ti_pos = 0;
-    ti->ti_select = select;
+    ti->ti_select = (binaryfunc)select;
     return (PyObject *)ti;
 }
 

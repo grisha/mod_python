@@ -57,7 +57,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.10 2002/09/12 18:24:06 gstein Exp $
+ * $Id: connobject.c,v 1.11 2002/10/15 15:47:31 grisha Exp $
  *
  */
 
@@ -333,9 +333,9 @@ static void conn_dealloc(connobject *self)
  *  utility func to make an ip address
  */
 
-static PyObject *makeipaddr(struct sockaddr_in *addr)
+static PyObject *makeipaddr(struct apr_sockaddr_t *addr)
 {
-    long x = ntohl(addr->sin_addr.s_addr);
+    long x = ntohl(addr->sa.sin.sin_addr.s_addr);
     char buf[100];
     sprintf(buf, "%d.%d.%d.%d",
             (int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
@@ -349,12 +349,12 @@ static PyObject *makeipaddr(struct sockaddr_in *addr)
  *  utility func to make a socket address
  */
 
-static PyObject *makesockaddr(struct sockaddr_in *addr)
+static PyObject *makesockaddr(struct apr_sockaddr_t *addr)
 {
     PyObject *addrobj = makeipaddr(addr);
     PyObject *ret = NULL;
     if (addrobj) {
-        ret = Py_BuildValue("Oi", addrobj, ntohs(addr->sin_port));
+        ret = Py_BuildValue("Oi", addrobj, ntohs(addr->sa.sin.sin_port));
         Py_DECREF(addrobj);
     }
     return ret;
@@ -407,8 +407,7 @@ static PyObject * conn_getattr(connobject *self, char *name)
         return PyInt_FromLong(self->conn->double_reverse);
     }
     else if (strcmp(name, "remote_addr") == 0) {
-        /* XXX this needs to be compatible with apr_sockaddr_t */
-        return makesockaddr(&(self->conn->remote_addr));
+        return makesockaddr(self->conn->remote_addr);
     }
     else if (strcmp(name, "notes") == 0) {
         Py_INCREF(self->notes);
@@ -416,7 +415,7 @@ static PyObject * conn_getattr(connobject *self, char *name)
     }
     else if (strcmp(name, "hlist") == 0) {
         Py_INCREF(self->hlo);
-        return self->hlo;
+        return (PyObject *)self->hlo;
     }
     else
         return PyMember_Get((char *)self->conn, conn_memberlist, name);

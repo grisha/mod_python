@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.18 2002/10/14 21:18:24 grisha Exp $
+ # $Id: test.py,v 1.19 2002/10/15 15:47:32 grisha Exp $
  #
 
 """
@@ -274,6 +274,7 @@ class HttpdCtrl:
         cmd = '%s -k start -f %s' % (httpd, config)
         print "    ", cmd
         os.system(cmd)
+        time.sleep(1)
         self.httpd_running = 1
 
     def stopHttpd(self):

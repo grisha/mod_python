@@ -7,12 +7,21 @@ If you can't read instructions:
 
 	$ ./configure --with-apxs=/usr/local/apache/sbin/apxs
 
-	$ make dso
+	$ make
 	$ su
 	# make install
 
-	Edit apache.conf like instructions at the end of "make install"
+	Edit httpd.conf like instructions at the end of "make install"
 	tell you.
 
 	If the above worked - read the tutorial in the doc directory.
 
+OS Hints:
+
+FreeBSD:        Apache has to be compiled with threads, even if using the
+                prefork MPM (recommended). In the ports collection, edit the 
+                Makefile to add --enable-threads in the CONFIGURE_ARGS 
+                section.
+                This has been tested on FreeBSD 4.7; it is possible that
+                earlier versions of FreeBSD may have issues with httpd's
+                use of threads.
