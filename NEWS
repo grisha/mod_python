@@ -1,3 +1,7 @@
+Oct 20 2000 -	Fixed some minor installation bugs.
+
+Oct 19 2000 -   2.6 out
+
 Oct 16 2000 -	Began a major file reorganization. All objects are now in
 		separate files, and all external functions have an Mp prefix
 		and named consistently with Python C API conventions.

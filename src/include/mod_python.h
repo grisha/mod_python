@@ -69,7 +69,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.h,v 1.3 2000/10/18 22:56:48 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.4 2000/10/20 22:36:00 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -121,7 +121,7 @@ extern module MODULE_VAR_EXPORT python_module;
 
 /** Things specific to mod_python, as an Apache module **/
 
-#define VERSION_COMPONENT "mod_python/2.6"
+#define VERSION_COMPONENT "mod_python/2.6.1"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define GLOBAL_INTERPRETER "global_interpreter"
