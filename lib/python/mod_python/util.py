@@ -54,11 +54,13 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: util.py,v 1.15 2003/06/24 04:16:00 grisha Exp $
+ # $Id: util.py,v 1.16 2003/08/12 19:19:43 grisha Exp $
 
 import _apache
 import apache
 import StringIO
+
+from types import *
 
 parse_qs = _apache.parse_qs
 parse_qsl = _apache.parse_qsl
@@ -271,6 +273,12 @@ class FieldStorage:
         else:
             return found
 
+    def get(self, key, default):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+
     def keys(self):
         """Dictionary style keys() method."""
         if self.list is None:
@@ -313,3 +321,54 @@ def parse_header(line):
             pdict[name] = value
     return key, pdict
 
+def apply_fs_data(object, fs, **args):
+    """
+    Apply FieldStorage data to an object - the object must be
+    callable. Examine the args, and match then with fs data,
+    then call the object, return the result.
+    """
+
+    # add form data to args
+    for field in fs.list:
+        if field.filename:
+            val = field
+        else:
+            val = field.value
+        args.setdefault(field.name, []).append(val)
+
+    # replace lists with single values
+    for arg in args:
+        if ((type(args[arg]) is ListType) and
+            (len(args[arg]) == 1)):
+            args[arg] = args[arg][0]
+
+    # we need to weed out unexpected keyword arguments
+    # and for that we need to get a list of them. There
+    # are a few options for callable objects here:
+
+    if type(object) is InstanceType:
+        # instances are callable when they have __call__()
+        object = object.__call__
+
+    expected = []
+    if hasattr(object, "func_code"):
+        # function
+        fc = object.func_code
+        expected = fc.co_varnames[0:fc.co_argcount]
+    elif hasattr(object, 'im_func'):
+        # method
+        fc = object.im_func.func_code
+        expected = fc.co_varnames[1:fc.co_argcount]
+    elif type(object) is ClassType:
+        # class
+        fc = object.__init__.im_func.func_code
+        expected = fc.co_varnames[1:fc.co_argcount]
+
+    # remove unexpected args unless co_flags & 0x08,
+    # meaning function accepts **kw syntax
+    if not (fc.co_flags & 0x08):
+        for name in args.keys():
+            if name not in expected:
+                del args[name]
+
+    return object(**args)

@@ -289,11 +289,23 @@ which may or may not be what you want. Similarly, a mod_python
 \class{FieldStorage} object will be instantiated if \code{form} is
 referenced in the code.
 
-The object passed in \code{psp} variable at this point supports only
-one function, \code{set_error_page(string)} which can be used to set
-(a relative path to) a psp page to be process when an exception
-occurs. This page will receive one additional variable,
-\code{exception}, which is a 3-tuple returned by \code{sys.exc_info()}.
+The object passed in \code{psp} is an instance of \class{PSPInstance}.
+
+\begin{classdesc}{PSPInstance}{}
+  \begin{methoddesc}[PSPInstance]{set_error_page}{filename}
+    Used to set a psp page to be processed when an exception
+    occurs. If the path is absolute, it will be appended to document
+    root, otherwise the file is assumed to exist in the same directory
+    as the current page. The error page will receive one additional
+    variable, \code{exception}, which is a 3-tuple returned by
+    \code{sys.exc_info()}.
+  \end{methoddesc}
+
+  \begin{methoddesc}[PSPInstance]{apply_data}{object\optional{, **kw}}
+    This method will call the callable object \var{object}, passing form
+    data as keyword arguments, and return the result.
+  \end{methoddesc}
+\end{classdesc}
 
 If \code{PythonDebug} server configuration is \code{On}, then by
 appending an underscore (\samp{_}) to the end of the url you can get a

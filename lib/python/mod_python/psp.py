@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.16 2003/08/11 20:13:03 grisha Exp $
+ # $Id: psp.py,v 1.17 2003/08/12 19:19:43 grisha Exp $
 
 from mod_python import apache, Session, util, _psp
 import _apache
@@ -198,16 +198,35 @@ def display_code(req):
 
 class PSPInterface:
 
-    def __init__(self, req, dir, fname, dbmcache):
+    def __init__(self, req, dir, fname, dbmcache, session, form):
         self._req = req
         self._dir = dir
         self._fname = fname
         self._dbmcache = dbmcache
+        self._session = session
+        self._form = form
         self._error_page = None
 
     def set_error_page(self, page):
-        self._error_page = load_file(self._dir, page, self._dbmcache,
-                                     srv=self._req.server)
+        if page and page[0] == '/':
+            # absolute relative to document root
+            self._error_page = load_file(self._req.document_root(), page,
+                                         self._dbmcache,
+                                         srv=self._req.server)
+        else:
+            # relative to same dir we're in
+            self._error_page = load_file(self._dir, page, self._dbmcache,
+                                         srv=self._req.server)
+
+    def apply_data(self, object):
+
+        if not self._form:
+            self._form = util.FieldStorage(self._req,
+                                           keep_blank_values=1)
+
+        return util.apply_fs_data(object, self._form,
+                                  req=self._req)
+        
 
 def run_psp(req):
 
@@ -217,6 +236,10 @@ def run_psp(req):
         dbmcache = opts["PSPDbmCache"]
 
     dir, fname = path_split(req.filename)
+
+    if not fname:
+        # this is a directory
+        return apache.DECLINED
 
     code = load_file(dir, fname, dbmcache, srv=req.server)
 
@@ -228,7 +251,7 @@ def run_psp(req):
     if "form" in code.co_names:
         form = util.FieldStorage(req, keep_blank_values=1)
 
-    psp = PSPInterface(req, dir, fname, dbmcache)
+    psp = PSPInterface(req, dir, fname, dbmcache, session, form)
 
     try:
         try:
