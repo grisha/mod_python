@@ -70,7 +70,6 @@ CFLAGS=$(OPT) $(INCLUDES)
 srcdir=.
 
 SRCS=	mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
-		psp_string.c psp_parser.c psp_parser.c _pspmodule.c \
 		serverobject.c connobject.c filterobject.c hlist.c hlistobject.c
 
 all:	@ALL@

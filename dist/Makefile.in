@@ -54,21 +54,14 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.4 2003/05/29 14:15:46 grisha Exp $
+ # $Id: Makefile.in,v 1.5 2003/05/29 14:44:33 grisha Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
 MP_VERSION=@MP_VERSION@
 
-dist: unixdist
-
-unixdist: mod_python src 
-	@if [ ! -f dist/mod_python-$(MP_VERSION).tar.gz ]; then \
-		echo "Building a source distribution"; \
-		$(PYTHON_BIN) setup.py sdist; \
-	else \
-		echo "Source distribution found"; \
-	fi
+build: mod_python src
+	$(PYTHON_BIN) setup.py build
 
 # this one requires at least python 2.3
 windist: mod_python.so
@@ -78,6 +71,7 @@ install: install_py_lib
 
 # this may require root privilidges
 install_py_lib: mod_python src
+	@cd src; $(MAKE) psp_parser.c
 	$(PYTHON_BIN) setup.py install --optimize 2 --force; \
 
 mod_python.so:
