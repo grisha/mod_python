@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: util.py,v 1.17 2003/08/14 15:24:42 grisha Exp $
+ # $Id: util.py,v 1.18 2003/08/28 18:47:13 grisha Exp $
 
 import _apache
 import apache
@@ -296,6 +296,8 @@ class FieldStorage:
         for item in self.list:
             if item.name == key: return 1
         return 0
+
+    __contains__ = has_key
 
     def __len__(self):
         """Dictionary style len(x) support."""
