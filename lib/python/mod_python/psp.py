@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.7 2003/05/30 15:10:46 grisha Exp $
+ # $Id: psp.py,v 1.8 2003/06/13 02:36:23 sterling Exp $
 
 # this trick lets us be used outside apache
 try:
@@ -128,6 +128,8 @@ def load_file(filename):
 def handler(req):
 
     code = load_file(req.filename)
+
+    req.content_type = "text/html"
 
     # give it it's own locals
     exec code in globals(), {"req":req}
