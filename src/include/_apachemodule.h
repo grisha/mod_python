@@ -60,7 +60,7 @@
  *
  * apachemodule.h 
  *
- * $Id: _apachemodule.h,v 1.4 2003/05/29 14:15:49 grisha Exp $
+ * $Id: _apachemodule.h,v 1.5 2003/10/06 14:48:12 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -68,6 +68,6 @@
  */
 
 PyObject *get_ServerReturn(void);
-void init_apache(void);
+DL_EXPORT(void) init_apache(void);
 
 #endif /* !Mp_APACHEMODULE_H */
