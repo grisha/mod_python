@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.59 2002/03/05 01:43:39 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.60 2002/06/03 14:31:15 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1023,7 +1023,7 @@ static apr_status_t python_cleanup_handler(void *data)
 static apr_status_t python_filter(int is_input, ap_filter_t *f, 
 				  apr_bucket_brigade *bb,
 				  ap_input_mode_t mode,
-				  apr_off_t *readbytes) {
+				  apr_size_t *readbytes) {
 
     PyObject *resultobject = NULL;
     interpreterdata *idata;
@@ -1467,7 +1467,7 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
-    ap_register_input_filter(name, python_input_filter, AP_FTYPE_CONTENT);
+    ap_register_input_filter(name, python_input_filter, AP_FTYPE_RESOURCE);
  
     return NULL;
 }
@@ -1491,7 +1491,7 @@ static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig,
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
-    ap_register_output_filter(name, python_output_filter, AP_FTYPE_CONTENT);
+    ap_register_output_filter(name, python_output_filter, AP_FTYPE_RESOURCE);
  
     return NULL;
 }

@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.17 2001/11/06 05:06:58 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.18 2002/06/03 14:31:16 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -118,8 +118,6 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define SLASH '/'
 #define SLASH_S "/"
 #endif
-
-PyObject *Mp_ServerReturn;
 
 /* structure to hold interpreter data */
 typedef struct {

@@ -44,11 +44,15 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.11 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.12 2002/06/03 14:31:15 gtrubetskoy Exp $
  *
  */
 
 #include "mod_python.h"
+
+/* A referende to the _apache.SERVER_RETURN */
+
+PyObject *Mp_ServerReturn;
 
 /** 
  ** mp_log_error
@@ -379,4 +383,9 @@ DL_EXPORT(void) init_apache()
     if (Mp_ServerReturn == NULL)
 	return;
     PyDict_SetItemString(d, "SERVER_RETURN", Mp_ServerReturn);
+}
+
+PyObject *get_ServerReturn() 
+{
+  return Mp_ServerReturn;
 }

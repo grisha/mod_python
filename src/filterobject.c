@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.4 2002/03/04 21:19:17 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.5 2002/06/03 14:31:15 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -61,7 +61,7 @@
  */
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
-			      ap_input_mode_t mode, apr_off_t *readbytes,
+			      ap_input_mode_t mode, apr_size_t *readbytes,
 			      char * handler, char *dir)
 {
     filterobject *result;
@@ -122,6 +122,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     long bufsize;
     int newline = 0;
     long len = -1;
+    conn_rec *c = self->request_obj->request_rec->connection;
 
     if (! PyArg_ParseTuple(args, "|l", &len)) 
 	return NULL;
@@ -135,7 +136,8 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
 	/* does the output brigade exist? */
 	if (!self->bb_in) {
-	    self->bb_in = apr_brigade_create(self->f->r->pool);
+	    self->bb_in = apr_brigade_create(self->f->r->pool, 
+					     c->bucket_alloc);
 	}
 
 	Py_BEGIN_ALLOW_THREADS;
@@ -294,6 +296,7 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
     int len;
     apr_bucket *b;
     PyObject *s;
+    conn_rec *c = self->request_obj->request_rec->connection;
 
     if (! PyArg_ParseTuple(args, "O", &s)) 
 	return NULL;
@@ -315,10 +318,12 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
 
 	/* does the output brigade exist? */
 	if (!self->bb_out) {
-	    self->bb_out = apr_brigade_create(self->f->r->pool);
+	    self->bb_out = apr_brigade_create(self->f->r->pool, 
+					      c->bucket_alloc);
 	}
 	
-	b = apr_bucket_pool_create(buff, len, self->f->r->pool);
+	b = apr_bucket_pool_create(buff, len, self->f->r->pool,
+					      c->bucket_alloc);
 	APR_BRIGADE_INSERT_TAIL(self->bb_out, b);
 	
 	self->bytes_written += len;
@@ -337,12 +342,16 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
 static PyObject *filter_flush(filterobject *self, PyObject *args)
 {
 
+    conn_rec *c = self->request_obj->request_rec->connection;
+
     /* does the output brigade exist? */
     if (!self->bb_out) {
-	self->bb_out = apr_brigade_create(self->f->r->pool);
+	self->bb_out = apr_brigade_create(self->f->r->pool,
+					  c->bucket_alloc);
     }
 
-    APR_BRIGADE_INSERT_TAIL(self->bb_out, apr_bucket_flush_create());
+    APR_BRIGADE_INSERT_TAIL(self->bb_out, 
+			    apr_bucket_flush_create(c->bucket_alloc));
 
     if (ap_pass_brigade(self->f->next, self->bb_out) != APR_SUCCESS) {
 	PyErr_SetString(PyExc_IOError, "Flush failed.");
@@ -363,16 +372,20 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
 static PyObject *filter_close(filterobject *self, PyObject *args)
 {
 
+    conn_rec *c = self->request_obj->request_rec->connection;
+
     if (! self->closed) {
 
 	if (self->bytes_written) {
 
 	    /* does the output brigade exist? */
 	    if (!self->bb_out) {
-		self->bb_out = apr_brigade_create(self->f->r->pool);
+		self->bb_out = apr_brigade_create(self->f->r->pool,
+						  c->bucket_alloc);
 	    }
 
-	    APR_BRIGADE_INSERT_TAIL(self->bb_out, apr_bucket_eos_create());
+	    APR_BRIGADE_INSERT_TAIL(self->bb_out, 
+				    apr_bucket_eos_create(c->bucket_alloc));
 	
 	    if (! self->is_input) {
 		ap_pass_brigade(self->f->next, self->bb_out);
