@@ -732,17 +732,17 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing interpreter per directive"
 
-        interpreter_name = DOCUMENT_ROOT.replace('\\','/')+'/'
+        interpreter_name = DOCUMENT_ROOT.replace('\\', '/')+'/'
 
         rsp = self.vhost_get("test_interpreter_per_directive")
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directive",'/subdir/foo.py')
+        rsp = self.vhost_get("test_interpreter_per_directive", '/subdir/foo.py')
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directive",'/subdir/')
+        rsp = self.vhost_get("test_interpreter_per_directive", '/subdir/')
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
@@ -764,17 +764,17 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing interpreter per directory"
 
-        interpreter_name = DOCUMENT_ROOT.replace('\\','/')+'/'
+        interpreter_name = DOCUMENT_ROOT.replace('\\', '/')+'/'
 
         rsp = self.vhost_get("test_interpreter_per_directory")
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directory",'/subdir/foo.py')
+        rsp = self.vhost_get("test_interpreter_per_directory", '/subdir/foo.py')
         if (rsp != interpreter_name+'subdir/'):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directory",'/subdir/')
+        rsp = self.vhost_get("test_interpreter_per_directory", '/subdir/')
         if (rsp != interpreter_name+'subdir/'):
             self.fail(`rsp`)
 
@@ -793,7 +793,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing util_fieldstorage()"
 
-        params = urllib.urlencode([('spam',1),('spam',2),('eggs',3),('bacon',4)])
+        params = urllib.urlencode([('spam', 1), ('spam', 2), ('eggs', 3), ('bacon', 4)])
         headers = {"Host": "test_util_fieldstorage",
                    "Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
@@ -1162,35 +1162,35 @@ class PerRequestTestCase(unittest.TestCase):
 
         status, response = get_status("/tests.py/_SECRET_PASSWORD")
         if status != 403:
-            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s' % (status, response))
 
         status, response = get_status("/tests.py/__ANSWER")
         if status != 403:
-            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s' % (status, response))
 
         status, response = get_status("/tests.py/re")
         if status != 403:
-            self.fail('Vulnerability : module published (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : module published (%i)\n%s' % (status, response))
 
         status, response = get_status("/tests.py/OldStyleClassTest")
         if status != 403:
-            self.fail('Vulnerability : old style class published (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : old style class published (%i)\n%s' % (status, response))
 
         status, response = get_status("/tests.py/InstanceTest")
         if status != 403:
-            self.fail('Vulnerability : new style class published (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : new style class published (%i)\n%s' % (status, response))
 
         status, response = get_status("/tests.py/index/func_code")
         if status != 403:
-            self.fail('Vulnerability : function traversal (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : function traversal (%i)\n%s' % (status, response))
 
         status, response = get_status("/tests.py/old_instance/traverse/func_code")
         if status != 403:
-            self.fail('Vulnerability : old-style method traversal (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : old-style method traversal (%i)\n%s' % (status, response))
 
         status, response = get_status("/tests.py/instance/traverse/func_code")
         if status != 403:
-            self.fail('Vulnerability : new-style method traversal (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : new-style method traversal (%i)\n%s' % (status, response))
 
     def test_publisher_old_style_instance_conf(self):
         c = VirtualHost("*",

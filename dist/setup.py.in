@@ -38,8 +38,8 @@ def getconfigure_option(option_name):
     config_status_file = os.path.join(getmp_rootdir(), 'config.status')
     if not os.path.exists(config_status_file):
         raise AssertionError("config.status not found in expected location (%s)" % config_status_file)
-    header = open(config_status_file,'r')
-    r = re.compile('s,@%s@,(?P<OPTION_STRING>[^,]+),' % (option_name))
+    header = open(config_status_file, 'r')
+    r = re.compile('s, @%s@, (?P<OPTION_STRING>[^,]+), ' % (option_name))
     for line in header.readlines():
         m = r.search(line)
         if m is not None:
@@ -52,7 +52,7 @@ def getmp_version():
     mpversion_file = os.path.join(getmp_includedir(), 'mpversion.h')
     if not os.path.exists(mpversion_file):
         raise AssertionError("mpversion.h not found in expected location (%s)" % mpversion_file)
-    header = open(mpversion_file,'r')
+    header = open(mpversion_file, 'r')
     r = re.compile('#define\s+MPV_STRING\s+"(?P<MPV_STRING>[^"]+)"')
     for line in header.readlines():
         m = r.search(line)
@@ -104,7 +104,7 @@ class PSPExtension(Extension):
                            )
 
         if winbuild:
-            self.define_macros.extend([('WIN32',None),('NDEBUG',None),('_WINDOWS',None)])
+            self.define_macros.extend([('WIN32', None), ('NDEBUG', None), ('_WINDOWS', None)])
 
 PSPModule = PSPExtension(getmp_srcdir(), [getmp_includedir()])
 
@@ -123,11 +123,11 @@ class ModPyExtension(Extension):
         Extension.__init__(self, "mod_python_so",
             sources = [os.path.join(source_dir, source_file) for source_file in modpy_src_files],
                            include_dirs=include_dirs,
-            libraries = ['libhttpd','libapr','libaprutil','ws2_32'],
+            libraries = ['libhttpd', 'libapr', 'libaprutil', 'ws2_32'],
             library_dirs=library_dirs
                            )
         if winbuild:
-            self.define_macros.extend([('WIN32',None),('NDEBUG',None),('_WINDOWS',None)])
+            self.define_macros.extend([('WIN32', None),('NDEBUG', None),('_WINDOWS', None)])
             self.sources.append(os.path.join(source_dir, "Version.rc"))
         else:
             # TODO: fix this to autodetect if required...

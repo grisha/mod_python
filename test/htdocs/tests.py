@@ -829,25 +829,25 @@ def interpreter(req):
     return apache.OK
 
 def index(req):
-    return "test ok, interpreter=%s"%req.interpreter
+    return "test ok, interpreter=%s" % req.interpreter
 
 def test_publisher(req):
-    return "test ok, interpreter=%s"%req.interpreter
+    return "test ok, interpreter=%s" % req.interpreter
 
 class OldStyleClassTest:
-    def __call__(self,req):
+    def __call__(self, req):
         return "test callable old-style instance ok"
-    def traverse(self,req):
+    def traverse(self, req):
         return "test traversable old-style instance ok"
 old_instance = OldStyleClassTest()
 
-test_dict = {1:1,2:2,3:3}
+test_dict = {1:1, 2:2, 3:3}
 test_dict_keys = test_dict.keys
 
 class InstanceTest(object):
-    def __call__(self,req):
+    def __call__(self, req):
         return "test callable instance ok"
-    def traverse(self,req):
+    def traverse(self, req):
         return "test traversable instance ok"
 instance = InstanceTest()
 
