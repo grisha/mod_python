@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.8 2003/10/15 01:32:20 grisha Exp $
+ # $Id: Makefile.in,v 1.9 2003/10/21 20:42:38 grisha Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
@@ -70,10 +70,15 @@ windist: mod_python.so
 
 install: install_py_lib
 
-# this may require root privilidges
+# this may require root priviledges
 install_py_lib: mod_python src
 	@cd src; $(MAKE) psp_parser.c
 	$(PYTHON_BIN) setup.py install --optimize 2 --force
+	if test -z "$(DESTDIR)" ; then \
+		$(PYTHON_BIN) setup.py install --optimize 2 --force ; \
+	else \
+		$(PYTHON_BIN) setup.py install --optimize 2 --force --root $(DESTDIR) ; \
+	fi
 
 mod_python.so:
 	@echo "Please place a WIN32 compiled mod_python.so in this directory"
@@ -86,7 +91,7 @@ src:
 	ln -s ../src
 
 clean:
-	rm -rf mod_python build 
+	rm -rf mod_python build dist
 
 distclean:
-	rm -rf mod_python src build mod_python.so setup.py Makefile MANIFEST MANIFSET.in
+	rm -rf mod_python src build dist mod_python.so setup.py Makefile MANIFEST MANIFSET.in

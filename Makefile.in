@@ -98,7 +98,8 @@ install_dso:	dso
 	@echo
 	@echo "Performing DSO installation."
 	@echo
-	$(INSTALL) src/mod_python.so $(LIBEXECDIR)
+	$(INSTALL) -d $(DESTDIR)$(LIBEXECDIR)
+	$(INSTALL) src/mod_python.so $(DESTDIR)$(LIBEXECDIR)
 	@$(MAKE) install_py_lib
 	@echo
 	@echo "Now don't forget to edit your main config and add"
@@ -112,6 +113,7 @@ install_py_lib:
 
 clean:
 	cd src && $(MAKE) clean
+	cd dist && $(MAKE) clean
 	rm -f core
 
 distclean: clean
