@@ -42,7 +42,7 @@
  # ====================================================================
  #
 
-dnl $Id: configure.in,v 1.14 2002/06/18 21:15:29 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.15 2002/06/21 20:12:12 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -162,14 +162,19 @@ fi
 AC_SUBST(AP_SRC)
 AC_SUBST(AP_SRC_OWN)
 AC_SUBST(AP_SRC_GRP)
-AC_MSG_CHECKING(for --with-apache)
+##AC_MSG_CHECKING(for --with-apache)
 AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
 [
+
+  # temporarily disable static on 2.0 until I figure out how to
+  # do it right
+  AC_MSG_ERROR([Sorry, --with-apache (static compilation) is not supported at this time!])
+
   AP_SRC=`cd $withval; pwd`
 
-  dnl  For Apache 2.0 apxs in src/support may be usable
-  if test ! -f "$AP_SRC/src/include/httpd.h"; then
-    AC_MSG_ERROR([$withval does not look like an Apache source directory.])
+  dnl  Make sure this looks like Apache source
+  if test ! -f "$AP_SRC/include/httpd.h"; then
+    AC_MSG_ERROR([$withval does not look like an Apache 2.0 source directory.])
   fi
 
   AC_MSG_RESULT($AP_SRC)
@@ -183,8 +188,8 @@ AC_MSG_RESULT(no))
 
 AC_SUBST(STATIC)
 if test -z "$AP_SRC"; then
-  AC_MSG_WARN([**** No apache sources specified, static compilation will not be available.])
-  AC_MSG_WARN([**** You can use --with-apache to specify where your Apache sources are.])
+##  AC_MSG_WARN([**** No apache sources specified, static compilation will not be available.])
+##  AC_MSG_WARN([**** You can use --with-apache to specify where your Apache sources are.])
   STATIC="no_static"
 else
   STATIC="do_static"
