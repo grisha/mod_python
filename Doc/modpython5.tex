@@ -45,17 +45,17 @@ authenhandler.
 Example: 
 
 \begin{verbatim}
-PythonAuthzHandler mypackage.mymodule::checkallowed
+  PythonAuthzHandler mypackage.mymodule::checkallowed
 \end{verbatim}
 
 For more information on handlers, see Overview of a Handler.
 
-Side note: The "::" was chosen for performance reasons. In order for
+Side note: The \samp{::} was chosen for performance reasons. In order for
 Python to use objects inside modules, the modules first need to be
-imported. Having the separator as simply a ".", would considerably
+imported. Having the separator as simply a \samp{.}, would considerably
 complicate process of sequentially evaluating every word to determine
 whether it is a package, module, class etc. Using the (admittedly
-un-Python-like) "::" takes the time consuming work of figuring out
+un-Python-like) \samp{::} takes the time consuming work of figuring out
 where the module part ends and the object inside of it begins away
 from mod_python resulting in a modest performance gain.
 
@@ -75,7 +75,8 @@ This handler is called after the request has been read but before any
 other phases have been processed. This is useful to make decisions
 based upon the input header fields.
 
-NOTE: When this phase of the request is processed, the URI has not yet
+\begin{notice}
+When this phase of the request is processed, the URI has not yet
 been translated into a path name, therefore this directive could never
 be executed by Apache if it could specified within \code{<Directory>},
 \code{<Location>}, \code{<File>} directives or in an \file{.htaccess}
@@ -87,6 +88,7 @@ program or a gif?), the python routine specified with this handler
 will be called for \emph{ALL} requests on this server (not just python
 programs), which is an important consideration if performance is a
 priority.
+\end{notice}
 
 \indexii{phase}{order} The handlers below are documented in order in
 which phases are processed by Apache.
@@ -107,13 +109,15 @@ This handler gives allows for an opportunity to translate the URI into
 an actual filename, before the server's default rules (Alias
 directives and the like) are followed.
 
-NOTE: At the time when this phase of the request is being processed,
-the URI has not been translated into a path name, therefore this
-directive will never be executed by Apache if specified within
-\code{<Directory>}, \code{<Location>}, \code{<File>} directives or in
-an \file{.htaccess} file. The only place this can be specified is the
-main configuration file, and the code for it will execute in the
-main interpreter.
+\begin{notice}
+  At the time when this phase of the request is being processed, the
+  URI has not been translated into a path name, therefore this
+  directive will never be executed by Apache if specified within
+  \code{<Directory>}, \code{<Location>}, \code{<File>} directives or
+  in an \file{.htaccess} file. The only place this can be specified is
+  the main configuration file, and the code for it will execute in the
+  main interpreter.
+\end{notice}
 
 \subsection{PythonHeaderParserHandler\label{dir-handlers-hph}}
 \index{PythonHeaderParserHandler}
@@ -206,19 +210,21 @@ succeeded, but the user is not permitted to access a particular URL.
 An example authentication handler might look like this: 
 
 \begin{verbatim}
-def authenhandler(req):
+  def authenhandler(req):
 
-    pw = req.get_basic_auth_pw()
-    user = req.connection.user     
-    if user == "spam" and pw == "eggs":
-        return apache.OK
-    else:
-        return apache.HTTP_UNAUTHORIZED
+  pw = req.get_basic_auth_pw()
+  user = req.connection.user     
+  if user == "spam" and pw == "eggs":
+  return apache.OK
+  else:
+  return apache.HTTP_UNAUTHORIZED
 \end{verbatim}    
 
-\strong{Note:} \code{req.get_basic_auth_pw()} must be called prior to using the
-\code{req.connection.user} value. Apache makes no attempt to decode the
-authentication information unless \code{req.get_basic_auth_pw()} is called.
+\begin{notice}
+  \code{req.get_basic_auth_pw()} must be called prior to using the
+  \code{req.connection.user} value. Apache makes no attempt to decode the
+  authentication information unless \code{req.get_basic_auth_pw()} is called.
+\end{notice}
 
 \subsection{PythonAuthzHandler\label{dir-handlers-auh}}
 \index{PythonAuthzHandler}
@@ -342,7 +348,7 @@ mod_python.c
 Registers an input filter \var{handler} under name
 \var{name}. \var{Handler} is a module name optionally followed
 \code{::} and a callable object name. If callable object name is
-omited, it will default to "inputfilter". \var{Name} is the name under
+omited, it will default to \samp{inputfilter}. \var{Name} is the name under
 which the filter is registered, by convention filter names are usually
 in all caps.
 
@@ -361,7 +367,7 @@ mod_python.c
 Registers an output filter \var{handler} under name
 \var{name}. \var{Handler} is a module name optionally followed
 \code{::} and a callable object name. If callable object name is
-omited, it will default to "outputfilter". \var{Name} is the name under
+omited, it will default to \samp{outputfilter}. \var{Name} is the name under
 which the filter is registered, by convention filter names are usually
 in all caps.
 
@@ -385,7 +391,7 @@ the connection object.
 
 \var{Handler} is a module name optionally followed \code{::} and a
 callable object name. If callable object name is omited, it will
-default to "connectionhandler".
+default to \samp{connectionhandler}.
 
 \section{Other Directives\label{dir-other}}
 
@@ -455,14 +461,16 @@ connection.
 The import takes place at child process initialization, so the module
 will actually be imported once for every child process spawned.
 
-Note that at the time when the import takes place, the configuration
-is not completely read yet, so all other directives, including
-PythonInterpreter have no effect on the behavior of modules imported
-by this directive. Because of this limitation, the interpreter must be
-specified explicitely, and must match the name under which subsequent
-requests relying on this operation will execute. If you are not sure
-under what interpreter name a request is running, examine the
-\member{interpreter} member of the request object.
+\begin{notice}
+  At the time when the import takes place, the configuration is not
+  completely read yet, so all other directives, including
+  PythonInterpreter have no effect on the behavior of modules imported
+  by this directive. Because of this limitation, the interpreter must
+  be specified explicitely, and must match the name under which
+  subsequent requests relying on this operation will execute. If you
+  are not sure under what interpreter name a request is running,
+  examine the \member{interpreter} member of the request object.
+\end{notice}
 
 See also Multiple Interpreters. 
 
@@ -496,16 +504,18 @@ both directories are accessed via the same virtual server. With
 PythonInterpPerDirectory, there would be two different interpreters,
 one for each directory.
 
-\strong{Note:} In early phases of the request prior to the URI translation
-(PostReadRequestHandler and TransHandler) the path is not yet known
-because the URI has not been translated. During those phases and with
-PythonInterpPerDirectory on, all python code gets executed in the
-main interpreter. This may not be exactly what you want, but
-unfortunately there is no way around this.
+\begin{notice}
+  In early phases of the request prior to the URI translation
+  (PostReadRequestHandler and TransHandler) the path is not yet known
+  because the URI has not been translated. During those phases and
+  with PythonInterpPerDirectory on, all python code gets executed in
+  the main interpreter. This may not be exactly what you want, but
+  unfortunately there is no way around this.
+\end{notice}
 
 \begin{seealso}
-	\seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
-	{for more information}
+  \seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
+	   {for more information}
 \end{seealso}
 
 \subsection{PythonInterpPerDirective\label{dir-other-ipdv}}
@@ -537,8 +547,8 @@ PythonInterpPerDirective, there would be two different interpreters,
 one for each directive.
 
 \begin{seealso}
-	\seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
-	{for more information}
+  \seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
+	   {for more information}
 \end{seealso}
 
 \subsection{PythonInterpreter\label{dir-other-pi}}
@@ -564,8 +574,8 @@ specified in the DocumentRoot, it forces the whole server to run in one
 subinterpreter.
 
 \begin{seealso}
-	\seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
-	{for more information}
+  \seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
+	   {for more information}
 \end{seealso}
 
 \subsection{PythonHandlerModule\label{dir-other-phm}}
@@ -587,14 +597,14 @@ and if a function is found, it will be executed.
 
 For example, instead of:
 \begin{verbatim}
-PythonAutenHandler mymodule
-PythonHandler mymodule
-PythonLogHandler mymodule
+  PythonAutenHandler mymodule
+  PythonHandler mymodule
+  PythonLogHandler mymodule
 \end{verbatim}    
 
 one can simply say
 \begin{verbatim}
-PythonHandlerModule mymodule
+  PythonHandlerModule mymodule
 \end{verbatim}    
 
 \subsection{PythonAutoReload\label{dir-other-par}}
@@ -671,7 +681,7 @@ PythonPath directive sets the PythonPath. The path must be specified
 in Python list notation, e.g.
 
 \begin{verbatim}
-PythonPath "['/usr/local/lib/python2.0', '/usr/local/lib/site_python', '/some/other/place']"
+  PythonPath "['/usr/local/lib/python2.0', '/usr/local/lib/site_python', '/some/other/place']"
 \end{verbatim}
 
 The path specified in this directive will replace the path, not add to
@@ -679,7 +689,7 @@ it. However, because the value of the directive is evaled, to append a
 directory to the path, one can specify something like
 
 \begin{verbatim}
-PythonPath "sys.path+['/mydir']"
+  PythonPath "sys.path+['/mydir']"
 \end{verbatim}
 
 Mod_python tries to minimize the number of evals associated with the
@@ -692,6 +702,7 @@ remembered value. If the value is the same, no action is
 taken. Because of this, you should not rely on the directive as a way
 to restore the pythonpath to some value if your code changes it.
 
-Note that this directive should not be used as a security measure
-since the Python path is easily manipulated from within the scripts.
-
+\begin{notice}
+  This directive should not be used as a security measure since the
+  Python path is easily manipulated from within the scripts.
+\end{notice}

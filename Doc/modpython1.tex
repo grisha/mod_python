@@ -2,15 +2,15 @@
 
 \section{Performance\label{intr-performance}}
 
-One of the main advantages of mod_python is the increase in
-performance over traditional CGI. Below are results of a very crude
-test. The test was done on a 1.2Ghz Pentium machine running RedHat
-Linux
-7.3. \citetitle[http://httpd.apache.org/docs-2.0/programs/ab.html]{Ab}
-was used to poll 4 kinds of scripts, all of which imported the
-standard cgi module (because this is how a typical Python cgi script
-begins), then output a single word "Hello!". The results are based on
-10000 requests with concurrency of 1.
+  One of the main advantages of mod_python is the increase in
+  performance over traditional CGI. Below are results of a very crude
+  test. The test was done on a 1.2Ghz Pentium machine running RedHat
+  Linux
+  7.3. \citetitle[http://httpd.apache.org/docs-2.0/programs/ab.html]{Ab}
+  was used to poll 4 kinds of scripts, all of which imported the
+  standard cgi module (because this is how a typical Python cgi script
+  begins), then output a single word \samp{Hello!}. The results are
+  based on 10000 requests with concurrency of 1.
 
 \begin{verbatim}
 
@@ -23,19 +23,21 @@ begins), then output a single word "Hello!". The results are based on
 
 \section{Flexibility\label{intr-flexibility}}
 
-Apache processes requests in phases (e.g. read the request, parse
-headers, check access, etc.). These phases can be implemented by
-functions called handlers. Traditionally, handlers are written in C
-and compiled into Apache modules. Mod_python provides a way to extend
-Apache functionality by writing Apache handlers in Python. For a
-detailed description of the Apache request processing process, see the
-\citetitle[http://dev.apache.org/API.html]{Apache API Notes}, as well
-as the \citetitle[http://www.modpython.org/python10/]{Mod_python -
-Integrating Python with Apache} paper. 
+  Apache processes requests in phases (e.g. read the request, parse
+  headers, check access, etc.). These phases can be implemented by
+  functions called handlers. Traditionally, handlers are written in C
+  and compiled into Apache modules. Mod_python provides a way to
+  extend Apache functionality by writing Apache handlers in
+  Python. For a detailed description of the Apache request processing
+  process, see the \citetitle[http://dev.apache.org/API.html]{Apache
+  API Notes}, as well as the
+  \citetitle[http://www.modpython.org/python10/]{Mod_python -
+  Integrating Python with Apache} paper.
 
-To ease migration from CGI, a standard mod_python handler is provided
-that simulates the CGI environment allowing a user to run legacy scripts
-under mod_python with no changes to the code (in most cases).
+  To ease migration from CGI, a standard mod_python handler is
+  provided that simulates the CGI environment allowing a user to run
+  legacy scripts under mod_python with no changes to the code (in most
+  cases).
  
 \begin{seealso}
   \seeurl{http://dev.apache.org/}{Apache Developer Resources}
@@ -44,16 +46,16 @@ under mod_python with no changes to the code (in most cases).
 
 \section{History\label{intr-history}}
 
-Mod_python originates from a project called
-\citetitle[http://www.ispol.com/home/grisha/httpdapy/]{Httpdapy}
-(1997). For a long time Httpdapy was not called mod_python because
-Httpdapy was not meant to be Apache-specific. Httpdapy was designed to
-be cross-platform and in fact was initially written for the Netscape
-server (back then it was called Nsapy (1997).
+  Mod_python originates from a project called
+  \citetitle[http://www.ispol.com/home/grisha/httpdapy/]{Httpdapy}
+  (1997). For a long time Httpdapy was not called mod_python because
+  Httpdapy was not meant to be Apache-specific. Httpdapy was designed
+  to be cross-platform and in fact was initially written for the
+  Netscape server (back then it was called Nsapy (1997).
 
-This excerpt from the Httpdapy README file describes well the
-challenges and the solution provided by embedding Python within the
-HTTP server:
+  This excerpt from the Httpdapy README file describes well the
+  challenges and the solution provided by embedding Python within the
+  HTTP server:
 
 \begin{verbatim}
 
@@ -89,14 +91,15 @@ the most popular one, Apache. And so from Nsapy was born Httpdapy.
 
 \end{verbatim}
 
-...continuing this saga, yours truly later learned that writing Httpdapy for
-every server is a task a little bigger and less interesting than I
-originally imagined.
+  ...continuing this saga, yours truly later learned that writing
+  Httpdapy for every server is a task a little bigger and less
+  interesting than I originally imagined.
 
-Instead, it seemed like providing a Python counterpart to the popular
-Perl Apache extension mod_perl that would give Python users the same
-(or better) capability would be a much more exciting thing to do.
+  Instead, it seemed like providing a Python counterpart to the
+  popular Perl Apache extension mod_perl that would give Python users
+  the same (or better) capability would be a much more exciting thing
+  to do.
 
-And so it was done. The first release of mod_python happened in May of
-2000.
+  And so it was done. The first release of mod_python happened in May
+  of 2000.
 
