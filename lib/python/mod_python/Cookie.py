@@ -297,41 +297,19 @@ _cookiePattern = re.compile(
     )
 
 def _parse_cookie(str, Class):
-
     # XXX problem is we should allow duplicate
     # strings
     result = {}
 
-    # max-age is a problem because of the '-'
-    # XXX there should be a more elegant way
-    valid = Cookie._valid_attr + ("max-age",)
-
-    c = None
     matchIter = _cookiePattern.finditer(str)
 
     for match in matchIter:
-
         key, val = match.group("key"), match.group("val")
 
-        if not c:
-            # new cookie
-            c = Class(key, val)
-            result[key] = c
-
-        l_key = key.lower()
-        
-        if (l_key in valid or key[0] == '$'):
-            
-            # "internal" attribute, add to cookie
-
-            if l_key == "max-age":
-                l_key = "max_age"
-            setattr(c, l_key, val)
-
-        else:
-            # start a new cookie
-            c = Class(l_key, val)
-            result[l_key] = c
+        # We just ditch the cookies names which start with a dollar sign since
+        # those are in fact RFC2965 cookies attributes. See bug [#MODPYTHON-3].
+        if key[0]!='$':
+            result[key] = Class(key, val)
 
     return result
 

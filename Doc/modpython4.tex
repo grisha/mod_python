@@ -1614,8 +1614,14 @@ specification published by Netscape.
   by most browsers is the original Netscape specification.
   Furthermore, true compliance with IETF standards is actually
   incompatible with many popular browsers, even those that claim to be
-  RFC-compliant.  Therefore, this module supports the current common
+  RFC-compliant. Therefore, this module supports the current common
   practice, and is not fully RFC compliant.
+  
+  More specifically, the biggest difference between Netscape and RFC cookies is 
+  that RFC cookies are sent from the browser to the server along with their 
+  attributes (like Path or Domain). The \module{Cookie} module ignore those 
+  incoming attributes, so all incoming cookies end up as Netscape-style cookies, 
+  without any of their attributes defined.
 \end{notice}
 
 \begin{seealso}
