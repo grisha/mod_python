@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.28 2003/06/19 21:00:37 grisha Exp $
+ # $Id: tests.py,v 1.29 2003/06/24 04:16:00 grisha Exp $
  #
 
 # mod_python tests
@@ -746,6 +746,34 @@ def pipe_ext(req):
     # this is called by publisher
 
     return "pipe ext"
+
+
+def Cookie_Cookie(req):
+
+    from mod_python import Cookie
+
+    cookies = Cookie.getCookie(req)
+
+    for k in cookies:
+        Cookie.setCookie(req, cookies[k])
+
+    req.write("test ok")
+    
+    return apache.OK
+
+def Cookie_MarshalCookie(req):
+
+    from mod_python import Cookie
+
+    cookies = Cookie.getCookie(req, Cookie.MarshalCookie, "secret")
+
+    for k in cookies:
+        Cookie.setCookie(req, cookies[k])
+
+    req.write("test ok")
+    
+    return apache.OK
+    
 
 def _test_table():
 
