@@ -57,7 +57,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.15 2002/12/30 15:17:56 grisha Exp $
+ * $Id: util.c,v 1.16 2003/08/09 18:08:17 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -388,7 +388,8 @@ char * get_addhandler_extensions(request_rec *req)
             apr_hash_this(hi, (const void **)&key, NULL, &val);
             ei = (extension_info *)val;
             if (ei->handler) 
-                if (strcmp("python-program", ei->handler) == 0) 
+                if (strcmp("mod_python", ei->handler) == 0 || 
+		    strcmp("python-program", ei->handler) == 0) 
                     result = apr_pstrcat(req->pool, (char *)key, " ", result, NULL);
         }
     }

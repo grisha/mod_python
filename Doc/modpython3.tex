@@ -25,7 +25,7 @@ mod_python handlers. To get the publisher handler working, you will
 need the following lines in your config:
 
 \begin{verbatim}
-  AddHandler python-program .py
+  AddHandler mod_python .py
   PythonHandler mod_python.publisher
   PythonDebug On
 \end{verbatim}
@@ -173,7 +173,7 @@ handlers, refer to Section \ref{directives},
 Let's pretend we have the following configuration: 
 \begin{verbatim}
   <Directory /mywebdir>
-      AddHandler python-program .py
+      AddHandler mod_python .py
       PythonHandler myscript
       PythonDebug On
   </Directory>
@@ -329,7 +329,7 @@ handler when authentication is needed. We do this by adding the
 
 \begin{verbatim}
   <Directory /mywebdir>
-      AddHandler python-program .py
+      AddHandler mod_python .py
       PythonHandler myscript
       PythonAuthenHandler myscript
       PythonDebug On
@@ -347,7 +347,7 @@ looks like this now:
 
 \begin{verbatim}
   <Directory /mywebdir>
-     AddHandler python-program .py
+     AddHandler mod_python .py
      PythonHandler myscript
      PythonAuthenHandler myscript
      PythonDebug On

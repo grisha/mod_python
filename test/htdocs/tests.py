@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.33 2003/08/08 14:50:09 grisha Exp $
+ # $Id: tests.py,v 1.34 2003/08/09 18:08:17 grisha Exp $
  #
 
 # mod_python tests
@@ -301,8 +301,8 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("req.content_type should be 'test/123' and req._content_type_set 1")
         
         log("    req.handler: %s" % `req.handler`)
-        if req.handler != "python-program":
-            self.fail("req.handler should be 'python-program'")
+        if req.handler != "mod_python":
+            self.fail("req.handler should be 'mod_python'")
             
         log("    req.content_encoding: %s" % `req.content_encoding`)
         if req.content_encoding:

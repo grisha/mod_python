@@ -11,7 +11,7 @@ by \citetitle[http://www.zope.org/]{Zope} ZPublisher.
 To use the handler, you need the following lines in your configuration
 \begin{verbatim}
   <Directory /some/path}
-    SetHandler python-program 
+    SetHandler mod_python 
     PythonHandler mod_python.publisher
     </Directory>
 \end{verbatim}
@@ -87,7 +87,7 @@ For eaxmple, given the following configuration:
   DocumentRoot /some/dir
 
   <Directory /some/dir>
-  SetHandler python-program
+  SetHandler mod_python
   PythonHandler mod_python.publisher
   </Directory>
 \end{verbatim}
@@ -275,7 +275,7 @@ Section \ref{pyapi-psp}.
 To use it, simply add this to your httpd configuration: 
 
 \begin{verbatim}
-  AddHandler python-program .psp
+  AddHandler mod_python .psp
   PythonHandler mod_python.psp
 \end{verbatim}
 
@@ -343,7 +343,7 @@ the first place.
 To use it, simply add this to your \file{.htaccess} file: 
 
 \begin{verbatim}
-  SetHandler python-program
+  SetHandler mod_python
   PythonHandler mod_python.cgihandler
 \end{verbatim}
 

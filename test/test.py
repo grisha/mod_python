@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.36 2003/08/08 14:50:09 grisha Exp $
+ # $Id: test.py,v 1.37 2003/08/09 18:08:17 grisha Exp $
  #
 
 """
@@ -328,7 +328,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_document_root"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_document_root"),
                                   PythonDebug("On")))
         return str(c)
@@ -348,7 +348,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_add_handler"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_add_handler"),
                                   PythonDebug("On")))
         return str(c)
@@ -367,7 +367,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_allow_methods"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_allow_methods"),
                                   PythonDebug("On")))
         return str(c)
@@ -392,7 +392,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_get_basic_auth_pw"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   AuthName("blah"),
                                   AuthType("basic"),
                                   PythonAuthenHandler("tests::req_get_basic_auth_pw"),
@@ -424,7 +424,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_internal_redirect"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_internal_redirect | .py"),
                                   PythonHandler("tests::req_internal_redirect_int | .int"),
                                   PythonDebug("On")))
@@ -445,7 +445,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_read"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_read"),
                                   PythonDebug("On"))))
         return c
@@ -491,7 +491,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_readline"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_readline"),
                                   PythonDebug("On")))
         return str(c)
@@ -522,7 +522,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_readlines"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_readlines"),
                                   PythonDebug("On")))
         return str(c)
@@ -553,7 +553,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_register_cleanup"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_register_cleanup"),
                                   PythonDebug("On")))
         return str(c)
@@ -578,7 +578,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_headers_out"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  AddHandler("python-program .py"),
+                                  AddHandler("mod_python .py"),
                                   DirectoryIndex("/tests.py"),
                                   PythonHandler("tests::req_headers_out"),
                                   PythonAccessHandler("tests::req_headers_out_access"),
@@ -610,7 +610,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_sendfile"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_sendfile"),
                                   PythonDebug("On")))
 
@@ -632,7 +632,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_util_fieldstorage"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::util_fieldstorage"),
                                   PythonDebug("On")))
         return str(c)
@@ -659,7 +659,7 @@ class PerRequestTestCase(unittest.TestCase):
         c = VirtualHost("*",
                         ServerName("test_postreadrequest"),
                         DocumentRoot(DOCUMENT_ROOT),
-                        SetHandler("python-program"),
+                        SetHandler("mod_python"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonPostReadRequestHandler("tests::postreadrequest"),
                         PythonDebug("On"))
@@ -678,7 +678,7 @@ class PerRequestTestCase(unittest.TestCase):
         c = VirtualHost("*",
                         ServerName("test_trans"),
                         DocumentRoot(DOCUMENT_ROOT),
-                        SetHandler("python-program"),
+                        SetHandler("mod_python"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonTransHandler("tests::trans"),
                         PythonDebug("On"))
@@ -706,7 +706,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   ServerName("test_import"),
                                   DocumentRoot(DOCUMENT_ROOT),
                                   Directory(DOCUMENT_ROOT,
-                                            SetHandler("python-program"),
+                                            SetHandler("mod_python"),
                                             PythonHandler("tests::import_test"),
                                             PythonDebug("On"))))
         return str(c)
@@ -724,7 +724,7 @@ class PerRequestTestCase(unittest.TestCase):
         c = VirtualHost("*",
                         ServerName("test_outputfilter"),
                         DocumentRoot(DOCUMENT_ROOT),
-                        SetHandler("python-program"),
+                        SetHandler("mod_python"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::simplehandler"),
                         PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
@@ -745,7 +745,7 @@ class PerRequestTestCase(unittest.TestCase):
         self.conport = findUnusedPort()
         c = str(Listen("%d" % self.conport)) + \
             str(VirtualHost("127.0.0.1:%d" % self.conport,
-                            SetHandler("python-program"),
+                            SetHandler("mod_python"),
                             PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                             PythonConnectionHandler("tests::connectionhandler")))
         return c
@@ -771,7 +771,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerPath("some/path"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests"),
                                   PythonOption("testing 123"),
                                   PythonDebug("On")))
@@ -791,7 +791,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_pipe_ext"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher | .py"),
                                   PythonHandler("tests::simplehandler"),
                                   PythonDebug("On")))
@@ -815,7 +815,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_cgihandler"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("mod_python.cgihandler"),
                                   PythonDebug("On")))
         return str(c)
@@ -835,7 +835,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_psphandler"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("mod_python.psp"),
                                   PythonDebug("On")))
         return str(c)
@@ -854,7 +854,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_Cookie_Cookie"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::Cookie_Cookie"),
                                   PythonDebug("On")))
         return str(c)
@@ -885,7 +885,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_Cookie_MarshalCookie"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::Cookie_Cookie"),
                                   PythonDebug("On")))
         return str(c)
@@ -915,7 +915,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_Session_Session"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::Session_Session"),
                                   PythonDebug("On")))
         return str(c)
@@ -975,7 +975,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         print "\n  * Testing _global_lock"
 
         c = Directory(DOCUMENT_ROOT,
-                      SetHandler("python-program"),
+                      SetHandler("mod_python"),
                       PythonHandler("tests::global_lock"),
                       PythonDebug("On"))
 
@@ -1051,7 +1051,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         print "\n* Testing server.register_cleanup()..."
 
         c = Directory(DOCUMENT_ROOT,
-                      SetHandler("python-program"),
+                      SetHandler("mod_python"),
                       PythonHandler("tests::srv_register_cleanup"),
                       PythonDebug("On"))
 
