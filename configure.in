@@ -238,6 +238,7 @@ fi
 # find out python version
 AC_MSG_CHECKING(Python version)
 PyVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:3]'`]
+PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:1]'`]
 AC_MSG_RESULT($PyVERSION)
 
 # find out compiled in install prefix
@@ -261,7 +262,7 @@ if test -z "$PYTHON_SRC"; then
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 else
   PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  if test ${PyVERSION} = "2.1"; then
+  if test ${PyMAJVERSION} = "2"; then
     PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
     PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   else

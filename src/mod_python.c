@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.81 2002/10/04 21:31:05 grisha Exp $
+ * $Id: mod_python.c,v 1.82 2002/10/12 05:41:31 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -69,9 +69,6 @@
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
-
-/* list of modules to be imported from PythonImport */
-static apr_table_t *python_imports = NULL;
 
 apr_pool_t *child_init_pool = NULL;
 
@@ -1195,40 +1192,25 @@ static apr_status_t python_output_filter(ap_filter_t *f,
  **
  *      This function called whenever PythonImport directive
  *      is encountered. Note that this function does not actually
- *      import anything, it just remembers what needs to be imported
- *      in the python_imports table. The actual importing is done later
+ *      import anything, it just remembers what needs to be imported.
+ *      The actual importing is done later
  *      in the ChildInitHandler. This is because this function here
  *      is called before the python_init and before the suid and fork.
  *
- *      The reason why this info is stored in a global variable as opposed
- *      to the actual config, is that the config info doesn't seem to
- *      be available within the ChildInit handler.
  */
 static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig, 
-                                          const char *module) 
+                                          const char *module, const char *interp_name) 
 {
-    py_config *conf;
+    py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                           &python_module);
 
-    /* get config */
-    conf = (py_config *) mconfig;
-
-#ifdef WITH_THREAD  
-    PyEval_AcquireLock();
-#endif
-
-    /* make the table if not yet */
-    if (! python_imports)
-        python_imports = apr_table_make(cmd->pool, 4);
-    
-    /* remember the module name and the directory in which to
-       import it (this is for ChildInit) */
-    apr_table_add(python_imports, module, conf->config_dir);
-
-#ifdef WITH_THREAD  
-    PyEval_ReleaseLock();
-#endif
+    if (!conf->imports)
+        conf->imports = hlist_new(cmd->pool, module, interp_name, 0);
+    else 
+        hlist_append(cmd->pool, conf->imports, module, interp_name, 0);
 
     return NULL;
+
 }
 
 /**
@@ -1281,6 +1263,7 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
     if (!rc) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
+
         return python_directive_flag(conf, "PythonDebug", val);
     }
     return rc;
@@ -1570,13 +1553,11 @@ static apr_status_t python_finalize(void *data)
 static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 {
 
-    const apr_array_header_t *ah;
-    apr_table_entry_t *elts;
-    PyObject *sys, *path, *dirstr;
-    interpreterdata *idata;
-    int i;
-    const char *interp_name;
 
+    hl_entry *hle;
+
+    py_config *conf = ap_get_module_config(s->module_config, &python_module);
+    
     /*
      * Cleanups registered first will be called last. This will
      * end the Python enterpreter *after* all other cleanups.
@@ -1590,55 +1571,70 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
      */
     child_init_pool = p;
 
-    if (python_imports) {
+    /*
+     * Now run PythonImports
+     */
 
-        /* iterate throught the python_imports table and import all
-           modules specified by PythonImport */
+    hle = conf->imports;
+    while(hle) {
 
-        ah = apr_table_elts(python_imports);
-        elts = (apr_table_entry_t *)ah->elts;
-        for (i = 0; i < ah->nelts; i++) {
-        
-            char *module = elts[i].key;
-            char *dir = elts[i].val;
+        interpreterdata *idata;
+        char *module_name = hle->handler;
+        char *interp_name = hle->directory;
+        char *ppath = NULL;
 
-            /* Note: PythonInterpreter has no effect */
-            interp_name = dir;
+        /* get interpreter */
+        idata = get_interpreter(interp_name, s);
+        if (!idata)
+            return;
 
-            /* get interpreter */
-            idata = get_interpreter(interp_name, s);
+        /* set up PythonPath */
+        ppath = apr_table_get(conf->directives, "PythonPath");
+        if (ppath) {
 
-            if (!idata)
-                return;
+            PyObject *globals, *locals, *newpath, *sys;
+            
+            globals = PyDict_New();
+            locals = PyDict_New();
+            
+            sys = PyImport_ImportModuleEx("sys", globals, locals, NULL);
+            if (!sys)
+                goto err;
 
-            /* add dir to pythonpath if not in there already */
-            if (dir) {
-                sys = PyImport_ImportModule("sys");
-                path = PyObject_GetAttrString(sys, "path");
-                dirstr = PyString_FromString(dir);
-                if (PySequence_Index(path, dirstr) == -1) {
-                    PyObject *list;
-                    PyErr_Clear();
-                    list = Py_BuildValue("[O]", dirstr);
-                    PyList_SetSlice(path, 0, 0, list);
-                    Py_DECREF(list);
-                }
-                Py_DECREF(dirstr);
-                Py_DECREF(path);
-                Py_DECREF(sys);
-            }
+            PyDict_SetItemString(globals, "sys", sys);
+            newpath = PyRun_String(ppath, Py_eval_input, globals, locals);
+            if (!newpath)
+                goto err;
 
-            /* now import the specified module */
-            if (! PyImport_ImportModule(module)) {
-                if (PyErr_Occurred())
-                    PyErr_Print();
-                ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                             "directive_PythonImport: error importing %s", module);
-            }
+            if (PyObject_SetAttrString(sys, "path", newpath) == -1)
+                goto err;
 
-            /* release interpreter */
+            Py_XDECREF(sys);
+            Py_XDECREF(newpath);
+            Py_XDECREF(globals);
+            Py_XDECREF(locals);
+            goto success;
+
+        err:
+            PyErr_Print();
             release_interpreter();
+            return;
         }
+
+    success:
+        /* now import the specified module */
+        if (! PyImport_ImportModule(module_name)) {
+            if (PyErr_Occurred())
+                PyErr_Print();
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                         "directive_PythonImport: error importing %s", module_name);
+        }
+
+        /* release interpreter */
+        release_interpreter();
+
+        /* next module */
+        hle = hle->next;
     }
 }
 
@@ -1797,9 +1793,9 @@ command_rec python_commands[] =
     AP_INIT_RAW_ARGS(
         "PythonHeaderParserHandler", directive_PythonHeaderParserHandler, NULL, OR_ALL,
         "Python header parser handlers."),
-    AP_INIT_ITERATE(
-        "PythonImport", directive_PythonImport, NULL, ACCESS_CONF,
-        "Modules to be imported when this directive is processed."),
+    AP_INIT_TAKE2(
+        "PythonImport", directive_PythonImport, NULL, RSRC_CONF,
+        "Module and interpreter name to be imported at server/child init time."),
     AP_INIT_RAW_ARGS(
         "PythonInitHandler", directive_PythonInitHandler, NULL, OR_ALL,
         "Python request initialization handler."),

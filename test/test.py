@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.14 2002/10/10 21:28:32 grisha Exp $
+ # $Id: test.py,v 1.15 2002/10/12 05:41:31 grisha Exp $
  #
 
 """
@@ -612,6 +612,33 @@ class PerRequestTestCase(unittest.TestCase):
 
         if (rsp != "test ok"):
             self.fail("test failed")
+            
+    def test_import_conf(self):
+
+        # create a dummy module
+        f = open(os.path.join(DOCUMENT_ROOT, "dummymodule.py"), "w")
+        f.write("# nothing here")
+        f.close()
+
+        # configure apache to import it at startup
+        c = Container(PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                      PythonImport("dummymodule test_import"),
+                      VirtualHost("*",
+                                  ServerName("test_import"),
+                                  DocumentRoot(DOCUMENT_ROOT),
+                                  Directory(DOCUMENT_ROOT,
+                                            SetHandler("python-program"),
+                                            PythonHandler("tests::import_test"),
+                                            PythonDebug("On"))))
+        return str(c)
+
+    def test_import(self):
+
+        print "\n  * Testing PythonImport"
+        rsp = self.vhost_get("test_import")
+
+        if (rsp != "test ok"):
+            self.fail("test failed")
 
     def test_outputfilter_conf(self):
 
@@ -717,6 +744,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
         perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
         perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_import"))
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)

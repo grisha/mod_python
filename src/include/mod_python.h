@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.24 2002/09/12 18:24:06 gstein Exp $
+ * $Id: mod_python.h,v 1.25 2002/10/12 05:41:31 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -153,6 +153,7 @@ typedef struct {
     apr_hash_t   *hlists; /* hlists for every phase */
     apr_hash_t   *in_filters;
     apr_hash_t   *out_filters;
+    hl_entry     *imports;  /* for PythonImport */
 } py_config;
 
 /* register_cleanup info */
