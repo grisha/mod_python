@@ -44,11 +44,23 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.16 2002/08/16 22:07:15 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.17 2002/08/19 20:12:50 gtrubetskoy Exp $
  *
  */
 
 #include "mod_python.h"
+
+/** XXX ok, so this is a hack */
+#define TABLE_HASH_SIZE 32
+static struct apr_table_t {
+    apr_array_header_t a;
+#ifdef MAKE_TABLE_PROFILE
+    void *creator;
+#endif
+    apr_uint32_t index_initialized;
+    int index_first[TABLE_HASH_SIZE];
+    int index_last[TABLE_HASH_SIZE];
+};
 
 /**
  **     MpTable_FromTable

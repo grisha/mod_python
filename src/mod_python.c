@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.65 2002/08/19 18:21:32 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.66 2002/08/19 20:12:49 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -552,7 +552,7 @@ static const char *python_directive_flag(void * mconfig,
  *      the reference to obCallBack.
  */
 
-PyObject * make_obcallback()
+static PyObject * make_obcallback()
 {
 
     PyObject *m;
@@ -1451,7 +1451,7 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
-    ap_register_input_filter(name, python_input_filter, AP_FTYPE_RESOURCE);
+    ap_register_input_filter(name, python_input_filter, NULL, AP_FTYPE_RESOURCE);
  
     return NULL;
 }
@@ -1475,7 +1475,7 @@ static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig,
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
-    ap_register_output_filter(name, python_output_filter, AP_FTYPE_RESOURCE);
+    ap_register_output_filter(name, python_output_filter, NULL, AP_FTYPE_RESOURCE);
  
     return NULL;
 }

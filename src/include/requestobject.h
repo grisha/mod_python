@@ -44,7 +44,7 @@
  *
  * requestobject.h
  *
- * $Id: requestobject.h,v 1.9 2002/08/19 18:21:32 gtrubetskoy Exp $
+ * $Id: requestobject.h,v 1.10 2002/08/19 20:12:52 gtrubetskoy Exp $
  *
  */
 
@@ -69,7 +69,7 @@ extern "C" {
 	PyObject       * subprocess_env;
 	PyObject       * notes;
 	PyObject       * phase;
-	PyObject       * interpreter; 
+	char           * interpreter; 
 	int              content_type_set;
 	hlistobject    * hlo;
 	char           * rbuff;       /* read bufer */

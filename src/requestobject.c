@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.23 2002/08/19 18:21:32 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.24 2002/08/19 20:12:49 gtrubetskoy Exp $
  *
  */
 
@@ -847,7 +847,7 @@ static struct memberlist request_rec_mbrs[] = {
     {"bytes_sent",         T_LONG,    OFF(bytes_sent)},
     {"mtime",              T_LONG,    OFF(mtime)},
     {"chunked",            T_INT,     OFF(chunked)},
-    {"boundary",           T_STRING,  OFF(boundary)},
+/*    {"boundary",           T_STRING,  OFF(boundary)}, */
     {"range",              T_STRING,  OFF(range)},
     {"clength",            T_LONG,    OFF(clength)},
     {"remaining",          T_LONG,    OFF(remaining)},
