@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.14 2002/08/11 19:44:27 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.15 2002/08/23 19:45:41 gtrubetskoy Exp $
  *
  */
 
@@ -356,6 +356,7 @@ DL_EXPORT(void) init_apache()
 
     /* initialize types XXX break windows? */
     MpTable_Type.ob_type = &PyType_Type; 
+    MpTableIter_Type.ob_type = &PyType_Type;
     MpServer_Type.ob_type = &PyType_Type;
     MpConn_Type.ob_type = &PyType_Type;  
     MpRequest_Type.ob_type = &PyType_Type; 
