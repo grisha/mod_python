@@ -54,6 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
+ # $Id: publisher.py,v 1.27 2002/12/28 03:43:40 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except

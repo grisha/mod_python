@@ -54,6 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
+ # $Id: util.py,v 1.14 2002/12/28 03:43:40 grisha Exp $
 
 import _apache
 import apache
