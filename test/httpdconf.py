@@ -252,6 +252,14 @@ class TypesConfig(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class PythonInterpPerDirectory(Directive):
+    def __init__(self, val='Off'):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class PythonInterpPerDirective(Directive):
+    def __init__(self, val='Off'):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class VirtualHost(ContainerTag):
     def __init__(self, addr, *args):
         ContainerTag.__init__(self, self.__class__.__name__, addr, args)

@@ -820,6 +820,10 @@ def PythonOption_items(req):
     req.write(str(options))
     return apache.OK
 
+def interpreter(req):
+    req.write(req.interpreter)
+    return apache.OK
+
 def _test_table():
 
     log = apache.log_error
