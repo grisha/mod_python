@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.25 2000/11/12 05:01:22 gtrubetskoy Exp $
+  $Id: apache.py,v 1.26 2000/11/18 04:21:32 gtrubetskoy Exp $
 
 """
 
@@ -141,7 +141,7 @@ class CallBack:
 
                 # find the object
                 silent = config.has_key("PythonHandlerModule")
-                object = resolve_object(module, object_str, silent)
+                object = resolve_object(self.req, module, object_str, silent)
 
                 if object:
 
@@ -333,7 +333,7 @@ def import_module(module_name, req=None, path=None):
 
     return module
 
-def resolve_object(module, object_str, silent=0):
+def resolve_object(req, module, object_str, silent=0):
     """
     This function traverses the objects separated by .
     (period) to find the last one we're looking for:
@@ -364,7 +364,7 @@ def resolve_object(module, object_str, silent=0):
         if hasattr(obj, "im_self") and not obj.im_self:
             # this is an unbound method, its class
             # needs to be instantiated
-            instance = parent(self.req)
+            instance = parent(req)
             obj = getattr(instance, obj_str)
 
     return obj

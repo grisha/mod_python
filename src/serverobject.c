@@ -51,7 +51,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.1 2000/10/16 20:58:57 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.2 2000/11/18 04:21:32 gtrubetskoy Exp $
  *
  */
 
@@ -231,7 +231,7 @@ static PyObject * server_getattr(serverobject *self, char *name)
 }
 
 PyTypeObject MpServer_Type = {
-    PyObject_HEAD_INIT(NULL)
+    PyObject_HEAD_INIT(&PyType_Type)
     0,
     "mp_server",
     sizeof(serverobject),

@@ -67,9 +67,9 @@
  * http://www.python.org/
  *
  *
- * mod_python.c 
+ * mod_python.h 
  *
- * $Id: mod_python.h,v 1.10 2000/11/09 00:09:18 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.11 2000/11/18 04:21:32 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -117,6 +117,7 @@ extern pool *child_init_pool;
 /* Apache module declaration */
 extern module MODULE_VAR_EXPORT python_module;
 
+#include "mpversion.h"
 #include "util.h"
 #include "tableobject.h"
 #include "serverobject.h"
@@ -126,7 +127,7 @@ extern module MODULE_VAR_EXPORT python_module;
 
 /** Things specific to mod_python, as an Apache module **/
 
-#define VERSION_COMPONENT "mod_python/2.7"
+#define VERSION_COMPONENT "mod_python/" MPV_STRING
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define GLOBAL_INTERPRETER "global_interpreter"
