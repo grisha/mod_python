@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.15 2002/10/01 22:04:54 grisha Exp $
+ * $Id: filterobject.c,v 1.16 2002/10/04 18:56:18 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -115,6 +115,25 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
 			      apr_pool_cleanup_null);
 
     return (PyObject *)result;
+}
+
+/**
+ ** filter_pass_on
+ **
+ *     just passes everything on
+ */
+
+static PyObject *filter_pass_on(filterobject *self)
+{
+    if (self->is_input) 
+        self->rc = ap_get_brigade(self->f->next, self->bb_out, 
+                                  self->mode, APR_BLOCK_READ, 
+                                  self->readbytes);
+    else
+        self->rc = ap_pass_brigade(self->f->next, self->bb_in);
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 /**
@@ -445,6 +464,7 @@ static PyObject *filter_disable(filterobject *self, PyObject *args)
 }
 
 static PyMethodDef filterobjectmethods[] = {
+    {"pass_on",   (PyCFunction) filter_pass_on,   METH_NOARGS},
     {"read",      (PyCFunction) filter_read,      METH_VARARGS},
     {"readline",  (PyCFunction) filter_readline,  METH_VARARGS},
     {"write",     (PyCFunction) filter_write,     METH_VARARGS},
