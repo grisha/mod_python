@@ -3,7 +3,7 @@
 
      This file is part of mod_python. See COPYRIGHT file for details.
 
-     $Id: httpdapi.py,v 1.4 2000/05/13 02:22:37 grisha Exp $
+     $Id: httpdapi.py,v 1.5 2000/06/11 19:36:43 grisha Exp $
 
      Httpdapy handler module.
 """
@@ -115,11 +115,13 @@ def handler(req, auth=None):
             if opt.has_key("handler"):
                 module_name = opt["handler"]
 
-            # cd into the uri directory
+            # add the uri directory to pythonpath
             if os.path.isdir(filename):
-                os.chdir(filename)
+                dir = filename
             else:
-                os.chdir(filename[:slash])
+                dir = filename[:slash]
+            if dir not in sys.path:
+                sys.path[:0] = [dir]
                     
         # import the module
         module = apache.import_module(module_name, req)
