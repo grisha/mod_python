@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.12 2002/06/08 00:42:00 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.13 2002/06/24 21:14:41 gtrubetskoy Exp $
 
 CC=@CC@
 RANLIB=@RANLIB@
@@ -80,6 +80,7 @@ mod_python.so: $(SRCS)
 	@echo 'Compiling for DSO. For static, do "make static"'
 	@echo
 	$(APXS) $(INCLUDES) -c $(SRCS) $(LIBS)
+	ln -s .libs/mod_python.so
 	@echo
 	@echo 'Now su and make install'
 	@echo '  (or, if you only want to perform a partial install,'
