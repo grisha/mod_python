@@ -623,6 +623,16 @@ it's possible that it will not be executed.
 
 \end{methoddesc}
 
+\begin{methoddesc}[request]{sendfile}{path\optional{, offset, len}}
+Sends \var{len} bytes of file \var{path} directly to the client,
+starting at offset \var{offset} using the server's internal
+API. \var{offset} defaults to 0, and \var{len} defaults to -1 (send
+the entire file). 
+
+This function provides the most efficient way to send a file to the
+client.
+\end{methoddesc}
+
 \begin{methoddesc}[request]{write}{string}
 Writes \var{string} directly to the client, then flushes the buffer. 
 \end{methoddesc}

@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.44 2003/03/07 20:04:30 grisha Exp $
+ * $Id: requestobject.c,v 1.45 2003/05/22 20:25:07 grisha Exp $
  *
  */
 
@@ -807,6 +807,50 @@ static PyObject * req_write(requestobject *self, PyObject *args)
 
 }
 
+static PyObject * req_sendfile(requestobject *self, PyObject *args)
+{
+    char *fname;
+    apr_file_t *fd;
+    apr_size_t offset=0, len=-1, nbytes;
+    apr_status_t status;
+    PyObject * py_result = NULL;
+    apr_finfo_t finfo;
+    
+    if (! PyArg_ParseTuple(args, "s|ll", &fname, &offset, &len))
+        return NULL;  /* bad args */
+
+    status=apr_stat(&finfo, fname,
+                    APR_READ, self->request_rec->pool);
+    if (status != APR_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Could not stat file for reading");
+        return NULL;
+    }
+    
+    status=apr_file_open(&fd, fname,
+                         APR_READ, finfo.protection,
+                         self->request_rec->pool);
+    if (status != APR_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Could not open file for reading");
+        return NULL;
+    }                         
+    
+    if (len==-1) len=finfo.size;
+        
+    Py_BEGIN_ALLOW_THREADS                         
+        status = ap_send_fd(fd, self->request_rec, offset, 
+                            len, &nbytes);
+    Py_END_ALLOW_THREADS
+    
+    if (status != APR_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
+        return NULL;
+    }
+
+    py_result = PyLong_FromLong (nbytes);
+    Py_INCREF(py_result);
+    return py_result;
+}
+
 static PyMethodDef request_methods[] = {
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
@@ -824,6 +868,7 @@ static PyMethodDef request_methods[] = {
     {"readlines",             (PyCFunction) req_readlines,             METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
     {"send_http_header",      (PyCFunction) req_send_http_header,      METH_NOARGS},
+    {"sendfile",              (PyCFunction) req_sendfile,              METH_VARARGS},
     {"set_content_length",    (PyCFunction) req_set_content_length,    METH_VARARGS},
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     { NULL, NULL } /* sentinel */

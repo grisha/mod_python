@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.26 2003/03/07 20:04:32 grisha Exp $
+ # $Id: tests.py,v 1.27 2003/05/22 20:25:07 grisha Exp $
  #
 
 # mod_python tests
@@ -656,6 +656,19 @@ def req_headers_out(req):
 
 def req_headers_out_access(req):
 
+    return apache.OK
+
+def req_sendfile(req):
+
+    import tempfile
+    fname  = tempfile.mktemp("txt")
+    f = open(fname, "w")
+    f.write("  test ok  ");
+    f.close()
+
+    req.sendfile(fname, 2, 7)
+
+    os.remove(fname)
     return apache.OK
 
 def srv_register_cleanup(req):
