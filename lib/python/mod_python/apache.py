@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.15 2000/08/10 13:26:34 gtrubetskoy Exp $
+  $Id: apache.py,v 1.16 2000/08/16 18:49:33 gtrubetskoy Exp $
 
 """
 
@@ -191,11 +191,9 @@ class CallBack:
 	when using Python interactively to the browser
 	"""
 
-        print 8
-
         try:
             req = self.req
-            print 5
+
             if str(etype) == "exceptions.IOError" \
                and str(evalue)[:5] == "Write":
                 # if this is an IOError while writing to client,
@@ -227,6 +225,7 @@ class CallBack:
         finally:
             # erase the traceback
             etb = None
+            return DONE
 
 def import_module(module_name, req=None):
     """ 

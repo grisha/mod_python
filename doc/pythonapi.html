@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.5 2000/08/10 13:26:34 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.6 2000/08/16 18:49:33 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -319,6 +319,9 @@
             len = int(req.headers_in["content-length"])
             form_data = req.read(len)
 	    </pre>
+	    This function is affected by the <code>Timeout</code> Apache configuration
+	    directive. The read will be aborted and an IOError raised if the Timout
+	    is reached while reading client data.
 
 	  <dt><br><b>send_http_header()</b>
 	  <dd>
@@ -718,7 +721,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Thu Aug 10 09:02:27 EDT 2000
+Last modified: Wed Aug 16 12:33:34 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
