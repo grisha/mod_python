@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.108 2003/10/27 21:45:49 grisha Exp $
+ * $Id: mod_python.c,v 1.109 2003/11/04 21:26:29 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1044,12 +1044,6 @@ static int python_handler(request_rec *req, char *phase)
 
     if (! (hle || dynhle)) {
         /* nothing to do here */
-
-        if (req->finfo.filetype == APR_DIR) {
-            /* this will kick in mod_dir */
-            req->handler = DIR_MAGIC_TYPE;
-        }
-
         return DECLINED;
     }
     
