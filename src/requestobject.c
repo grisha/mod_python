@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.10 2001/05/19 05:22:11 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.11 2001/05/23 02:49:43 gtrubetskoy Exp $
  *
  */
 
@@ -1063,6 +1063,13 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
 	return 0;
     }
     else if (strcmp(name, "_Request") == 0) {
+	/* it's ok to assign None */
+	if (value == Py_None) {
+	    Py_XDECREF(self->Request);
+	    self->Request = NULL;
+	    return 0;
+	}
+	/* but anything else has to be an instance */
 	if (! PyInstance_Check(value)) {
 	    PyErr_SetString(PyExc_AttributeError,
 			    "special attribute _Request must be an instance");
