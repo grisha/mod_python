@@ -348,7 +348,7 @@ mod_python.c
 Registers an input filter \var{handler} under name
 \var{name}. \var{Handler} is a module name optionally followed
 \code{::} and a callable object name. If callable object name is
-omited, it will default to \samp{inputfilter}. \var{Name} is the name under
+omitted, it will default to \samp{inputfilter}. \var{Name} is the name under
 which the filter is registered, by convention filter names are usually
 in all caps.
 
@@ -367,7 +367,7 @@ mod_python.c
 Registers an output filter \var{handler} under name
 \var{name}. \var{Handler} is a module name optionally followed
 \code{::} and a callable object name. If callable object name is
-omited, it will default to \samp{outputfilter}. \var{Name} is the name under
+omitted, it will default to \samp{outputfilter}. \var{Name} is the name under
 which the filter is registered, by convention filter names are usually
 in all caps.
 
@@ -390,7 +390,7 @@ connection handler. \var{Handler} will be passed a single argument -
 the connection object.
 
 \var{Handler} is a module name optionally followed \code{::} and a
-callable object name. If callable object name is omited, it will
+callable object name. If callable object name is omitted, it will
 default to \samp{connectionhandler}.
 
 \section{Other Directives\label{dir-other}}
@@ -466,7 +466,7 @@ will actually be imported once for every child process spawned.
   completely read yet, so all other directives, including
   PythonInterpreter have no effect on the behavior of modules imported
   by this directive. Because of this limitation, the interpreter must
-  be specified explicitely, and must match the name under which
+  be specified explicitly, and must match the name under which
   subsequent requests relying on this operation will execute. If you
   are not sure under what interpreter name a request is running,
   examine the \member{interpreter} member of the request object.
@@ -498,7 +498,7 @@ subinterpreter, even if they are in different directories.
 For example, assume there is a
 \file{/directory/subdirectory}. \file{/directory} has an .htaccess
 file with a PythonHandler directive.  \file{/directory/subdirectory}
-doesn't have an .htacess. By default, scripts in /directory and
+doesn't have an .htaccess. By default, scripts in /directory and
 \file{/directory/subdirectory} would execute in the same interpreter assuming
 both directories are accessed via the same virtual server. With
 PythonInterpPerDirectory, there would be two different interpreters,
@@ -539,7 +539,7 @@ encountered.
 For example, assume there is a
 \file{/directory/subdirectory}. \file{/directory} has an .htaccess
 file with a PythonHandler directive.  \file{/directory/subdirectory}
-has another \file{.htacess} file with another PythonHandler. By
+has another \file{.htaccess} file with another PythonHandler. By
 default, scripts in \file{/directory} and
 \file{/directory/subdirectory} would execute in the same interpreter
 assuming both directories are in the same virtual server. With
@@ -565,7 +565,7 @@ mod_python.c
 
 Forces mod_python to use interpreter named \emph{name}, overriding the
 default behaviour or behaviour dictated by
-\citetitle[dir-other-ipd.html]{\code{PythonIterpPerDirectory}} or
+\citetitle[dir-other-ipd.html]{\code{PythonInterpPerDirectory}} or
 \citetitle[dir-other-ipdv.html]{\code{PythonInterpPerDirective}} directive.
 
 This directive can be used to force execution that would normally
@@ -627,10 +627,10 @@ of the module file.
 By default, mod_python checks the time-stamp of the file and reloads
 the module if the module's file modification date is later than the
 last import or reload. This way changed modules get automatically
-reimported, elimitaing the need to restart the server for every
+reimported, eliminating the need to restart the server for every
 change.
 
-Disaling autoreload is useful in production environment where the
+Disabling autoreload is useful in production environment where the
 modules do not change; it will save some processing time and give a
 small performance gain.
 
