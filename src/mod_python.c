@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.55 2001/11/06 05:06:58 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.56 2001/11/06 05:09:09 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -851,8 +851,6 @@ static int python_handler(request_rec *req, char *phase)
 
     /* create a hahdler list object */
     request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
-    //apr_pool_cleanup_register(req->pool, request_obj->hlo, python_decref, 
-    //apr_pool_cleanup_null);
 
     /* add dynamically registered handlers, if any */
     if (dynhle) {
