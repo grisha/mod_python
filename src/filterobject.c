@@ -18,7 +18,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.27 2004/02/16 19:47:27 grisha Exp $
+ * $Id: filterobject.c,v 1.28 2004/04/30 19:21:07 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -259,7 +259,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
             _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
             buffer = PyString_AS_STRING((PyStringObject *) result);
-            buffer += HUGE_STRING_LEN;
+            buffer += bytes_read;
 
             bufsize += HUGE_STRING_LEN;
         }
