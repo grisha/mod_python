@@ -1,3 +1,6 @@
+May 28 2000 -	Renamed make_table, log_error, table_add and copy_table with
+		mp_ so as to not get confused with the ones in ap_compat.h
+
 May 24 2000 -	PythonNoReload obsoleted in favor of PythonAutoReload.
 
 May 23 2000 -	The "fix" re import on Apr 10 turned out to be a bug and
