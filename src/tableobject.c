@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.12 2002/08/09 21:44:32 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.13 2002/08/11 19:44:27 gtrubetskoy Exp $
  *
  */
 
@@ -215,6 +215,12 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
 {
     const char *v;
     char *k;
+
+    if (key && !PyString_Check(key)) {
+	PyErr_SetString(PyExc_TypeError,
+			"table keys must be strings");
+	return NULL;
+    }
 
     k = PyString_AsString(key);
 
@@ -395,27 +401,32 @@ static int table_merge(tableobject *a, PyObject *b, int override)
 	return -1;
     
     for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
-	if (!override && table_subscript(a, key) != NULL) {
-	    Py_DECREF(key);
-	    continue;
-	}
-	value = PyObject_GetItem(b, key);
-	if (value == NULL) {
+
+	skey = PyObject_Str(key);
+	if (skey == NULL) {
 	    Py_DECREF(iter);
 	    Py_DECREF(key);
 	    return -1;
 	}
-	skey = PyObject_Str(key);
-	if (skey == NULL) {
+	if (!override && apr_table_get(a->table, PyString_AsString(skey)) != NULL) {
 	    Py_DECREF(key);
-	    Py_DECREF(value);
+	    Py_DECREF(skey);
+	    continue;
+	}
+
+	value = PyObject_GetItem(b, key);
+	if (value == NULL) {
+	    Py_DECREF(iter);
+	    Py_DECREF(key);
+	    Py_DECREF(skey);
 	    return -1;
 	}
 	svalue = PyObject_Str(value);
 	if (svalue == NULL) {
+	    Py_DECREF(iter);
 	    Py_DECREF(key);
+	    Py_DECREF(skey);
 	    Py_DECREF(value);
-	    Py_DECREF(svalue);
 	    return -1;
 	}
 	status = table_ass_subscript(a, skey, svalue);
@@ -510,7 +521,8 @@ static int table_mergefromseq2(tableobject *self, PyObject *seq2, int override)
 	    goto Fail;
 	}
 
-	if (override || table_subscript(self, skey) == NULL) {
+	if (override || apr_table_get(self->table, 
+				      PyString_AsString(skey)) == NULL) {
 	    int status = table_ass_subscript(self, skey, svalue);
 	    if (status < 0) {
 		Py_DECREF(skey);
@@ -557,40 +569,27 @@ static PyObject *table_copy(register tableobject *from)
 
 static int table_compare(tableobject *a, tableobject *b)
 {
+    /* 
+       we're so lazy that we just copy tables to dicts
+       and rely on dict's compare ability. this is not
+       the best way to do this to say the least
+    */
 
-    const apr_array_header_t *aah, *bah ;
-    apr_table_entry_t *aelts, *belts;
-    register int i;
+    PyObject *ad, *bd;
+    int result;
 
-    aah = apr_table_elts (a->table);
-    bah = apr_table_elts (b->table);
-    aelts = (apr_table_entry_t *) aah->elts;
-    belts = (apr_table_entry_t *) bah->elts;
+    ad = PyDict_New();
+    bd = PyDict_New();
 
-    i = aah->nelts <= bah->nelts ? 
-	aah->nelts : bah->nelts;
+    PyDict_Merge(ad, a, 0);
+    PyDict_Merge(bd, b, 0);
 
-    if (i == 0) {
-	return 0;
-    }
+    result = PyObject_Compare(ad, bd);
 
-    while (i--) {
-	int c;
+    Py_DECREF(ad);
+    Py_DECREF(bd);
 
-	c = strcmp(aelts[i].key, belts[i].key);
-	if (c != 0)
-	    return c;
-
-	c = strcmp(aelts[i].val, belts[i].val);
-	if (c != 0)
-	    return c;
-
-    }
-
-    /* if we got this far, then only size matters */
-
-    return (aah->nelts < bah->nelts) ? -1 
-	: (aah->nelts > bah->nelts);
+    return result;
 }
 
 /**
@@ -647,16 +646,19 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
     PyObject *key;
     PyObject *failobj = Py_None;
     PyObject *val = NULL;
+    char *sval;
 
-    if (!PyArg_ParseTuple(args, "O|O:get", &key, &failobj))
+    if (!PyArg_ParseTuple(args, "S|S:get", &key, &failobj))
 	return NULL;
-    
-    val = table_subscript(self, key);
 
-    if (val == NULL) {
-	Py_INCREF(val);
+    sval = apr_table_get(self->table, PyString_AsString(key));
+    
+    if (sval == NULL) {
 	val = failobj;
+	Py_INCREF(val);
     }
+    else
+	val = PyString_FromString(sval);
 
     return val;
 }
@@ -670,20 +672,43 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
 static PyObject *table_setdefault(register tableobject *self, PyObject *args)
 {
     PyObject *key;
-    PyObject *failobj = Py_None;
+    PyObject *failobj = NULL;
     PyObject *val = NULL;
+    char *k = NULL;
+    char *v = NULL;
 
     if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
 	return NULL;
 
-    val = table_subscript(self, key);
-
-    if (val == NULL) {
-	val = failobj;
-	table_ass_subscript(self, key, val);
+    if (!PyString_Check(key)) {
+	PyErr_SetString(PyExc_TypeError,
+			"table keys must be strings");
+	return NULL;
     }
 
-    Py_XINCREF(val);
+    if (failobj && !PyString_Check(failobj)) {
+	PyErr_SetString(PyExc_TypeError,
+			"table values must be strings");
+	return NULL;
+    }
+
+    k = PyString_AsString(key);
+    v = apr_table_get(self->table, k);
+
+    if (v == NULL) {
+	if (failobj == NULL) {
+	    apr_table_set(self->table, k, "");
+	    val = PyString_FromString("");
+	}
+	else {
+	    apr_table_set(self->table, k, PyString_AsString(failobj));
+	    val = failobj;
+	    Py_XINCREF(val);
+	}
+    }
+    else
+	val = PyString_FromString(v);
+
     return val;
 }
 

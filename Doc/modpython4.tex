@@ -17,23 +17,22 @@ function. For this discussion, it will suffice to say that each
 subinterpreter has its own separate namespace, not accessible from
 other subinterpreters. Subinterpreters are very useful to make sure
 that separate programs running under the same Apache server do not
-interfere with one another..
+interfere with one another.
 
 At server start-up or mod_python initialization time, mod_python
 initializes an interpreter called \dfn{main} interpreter.  The main
 interpreter contains a dictionary of subinterpreters. Initially, this
-dictionary is empty. With every hit, as needed, subinterpreters are
-created, and references to them are stored in this dictionary. The
+dictionary is empty. With every request, as needed, subinterpreters
+are created, and references to them are stored in this dictionary. The
 dictionary is keyed on a string, also known as \emph{interpreter
 name}. This name can be any string.  The main interpreter is named
 \samp{main_interpreter}.  The way all other interpreters are named can
-be controlled by
-\code{PythonInterp*} directives. Default behaviour is to name interpreters
-using the Apache virtual server name (\code{ServerName}
-directive). This means that all scripts in the same vrtual server
-execute in the same subinterpreter, but scripts in different virtual
-servers execute in different subinterpreters with completely separate
-namespaces. 
+be controlled by \code{PythonInterp*} directives. Default behaviour is
+to name interpreters using the Apache virtual server name
+(\code{ServerName} directive). This means that all scripts in the same
+vrtual server execute in the same subinterpreter, but scripts in
+different virtual servers execute in different subinterpreters with
+completely separate namespaces.
 \citetitle[dir-other-ipd.html]{\code{PythonInterpPerDirectory}} and
 \citetitle[dir-other-ipdv.html]{\code{PythonInterpPerDirective}}
 directives alter the naming convention to use the absolute path of the
@@ -43,9 +42,8 @@ directory being accessed, or the directory in which the
 force the interpreter name to a specific string overriding any naming
 conventions.
 
-
 Once created, a subinterpreter will be reused for subsequent requests.
-It is never destroyed and exists until the Apache child process dies.
+It is never destroyed and exists until the Apache process dies.
 
 \begin{seealso}
   \seetitle[http://www.python.org/doc/current/api/api.html]
@@ -77,12 +75,13 @@ Every handler can return:
 handler and no errors occurred. 
 
 \item
-\constant{apache.DECLINED}, meaning this handler refused to handle this phase of 
-the requestand Apache needs to look for another handler.
+\constant{apache.DECLINED}, meaning this handler has not handled this
+phase of the request to completion and Apache needs to look for
+another handler in subsequent modules.
  
 \item
 \constant{apache.\emph{HTTP_ERROR}}, meaning an HTTP error occurred. 
-\var{HTTP_ERROR} can be:
+\var{HTTP_ERROR} can be any of the following:
 
 \begin{verbatim}
 HTTP_CONTINUE                     = 100
@@ -173,16 +172,20 @@ def requesthandler(req):
 \modulesynopsis{Access to Apache Internals}
 \moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
 
-The Python Application Programmer interface to Apache internals is
-contained in a module appropriately named \module{apache}, located inside the
-\module{mod_python} package. This module provides some important objects that
-map to Apache internal structures, as well as some useful functions,
-all documented below.
+The Python interface to Apache internals is contained in a module
+appropriately named \module{apache}, located inside the
+\module{mod_python} package. This module provides some important
+objects that map to Apache internal structures, as well as some useful
+functions, all documented below. (The \class{Request} object also
+provides an interface to Apache internals, it is covered in its own
+section of this manual.)
 
-\indexii{_apache}{module}
-The \module{apache} module can only be imported by a script running under
-mod_python. This is because it depends on a built-in module
-\module{_apache} provided by mod_python. It is best imported like this:
+\indexii{_apache}{module} The \module{apache} module can only be
+imported by a script running under mod_python. This is because it
+depends on a built-in module \module{_apache} provided by
+mod_python.
+
+It is best imported like this:
 
 \begin{verbatim}
 from mod_python import apache
@@ -190,7 +193,7 @@ from mod_python import apache
 
 \module{mod_python.apache} module defines the following objects and
 functions. For a more in-depth look at Apache internals, see the
-\citetitle[http://dev.apache.org/API.html]{Shambhala API Notes}
+\citetitle[http://httpd.apache.org/dev/]{Apache Developer page}
 
 \begin{funcdesc}{log_error}{message\optional{, level, server}}
 An interface to the Apache
@@ -214,11 +217,15 @@ APLOG_NOERRNO
 \var{server} is not specified, then the error will be logged to the default
 error log, otherwise it will be written to the error log for the
 appropriate virtual server.
+
+If you have a reference to a \class{Request} object available,
+consider using \method{Request.log_error} intead, it will prepend
+request-specific information to the log entry.
 \end{funcdesc}
 
 \begin{funcdesc}{make_table}{}
 Returns a new empty object of type \code{mp_table}. See Section \ref{pyapi-mptable}
-for a description of a table object. 
+for a description of a table object. XXX make_table is obsolete, use table instead
 \end{funcdesc}
 
 \subsection{Table Object (mp_table)\obindex{table}\label{pyapi-mptable}}

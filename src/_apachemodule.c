@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.13 2002/08/09 21:40:56 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.14 2002/08/11 19:44:27 gtrubetskoy Exp $
  *
  */
 
@@ -93,20 +93,6 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
 
     Py_INCREF(Py_None);
     return Py_None;
-}
-
-/** 
- ** mp_make_table
- **
- *  This returns a new object of built-in type table.
- *
- *  mp_make_table()
- *
- */
-
-static PyObject * mp_make_table(PyObject *self, PyObject *args)
-{
-    return MpTable_New();
 }
 
 /**
@@ -357,7 +343,6 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
     {"log_error",                 (PyCFunction)mp_log_error,     METH_VARARGS},
-    {"make_table",                (PyCFunction)mp_make_table,    METH_VARARGS},
     {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
     {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
     {NULL, NULL} /* sentinel */
