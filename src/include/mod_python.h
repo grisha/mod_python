@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.28 2003/04/09 14:05:56 grisha Exp $
+ * $Id: mod_python.h,v 1.29 2003/05/24 03:55:27 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -121,6 +121,7 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #include "connobject.h"
 #include "requestobject.h"
 #include "filterobject.h"
+#include "psp_flex.h"
 
 /** Things specific to mod_python, as an Apache module **/
 

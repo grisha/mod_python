@@ -1,30 +1,91 @@
 %{
-/*
- +----------------------------------------------------------------------------+
- | mod_psp - A python server pages preprocessor                               |
- +----------------------------------------------------------------------------+
- | Copyright (c) 2003 Sterling Hughes <sterling@php.net>                      |
- | Permission is hereby granted, free of charge, to any person obtaining a    |
- | copy of this software and associated documentation files (the "Software"), |
- | to deal in the Software without restriction, including without limitation  |
- | the rights to use, copy, modify, merge, publish, distribute, sublicense,   |
- | and/or sell copies of the Software, and to permit persons to whom the      |
- | Software is furnished to do so, subject to the following conditions:       |
- |                                                                            |
- | The above copyright notice and this permission notice shall be included in |
- | all copies or substantial portions of the Software.                        |
- |                                                                            |
- | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR |
- | IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,   |
- | FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL    |
- | THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER |
- | LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING    |
- | FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER        |
- | DEALINGS IN THE SOFTWARE.                                                  |
- +----------------------------------------------------------------------------+
- | Authors: Sterling Hughes <sterling@php.net>                                |
- +----------------------------------------------------------------------------+
-*/
+/* ====================================================================
+ * The Apache Software License, Version 1.1
+ *
+ * Copyright (c) 2000-2002 The Apache Software Foundation.  All rights
+ * reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *
+ * 3. The end-user documentation included with the redistribution,
+ *    if any, must include the following acknowledgment:
+ *       "This product includes software developed by the
+ *        Apache Software Foundation (http://www.apache.org/)."
+ *    Alternately, this acknowledgment may appear in the software itself,
+ *    if and wherever such third-party acknowledgments normally appear.
+ *
+ * 4. The names "Apache" and "Apache Software Foundation" must
+ *    not be used to endorse or promote products derived from this
+ *    software without prior written permission. For written
+ *    permission, please contact apache@apache.org.
+ *
+ * 5. Products derived from this software may not be called "Apache",
+ *    "mod_python", or "modpython", nor may these terms appear in their
+ *    name, without prior written permission of the Apache Software
+ *    Foundation.
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
+ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ * ====================================================================
+ *
+ * This software consists of voluntary contributions made by many
+ * individuals on behalf of the Apache Software Foundation.  For more
+ * information on the Apache Software Foundation, please see
+ * <http://www.apache.org/>.
+ *
+ * $Id: psp_parser.l,v 1.4 2003/05/24 03:55:27 grisha Exp $
+ *
+ * This file originally written by Sterling Hughes.
+ * 
+ */
+
+/* 
+ * Briefly we are dealing with five modes here:
+ * 0 (INITIAL) - we print a little header, req.print(""" and 
+ *   immeditely enter TEXT mode.
+ * TEXT - this is your plain old HTML or whatever is in the file.
+ *   We copy everything into ob, if we see eol, we flush ob to
+ *   pycode. If we see <% or <%= we enter PYCODE mode.
+ * PYCODE - we are inside Python code. Copy everithing similar
+ *   TEXT, but watch out for the following:
+ *     { - means "simlated" block. We increment in_block counter.
+ *         from here on any python code will be indented in_block
+ *         times.
+ *     } - decrement in_block
+ *     ", ' or """ - enter STRING mode
+ * STRING - Copy stuff over, but watch out for a backslash. A backslash
+ *   sets the escape flag, so a closing quote is ignored. The """ case is
+ *   a bit more complex.
+ * INDENT - we left Python code after encountering %> and are
+ *   now in the indent before the first non-whitespace char, e.g.
+ *
+ *   %>
+ *   ....<h1>hello</h1>
+ *
+ *   The space represented by dots above is in INDENT. If in block, 
+ *   we output whitespace, else, just pass blanks through.
+ *   Then print req.write(""" and enter TEXT mode.
+ */
 
 #include "psp_parser.h"
 #include <stdio.h>
@@ -37,18 +98,142 @@
 
 %}
 
-%x IN_PYCODE
-%x IN_STRING
+%x TEXT
+%x PYCODE
+%x STRING
+%x INDENT
 
 %%
 
-<IN_STRING>. {
+. {
+    psp_string_0(&PSP_PG(ob));
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("#\n# This is file is auto-generated by mod_python PSP.\n#\n")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\nreq.write(\"\"\"")); 
+    psp_string_free(&PSP_PG(ob));
+
+    yyless(0);
+
+    BEGIN TEXT;
+}
+
+<TEXT>[\r\n] { 
+    if (PSP_PG(ob).length) { 
+        psp_string_0(&PSP_PG(ob)); 
+        psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length); 
+        psp_string_free(&PSP_PG(ob)); 
+    }  
+
+    psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+} 
+
+<TEXT>"<%=" {
+	if (PSP_PG(ob).length) {
+		psp_string_0(&PSP_PG(ob));
+		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
+		psp_string_free(&PSP_PG(ob));
+	}
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
+
+	OUTPUT_WHITESPACE(&PSP_PG(whitespace));
+	psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write("));
+	PSP_PG(is_psp_echo) = 1;
+
+	BEGIN PYCODE;
+}
+
+<TEXT>"<%" {
+	if (PSP_PG(ob).length) { 
+		psp_string_0(&PSP_PG(ob));
+		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
+		psp_string_free(&PSP_PG(ob));
+	}  
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n\n")); 
+	CLEAR_WHITESPACE(&PSP_PG(whitespace));
+
+	BEGIN PYCODE;
+}
+
+<TEXT>. {
+	if (yytext[0] == '"') {
+		psp_string_appendl(&PSP_PG(ob), STATIC_STR("\\\""));
+	} else {
+		psp_string_appendc(&PSP_PG(ob), yytext[0]);
+	}
+}
+
+<TEXT><<EOF>> {
+    if (PSP_PG(ob).length) {
+        psp_string_0(&PSP_PG(ob));
+        OUTPUT_WHITESPACE(&PSP_PG(whitespace));
+        psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
+        psp_string_free(&PSP_PG(ob));
+    }
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
+    yyterminate();
+}
+
+<PYCODE>[\r\n] {
+	psp_string_appendc(&PSP_PG(pycode), '\n');
+}
+
+<PYCODE>"{" {
+	psp_string_appendc(&PSP_PG(whitespace), '\t');
+	PSP_PG(in_block)++;
+}
+
+<PYCODE>"}"([ ])* {
+	CLEAR_WHITESPACE(&PSP_PG(whitespace));
+	PSP_PG(in_block)--;
+	if (PSP_PG(in_block) < 0) {
+		PSP_PG(in_block) = 0;
+	}
+}
+
+<PYCODE>"%>" {
+	if (PSP_PG(is_psp_echo)) {
+		psp_string_appendc(&PSP_PG(pycode), ')'); 
+		PSP_PG(is_psp_echo) = 0;
+	} 
+
+        BEGIN INDENT;
+}
+
+<PYCODE>"\"\"\"" {
+        PSP_PG(string_char) = '3';
+        psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
+
+        BEGIN STRING;
+}
+
+<PYCODE>. {
+        if (yytext[0] == '"' || yytext[0] == '\'') {
+                PSP_PG(string_char) = yytext[0];
+                BEGIN STRING;
+        }	
+        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+}
+
+<STRING>"\"\"\"" {
+        if (PSP_PG(string_char) == '3') {
+                if (!PSP_PG(is_string_escape)) {
+                    psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
+                    BEGIN PYCODE;
+                }
+                else {
+                    psp_string_appendc(&PSP_PG(pycode), '"');
+                    yyless(1);
+                }
+        }
+        PSP_PG(is_string_escape) = 0;
+}
+
+<STRING>. {
 	if (yytext[0] == '\\') {
 		PSP_PG(is_string_escape) = 1;
 	} else {
 		if (yytext[0] == PSP_PG(string_char)) {
 			if (!PSP_PG(is_string_escape)) {
-				BEGIN IN_PYCODE;
+				BEGIN PYCODE;
 			}
 		}
 		PSP_PG(is_string_escape) = 0;
@@ -57,103 +242,47 @@
 	psp_string_appendc(&PSP_PG(pycode), yytext[0]);
 }
 
-<IN_PYCODE>[\r\n] {
-	psp_string_appendc(&PSP_PG(pycode), '\n');
-}
+<INDENT>^[\t ]* {
+        psp_string_appendc(&PSP_PG(pycode), '\n'); 
 
-<IN_PYCODE>"{" {
-	psp_string_appendc(&PSP_PG(whitespace), '\t');
-	psp_string_appendc(&PSP_PG(pycode), '\n');
-	PSP_PG(in_block)++;
-}
-
-<IN_PYCODE>"}"([ ])* {
-	CLEAR_WHITESPACE(&PSP_PG(whitespace));
-	PSP_PG(in_block)--;
-	if (PSP_PG(in_block) < 0) {
-		PSP_PG(in_block) = 0;
-	}
-}
-
-<IN_PYCODE>. {
-	if (yytext[0] == '"' || yytext[0] == '\'') {
-		PSP_PG(string_char) = yytext[0];
-		BEGIN IN_STRING;
-	}
-	psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-}
-
-<IN_PYCODE>"%>" {
-	if (PSP_PG(is_psp_echo)) {
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR(")\n"));
-		PSP_PG(is_psp_echo) = 0;
-	} else {
-		psp_string_appendc(&PSP_PG(pycode), '\n');
-	}
-
-	BEGIN 0;
-}
-
-"<%=" {
-	if (PSP_PG(ob).length) {
-		psp_string_0(&PSP_PG(ob));
-		OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("sys.stdout.write(\""));
-		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\")\n"));
-		psp_string_free(&PSP_PG(ob));
-	}
-
-	OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-	psp_string_appendl(&PSP_PG(pycode), STATIC_STR("sys.stdout.write("));
-	PSP_PG(is_psp_echo) = 1;
-
-	BEGIN IN_PYCODE;
-}
-
-"<%"([ \t]|[\n\r]) {
-	if (PSP_PG(ob).length) {
-		psp_string_0(&PSP_PG(ob));
-		OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("print \""));
-		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\n"));
-		psp_string_free(&PSP_PG(ob));
-	} 
-	
-	CLEAR_WHITESPACE(&PSP_PG(whitespace));
-
-	BEGIN IN_PYCODE;
-}
-
-^[\t ]* {
-	if (!PSP_PG(in_block)) {
-		psp_string_clear(&PSP_PG(whitespace));
+        if (PSP_PG(in_block)) {
+                OUTPUT_WHITESPACE(&PSP_PG(whitespace));
+        }
+        else {
+                CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
 		psp_string_appendl(&PSP_PG(whitespace), yytext, yyleng);
+		psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
 	}
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
+
+        BEGIN TEXT;
 }
 
-[\r\n] {
-	if (PSP_PG(ob).length) {
-		psp_string_0(&PSP_PG(ob));
-		OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("print \""));
-		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\n"));
-		psp_string_free(&PSP_PG(ob));
-	} 
+<INDENT>. {
+    psp_string_appendc(&PSP_PG(pycode), '\n'); 
 
-	if (!PSP_PG(in_block)) {
-		CLEAR_WHITESPACE(&PSP_PG(whitespace));
-	}
-}
+    if (PSP_PG(in_block)) {
+        OUTPUT_WHITESPACE(&PSP_PG(whitespace));
+    }
+    else {
+        CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    }
 
-. {
-	if (yytext[0] == '"') {
-		psp_string_appendl(&PSP_PG(ob), STATIC_STR("\\\""));
-	} else {
-		psp_string_appendc(&PSP_PG(ob), yytext[0]);
-	}
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
+
+    if (yytext[0] == '"') {
+        psp_string_appendl(&PSP_PG(ob), STATIC_STR("\\\""));
+    } else {
+        psp_string_appendc(&PSP_PG(ob), yytext[0]);
+    }
+    
+    BEGIN TEXT;
 }
 
 %%
+
+/* this is for emacs
+Local Variables:
+mode:C
+End:
+*/
