@@ -3,7 +3,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.1 2000/05/04 23:08:24 grisha Exp $
+ * $Id: mod_python.c,v 1.2 2000/05/05 16:51:14 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details. See COPYRIGHT file for Copyright. 
@@ -13,7 +13,6 @@
  * May 1998 - initial release.
  *
  */
-
 
 /* Apache headers */
 #include "httpd.h"
@@ -31,8 +30,8 @@
  ******************************************************************/
 
 #define VERSION_COMPONENT "mod_python/2.0a"
-#define MODULENAME "apache"
-#define INITSTRING "apache.init()"
+#define MODULENAME "apache.apache"
+#define INITSTRING "apache.apache.init()"
 #define INTERP_ATTR "__interpreter__"
 
 /* debugging? Use ./httpd -X when on */
@@ -79,7 +78,6 @@ static struct PyMethodDef _apache_module_methods[] = {
   {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
   {NULL, NULL} /* sentinel */
 };
-
 
 /********************************
           tableobject 
@@ -2250,9 +2248,9 @@ static int python_handler(request_rec *req, char *handler)
 
     resultobject = PyObject_CallMethod(obcallback, "Dispatch", "Os", request_obj, handler);
 
-#ifdef WITH_THREAD
     if (debug) printf("python_handler(): %s: user code done.\n", handler); 
 
+#ifdef WITH_THREAD
     /* release the lock */
     PyEval_ReleaseLock();
 #endif
