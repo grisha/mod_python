@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.34 2003/08/04 15:01:12 grisha Exp $
+ * $Id: mod_python.h,v 1.35 2003/08/09 18:08:17 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -154,6 +154,7 @@ typedef struct
 {
     apr_global_mutex_t **g_locks;
     int                  nlocks;
+    int                  parent_pid;
 } py_global_config;
 
 /* structure describing per directory configuration parameters */

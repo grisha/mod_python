@@ -92,7 +92,7 @@ Add the following lines in the section ScriptAlias and CGI of the httpd.conf:
 
 \begin{verbatim}                         
 <Directory "<Your Document Root>/python">
-   AddHandler python-program .py
+   AddHandler mod_python .py
    PythonHandler mptest
    PythonDebug on
 </Directory>

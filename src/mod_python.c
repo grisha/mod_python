@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.94 2003/08/08 23:35:30 grisha Exp $
+ * $Id: mod_python.c,v 1.95 2003/08/09 18:08:17 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -343,6 +343,7 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
     glb->g_locks = (apr_global_mutex_t **) 
 	apr_palloc(s->process->pool, locks * sizeof(apr_global_mutex_t *));
     glb->nlocks = locks;
+    glb->parent_pid = getpid();
 
     for (n=0; n<locks; n++) {
 	apr_status_t rc;
@@ -350,9 +351,8 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
 	char fname[255];
-	int pid = getpid();
 
-	snprintf(fname, 255, "/tmp/mpmtx%d%d", pid, n);
+	snprintf(fname, 255, "/tmp/mpmtx%d%d", glb->parent_pid, n);
 #else
 	char *fname = NULL;
 #endif
@@ -372,6 +372,7 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
 		ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
 			     "mod_python: Hint: On Linux, the problem may be the number of "
 			     "available semaphores, check 'sysctl kernel.sem'");
+		glb->nlocks = n;
 		break;
 		
 	    }
@@ -393,7 +394,7 @@ static apr_status_t reinit_mutexes(server_rec *s, py_global_config *glb)
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
         char fname[255];
-        sprintf(fname, "/tmp/mp_mutex%d", n);
+        snprintf(fname, 255, "/tmp/mpmtx%d%d", glb->parent_pid, n);
 #else
         char *fname = NULL;
 #endif
@@ -1830,7 +1831,8 @@ static int PythonHandler(request_rec *req) {
      * handle those that we explicitly agreed to handle (see 
      * above).
      */
-    if (!req->handler || strcmp(req->handler, "python-program"))
+    if (!req->handler || (strcmp(req->handler, "mod_python") &&
+			  strcmp(req->handler, "python-program")))
         return DECLINED;
 
     return python_handler(req, "PythonHandler");
