@@ -712,7 +712,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         rsp = self.vhost_get("test_PythonOption_remove2")
 
-        if (rsp != "[('PythonOptionTest2', 'new_value2'), ('PythonOptionTest2', 'new_value2')]"):
+        if (rsp != "[('PythonOptionTest2', 'new_value2'), ('PythonOptionTest3', 'new_value3')]"):
             self.fail(`rsp`)
 
     def test_util_fieldstorage_conf(self):
