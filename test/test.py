@@ -654,6 +654,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::PythonOption_items"),
                                   PythonOption('PythonOptionTest "new_value"'),
+                                  PythonOption('PythonOptionTest2 "new_value2"'),
                                   PythonDebug("On")))
 
         return str(c)
@@ -664,7 +665,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         rsp = self.vhost_get("test_PythonOption_override")
 
-        if (rsp != "[('PythonOptionTest', 'new_value')]"):
+        if (rsp != "[('PythonOptionTest', 'new_value'), ('PythonOptionTest2', 'new_value2')]"):
             self.fail(`rsp`)
 
     def test_PythonOption_remove_conf(self):
@@ -676,6 +677,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::PythonOption_items"),
                                   PythonOption('PythonOptionTest ""'),
+                                  PythonOption('PythonOptionTest2 "new_value2"'),
                                   PythonDebug("On")))
 
         return str(c)
@@ -686,7 +688,31 @@ class PerRequestTestCase(unittest.TestCase):
 
         rsp = self.vhost_get("test_PythonOption_remove")
 
-        if (rsp != "[]"):
+        if (rsp != "[('PythonOptionTest2', 'new_value2')]"):
+            self.fail(`rsp`)
+
+    def test_PythonOption_remove2_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_PythonOption_remove2"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::PythonOption_items"),
+                                  PythonOption('PythonOptionTest'),
+                                  PythonOption('PythonOptionTest2 "new_value2"'),
+                                  PythonOption('PythonOptionTest3 new_value3'),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_PythonOption_remove2(self):
+
+        print "\n  * Testing PythonOption remove2"
+
+        rsp = self.vhost_get("test_PythonOption_remove2")
+
+        if (rsp != "[('PythonOptionTest2', 'new_value2'), ('PythonOptionTest2', 'new_value2')]"):
             self.fail(`rsp`)
 
     def test_util_fieldstorage_conf(self):
@@ -1092,6 +1118,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_override"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove"))
+        perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove2"))
         perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
         perRequestSuite.addTest(PerRequestTestCase("test_trans"))
