@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.29 2000/09/05 12:46:55 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.30 2000/09/13 13:29:04 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -96,13 +96,15 @@
 #error Python threading must be enabled on Windows
 #endif
 
+#if !defined(WIN32)
 #include <sys/socket.h>
+#endif
 
 /******************************************************************
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.5"
+#define VERSION_COMPONENT "mod_python/2.5.1"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define GLOBAL_INTERPRETER "global_interpreter"
@@ -126,6 +128,10 @@ static PyObject * interpreters = NULL;
 
 /* list of modules to be imported from PythonImport */
 static table *python_imports = NULL;
+
+/* pool given to us in ChildInit. We use it for 
+   server.register_cleanup() */
+pool *child_init_pool = NULL;
 
 /* some forward declarations */
 void python_decref(void *object);
@@ -296,7 +302,8 @@ typedef struct serverobject {
 } serverobject;
 
 static void server_dealloc(serverobject *self);
-static PyObject * server_getattr(serverobject *self, char *name);
+static PyObject *server_register_cleanup(serverobject *self, PyObject *args);
+static PyObject *server_getattr(serverobject *self, char *name);
 
 static PyTypeObject serverobjecttype = {
     PyObject_HEAD_INIT(NULL)
@@ -317,6 +324,11 @@ static PyTypeObject serverobjecttype = {
 };
 
 #define is_serverobject(op) ((op)->ob_type == &serverobjecttype)
+
+static PyMethodDef serverobjectmethods[] = {
+    {"register_cleanup",     (PyCFunction) server_register_cleanup,     METH_VARARGS},
+    { NULL, NULL } /* sentinel */
+};
 
 #define OFF(x) offsetof(server_rec, x)
 static struct memberlist server_memberlist[] = {
@@ -561,6 +573,7 @@ typedef struct
 typedef struct
 {
     request_rec  *request_rec;
+    server_rec   *server_rec;
     PyObject     *handler;
     const char   *interpreter;
     PyObject     *data;
@@ -1254,6 +1267,15 @@ static void server_dealloc(serverobject *self)
 
 static PyObject * server_getattr(serverobject *self, char *name)
 {
+
+    PyObject *res;
+
+    res = Py_FindMethod(serverobjectmethods, (PyObject *)self, name);
+    if (res != NULL)
+	return res;
+    
+    PyErr_Clear();
+
     if (strcmp(name, "next") == 0)
 	/* server.next serverobject is created as needed */
 	if (self->next == NULL) {
@@ -1285,6 +1307,58 @@ static PyObject * server_getattr(serverobject *self, char *name)
 	return PyMember_Get((char *)self->server, server_memberlist, name);
 
 }
+
+/**
+ ** server.register_cleanup(handler, data)
+ **
+ *    same as request.register_cleanup, except the server pool is used.
+ *    the server pool gets destroyed before the child dies or when the
+ *    whole process dies in multithreaded situations.
+ */
+
+static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
+{
+
+    cleanup_info *ci;
+    PyObject *handler = NULL;
+    PyObject *data = NULL;
+    requestobject *req = NULL;
+
+    if (! PyArg_ParseTuple(args, "OO|O", &req, &handler, &data))
+	return NULL; 
+
+    if (! is_requestobject(req)) {
+	PyErr_SetString(PyExc_ValueError, "first argument must be a request object");
+	return NULL;
+    }
+    else if(!PyCallable_Check(handler)) {
+	PyErr_SetString(PyExc_ValueError, 
+			"second argument must be a callable object");
+	return NULL;
+    }
+    
+    ci = (cleanup_info *)malloc(sizeof(cleanup_info));
+    ci->request_rec = NULL;
+    ci->server_rec = self->server;
+    Py_INCREF(handler);
+    ci->handler = handler;
+    ci->interpreter = ap_table_get(req->request_rec->notes, "python_interpreter");
+    if (data) {
+	Py_INCREF(data);
+	ci->data = data;
+    }
+    else {
+	Py_INCREF(Py_None);
+	ci->data = Py_None;
+    }
+    
+    ap_register_cleanup(child_init_pool, ci, python_cleanup, 
+			ap_null_cleanup);
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 
 /********************************
   ***  end of server object ***
@@ -1698,7 +1772,9 @@ static PyObject * req_send_http_header(requestobject *self, PyObject *args)
 
 static PyObject * req_child_terminate(requestobject *self, PyObject *args)
 {
+#ifndef MULTITHREAD
     ap_child_terminate(self->request_rec);
+#endif
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -1721,6 +1797,7 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
 
     ci = (cleanup_info *)malloc(sizeof(cleanup_info));
     ci->request_rec = self->request_rec;
+    ci->server_rec = self->request_rec->server;
     if (PyCallable_Check(handler)) {
 	Py_INCREF(handler);
 	ci->handler = handler;
@@ -2809,9 +2886,21 @@ static int python_handler(request_rec *req, char *handler)
 	     * authoritative, let the others handle it
 	     */
 	    if (strcmp(handler, "PythonAuthenHandler") == 0) {
-		if ((result == HTTP_UNAUTHORIZED) && 
-		    (! conf->authoritative))
-		    result = DECLINED;
+		if (result == HTTP_UNAUTHORIZED)
+		{
+		    if   (! conf->authoritative)
+			result = DECLINED;
+		    else {
+			/*
+			 * This will insert a WWW-Authenticate header
+			 * to let the browser know that we are using
+			 * Basic authentication. This function does check
+			 * to make sure that auth is indeed Basic, no
+			 * need to do that here.
+			 */
+			ap_note_basic_auth_failure(req);
+		    }
+		}
 	    }
 	}
     } 
@@ -2870,7 +2959,10 @@ void python_cleanup(void *data)
 #endif
 
     /* get/create interpreter */
-    idata = get_interpreter_data(ci->interpreter, ci->request_rec->server);
+    if (ci->request_rec)
+	idata = get_interpreter_data(ci->interpreter, ci->request_rec->server);
+    else
+	idata = get_interpreter_data(ci->interpreter, ci->server_rec);
 
 #ifdef WITH_THREAD
     /* release the lock */
@@ -2878,10 +2970,14 @@ void python_cleanup(void *data)
 #endif
 
     if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
-		      "python_cleanup: get_interpreter_data returned NULL!");
+	if (ci->request_rec)
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+			  "python_cleanup: get_interpreter_data returned NULL!");
+	else
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
+			 "python_cleanup: get_interpreter_data returned NULL!");
 	Py_DECREF(ci->handler);
-	Py_DECREF(ci->data);
+	Py_XDECREF(ci->data);
 	free(ci);
         return;
     }
@@ -2912,12 +3008,22 @@ void python_cleanup(void *data)
 	Py_DECREF(pvalue);
 	Py_DECREF(ptb);
 
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
-		      "python_cleanup: Error calling cleanup object %s", 
-		      PyString_AsString(handler));
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
-		      "    %s: %s", PyString_AsString(stype), 
-		      PyString_AsString(svalue));
+	if (ci->request_rec) {
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+			  "python_cleanup: Error calling cleanup object %s", 
+			  PyString_AsString(handler));
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+			  "    %s: %s", PyString_AsString(stype), 
+			  PyString_AsString(svalue));
+	}
+	else {
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
+			 "python_cleanup: Error calling cleanup object %s", 
+			 PyString_AsString(handler));
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
+			  "    %s: %s", PyString_AsString(stype), 
+			  PyString_AsString(svalue));
+	}
 
 	Py_DECREF(handler);
 	Py_DECREF(stype);
@@ -3425,6 +3531,17 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
     PyThreadState *tstate;
 #endif
 
+    /*
+     * Cleanups registered first will be called last. This will
+     * end the Python enterpreter *after* all other cleanups.
+     */
+    ap_register_cleanup(p, NULL, (void (*)(void *))Py_Finalize, ap_null_cleanup);
+
+    /*
+     * remember the pool in a global var. we may use it
+     * later in server.register_cleanup()
+     */
+    child_init_pool = p;
 
     if (python_imports) {
 
@@ -3516,9 +3633,6 @@ static int PythonAuthenHandler(request_rec *req) {
 }
 static int PythonAuthzHandler(request_rec *req) {
     return python_handler(req, "PythonAuthzHandler");
-}
-static void PythonChildExitHandler(server_rec *srv, pool *p) {
-    Py_Finalize();
 }
 static int PythonFixupHandler(request_rec *req) {
     return python_handler(req, "PythonFixupHandler");
@@ -3614,6 +3728,14 @@ command_rec python_commands[] =
 	OR_ALL,
 	RAW_ARGS,
 	"Python clean up handlers."
+    },
+    {
+	"PythonChildExitHandler",
+	directive_PythonChildExitHandler,
+	NULL,
+	OR_ALL,
+	RAW_ARGS,
+	"Python child exit handlers."
     },
     {
 	"PythonDebug",                 
@@ -3814,7 +3936,7 @@ module python_module =
   PythonLogHandler,              /* [10] logger */
   PythonHeaderParserHandler,     /* [3] header parser */
   PythonChildInitHandler,        /* process initializer */
-  PythonChildExitHandler,        /* process exit/cleanup */
+  NULL,                          /* process exit/cleanup *//* we use register_cleanup */
   PythonPostReadRequestHandler   /* [1] post read_request handling */
 };
 
