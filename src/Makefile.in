@@ -88,10 +88,6 @@ mod_python.so: $(SRCS) @EPRINTF_HACK@ @FLOATDIDF_HACK@
 	@echo '   you can use make install_dso and make install_py_lib)'
 	@echo
 
-depend:
-	@$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \
-			sed 's|\(.*\)\.o|$(srcdir)/\1.c|'`
-
 clean:
 	rm -rf $(OBJS) core libpython.a mod_python.so *~ .libs
 
@@ -101,13 +97,5 @@ _eprintf.o:
 	ar -x `gcc -print-libgcc-file-name` _eprintf.o
 _floatdidf.o:
 	ar -x `gcc -print-libgcc-file-name` _floatdidf.o
-
-mod_python.o: mod_python.c
-_apachemodule.o: _apachemodule.c
-requestobject.o: requestobject.c
-tableobject.o: tableobject.c
-util.o: util.c
-serverobject.o: serverobject.c
-connobject.o: connobject.c
 
 # DO NOT DELETE THIS LINE
