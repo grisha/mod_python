@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.30 2003/07/14 20:51:32 grisha Exp $
+ # $Id: tests.py,v 1.31 2003/07/24 19:00:47 grisha Exp $
  #
 
 # mod_python tests
@@ -752,7 +752,7 @@ def Cookie_Cookie(req):
 
     from mod_python import Cookie
 
-    cookies = Cookie.getCookie(req)
+    cookies = Cookie.getCookies(req)
 
     for k in cookies:
         Cookie.setCookie(req, cookies[k])
@@ -765,10 +765,10 @@ def Cookie_MarshalCookie(req):
 
     from mod_python import Cookie
 
-    cookies = Cookie.getCookie(req, Cookie.MarshalCookie, "secret")
+    cookies = Cookie.getCookies(req, Cookie.MarshalCookie, "secret")
 
     for k in cookies:
-        Cookie.setCookie(req, cookies[k])
+        Cookie.setCookies(req, cookies[k])
 
     req.write("test ok")
     

@@ -1488,12 +1488,12 @@ specification published by Netscape.
 
 \begin{notice}
   Even though there are official IETF RFC's describing HTTP State
-  Management Mechanism using cookies, the de facto standard supported by
-  most browsers is the original Netscape specification.  Further, true
-  compliance with IETF standards is actually incompatible with many
-  popular browsers, even those that claim to be RFC-compliant.
-  Therefore, this module supports the current common practice, and is
-  not fully RFC compliant.
+  Management Mechanism using cookies, the de facto standard supported
+  by most browsers is the original Netscape specification.
+  Furthermore, true compliance with IETF standards is actually
+  incompatible with many popular browsers, even those that claim to be
+  RFC-compliant.  Therefore, this module supports the current common
+  practice, and is not fully RFC compliant.
 \end{notice}
 
 \begin{seealso}
@@ -1617,15 +1617,15 @@ spamcookie = mycookies["spam"]
   should not be cached.
 \end{funcdesc}
 
-\begin{funcdesc}{getCookie}{req \optional{, Class, data}}
-  This is a convenience function for retrieving a cookie from incoming
+\begin{funcdesc}{getCookies}{req \optional{, Class, data}}
+  This is a convenience function for retrieving cookies from incoming
   headers. \var{req} is a mod_python \class{Request}
-  object. \var{Class} is a class whose \method{parse} method will be
+  object. \var{Class} is a class whose \method{parse()} method will be
   used to parse the cookies, it defaults to \code{Cookie}. \var{Data}
   is an optional argument which, if not \code{None}, will be passed as
-  the first argument to \method{parse} (This is useful for
+  the first argument to \method{parse()} (This is useful for
   \class{signedCookie} and \class{MarshalCookie} which require
-  \code{secret} as an additional argument to \method{parse}.
+  \code{secret} as an additional argument to \method{parse}).
 \end{funcdesc}
 
 \subsection{Examples\label{pyapi-cookie-example}}

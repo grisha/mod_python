@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.5 2003/07/01 20:30:20 grisha Exp $
+ # $Id: Cookie.py,v 1.6 2003/07/24 19:00:46 grisha Exp $
 
 """
 
@@ -375,7 +375,7 @@ def setCookie(req, cookie):
 
     req.headers_out.add("Set-Cookie", str(cookie))
 
-def getCookie(req, Class=Cookie, data=None):
+def getCookies(req, Class=Cookie, data=None):
     """
     A shorthand for retrieveing and parsing cookies given
     a Cookie class. The class must be one of the classes from
