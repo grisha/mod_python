@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.93 2003/08/01 01:53:13 grisha Exp $
+ * $Id: mod_python.c,v 1.94 2003/08/08 23:35:30 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -350,17 +350,34 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
 	char fname[255];
-	sprintf(fname, "/tmp/mp_mutex%d", n);
+	int pid = getpid();
+
+	snprintf(fname, 255, "/tmp/mpmtx%d%d", pid, n);
 #else
 	char *fname = NULL;
 #endif
 	rc = apr_global_mutex_create(&mutex[n], fname, APR_LOCK_DEFAULT, 
 				     s->process->pool);
 	if (rc != APR_SUCCESS) {
-	    ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, s,
-			 "mod_python: Failed to create global mutex %s.",
-			 (!fname) ? "<null>" : fname);
-	    return rc;
+	    ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
+			 "mod_python: Failed to create global mutex %d of %d (%s).",
+			 n, locks, (!fname) ? "<null>" : fname);
+	    if (n > 0) {
+		/* we were able to crate at least one, so lets just print a 
+		   warning/hint and proceed
+		*/
+		ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+			     "mod_python: We can probably continue, but with diminished ability "
+			     "to process session locks.");
+		ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+			     "mod_python: Hint: On Linux, the problem may be the number of "
+			     "available semaphores, check 'sysctl kernel.sem'");
+		break;
+		
+	    }
+	    else {
+		return rc;
+	    }
 	}
     }
     return APR_SUCCESS;
