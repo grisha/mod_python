@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.11 2004/01/19 18:53:01 grisha Exp $
+ # $Id: Session.py,v 1.12 2004/01/26 17:58:06 grisha Exp $
 
 import apache, Cookie
 import _apache
@@ -204,6 +204,13 @@ class BaseSession(dict):
             if os.name == 'nt' and c.path[-1] == '\\':
                 c.path = c.path[:-1]
         
+            # Sometimes there is no path, e.g. when Location
+            # is used. When Alias or UserDir are used, then
+            # the path wouldn't match the URI. In those cases
+            # just default to '/'
+            if not c.path or not self._req.uri.startswith(c.path):
+                c.path = '/'
+
         return c
 
     def invalidate(self):
@@ -310,7 +317,7 @@ def dbm_cleanup(data):
 class DbmSession(BaseSession):
 
     def __init__(self, req, dbm=None, sid=0, secret=None, dbmtype=anydbm,
-                 timeout=0):
+                 timeout=0, lock=1):
 
         if not dbm:
             opts = req.get_options()
@@ -322,8 +329,8 @@ class DbmSession(BaseSession):
         self._dbmfile = dbm
         self._dbmtype = dbmtype
 
-        BaseSession.__init__(self, req, sid=sid,
-                             secret=secret, timeout=timeout)
+        BaseSession.__init__(self, req, sid=sid, secret=secret,
+                             timeout=timeout, lock=lock)
 
     def _set_dbm_type(self):
         module = whichdb.whichdb(self._dbmfile)
@@ -384,10 +391,10 @@ class MemorySession(BaseSession):
 
     sdict = {}
 
-    def __init__(self, req, sid=0, secret=None, timeout=0):
+    def __init__(self, req, sid=0, secret=None, timeout=0, lock=1):
 
-        BaseSession.__init__(self, req, sid=sid,
-                             secret=secret, timeout=timeout)
+        BaseSession.__init__(self, req, sid=sid, secret=secret,
+                             timeout=timeout, lock=lock)
 
     def do_cleanup(self):
         self._req.register_cleanup(mem_cleanup, MemorySession.sdict)
@@ -407,7 +414,7 @@ class MemorySession(BaseSession):
             del MemorySession.sdict[self._sid]
         except KeyError: pass
 
-def Session(req, sid=0, secret=None, timeout=0):
+def Session(req, sid=0, secret=None, timeout=0, lock=1):
 
     threaded = _apache.mpm_query(apache.AP_MPMQ_IS_THREADED)
     forked = _apache.mpm_query(apache.AP_MPMQ_IS_FORKED)
@@ -415,9 +422,9 @@ def Session(req, sid=0, secret=None, timeout=0):
 
     if (threaded and ((not forked) or (daemons == 1))):
         return MemorySession(req, sid=sid, secret=secret,
-                             timeout=timeout)
+                             timeout=timeout, lock=lock)
     else:
         return DbmSession(req, sid=sid, secret=secret,
-                          timeout=timeout)
+                          timeout=timeout, lock=lock)
 
     
