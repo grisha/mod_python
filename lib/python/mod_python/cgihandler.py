@@ -1,13 +1,25 @@
 """
  (C) Gregory Trubetskoy, 1998 <grisha@ispol.com>
 
+ XXX This handler leaks memory whith scripts processing large
+ POST operations with cgi.py.
+ 
+
 """
 
 import apache
 import imp
 import os
 
-def handle(req):
+# the next statement  deserves some explaining.
+# it seems that the standard os.environ object looses
+# memory if the environment is manipulated frequently. Since for
+# CGI you have to rebuild it for every request, your httpd will
+# grow rather fast. I am not exactly sure why it happens and if there
+# is a more sensible remedy, but this seems to work OK.
+os.environ = {}
+
+def handler(req):
 
     # get the filename of the script
     if req.subprocess_env.has_key("script_filename"):
@@ -32,7 +44,6 @@ def handle(req):
             fd, path, desc = imp.find_module(module_name, [dir])
         except ImportError:
             raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
-
 
         # this executes the module
         imp.load_module(module_name, fd, path, desc)

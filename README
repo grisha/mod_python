@@ -1,3 +1,24 @@
+
+
+XXX some quick stats:
+
+	import cgi
+	print "hello"
+
+plain cgi:
+
+	5 req/s
+
+cgihandler
+
+	40 req/s
+
+handler function
+
+	140 req/s
+
+
+
 Httpdapy 1.7b - Dec 1999
 
 Copyright Gregory Trubetskoy <grisha@ispol.com>
