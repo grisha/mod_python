@@ -1,3 +1,6 @@
+Nov 17 2000 -	I forgot to uncomment type initialization. type(req.headers_in)
+		would segfault. Fixed. Continuing work on publisher.py module.
+
 Nov 08 2000 -	read() and reqadline() now behave very much like the standard
 		Python file object counterparts. Added James Gessling's VMS
 		instructions.

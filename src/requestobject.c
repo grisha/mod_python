@@ -51,7 +51,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.2 2000/11/09 00:09:18 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.3 2000/11/18 04:21:32 gtrubetskoy Exp $
  *
  */
 
@@ -1056,7 +1056,7 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
 }
 
 PyTypeObject MpRequest_Type = {
-    PyObject_HEAD_INIT(NULL)
+    PyObject_HEAD_INIT(&PyType_Type)
     0,
     "mp_request",
     sizeof(requestobject),

@@ -51,7 +51,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.1 2000/10/16 20:58:57 gtrubetskoy Exp $
+ * $Id: connobject.c,v 1.2 2000/11/18 04:21:32 gtrubetskoy Exp $
  *
  */
 
@@ -216,7 +216,7 @@ static PyObject * conn_getattr(connobject *self, char *name)
 }
 
 PyTypeObject MpConn_Type = {
-    PyObject_HEAD_INIT(NULL)
+    PyObject_HEAD_INIT(&PyType_Type)
     0,
     "mp_conn",
     sizeof(connobject),
