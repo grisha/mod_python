@@ -42,7 +42,7 @@
  # ====================================================================
  #
 
-dnl $Id: configure.in,v 1.15 2002/06/21 20:12:12 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.16 2002/08/18 18:43:36 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -116,6 +116,7 @@ fi
 AC_SUBST(LIBEXECDIR)
 AC_SUBST(EPRINTF_HACK)
 AC_SUBST(FLOATDIDF_HACK)
+AC_SUBST(HTTPD)
 if test -z "$APXS"; then
   AC_MSG_WARN([**** apxs was not found, DSO compilation will not be available.])
   AC_MSG_WARN([**** You can use --with-apxs to specify where your apxs is.])
@@ -127,8 +128,8 @@ else
 
   # check Apache version
   AC_MSG_CHECKING(Apache version)
-  httpd="`${APXS} -q SBINDIR`/`${APXS} -q TARGET`"
-  ver=`$httpd -v | awk '/version/ {print $3}' | awk -F/ '{print $2}'`
+  HTTPD="`${APXS} -q SBINDIR`/`${APXS} -q TARGET`"
+  ver=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}'`
   AC_MSG_RESULT($ver)
 
   # make version begins with 2
@@ -162,6 +163,7 @@ fi
 AC_SUBST(AP_SRC)
 AC_SUBST(AP_SRC_OWN)
 AC_SUBST(AP_SRC_GRP)
+## static is disabled, thus no --with-apache
 ##AC_MSG_CHECKING(for --with-apache)
 AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
 [
@@ -183,8 +185,8 @@ AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
   # note who owns the apache source directory
   AP_SRC_OWN="`ls -ld $AP_SRC | awk '{print $3}'`"
   AP_SRC_GRP="`ls -ld $AP_SRC | awk '{print $4}'`"
-],
-AC_MSG_RESULT(no))
+],)
+##AC_MSG_RESULT(no))
 
 AC_SUBST(STATIC)
 if test -z "$AP_SRC"; then
@@ -301,7 +303,12 @@ if test -z "${MKDEP}"; then
   AC_PATH_PROG(MKDEP, "makedepend")
 fi
 
-AC_OUTPUT(Makefile src/Makefile src/libpython.module Doc/Makefile)
+# this for the test.py script
+AC_SUBST(TEST_SERVER_ROOT)
+TEST_SERVER_ROOT="`pwd`/test"
+ln -fs ../../src/mod_python.so test/modules/mod_python.so
+
+AC_OUTPUT(Makefile src/Makefile src/libpython.module Doc/Makefile test/testconf.py)
 
 if test -n "$MKDEP"; then
   # make dependencies
