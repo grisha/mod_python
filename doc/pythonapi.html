@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.9 2000/09/04 15:54:56 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.10 2000/09/04 19:21:20 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -352,6 +352,13 @@
 	    This function is affected by the <code>Timeout</code> Apache configuration
 	    directive. The read will be aborted and an IOError raised if the Timout
 	    is reached while reading client data.
+
+	  <dt><br><b>register_cleanup(callable function, data=None)</b>
+	  <dd>
+	    Registers a cleanup. Argument <em>function</em> can be any callable object,
+	    the optional argument <em>data</em> can be any object. At the very end of
+	    the request, just before the actual request record is destroyed by Apache,
+	    function <em>function</em> will be called with one argument, <em>data</em>.
 
 	  <dt><br><b>send_http_header()</b>
 	  <dd>
@@ -767,7 +774,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Fri Sep  1 18:17:08 EDT 2000
+Last modified: Mon Sep  4 14:42:13 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
