@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.11 2000/05/29 15:50:59 grisha Exp $
+ * $Id: mod_python.c,v 1.12 2000/05/29 16:55:11 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1734,25 +1734,6 @@ static PyObject * log_error(PyObject *self, PyObject *args)
 }
 
 /**
- ** del_request_object
- **
- *      This removes the reference to the request object created
- *      by get_request_object
- */
-
-static void del_request_object()
-{
-    PyObject *dict;
-    dict = PyThreadState_GetDict();
-    if (PyMapping_HasKeyString(dict, "python_request")) {
-	printf("deleting %d\n\n", PyDict_GetItemString(dict, "python_request"));
-	PyDict_DelItemString(dict, "python_request");
-    }
-    else
-	printf("couldn't find what to delete\n\n");
-}
-
-/**
  ** get_request_object
  **
  *      This creates or retrieves a previously created request object.
@@ -1764,14 +1745,16 @@ static requestobject *get_request_object(request_rec *req,
 					 PyThreadState *tstate)
 {
     requestobject *request_obj;
-    PyObject *dict;
+    char *s;
+    char s2[40];
 
-    dict = PyThreadState_GetDict();
-    request_obj = (requestobject *) PyDict_GetItemString(dict, 
-							 "python_request");
-    if (request_obj) {
-	/* we have one reference at creation that is shared, no INCREF here*/
-	printf("we already have %d, tstate %d\n", request_obj, tstate);
+    /* see if there is a request object already */
+    /* XXX there must be a cleaner way to do this, atoi is slow? */
+    /* since tables only understand strings, we need to do some conversion */
+    
+    s = (char *) ap_table_get(req->notes, "python_request_ptr");
+    if (s) {
+	request_obj = (requestobject *) atoi(s);
 	return request_obj;
     }
     else {
@@ -1799,13 +1782,11 @@ static requestobject *get_request_object(request_rec *req,
 	    Py_END_ALLOW_THREADS;
 	    request_obj = make_requestobject(req);
 	}
-
-	printf("created %d, tstate %d\n", request_obj, tstate);
-	/* store the pointer to this object */
-	PyDict_SetItemString(dict, "python_request", 
-			     (PyObject *)request_obj);
-	ap_register_cleanup(req->pool, NULL, del_request_object, 
-			    ap_null_cleanup);
+	
+	/* store the pointer to this object in notes */
+	/* XXX this is not good... */
+	sprintf(s2, "%d", (int) request_obj);
+	ap_table_set(req->notes, "python_request_ptr", s2);
 	return request_obj;
     }
 }
