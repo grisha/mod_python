@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.82 2004/02/16 19:47:27 grisha Exp $
+ # $Id: apache.py,v 1.83 2004/06/30 13:52:00 grisha Exp $
 
 import sys
 import traceback
@@ -538,7 +538,7 @@ def build_cgi_env(req):
     req.add_common_vars()
     env = req.subprocess_env.copy()
         
-    if len(req.path_info) > 0:
+    if req.path_info and len(req.path_info) > 0:
         env["SCRIPT_NAME"] = req.uri[:-len(req.path_info)]
     else:
         env["SCRIPT_NAME"] = req.uri
