@@ -65,7 +65,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
 
     // we make sure that the object dictionary is there
     // before registering the object with the GC
-    _PyObject_GetDictPtr(result);
+    _PyObject_GetDictPtr((PyObject*)result);
     PyObject_GC_Track(result);
 
     return (PyObject *) result;
