@@ -1,5 +1,5 @@
 dnl Copyright 2000 Gregory Trubetskoy <grisha@ispol.com>
-dnl $Id: configure.in,v 1.3 2000/10/16 20:58:30 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.4 2000/10/18 20:01:28 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -64,7 +64,7 @@ fi
 if test -z "$APXS"; then
   AC_MSG_CHECKING(for apxs in your PATH)
   AC_PATH_PROG(APXS, apxs)
-  if test -z "$APXS"; then
+  if test -n "$APXS"; then
     AC_MSG_RESULT([found $APXS, we'll use this. Use --with-apxs to specify another.])
   fi
 fi  
@@ -224,9 +224,23 @@ fi
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
 AC_MSG_RESULT($PY_INCLUDES)
 
+AC_SUBST(MKDEP)
+
+AC_MSG_CHECKING(for mkdep)
+AC_PATH_PROG(MKDEP, "mkdep")
+
+if test -z "${MKDEP}"; then
+  AC_MSG_CHECKING(for makedepend)
+  AC_PATH_PROG(MKDEP, "makedepend")
+fi
+
 AC_OUTPUT(Makefile src/Makefile src/libpython.module)
 
-# make dependencies
-echo "analyzing dependencies"
-cd src
-make depend
+if test -n "$MKDEP"; then
+  # make dependencies
+  echo "analyzing dependencies"
+  cd src
+  make depend
+fi
+
+

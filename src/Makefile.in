@@ -48,13 +48,13 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.2 2000/10/16 20:58:57 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.3 2000/10/18 20:01:29 gtrubetskoy Exp $
 
 CC=gcc
 RANLIB=@RANLIB@
 AR=@AR@
 APXS=@APXS@
-MKDEP=mkdep
+MKDEP=@MKDEP@
 
 INCLUDES=@INCLUDES@
 LIBS=@LIBS@
@@ -109,4 +109,12 @@ depend:
 clean:
 	rm -f $(OBJS) core libpython.a mod_python.so *~
 
+mod_python.o: mod_python.c
+_apachemodule.o: _apachemodule.c
+requestobject.o: requestobject.c
+tableobject.o: tableobject.c
+util.o: util.c
+serverobject.o: serverobject.c
+connobject.o: connobject.c
 
+# DO NOT DELETE THIS LINE
