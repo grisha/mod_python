@@ -52,36 +52,58 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: httpdconf.py,v 1.1 2002/10/08 21:38:54 grisha Exp $
+ # $Id: httpdconf.py,v 1.2 2002/10/10 21:28:32 grisha Exp $
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
 
 class Directive:
 
-    def __init__(self, name, val):
+    def __init__(self, name, val, flipslash=1):
         self.name = name
         self.val = val
         self.indent = 0
+        self.flipslash = flipslash
 
     def __str__(self):
 
         i = " " * self.indent
-        return i + '%s %s\n' % (self.name, self.val)
+        s = i + '%s %s\n' % (self.name, self.val)
+        if self.flipslash:
+            s = s.replace("\\", "/")
+        return s
 
-class ContainerTag:
-
-    def __init__(self, tag, attr, args):
-        self.tag = tag
-        self.attr = attr
+class Container:
+    
+    def __init__(self, *args):
         self.args = args
         self.indent = 0
 
     def __str__(self):
 
         i = " " * self.indent
+        s = "\n"
+        for arg in self.args:
+            s += i + "%s" % str(arg)
+
+        return s
+
+class ContainerTag:
+
+    def __init__(self, tag, attr, args, flipslash=1):
+        self.tag = tag
+        self.attr = attr
+        self.args = args
+        self.indent = 0
+        self.flipslash = flipslash
+
+    def __str__(self):
+
+        i = " " * self.indent
 
         s = i + "<%s %s>\n" % (self.tag, self.attr)
+        if self.flipslash:
+            s = s.replace("\\", "/")
         for arg in self.args:
             arg.indent = self.indent + 2
             s += i + "%s" % str(arg)
@@ -101,6 +123,10 @@ class AuthName(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class CustomLog(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class Directory(ContainerTag):
     def __init__(self, dir, *args):
         ContainerTag.__init__(self, self.__class__.__name__, dir, args)
@@ -109,7 +135,59 @@ class DocumentRoot(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class ErrorLog(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class IfModule(ContainerTag):
+    def __init__(self, dir, *args):
+        ContainerTag.__init__(self, self.__class__.__name__, dir, args)
+
 class Listen(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class LoadModule(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class LogLevel(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class LogFormat(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val, flipslash=0)
+
+class MaxClients(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class MaxRequestsPerChild(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class MaxSpareServers(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class MaxSpareThreads(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class MaxThreadsPerChild(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class MinSpareThreads(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class NumServers(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class PidFile(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
@@ -131,7 +209,7 @@ class PythonDebug(Directive):
 
 class PythonPath(Directive):
     def __init__(self, val):
-        Directive.__init__(self, self.__class__.__name__, val)
+        Directive.__init__(self, self.__class__.__name__, val, flipslash=0)
 
 class PythonOutputFilter(Directive):
     def __init__(self, val):
@@ -153,7 +231,27 @@ class ServerName(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class ServerRoot(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class StartServers(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class StartThreads(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class ThreadsPerChild(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class Timeout(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class TypesConfig(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
@@ -162,3 +260,7 @@ class VirtualHost(ContainerTag):
         ContainerTag.__init__(self, self.__class__.__name__, addr, args)
 
 
+
+    
+             
+    

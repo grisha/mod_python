@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.11 2002/10/09 15:06:53 grisha Exp $
+ # $Id: tests.py,v 1.12 2002/10/10 21:28:33 grisha Exp $
  #
 
 # mod_python tests
@@ -62,6 +62,7 @@ import unittest
 import re
 import time
 import os
+import cStringIO
 
 class SimpleTestCase(unittest.TestCase):
 
@@ -174,8 +175,8 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("req.hostname isn't 'test_internal'")
 
         log("    req.request_time: %s" % `req.request_time`)
-        if (time.time() - req.request_time) > 2:
-            self.fail("req.request_time suggests request started more than 2 secs ago")
+        if (time.time() - req.request_time) > 10:
+            self.fail("req.request_time suggests request started more than 10 secs ago")
 
         log("    req.status_line: %s" % `req.status_line`)
         if req.status_line:
@@ -345,7 +346,7 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("req.args should be None")
             
         log("    req.finfo: %s" % `req.finfo`)
-        if req.finfo[10] != req.canonical_filename:
+        if req.finfo[10] and (req.finfo[10] != req.canonical_filename):
             self.fail("req.finfo[10] should be the (canonical) filename")
         
         log("    req.parsed_uri: %s" % `req.parsed_uri`)
@@ -399,8 +400,11 @@ def make_suite(req):
 
 def handler(req):
 
-    tr = unittest.TextTestRunner()
+    out = cStringIO.StringIO()
+    tr = unittest.TextTestRunner(out)
     result = tr.run(make_suite(req))
+
+    req.log_error(out.getvalue())
 
     if result.wasSuccessful():
         req.write("test ok")
@@ -524,6 +528,11 @@ def simplehandler(req):
     return apache.OK
 
 def connectionhandler(conn):
+
+    # read whatever
+    s = conn.readline().strip()
+    while s:
+        s = conn.readline().strip()
 
     # fake an HTTP response
     conn.write("HTTP/1.1 200 OK\r\n")
