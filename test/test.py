@@ -715,6 +715,30 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "[('PythonOptionTest2', 'new_value2'), ('PythonOptionTest3', 'new_value3')]"):
             self.fail(`rsp`)
 
+    def test_interpreter_per_directive_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_interpreter_per_directive"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  PythonInterpPerDirective('On'),
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::interpreter"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_interpreter_per_directive(self):
+
+        print "\n  * Testing interpreter per directive"
+
+        rsp = self.vhost_get("test_interpreter_per_directive")
+
+        interpreter_name = DOCUMENT_ROOT.replace('\\','/')+'/'
+        
+        if (rsp != interpreter_name):
+            self.fail(`rsp`)
+
     def test_util_fieldstorage_conf(self):
 
         c = VirtualHost("*",
@@ -1133,6 +1157,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_Session_Session"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
+        perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)
         self.startHttpd()
