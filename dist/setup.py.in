@@ -1,0 +1,21 @@
+
+# $Id: setup.py.in,v 1.1 2002/12/28 03:42:32 grisha Exp $
+
+from distutils.core import setup
+
+setup(name="Mod_python",
+      version="@@VERSION@@",
+      description="Apache/Python Integration",
+      author="Gregory Trubetskoy et al",
+      author_email="mod_python@modpython.org",
+      url="http://www.modpython.org/",
+      packages=["mod_python"],
+      package_dir = {"mod_python":"../lib/python/mod_python"},
+      scripts=["win32_postinstall.py"],
+      data_files=[('', ['mod_python.so'])])
+
+
+# makes emacs go into python mode
+### Local Variables:
+### mode:python
+### End:
