@@ -1,3 +1,9 @@
+Apr 10 2002 -	Added a fix for a proble where if a module was indirectly
+		imported, it could then be accessed via the publisher
+
+Aug  4 2001 -   2.7.6 released. Sometime prior a publisher upload bug was 
+		fixed.
+
 Jun 11 2001 -	2.7.5 released for those who want Python 2.1
 
 Jun 11 2001 -	Changed configure.in to accomodate Python 2.1. It looks like
