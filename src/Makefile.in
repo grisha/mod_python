@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.8 2001/04/07 05:43:21 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.9 2001/09/06 20:27:31 gtrubetskoy Exp $
 
 CC=@CC@
 RANLIB=@RANLIB@
@@ -62,10 +62,11 @@ OBJS=		mod_python.o \
 		tableobject.o \
 		util.o \
 		serverobject.o \
-		connobject.o @EPRINTF_HACK@
+		connobject.o \
+		filterobject.o @EPRINTF_HACK@
 
 SRCS=		mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
-		serverobject.c connobject.c
+		serverobject.c connobject.c filterobject.c
 
 all:	@ALL@
 
@@ -76,7 +77,8 @@ mod_python.so: $(OBJS)
 	@echo
 	@echo 'Compiling for DSO. For static, do "make static"'
 	@echo
-	$(APXS) $(INCLUDES) -c $(OBJS) $(LIBS)
+	ld -G -o mod_python.so $(OBJS) $(LIBS)
+#	$(APXS) $(INCLUDES) -c $(OBJS) $(LIBS)
 	@echo
 	@echo 'Now su and make install'
 	@echo '  (or, if you only want to perform a partial install,'
