@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.6 2003/05/29 20:52:25 grisha Exp $
+ # $Id: Makefile.in,v 1.7 2003/06/13 02:52:03 sterling Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
@@ -86,7 +86,7 @@ src:
 	ln -s ../src
 
 clean:
-	rm -rf mod_python build dist
+	rm -rf mod_python build 
 
 distclean:
-	rm -rf mod_python src build dist mod_python.so setup.py Makefile MANIFEST MANIFSET.in
+	rm -rf mod_python src build mod_python.so setup.py Makefile MANIFEST MANIFSET.in
