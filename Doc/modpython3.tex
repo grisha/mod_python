@@ -41,14 +41,14 @@ Here is the html for the form:
 
 \begin{verbatim}
   <html>
-  Please provide feedback below:
+      Please provide feedback below:
   <p>                           
   <form action="form.py/email" method="POST">
 
-  Name: <input type="text" name="name"><br>
-  Email: <input type="text" name="email"><br>
-  Comment: <textarea name="comment" rows=4 cols=20></textarea><br>
-  <input type="submit">
+      Name:    <input type="text" name="name"><br>
+      Email:   <input type="text" name="email"><br>
+      Comment: <textarea name="comment" rows=4 cols=20></textarea><br>
+      <input type="submit">
 
   </form>
   </html>  
@@ -59,51 +59,50 @@ Note the \code{action} element of the \code{<form>} tag points to
 \filenq{form.py}, like this:
 
 \begin{verbatim}
-  import smtplib
+import smtplib
 
-  WEBMASTER = "webmaster"   # webmaster e-mail
-  SMTP_SERVER = "localhost" # your SMTP server
+WEBMASTER = "webmaster"   # webmaster e-mail
+SMTP_SERVER = "localhost" # your SMTP server
 
-  def email(req, name, email, comment):
+def email(req, name, email, comment):
 
-  # make sure the user provided all the parameters
-  if not (name and email and comment):
-  return "A required parameter is missing, \
-  please go back and correct the error"
+    # make sure the user provided all the parameters
+    if not (name and email and comment):
+        return "A required parameter is missing, \
+	       please go back and correct the error"
 
-  # create the message text
-  msg = """\
-  From: %s                                                                                                                                           
-  Subject: feedback
-  To: %s
+    # create the message text
+    msg = """\
+From: %s                                                                                                                                           
+Subject: feedback
+To: %s
 
-  I have the following comment:
+I have the following comment:
 
-  %s
+%s
 
-  Thank You,
+Thank You,
 
-  %s                                                                                                                                                 
+%s
 
-  """ % (email, WEBMASTER, comment, name)
+""" % (email, WEBMASTER, comment, name)
 
-  # send it out
-  conn = smtplib.SMTP(SMTP_SERVER)
-  conn.sendmail(email, [WEBMASTER], msg)
-  conn.quit()
+    # send it out
+    conn = smtplib.SMTP(SMTP_SERVER)
+    conn.sendmail(email, [WEBMASTER], msg)
+    conn.quit()
 
-  # provide feedback to the user
-  s = """\
-  <html>
+    # provide feedback to the user
+    s = """\
+<html>
 
-  Dear %s,<br>                                                                                                                                       
+Dear %s,<br>                                                                                                                                       
+Thank You for your kind comments, we
+will get back to you shortly.
 
-  Thank You for your kind comments, we
-  will get back to you shortly.
+</html>""" % name
 
-  </html>""" % name
-
-  return s
+    return s
 \end{verbatim}
 
 When the user clicks the Submit button, the publisher handler will
@@ -174,9 +173,9 @@ handlers, refer to Section \ref{directives},
 Let's pretend we have the following configuration: 
 \begin{verbatim}
   <Directory /mywebdir>
-  AddHandler python-program .py
-  PythonHandler myscript
-  PythonDebug On
+      AddHandler python-program .py
+      PythonHandler myscript
+      PythonDebug On
   </Directory>
 \end{verbatim}
 
@@ -187,14 +186,14 @@ forward slashes for backslashes) \file{/mywedir/myscript.py} that looks like
 this:
 
 \begin{verbatim}
-  from mod_python import apache
+from mod_python import apache
 
-  def handler(req):
+def handler(req):
 
-  req.content_type = "text/plain"
-  req.write("Hello World!")
+    req.content_type = "text/plain"
+    req.write("Hello World!")
 
-  return apache.OK
+    return apache.OK
 \end{verbatim}    
 
 Here is what's going to happen: The \code{AddHandler} directive tells
@@ -243,7 +242,7 @@ the following:
 
   \item
     \begin{verbatim}
-      from mod_python import apache
+from mod_python import apache
     \end{verbatim}
 
     This imports the apache module which provides us the interface to
@@ -252,7 +251,7 @@ the following:
 
   \item
     \begin{verbatim}
-      def handler(req):
+def handler(req):
     \end{verbatim}
 
     \index{handler} This is our \dfn{handler} function declaration. It
@@ -273,7 +272,7 @@ the following:
 
   \item
     \begin{verbatim}
-      req.content_type = "text/plain"
+req.content_type = "text/plain"
     \end{verbatim}
 
     This sets the content type to \samp{text/plain}. The default is usually
@@ -282,7 +281,7 @@ the following:
 
   \item
     \begin{verbatim}
-      req.write("Hello World!")
+req.write("Hello World!")
     \end{verbatim}
 
     This writes the \samp{Hello World!} string to the client. (Did I really
@@ -290,7 +289,7 @@ the following:
 
   \item
     \begin{verbatim}
-      return apache.OK
+return apache.OK
     \end{verbatim}
 
     This tells Apache that everything went OK and that the request has
@@ -330,10 +329,10 @@ handler when authentication is needed. We do this by adding the
 
 \begin{verbatim}
   <Directory /mywebdir>
-  AddHandler python-program .py
-  PythonHandler myscript
-  PythonAuthenHandler myscript
-  PythonDebug On
+      AddHandler python-program .py
+      PythonHandler myscript
+      PythonAuthenHandler myscript
+      PythonDebug On
   </Directory>
 \end{verbatim}
 
@@ -348,13 +347,13 @@ looks like this now:
 
 \begin{verbatim}
   <Directory /mywebdir>
-  AddHandler python-program .py
-  PythonHandler myscript
-  PythonAuthenHandler myscript
-  PythonDebug On
-  AuthType Basic
-  AuthName "Restricted Area"
-  require valid-user
+     AddHandler python-program .py
+     PythonHandler myscript
+     PythonAuthenHandler myscript
+     PythonDebug On
+     AuthType Basic
+     AuthName "Restricted Area"
+     require valid-user
   </Directory>
 \end{verbatim}          
 
@@ -364,17 +363,17 @@ this:
 
 \begin{verbatim}
 
-  from mod_python import apache
+from mod_python import apache
 
-  def authenhandler(req):
+def authenhandler(req):
 
-  user = req.user
-  pw = req.get_basic_auth_pw()
+    pw = req.get_basic_auth_pw()
+    user = req.user
 
-  if user == "spam" and pw == "eggs":
-  return apache.OK
-  else:
-  return apache.HTTP_UNAUTHORIZED
+    if user == "spam" and pw == "eggs":
+       return apache.OK
+    else:
+       return apache.HTTP_UNAUTHORIZED
 \end{verbatim}  
 
 Let's look at this line by line: 
@@ -383,7 +382,7 @@ Let's look at this line by line:
 
 \item
   \begin{verbatim}
-    def authenhandler(req):
+def authenhandler(req):
   \end{verbatim}
 
   This is the handler function declaration. This one is called
@@ -394,6 +393,17 @@ Let's look at this line by line:
 
 \item
   \begin{verbatim}
+    pw = req.get_basic_auth_pw()
+  \end{verbatim}
+  
+  This is how we obtain the password. The basic HTTP authentication
+  transmits the password in base64 encoded form to make it a little
+  bit less obvious. This function decodes the password and returns it
+  as a string. Note that we have to call this function before obtaining
+  the user name.
+
+\item
+  \begin{verbatim}
     user = req.user
   \end{verbatim}
   
@@ -401,18 +411,8 @@ Let's look at this line by line:
 
 \item
   \begin{verbatim}
-    pw = req.get_basic_auth_pw()
-  \end{verbatim}
-  
-  This is how we obtain the password. The basic HTTP authentication
-  transmits the password in base64 encoded form to make it a little
-  bit less obvious. This function decodes the password and returns it
-  as a string.
-
-\item
-  \begin{verbatim}
     if user == "spam" and pw == "eggs":
-    return apache.OK
+        return apache.OK
   \end{verbatim}
 
   We compare the values provided by the user, and if they are what we
@@ -424,7 +424,7 @@ Let's look at this line by line:
 \item
   \begin{verbatim}
     else:
-    return apache.HTTP_UNAUTHORIZED 
+        return apache.HTTP_UNAUTHORIZED 
   \end{verbatim}
 
   Else, we tell Apache to return \constant{HTTP_UNAUTHORIZED} to the

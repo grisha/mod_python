@@ -144,7 +144,7 @@ exception, and providing an HTTP error code as the exception value,
 e.g.
 
 \begin{verbatim}
-  raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 \end{verbatim}
 
 Handlers can send content to the client using the \method{req.write()}
@@ -163,12 +163,12 @@ Client data, such as POST requests, can be read by using the
 An example of a minimalistic handler might be: 
 
 \begin{verbatim}
-  from mod_python import apache
+from mod_python import apache
 
-  def requesthandler(req):
-  req.content_type = "text/plain"
-  req.write("Hello World!")
-  return apache.OK
+def requesthandler(req):
+    req.content_type = "text/plain"
+    req.write("Hello World!")
+    return apache.OK
 \end{verbatim}
 
 \section{Overview of a Filter Handler\label{pyapi-filter}}
@@ -212,17 +212,17 @@ And here is what the code for the \file{capitalize.py} might look
 like:
 
 \begin{verbatim}
-  from mod_python import apache
+from mod_python import apache
+  
+def outputfilter(filter):
 
-  def outputfilter(filter):
+    s = filter.read()
+    while s:
+        filter.write(s.upper())
+	s = filter.read()
 
-  s = filter.read()
-  while s:
-  filter.write(s.upper())
-  s = filter.read()
-
-  if s is None:
-  filter.close()
+    if s is None:
+        filter.close()
 
 \end{verbatim}
 
@@ -265,14 +265,14 @@ Apache configuration:
 Contents of \filenq{echo.py} file:
 
 \begin{verbatim}
-  from mod_python import apache
+from mod_python import apache
 
-  def connectionhandler(conn):
+def connectionhandler(conn):
 
-  while 1:
-  conn.write(conn.readline())
+    while 1:
+        conn.write(conn.readline())
 
-  return apache.OK
+    return apache.OK
 \end{verbatim}
 
 \section{\module{apache} -- Access to Apache Internals.}
@@ -296,7 +296,7 @@ mod_python.
 It is best imported like this:
 
 \begin{verbatim}
-  from mod_python import apache
+from mod_python import apache
 \end{verbatim}
 
 \module{mod_python.apache} module defines the following functions and
@@ -470,9 +470,9 @@ between handlers.
   like:
 
   \begin{verbatim}
-    if manager:
+if manager:
     req.add_handler("PythonHandler", "menu::admin")
-    else:
+else:
     req.add_handler("PythonHandler", "menu::basic")
   \end{verbatim}                              
 
@@ -905,6 +905,9 @@ between handlers.
   If an authentication check is made, this will hold the user
   name. Same as CGI \envvar{REMOTE_USER}.
   \emph{(Read-Only})
+  \begin{notice}
+    \method{req.get_basic_auth_pw()} must be called prior to using this value.
+  \end{notice}
 \end{memberdesc}
 
 \begin{memberdesc}[request]{ap_auth_type}
@@ -960,7 +963,7 @@ between handlers.
   constants that should be used to access elements of this
   tuple. Example:
   \begin{verbatim}
-    fname = req.finfo[apache.FINFO_FNAME]
+fname = req.finfo[apache.FINFO_FNAME]
   \end{verbatim}
   \emph{(Read-Only})
 \end{memberdesc}
@@ -971,7 +974,7 @@ between handlers.
   The \code{apache} module defines a set of \constant{URI_*} constants that
   should be used to access elements of this tuple. Example:
   \begin{verbatim}
-    fname = req.parsed_uri[apache.URI_PATH]
+fname = req.parsed_uri[apache.URI_PATH]
   \end{verbatim}
   \emph{(Read-Only})
 \end{memberdesc}
@@ -1289,7 +1292,7 @@ information.
 
 The recommended way of using this module is:
 \begin{verbatim}
-  from mod_python import util
+from mod_python import util
 \end{verbatim}
 
 \begin{seealso}
@@ -1550,8 +1553,8 @@ specification published by Netscape.
 
     Here is an example of getting a single \class{Cookie} instance:
     \begin{verbatim}
-      mycookies = Cookie.parse("spam=eggs; expires=Sat, 14-Jun-2003 02:42:36 GMT")
-      spamcookie = mycookies["spam"]
+mycookies = Cookie.parse("spam=eggs; expires=Sat, 14-Jun-2003 02:42:36 GMT")
+spamcookie = mycookies["spam"]
     \end{verbatim}
 
     \begin{notice}
@@ -1736,7 +1739,7 @@ Here is an example:
   <html>
   <%
   for n in range(3):
-  # This indent will persist
+      # This indent will persist
   %>
   <p>This paragraph will be 
   repeated 3 times.</p>
@@ -1753,8 +1756,8 @@ The above will be internally translated to the following Python code:
   req.write("""<html>
   """)
   for n in range(3):
-  # This indent will persist
-  req.write("""
+      # This indent will persist
+      req.write("""
   <p>This paragraph will be
   repeated 3 times.</p>
   """)
