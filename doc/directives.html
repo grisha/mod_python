@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Python Functions and Objects and Apache Configuration Directives</title>
+  </head>
+
+  <body bgcolor=white>
+    <h1>Apache Configuration Directives</h1>
+
+    <hr>
+    Note on multiple interpreters XXX<br>
+    Note on scope of directives XXX<br>
+    Note on current directories XXX<br>
+    Note on DSO XXX<br>
+    Process/Child start end<br>
+
+    <p>
+      <a name="HandlerSyntax">
+	<h3>Python*Handler Directive Syntax</h3>
+      All <b>Python*Handler</b> directives have the following syntax:
+    <blockquote>
+      <pre>Python*Handler <em>handler [handler] ...</em></pre>
+
+      Where <em>handler</em> is a callable object (e.g. a function) that accepts a
+      single argument - <em>request</em> object. Multiple handlers can be specified,
+      in which case they will be called sequentially, from left to right.
+      <p>
+	A <em>handler</em> has the following syntax:
+      <pre><em>module[::object] [module::[object]] ...</em></pre>
+
+      Where <em>module</em> can be a full module name (package dot notation is
+      accepted), and the optional <em>object</em> is the name of an object inside the
+      module. 
+      <p>
+	<em>Object</em> can also contain dots, in which case it will be resolved
+	from left to right. During resolution, if mod_python encounters an object of
+	type &lt;class&gt;, it will try instantiate it passing it a single argument, a
+	request object. Only <b>one</b> uninstantiated class is allowed in the path.
+      <p>
+	If no <em>object</em> is specified, then it will default to the directive
+	of the handler, all lower case, with the word "Python" removed. E.g. the
+	default <em>object</em> for <code>PythonAuthenHandler</code> would be 
+	<code>authenhandler</code>.
+      <p>
+	Example: <pre>PythonAuthzHandler mypackage.mymodule::checkallowed</pre>
+      <p>
+	Side note: The &quot;::&quot; was chosen for performance reasons. In order
+	for Python to use objects inside modules, the modules first need to be imported.
+	However, if the separator were simply a &quot;.&quot;, it would involve a much
+	more complex process of sequetially evaluating every word to determine whether
+	it is a package, module, class etc. Using the (admittedly un-Python-like) 
+	&quot;::&quot; takes the time consuming work of figuring out where the 
+	module ends and the object inside of it begins away from mod_python resulting
+	in a modest performance gain..
+      <p>
+    </blockquote>
+
+
+    <h3>Objects and Functions</h3>
+
+    Mod_python's <code>apache</code> module defines the following objects and functions.
+    For a more in-depth look at Apache internals, see the 
+    <a href="http://dev.apache.org/API.html">Shambhala API Notes</a>.
+
+    <blockquote>
+
+
+      XXX Server object?
+
+      <h4>Table Object</h4>
+
+      The <code>table</code> object is a Python mapping to the Apache <code>
+	<a href="http://dev.apache.org/apidoc/apidoc_table.html">table</a>
+      </code>. The <code>table</code> object performs just like
+      a dictionary, with the only difference that key lookups are case
+      insensitive.
+      <p>
+	Much of the information that Apache uses is stored in tables. For
+	example, <code>request.header_in</code> and 
+	<code>request.headers_out</code>.
+      <p>
+	All the talbles that mod_python provides inside the <code>request</code>
+	object are actual mappings to the Apache structures, so changing the Python
+	table also changes the underlying Apache table.
+
+      <h4>Request Object</h4>
+
+      The <code>request</code> object is a Python mapping to the Apache <code>
+	<a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a>
+      </code> structure.
+
+      XXX request functions?
+
+
+      <h4>Connection Object</h4>
+
+      The <code>connection</code> object is a Python mapping to the Apache <code>
+      <a href="http://dev.apache.org/apidoc/apidoc_conn_rec.html">conn_rec</a>
+      </code> structure.
+
+      
+
+    </blockquote>
+
+    
+
+      </a>
+
+    <hr>
+
+    <ul>
+      <li><a href="#PythonPath">PythonPath</a>
+      <li><a href="#PythonInterpreter">PythonInterpreter</a>
+      <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
+      <li><a href="#PythonDebug">PythonDebug</a>
+      <li><a href="#PythonNoReload">PythonNoReload</a>
+      <li><a href="#PythonPostReadRequestHandler">PythonPostReadRequestHandler</a>
+      <li><a href="#PythonTransHandler">PythonTransHandler</a>
+      <li><a href="#PythonHeaderParserHandler">PythonHeaderParserHandler</a>
+      <li><a href="#PythonAccessHandler">PythonAccessHandler</a>
+      <li><a href="#PythonAuthenHandler">PythonAuthenHAndler</a>
+      <li><a href="#PythonAuthzHandlerPath">PythonAuthzHandler</a>
+      <li><a href="#PythonTypeHandler">PythonTypeHandler</a>
+      <li><a href="#PythonHandler">PythonHandler</a>
+      <li><a href="#PythonFixupHandler">PythonFixupHandler</a>
+      <li><a href="#PythonLogHandler">PythonLogHandler</a>
+    </ul>
+    <hr>
+
+<h2><a name="PythonPath">PythonPath</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonPath <em>path</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c<p>
+
+<p>
+PythonPath directive sets the PythonPath. The path must be specified
+in Python list notation, e.g.  
+<pre> PythonPath "['/usr/local/lib/python1.5', '/usr/local/lib/site_python', '/some/other/place']".
+</pre> 
+The path specified in this directive will <em>replace</em> the path,
+not <em>add</em> to it.  Note that this directive should not be used as a
+security measure since the Python path is easily manipulated from
+within the scripts.
+
+<hr>
+
+<h2><a name="PythonInterpreter">PythonInterpreter</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonInterpreter <em>name</em><br>
+<!--<strong>Default:</strong></A> <code>AccessConfig conf/access.conf</code><br>-->
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c<p>
+
+<p>
+Forces the subinterpreter name to be <em>name</em>, instead of the
+name assigned by mod_python. Mod_python names subinterpreters by using
+full path of a directory thereby guaranteeing uniqueness. By using
+this directive, scripts located in different directories and that would 
+by default be executed in different
+subinterpreters, can be forced to execute in the same subinterpreter.
+
+<hr>
+
+<h2><a name="PythonInterpPerDirectory">PythonInterpPerDirectory</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonInterpPerDirectory<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c<p>
+
+<p>
+Instructs mod_python to name subinterpreters using the directory of
+the file in the request (<code>request_rec->filename</code>) rather
+than the directory in which the Python*Handler directive currently in effect
+was encountered. This means that scripts in different directories will
+execute in different subinterpreters as opposed to the default policy
+where scripts effected by the same Handler directive execute in the
+same subinterpreter, even if they are in different directories.
+<p>
+Let's say you have a
+<code>/directory/subdirectory</code>. <code>/directory</code> has an
+.htaccess file with a PythonHandler directive.
+<code>/directory/subdirectory</code> doesn't have an .htacess. By
+default, scripts in <code>/directory</code> and
+<code>/directory/subdirectory</code> would execute in the same
+interpreter based on the directory where PythonHandler was
+encountered.  With PythonInterpPerDirectory, there would be two
+different interpreters, one for each directory.
+
+<hr>
+
+<h2><a name="PythonDebug">PythonDebug</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonDebug<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c<p>
+
+<p>
+Normally, the traceback output resulting from uncaught Python errors is sent to
+the error log. With PythonDebug directive specified, the output will be sent to
+the client, except when the error is IOError while writing, in which case it will
+go to the error log.
+<p>
+A consequence of this directive being specified is that when multiple handlers
+are involved in processing the request, the processing will
+<p>
+This directive is very usefull during the development process. It is recommended
+that you do not use it production environment as it may reveal to the client 
+sensitive security information.
+
+<hr>
+
+<h2><a name="PythonNoReload">PythonNoReload</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonNoReload<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<!--<strong>Default:</strong></A> <code>AccessConfig conf/access.conf</code><br>-->
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c<p>
+
+<p>
+Instructs mod_python not to check the modification date of the module file.
+By default, mod_python checks the timestamp of the file and reloads the module if the
+module's file modification date is later than the last import or reload.
+<p>
+This options is useful in production environment where the modules do not change,
+it will save some processing time and give a small performance gain.
+
+<hr>
+
+<h2><a name="PythonPostReadRequestHandler">PythonPostReadRequestHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonPostReadRequestHandler <em>module[::object]</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c<p>
+
+    <hr>
+<!-- Created: Sat May  6 21:05:39 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Mon May  8 19:23:51 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>
