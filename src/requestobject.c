@@ -44,29 +44,11 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.12 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.13 2001/11/03 04:24:30 gtrubetskoy Exp $
  *
  */
 
 #include "mod_python.h"
-
-/*
- * This is a mapping of a Python object to an Apache request_rec.
- *
- */
-
-/**
- ** python_decref
- ** 
- *   This helper function is used with apr_pool_cleanup_register to destroy
- *   python objects when a certain pool is destroyed.
- */
-
-static apr_status_t python_decref(void *object)
-{
-    Py_XDECREF((PyObject *) object);
-    return 0;
-}
 
 /**
  **     MpRequest_FromRequest
@@ -96,9 +78,10 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->err_headers_out = MpTable_FromTable(req->err_headers_out);
     result->subprocess_env = MpTable_FromTable(req->subprocess_env);
     result->notes = MpTable_FromTable(req->notes);
+    result->phase = NULL;
     result->Request = NULL;
     result->content_type_set = 0;
-    result->hstack = NULL;
+    result->hlo = NULL;
     result->rbuff = NULL;
     result->rbuff_pos = 0;
     result->rbuff_len = 0;
@@ -131,131 +114,81 @@ static PyObject * req_add_common_vars(requestobject *self, PyObject *args)
 }
 
 /**
- ** valid_handler()
+ ** valid_phase()
  **
- *  utility func - makes sure a handler is valid
+ *  utility func - makes sure a phase is valid
  */
 
-static int valid_handler(const char *h)
+static int valid_phase(const char *p)
 {
-    if ((strcmp(h, "PythonHandler") != 0) &&
-	(strcmp(h, "PythonAuthenHandler") != 0) &&
-	(strcmp(h, "PythonPostReadRequestHandler") != 0) &&
-	(strcmp(h, "PythonTransHandler") != 0) &&
-	(strcmp(h, "PythonHeaderParserHandler") != 0) &&
-	(strcmp(h, "PythonAccessHandler") != 0) &&
-	(strcmp(h, "PythonAuthzHandler") != 0) &&
-	(strcmp(h, "PythonTypeHandler") != 0) &&
-	(strcmp(h, "PythonFixupHandler") != 0) &&
-	(strcmp(h, "PythonLogHandler") != 0) &&
-	(strcmp(h, "PythonInitHandler") != 0))
+    if ((strcmp(p, "PythonHandler") != 0) &&
+	(strcmp(p, "PythonAuthenHandler") != 0) &&
+	(strcmp(p, "PythonPostReadRequestHandler") != 0) &&
+	(strcmp(p, "PythonTransHandler") != 0) &&
+	(strcmp(p, "PythonHeaderParserHandler") != 0) &&
+	(strcmp(p, "PythonAccessHandler") != 0) &&
+	(strcmp(p, "PythonAuthzHandler") != 0) &&
+	(strcmp(p, "PythonTypeHandler") != 0) &&
+	(strcmp(p, "PythonFixupHandler") != 0) &&
+	(strcmp(p, "PythonLogHandler") != 0) &&
+	(strcmp(p, "PythonInitHandler") != 0))
 	return 0;
     else
 	return 1;
 }
 
 /**
- ** request.add_handler(request self, string handler, string function)
+ ** request.add_handler(request self, string phase, string handler)
  **
  *     Allows to add another handler to the handler list.
- *
- * The dynamic handler mechanism works like this: we have
- * the original config, which gets build via the standard Apache
- * config functions. The calls to add_handler() slap new values into
- * req->notes. At handler execution time, prior to calling into python, 
- * but after the requestobject has been created/obtained, a concatenation 
- * of values of conf->directives+req->notes for the handler currently
- * being executed is placed in req->hstack. Inside Python, in Dispatch(),
- * handlers will be chopped from the begining of the string as they
- * get executed. Add_handler is also smart enough to append to
- * req->hstack if the handler being added is the same as the one 
- * being currently executed.
  */
 
 static PyObject *req_add_handler(requestobject *self, PyObject *args)
 {
+    char *phase;
     char *handler;
-    char *function;
     const char *dir = NULL;
-    const char *currhand;
+    const char *currphase;
 
-    if (! PyArg_ParseTuple(args, "ss|s", &handler, &function, &dir)) 
+    if (! PyArg_ParseTuple(args, "ss|s", &phase, &handler, &dir)) 
         return NULL;
 
-    if (! valid_handler(handler)) {
+    if (! valid_phase(phase)) {
 	PyErr_SetString(PyExc_IndexError, 
 			apr_psprintf(self->request_rec->pool,
-				    "Invalid handler: %s", handler));
+				     "Invalid phase: %s", phase));
 	return NULL;
     }
     
-    /* which handler are we processing? */
-    currhand = apr_table_get(self->request_rec->notes, "python_handler");
+    /* which phase are we processing? */
+    currphase = PyString_AsString(self->phase);
 
-    if (strcmp(currhand, handler) == 0) {
+    /* are we in same phase as what's being added? */
+    if (strcmp(currphase, phase) == 0) {
 
-	/* if it's the same as what's being added, then just append to hstack */
-	self->hstack = apr_pstrcat(self->request_rec->pool, self->hstack, 
-				  function, NULL);
-        
-	if (dir) 
-            apr_table_set(self->request_rec->notes, 
-			 apr_pstrcat(self->request_rec->pool, handler, "_dir", NULL), 
-			 dir);
+	/* then just append to hlist */
+	hlist_append(self->request_rec->pool, self->hlo->head,
+		     handler, dir, 0);
     }
     else {
 
-	const char *existing;
+	/* this is a phase that we're not in */
+	py_req_config *req_config;
+	hl_entry *hle;
 
-	/* is there a handler like this in the notes already? */
-	existing = apr_table_get(self->request_rec->notes, handler);
+	/* get request config */
+	req_config = (py_req_config *) 
+	    ap_get_module_config(self->request_rec->request_config,
+				 &python_module);
 
-	if (existing) {
+	hle = apr_hash_get(req_config->dynhls, phase, APR_HASH_KEY_STRING);
 
-	    /* append the function to the list using the request pool */
-	    apr_table_set(self->request_rec->notes, handler, 
-			 apr_pstrcat(self->request_rec->pool, existing, " ", 
-				    function, NULL));
-
-	    if (dir) {
-		char *s = apr_pstrcat(self->request_rec->pool, handler, "_dir", NULL);
-		apr_table_set(self->request_rec->notes, s, dir);
-	    }
-
+	if (! hle) {
+	    hle = hlist_new(self->request_rec->pool, handler, dir, 0);
+	    apr_hash_set(req_config->dynhls, phase, APR_HASH_KEY_STRING, hle);
 	}
 	else {
-
-	    char *s;
-
-	    /* a completely new handler */
-	    apr_table_set(self->request_rec->notes, handler, function);
-
-	    if (! dir) {
-
-		/*
-		 * If no directory was explicitely specified, the new handler will 
-		 * have the same directory associated with it as the handler 
-		 * currently being processed.
-		 */
-
-		py_dir_config *conf;
-
-		/* get config */
-		conf = (py_dir_config *) ap_get_module_config(
-		    self->request_rec->per_dir_config, &python_module);
-        
-		/* what's the directory for this handler? */
-		dir = apr_table_get(conf->dirs, currhand);
-
-		/*
-		 * make a note that the handler's been added. 
-		 * req_get_all_* rely on this to be faster
-		 */
-		apr_table_set(self->request_rec->notes, "py_more_directives", "1");
-
-	    }
-	    s = apr_pstrcat(self->request_rec->pool, handler, "_dir", NULL);
-	    apr_table_set(self->request_rec->notes, s, dir);
+	    hlist_append(self->request_rec->pool, hle, handler, dir, 0);
 	}
     }
     
@@ -343,7 +276,7 @@ static PyObject *req_get_all_config(requestobject *self, PyObject *args)
 
 	while (i--) {
 	    if (elts[i].key) {
-		if (valid_handler(elts[i].key)) {
+		if (valid_phase(elts[i].key)) {
 		
 		    /* if exists - append, otherwise add */
 		    const char *val = apr_table_get(all, elts[i].key);
@@ -356,43 +289,6 @@ static PyObject *req_get_all_config(requestobject *self, PyObject *args)
 		    else {
 			apr_table_set(all, elts[i].key, elts[i].val);
 		    }
-		}
-	    }
-	}
-    }
-    return MpTable_FromTable(all);
-}
-
-/**
- ** request.get_all_dirs(request self)
- **
- *  returns get_dirs + all the dirs added by req.add_handler
- */
-
-static PyObject * req_get_all_dirs(requestobject *self, PyObject *args)
-{
-    apr_table_t *all;
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-
-    all = apr_table_copy(self->request_rec->pool, conf->dirs);
-
-    if (apr_table_get(self->request_rec->notes, "py_more_directives")) {
-
-	apr_array_header_t *ah = apr_table_elts(self->request_rec->notes);
-	apr_table_entry_t *elts = (apr_table_entry_t *)ah->elts;
-	int i = ah->nelts;
-
-	while (i--) {
-	    if (elts[i].key) {
-		
-		/* chop off _dir */
-		char *s = apr_pstrdup(self->request_rec->pool, elts[i].key);
-		if (valid_handler(s)) {
-		    
-		    s[strlen(s)-4] = 0;
-		    apr_table_set(all, s, elts[i].val);
 		}
 	    }
 	}
@@ -426,7 +322,7 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
  ** request.get_config(request self)
  **
  *     Returns the config directives set through Python* apache directives.
- *     except for PythonOption, which you get via get_options
+ *     except for Python*Handler and PythonOption (which you get via get_options).
  */
 
 static PyObject * req_get_config(requestobject *self, PyObject *args)
@@ -437,50 +333,7 @@ static PyObject * req_get_config(requestobject *self, PyObject *args)
     return MpTable_FromTable(conf->directives);
 }
 
-/**
- ** request.get_dirs(request self)
- **
- *  Returns a table keyed by directives with the last path in which the
- *  directive was encountered.
- */
-
-static PyObject * req_get_dirs(requestobject *self, PyObject *args)
-{
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-    return MpTable_FromTable(conf->dirs);
-}
-
-/**
- ** request.get_input_filter_dirs(request self)
- **
- *  Returns a table keyed by filters with the last path in which the
- *  directive was encountered.
- */
-
-static PyObject * req_get_input_filter_dirs(requestobject *self, PyObject *args)
-{
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-    return MpTable_FromTable(conf->input_filter_dirs);
-}
-
-/**
- ** request.get_output_filter_dirs(request self)
- **
- *  Returns a table keyed by filters with the last path in which the
- *  directive was encountered.
- */
-
-static PyObject * req_get_output_filter_dirs(requestobject *self, PyObject *args)
-{
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-    return MpTable_FromTable(conf->output_filter_dirs);
-}
+//XXX document - get_dirs and get_all_dirs gone
 
 /**
  ** request.get_remote_host(request self, [int type])
@@ -851,14 +704,10 @@ static PyMethodDef requestobjectmethods[] = {
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
     {"get_all_config",        (PyCFunction) req_get_all_config,        METH_VARARGS},
-    {"get_all_dirs",          (PyCFunction) req_get_all_dirs,          METH_VARARGS},
     {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_VARARGS},
     {"get_config",            (PyCFunction) req_get_config,            METH_VARARGS},
-    {"get_dirs",              (PyCFunction) req_get_dirs,              METH_VARARGS},
-    {"get_input_filter_dirs", (PyCFunction) req_get_input_filter_dirs, METH_VARARGS},
     {"get_remote_host",       (PyCFunction) req_get_remote_host,       METH_VARARGS},
     {"get_options",           (PyCFunction) req_get_options,           METH_VARARGS},
-    {"get_output_filter_dirs",(PyCFunction) req_get_output_filter_dirs,METH_VARARGS},
     {"read",                  (PyCFunction) req_read,                  METH_VARARGS},
     {"readline",              (PyCFunction) req_readline,              METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
@@ -928,6 +777,7 @@ static struct memberlist request_memberlist[] = {
     {"args",               T_STRING,    OFF(args),                 RO},
     {"finfo",              T_OBJECT,    0,                         RO},
     {"parsed_uri",         T_OBJECT,    0,                         RO},
+    {"phase",              T_OBJECT,    0,                         RO},
     /* XXX per_dir_config */
     /* XXX request_config */
     /* XXX htaccess */
@@ -953,6 +803,7 @@ static void request_dealloc(requestobject *self)
     Py_XDECREF(self->err_headers_out);
     Py_XDECREF(self->subprocess_env);
     Py_XDECREF(self->notes);
+    Py_XDECREF(self->phase);
     Py_XDECREF(self->Request);
 
     free(self);
@@ -1229,11 +1080,22 @@ static PyObject *request_getattr(requestobject *self, char *name)
     else if (strcmp(name, "parsed_uri") == 0) {
 	return tuple_from_parsed_uri(self->request_rec->parsed_uri);
     }
-    else if (strcmp(name, "hstack") == 0) {
-	return PyString_FromString(self->hstack);
+    else if (strcmp(name, "hlist") == 0) {
+	Py_INCREF(self->hlo);
+	return (PyObject *)self->hlo;
     }
     else if (strcmp(name, "_content_type_set") == 0) {
 	return PyInt_FromLong(self->content_type_set);
+    }
+    else if (strcmp(name, "phase") == 0) {
+	if (self->phase == NULL) {
+	    Py_INCREF(Py_None);
+	    return Py_None;
+	}
+	else {
+	    Py_INCREF(self->phase);
+	    return self->phase;
+	}
     }
     else if (strcmp(name, "_Request") == 0) {
 	if (self->Request == NULL) {
@@ -1273,10 +1135,6 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
     else if (strcmp(name, "filename") == 0) {
 	self->request_rec->filename =
 	    apr_pstrdup(self->request_rec->pool, PyString_AsString(value));
-	return 0;
-    }
-    else if (strcmp(name, "hstack") == 0) {
-	self->hstack = apr_pstrdup(self->request_rec->pool, PyString_AsString(value));
 	return 0;
     }
     else if (strcmp(name, "user") == 0) {

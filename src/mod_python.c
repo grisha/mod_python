@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.53 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.54 2001/11/03 04:24:30 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -320,43 +320,20 @@ static void *python_create_dir_config(apr_pool_t *p, char *dir)
 	(py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
 
     conf->authoritative = 1;
+
     /* make sure directory ends with a slash */
     if (dir && (dir[strlen(dir) - 1] != SLASH))
 	conf->config_dir = apr_pstrcat(p, dir, SLASH_S, NULL);
     else
 	conf->config_dir = apr_pstrdup(p, dir);
+
     conf->options = apr_table_make(p, 4);
     conf->directives = apr_table_make(p, 4);
-    conf->dirs = apr_table_make(p, 4);
-    conf->input_filters = apr_table_make(p, 4);
-    conf->input_filter_dirs = apr_table_make(p, 4);
-    conf->output_filters = apr_table_make(p, 4);
-    conf->output_filter_dirs = apr_table_make(p, 4);
+    conf->hlists = apr_hash_make(p);
+    conf->in_filters = apr_hash_make(p);
+    conf->out_filters = apr_hash_make(p);
 
     return conf;
-}
-
-/**
- ** mp_copy_table
- **
- *   Merge two tables into one. Matching key values 
- *   in second overlay the first.
- */
-
-void mp_copy_table(apr_table_t *t1, apr_table_t *t2)
-{
-
-    apr_array_header_t *ah;
-    apr_table_entry_t *elts;
-    int i;
-
-    ah = apr_table_elts(t2);
-    elts = (apr_table_entry_t *)ah->elts;
-    i = ah->nelts;
-
-    while (i--)
-	if (elts[i].key)
-	    apr_table_set(t1, elts[i].key, elts[i].val);
 }
 
 /**
@@ -364,13 +341,19 @@ void mp_copy_table(apr_table_t *t1, apr_table_t *t2)
  **
  */
 
-static void *python_merge_dir_config(apr_pool_t *p, void *cc, void *nc)
+static void *python_merge_dir_config(apr_pool_t *p, void *current_conf, 
+				     void *new_conf)
 {
 
     py_dir_config *merged_conf = 
 	(py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
-    py_dir_config *current_conf = (py_dir_config *) cc;
-    py_dir_config *new_conf = (py_dir_config *) nc;
+    py_dir_config *cc = (py_dir_config *) current_conf;
+    py_dir_config *nc = (py_dir_config *) new_conf;
+
+    apr_hash_index_t *hi;
+    char *key;
+    apr_ssize_t klen;
+    hl_entry *hle;
 
     /* we basically allow the local configuration to override global,
      * by first copying current values and then new values on top
@@ -378,40 +361,61 @@ static void *python_merge_dir_config(apr_pool_t *p, void *cc, void *nc)
 
     /** create **/
     merged_conf->directives = apr_table_make(p, 4);
-    merged_conf->dirs = apr_table_make(p, 4);
     merged_conf->options = apr_table_make(p, 4);
-    merged_conf->input_filters = apr_table_make(p, 4);
-    merged_conf->input_filter_dirs = apr_table_make(p, 4);
-    merged_conf->output_filters = apr_table_make(p, 4);
-    merged_conf->output_filter_dirs = apr_table_make(p, 4);
+    merged_conf->hlists = apr_hash_make(p);
+    merged_conf->in_filters = apr_hash_make(p);
+    merged_conf->out_filters = apr_hash_make(p);
 
     /** copy current **/
-    merged_conf->authoritative = current_conf->authoritative;
-    merged_conf->config_dir = apr_pstrdup(p, current_conf->config_dir);
 
-    mp_copy_table(merged_conf->directives, current_conf->directives);
-    mp_copy_table(merged_conf->dirs, current_conf->dirs);
-    mp_copy_table(merged_conf->options, current_conf->options);
-    mp_copy_table(merged_conf->input_filters, current_conf->input_filters);
-    mp_copy_table(merged_conf->input_filter_dirs, current_conf->input_filter_dirs);
-    mp_copy_table(merged_conf->output_filters, current_conf->output_filters);
-    mp_copy_table(merged_conf->output_filter_dirs, current_conf->output_filter_dirs);
+    merged_conf->authoritative = cc->authoritative;
+    merged_conf->config_dir = apr_pstrdup(p, cc->config_dir);
+    apr_table_overlap(merged_conf->directives, cc->directives,
+		      APR_OVERLAP_TABLES_SET);
+    apr_table_overlap(merged_conf->options, cc->options,
+		      APR_OVERLAP_TABLES_SET);
 
+    for (hi = apr_hash_first(cc->hlists); hi; hi=apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
+	apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
+    }
+
+    for (hi = apr_hash_first(cc->in_filters); hi; hi=apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
+	apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
+    }
+
+    for (hi = apr_hash_first(cc->out_filters); hi; hi=apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
+	apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
+    }
 
     /** copy new **/
 
-    if (new_conf->authoritative != merged_conf->authoritative)
-	merged_conf->authoritative = new_conf->authoritative;
-    if (new_conf->config_dir)
-	merged_conf->config_dir = apr_pstrdup(p, new_conf->config_dir);
+    if (nc->authoritative != merged_conf->authoritative)
+	merged_conf->authoritative = nc->authoritative;
+    if (nc->config_dir)
+	merged_conf->config_dir = apr_pstrdup(p, nc->config_dir);
 
-    mp_copy_table(merged_conf->directives, new_conf->directives);
-    mp_copy_table(merged_conf->dirs, new_conf->dirs);
-    mp_copy_table(merged_conf->options, new_conf->options);
-    mp_copy_table(merged_conf->input_filters, new_conf->input_filters);
-    mp_copy_table(merged_conf->input_filter_dirs, new_conf->input_filter_dirs);
-    mp_copy_table(merged_conf->output_filters, new_conf->output_filters);
-    mp_copy_table(merged_conf->output_filter_dirs, new_conf->output_filter_dirs);
+    apr_table_overlap(merged_conf->directives, nc->directives,
+		      APR_OVERLAP_TABLES_SET);
+    apr_table_overlap(merged_conf->options, nc->options,
+		      APR_OVERLAP_TABLES_SET);
+
+    for (hi = apr_hash_first(nc->hlists); hi; hi=apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
+	apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
+    }
+
+    for (hi = apr_hash_first(nc->in_filters); hi; hi=apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
+	apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
+    }
+
+    for (hi = apr_hash_first(nc->out_filters); hi; hi=apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
+	apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
+    }
 
     return (void *) merged_conf;
 }
@@ -419,12 +423,7 @@ static void *python_merge_dir_config(apr_pool_t *p, void *cc, void *nc)
 /**
  ** python_directive
  **
- *  Called by Python*Handler directives.
- *
- *  When used within the same directory, this will have a
- *  cumulative, rather than overriding effect - i.e. values
- *  from same directives specified multiple times will be appended
- *  with a space in between.
+ *  Called by non-handler directives
  *
  */
 
@@ -432,36 +431,116 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
 				    char *key, const char *val)
 {
     py_dir_config *conf;
-    const char *s;
-    
+   
     conf = (py_dir_config *) mconfig;
+    apr_table_set(conf->directives, key, val);
     
-    if (! val) {
-	/*  If the value is NULL, then assume this is an "Off" FLAG
-	    and erase the directive from the config. */
-	apr_table_unset(conf->directives, key);
-	apr_table_unset(conf->dirs, key);
-    }
-    else {
-
-	/* something there already? */
-	s = apr_table_get(conf->directives, key);
-	if (s)
-	    val = apr_pstrcat(cmd->pool, s, " ", val, NULL);
-    
-	apr_table_set(conf->directives, key, val);
-    
-	/* remember the directory where the directive was found */
-	if (conf->config_dir) {
-	    apr_table_set(conf->dirs, key, conf->config_dir);
-	}
-	else {
-	    apr_table_set(conf->dirs, key, "");
-	}
-    }
     return NULL;
 }
 
+static void python_directive_hl_add(apr_pool_t *p,
+				    apr_hash_t *hlists, 
+				    const char *phase, const char *handler, 
+				    const char *directory, const int silent)
+{
+    hl_entry *head;
+    char *h;
+
+    head = (hl_entry *)apr_hash_get(hlists, phase, APR_HASH_KEY_STRING);
+
+    /* it's possible that handler is multiple handlers separated
+       by white space */
+
+    while (*(h = ap_getword_white(p, &handler)) != '\0') {
+	if (!head) {
+	    head = hlist_new(p, h, directory, silent);
+	    apr_hash_set(hlists, phase, APR_HASH_KEY_STRING, head);
+	}
+	else {
+	    hlist_append(p, head, h, directory, silent);
+	}
+    }
+}
+
+/**
+ ** python_directive_handler
+ **
+ *  Called by Python*Handler directives.
+ *
+ *  When used within the same directory, this will have a
+ *  cumulative, rather than overriding effect - i.e. values
+ *  from same directives specified multiple times will be appended.
+ *
+ */
+
+static const char *python_directive_handler(cmd_parms *cmd, void * mconfig, 
+				    char *key, const char *val, int silent)
+{
+    py_dir_config *conf;
+    
+    /* a handler may be restricted to certain file type by 
+     * extention using the "| .ext1 .ext2" syntax. When this
+     * is the case, we will end up with a directive concatenated
+     * with the extension, one per, e.g.
+     * "PythonHandler foo | .ext1 .ext2" will result in
+     * PythonHandlerext1 foo
+     * PythonHandlerext2 foo
+     */
+
+    const char *exts = val;
+    val = ap_getword(cmd->pool, &exts, '|');
+
+    conf = (py_dir_config *) mconfig;
+
+    if (*exts == '\0') {
+	python_directive_hl_add(cmd->pool, conf->hlists, key, val,
+				conf->config_dir, silent);
+    }
+    else {
+
+	char *ext;
+
+	/* skip blanks */
+	while (apr_isspace(*exts)) exts++;
+	
+	/* repeat for every extension */
+	while (*(ext = ap_getword_white(cmd->pool, &exts)) != '\0') {
+	    char *s;
+
+	    /* append extention to the directive name */
+	    s = apr_pstrcat(cmd->pool, key, ext, NULL);
+
+	    python_directive_hl_add(cmd->pool, conf->hlists, s, val,
+				    conf->config_dir, silent);
+	}
+    }
+
+    return NULL;
+}
+
+/**
+ ** python_directive_flag
+ **
+ *  Called for FLAG directives.
+ *
+ */
+
+static const char *python_directive_flag(void * mconfig, 
+					 char *key, int val)
+{
+    py_dir_config *conf;
+
+    conf = (py_dir_config *) mconfig;
+
+    if (val) {
+	apr_table_set(conf->directives, key, "1");
+    }
+    else {
+	apr_table_unset(conf->directives, key);
+    }
+
+    return NULL;
+}
 
 /**
  ** make_obcallback
@@ -513,14 +592,16 @@ PyObject * make_obcallback()
 
 static requestobject *get_request_object(request_rec *req)
 {
+    py_req_config *req_config;
     requestobject *request_obj;
     PyThreadState *_save;
 
     /* see if there is a request object already */
-    request_obj = (requestobject *) ap_get_module_config(req->request_config,
-							 &python_module);
-    if (request_obj) {
-	return request_obj;
+    req_config = (py_req_config *) ap_get_module_config(req->request_config,
+						     &python_module);
+
+    if (req_config) {
+	return req_config->request_obj;
     }
     else {
 	if ((req->path_info) && 
@@ -552,7 +633,12 @@ static requestobject *get_request_object(request_rec *req)
 	}
 
 	/* store the pointer to this object in request_config */
-	ap_set_module_config(req->request_config, &python_module, request_obj);
+	req_config = apr_pcalloc(req->pool, sizeof(py_req_config));
+	req_config->request_obj = request_obj;
+	req_config->dynhls = apr_hash_make(req->pool);
+	ap_set_module_config(req->request_config, &python_module, req_config);
+
+	/* XXX why no incref here? */
 	return request_obj;
     }
 }
@@ -562,10 +648,12 @@ static requestobject *get_request_object(request_rec *req)
  **
  *      (internal)
  *      figure out the name of the interpreter we should be using
+ *      If this is for a handler, then hle is required. If this is
+ *      for a filter, then fname and is_input are required.
  */
 
 static const char *select_interp_name(request_rec *req, py_dir_config *conf, 
-				      char *handler, const char *fname)
+				      hl_entry *hle, const char *fname, int is_input)
 {
     const char *s;
 
@@ -586,7 +674,7 @@ static const char *select_interp_name(request_rec *req, py_dir_config *conf,
 		    return ap_make_dirstr_parent(req->pool, req->filename);
 		else
 		    /* 
-		     * In early stages of the request, req->filename is not known,
+		     * In early phases of the request, req->filename is not known,
 		     * so this would have to run in the global interpreter.
 		     */
 		    return NULL;
@@ -600,33 +688,30 @@ static const char *select_interp_name(request_rec *req, py_dir_config *conf,
 	     * global interpreter.
 	     */
 	    
-	    if (strcmp("PythonInputHandler", handler) == 0) {
-		s = apr_table_get(conf->input_filter_dirs, fname);
-	    }
-	    else if (strcmp("PythonOutputHandler", handler) == 0) {
-		s = apr_table_get(conf->output_filter_dirs, fname);
+	    py_filter_handler *fh;
+
+	    if (fname) {
+		if (is_input) {
+		    fh = (py_filter_handler *)apr_hash_get(conf->in_filters, fname,
+							   APR_HASH_KEY_STRING);
+		}
+		else {
+		    fh = (py_filter_handler *)apr_hash_get(conf->out_filters, fname,
+							   APR_HASH_KEY_STRING);
+		}
+		s = fh->dir;
 	    }
 	    else {
-		s = apr_table_get(conf->dirs, handler);
-		if (! s) {
-
-		    /* are we using PythonHandlerModule? */
-		    s = apr_table_get(conf->dirs, "PythonHandlerModule");
-		
-		    if (! s) {
-			/* this one must have been added via req.add_handler() */
-			char * ss = apr_pstrcat(req->pool, handler, "_dir", NULL);
-			s = apr_table_get(req->notes, ss);
-		    }
-		}
+		s = hle->directory;
 	    }
-	    if (strcmp(s, "") == 0)
+
+	    if (s && (s[0] == '\0'))
 		return NULL;
 	    else
 		return s;
 	}
 	else {
-	    /* - default per server - */
+	    /* - default: per server - */
 	    return req->server->server_hostname;
 	}
     }
@@ -639,17 +724,21 @@ static const char *select_interp_name(request_rec *req, py_dir_config *conf,
  *      A generic python handler. Most handlers should use this.
  */
 
-static int python_handler(request_rec *req, char *handler)
+static int python_handler(request_rec *req, char *phase)
 {
 
     PyObject *resultobject = NULL;
     interpreterdata *idata;
     requestobject *request_obj;
-    const char *s;
     py_dir_config * conf;
     int result;
     const char * interpreter = NULL;
     PyThreadState *tstate;
+    const char *ext;
+    hl_entry *hle = NULL;
+    hl_entry *dynhle = NULL;
+
+    py_req_config *req_conf;
 
     /*
      * In Apache 2.0, all handlers receive a request and have
@@ -663,17 +752,36 @@ static int python_handler(request_rec *req, char *handler)
     /* get configuration */
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, 
 						  &python_module);
+    /* get file extension */
+    ext = req->filename;
+    ap_getword(req->pool, &ext, '.');
+    if (*ext != '\0')
+	ext = apr_pstrcat(req->pool, ".", ext, NULL);
 
-    /* is there a handler? */
-    if (! apr_table_get(conf->directives, "PythonHandlerModule")) {
-	if (! apr_table_get(conf->directives, handler)) {
-	    if (! apr_table_get(req->notes, handler))
-	    return DECLINED;
-	}
+    /* is there an hlist entry, i.e. a handler? */
+    /* try with extension */
+    hle = (hl_entry *)apr_hash_get(conf->hlists, 
+				   apr_pstrcat(req->pool, phase, ext, NULL),
+				   APR_HASH_KEY_STRING);
+    if (!hle) {
+	/* try without extension */
+	hle = (hl_entry *)apr_hash_get(conf->hlists, phase, APR_HASH_KEY_STRING);
+    }
+    
+    req_conf = (py_req_config *) ap_get_module_config(req->request_config,
+						      &python_module);
+    if (req_conf) {
+	dynhle = (hl_entry *)apr_hash_get(req_conf->dynhls, phase, 
+					  APR_HASH_KEY_STRING);
     }
 
+    if (! (hle || dynhle)) {
+	/* nothing to do here */
+	return DECLINED;
+    }
+    
     /* determine interpreter to use */
-    interpreter = select_interp_name(req, conf, handler, NULL);
+    interpreter = select_interp_name(req, conf, hle, NULL, 0);
 
 #ifdef WITH_THREAD  
     /* acquire lock (to protect the interpreters dictionary) */
@@ -732,36 +840,27 @@ static int python_handler(request_rec *req, char *handler)
     /* create/acquire request object */
     request_obj = get_request_object(req);
 
-    /* make a note of which handler we are in right now */
-    apr_table_set(req->notes, "python_handler", handler);
+    /* make a note of which phase we are in right now */
+    Py_XDECREF(request_obj->phase);
+    request_obj->phase = PyString_FromString(phase);
 
-    /* put the list of handlers on the hstack */
-    if ((s = apr_table_get(conf->directives, handler))) {
-	request_obj->hstack = apr_pstrdup(req->pool, apr_table_get(conf->directives,
-								 handler));
-    }
-    if ((s = apr_table_get(conf->directives, "PythonHandlerModule"))) {
-	if (request_obj->hstack)
-	    request_obj->hstack = apr_pstrcat(req->pool, request_obj->hstack,
-					     " ", s, NULL);
-	else 
-	    request_obj->hstack = apr_pstrdup(req->pool, s);
-    }	
-    if ((s = apr_table_get(req->notes, handler))) {
-	if (request_obj->hstack)
-	    request_obj->hstack = apr_pstrcat(req->pool, request_obj->hstack,
-					     " ", s, NULL);
-	else
-	    request_obj->hstack = apr_pstrdup(req->pool, s);
+    /* create an hahdler list object */
+    request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
+    apr_pool_cleanup_register(req->pool, request_obj->hlo, python_decref, 
+    apr_pool_cleanup_null);
+
+    /* add dynamically registered handlers, if any */
+    if (dynhle) {
+	MpHList_Append(request_obj->hlo, dynhle);
     }
 
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
-     * >>> resultobject = obCallBack.Dispatch(request_object, handler)
+     * >>> resultobject = obCallBack.Dispatch(request_object, phase)
      */
-    resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch", "Os", 
-				       request_obj, handler);
+    resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch", "O", 
+				       request_obj);
      
     /* release the lock and destroy tstate*/
     /* XXX Do not use 
@@ -796,7 +895,7 @@ static int python_handler(request_rec *req, char *handler)
 	     * if authentication failed and this handler is not
 	     * authoritative, let the others handle it
 	     */
-	    if (strcmp(handler, "PythonAuthenHandler") == 0) {
+	    if (strcmp(phase, "PythonAuthenHandler") == 0) {
 		if (result == HTTP_UNAUTHORIZED)
 		{
 		    if   (! conf->authoritative)
@@ -859,121 +958,6 @@ static int python_handler(request_rec *req, char *handler)
 static apr_status_t python_cleanup_handler(void *data)
 {
 
-    request_rec *req = (request_rec *)data;
-    char *handler = "PythonCleanupHandler";
-    interpreterdata *idata;
-    requestobject *request_obj;
-    const char *s;
-    py_dir_config * conf;
-    const char * interpreter = NULL;
-    PyThreadState *tstate;
-    
-    /* get configuration */
-    conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, &python_module);
-
-    /* is there a handler? */
-    if (! apr_table_get(conf->directives, handler)) {
-	return APR_SUCCESS;
-    }
-
-    /* determine interpreter to use */
-    interpreter = select_interp_name(req, conf, handler, NULL);
-
-#ifdef WITH_THREAD  
-    /* acquire lock (to protect the interpreters dictionary) */
-    PyEval_AcquireLock();
-#endif
-
-    /* get/create interpreter */
-    idata = get_interpreter_data(interpreter, req->server);
-   
-#ifdef WITH_THREAD
-    /* release the lock */
-    PyEval_ReleaseLock();
-#endif
-
-    if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-		      "python_cleanup_handler: get_interpreter_data returned NULL!");
-        return APR_SUCCESS;
-    }
-    
-    /* create thread state and acquire lock */
-    tstate = PyThreadState_New(idata->istate);
-#ifdef WITH_THREAD  
-    PyEval_AcquireThread(tstate);
-#else
-    PyThreadState_Swap(tstate);
-#endif
-
-    if (!idata->obcallback) {
-
-        idata->obcallback = make_obcallback();
-        /* we must have a callback object to succeed! */
-        if (!idata->obcallback) 
-        {
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-			  "python_cleanup_handler: make_obcallback returned no obCallBack!");
-	    PyThreadState_Swap(NULL);
-	    PyThreadState_Delete(tstate);
-#ifdef WITH_THREAD
-	    PyEval_ReleaseLock();
-#endif
-	    return APR_SUCCESS;
-        }
-    }
-
-    /* 
-     * make a note of which subinterpreter we're running under.
-     * this information is used by register_cleanup()
-     */
-    if (interpreter)
-	apr_table_set(req->notes, "python_interpreter", interpreter);
-    else
-	apr_table_set(req->notes, "python_interpreter", MAIN_INTERPRETER);
-    
-    /* create/acquire request object */
-    request_obj = get_request_object(req);
-
-    /* make a note of which handler we are in right now */
-    apr_table_set(req->notes, "python_handler", handler);
-
-    /* put the list of handlers on the hstack */
-    if ((s = apr_table_get(conf->directives, handler))) {
-	request_obj->hstack = apr_pstrdup(req->pool, apr_table_get(conf->directives,
-								 handler));
-    }
-    if ((s = apr_table_get(req->notes, handler))) {
-	if (request_obj->hstack) {
-	    request_obj->hstack = apr_pstrcat(req->pool, request_obj->hstack,
-					     " ", s, NULL);
-	}
-	else {
-	    request_obj->hstack = apr_pstrdup(req->pool, s);
-	}
-    }
-    /* 
-     * Here is where we call into Python!
-     * This is the C equivalent of
-     * >>> obCallBack.Dispatch(request_object, handler)
-     */
-    PyObject_CallMethod(idata->obcallback, "Dispatch", "Os", 
-			request_obj, handler);
-     
-    /* release the lock and destroy tstate*/
-    /* XXX Do not use 
-     * . PyEval_ReleaseThread(tstate); 
-     * . PyThreadState_Delete(tstate);
-     * because PyThreadState_delete should be done under 
-     * interpreter lock to work around a bug in 1.5.2 (see patch to pystate.c 2.8->2.9) 
-     */
-    PyThreadState_Swap(NULL);
-    PyThreadState_Delete(tstate);
-#ifdef WITH_THREAD
-    PyEval_ReleaseLock();
-#endif
-
-    /* unlike python_handler, there is nothing to return */
     return APR_SUCCESS;
 }
 
@@ -988,7 +972,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 				  apr_bucket_brigade *bb,
 				  ap_input_mode_t mode,
 				  apr_size_t *readbytes) {
-    
+
     PyObject *resultobject = NULL;
     interpreterdata *idata;
     requestobject *request_obj;
@@ -997,8 +981,8 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     PyThreadState *tstate;
     request_rec *req;
     filterobject *filter;
-    const char *func;
     python_filter_ctx *ctx;
+    py_filter_handler *fh;
 
     /* we only allow request level filters so far */
     req = f->r;
@@ -1026,10 +1010,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 						  &python_module);
 
     /* determine interpreter to use */
-    if (is_input)
-	interpreter = select_interp_name(req, conf, "PythonInputFilter", f->frec->name);
-    else
-	interpreter = select_interp_name(req, conf, "PythonOutputFilter", f->frec->name);
+    interpreter = select_interp_name(req, conf, NULL, f->frec->name, is_input);
 
 #ifdef WITH_THREAD  
     /* acquire lock (to protect the interpreters dictionary) */
@@ -1088,24 +1069,25 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     /* create/acquire request object */
     request_obj = get_request_object(req);
 
-    /* create filter */
-    filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes);
-    Py_INCREF(request_obj);
-    filter->request_obj = request_obj;
-
     /* the name of python function to call */
     if (is_input)
-	func = apr_table_get(conf->input_filters, f->frec->name);
+	fh = apr_hash_get(conf->in_filters, f->frec->name, APR_HASH_KEY_STRING);
     else
-	func = apr_table_get(conf->output_filters, f->frec->name);
+	fh = apr_hash_get(conf->out_filters, f->frec->name, APR_HASH_KEY_STRING);
+
+    /* create filter */
+    filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
+						 fh->handler, fh->dir);
+    Py_INCREF(request_obj);
+    filter->request_obj = request_obj;
 
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
-     * >>> resultobject = obCallBack.FilterDispatch(filter_object, handler)
+     * >>> resultobject = obCallBack.FilterDispatch(filter_object)
      */
-    resultobject = PyObject_CallMethod(idata->obcallback, "FilterDispatch", "Os", 
-				       filter, func);
+    resultobject = PyObject_CallMethod(idata->obcallback, "FilterDispatch", "O", 
+				       filter);
      
     /* release the lock and destroy tstate*/
     /* XXX Do not use 
@@ -1142,6 +1124,14 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 	}
     }
     return filter->rc;
+
+
+
+
+
+
+
+    return APR_SUCCESS;
 }
 
 /**
@@ -1183,16 +1173,14 @@ static apr_status_t python_output_filter(ap_filter_t *f,
  *      in the ChildInitHandler. This is because this function here
  *      is called before the python_init and before the suid and fork.
  *
- *      The reason why this infor stored in a global variable as opposed
+ *      The reason why this info is stored in a global variable as opposed
  *      to the actual config, is that the config info doesn't seem to
  *      be available within the ChildInit handler.
  */
 static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig, 
 					  const char *module) 
 {
-    const char *s = NULL; /* general purpose string */
     py_dir_config *conf;
-    const char *key = "PythonImport";
 
     /* get config */
     conf = (py_dir_config *) mconfig;
@@ -1212,24 +1200,6 @@ static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig,
 #ifdef WITH_THREAD  
     PyEval_ReleaseLock();
 #endif
-
-    /* the rest is basically for consistency */
-
-    /* Append the module to the directive. (this is ITERATE) */
-    if ((s = apr_table_get(conf->directives, key))) {
-	apr_pstrcat(cmd->pool, s, " ", module, NULL);
-    }
-    else {
-	apr_table_set(conf->directives, key, module);
-    }
-
-    /* remember the directory where the directive was found */
-    if (conf->config_dir) {
-	apr_table_set(conf->dirs, key, conf->config_dir);
-    }
-    else {
-	apr_table_set(conf->dirs, key, "");
-    }
 
     return NULL;
 }
@@ -1264,10 +1234,7 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
  */
 static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
 					 int val) {
-    if (val)
-	return python_directive(cmd, mconfig, "PythonDebug", "1");
-    else
-	return python_directive(cmd, mconfig, "PythonDebug", NULL);
+    return python_directive_flag(mconfig, "PythonDebug", val);
 }
 
 /**
@@ -1278,10 +1245,7 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
  */
 static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
 					     int val) {
-    if (val)
-	return python_directive(cmd, mconfig, "PythonEnablePdb", "1");
-    else
-	return python_directive(cmd, mconfig, "PythonEnablePdb", NULL);
+    return python_directive_flag(mconfig, "PythonEnablePdb", val);
 }
 
 /**
@@ -1293,28 +1257,7 @@ static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
 
 static const char *directive_PythonInterpPerDirective(cmd_parms *cmd, 
 						      void *mconfig, int val) {
-    py_dir_config *conf;
-    const char *key = "PythonInterpPerDirective";
-
-    conf = (py_dir_config *) mconfig;
-
-    if (val) {
-	apr_table_set(conf->directives, key, "1");
-
-	/* remember the directory where the directive was found */
-	if (conf->config_dir) {
-	    apr_table_set(conf->dirs, key, conf->config_dir);
-	}
-	else {
-	    apr_table_set(conf->dirs, key, "");
-	}
-    }
-    else {
-	apr_table_unset(conf->directives, key);
-	apr_table_unset(conf->dirs, key);
-    }
-
-    return NULL;
+    return python_directive_flag(mconfig, "PythonInterpPerDirective", val);
 }
 
 /**
@@ -1326,28 +1269,7 @@ static const char *directive_PythonInterpPerDirective(cmd_parms *cmd,
 
 static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd, 
 						      void *mconfig, int val) {
-    py_dir_config *conf;
-    const char *key = "PythonInterpPerDirectory";
-
-    conf = (py_dir_config *) mconfig;
-
-    if (val) {
-	apr_table_set(conf->directives, key, "1");
-
-	/* remember the directory where the directive was found */
-	if (conf->config_dir) {
-	    apr_table_set(conf->dirs, key, conf->config_dir);
-	}
-	else {
-	    apr_table_set(conf->dirs, key, "");
-	}
-    }
-    else {
-	apr_table_unset(conf->directives, key);
-	apr_table_unset(conf->dirs, key);
-    }
-
-    return NULL;
+    return python_directive_flag(mconfig, "PythonInterpPerDirectory", val);
 }
 
 /**
@@ -1359,13 +1281,11 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
 
 static const char *directive_PythonAutoReload(cmd_parms *cmd, 
 					    void *mconfig, int val) {
-    if (val)
-	return python_directive(cmd, mconfig, "PythonAutoReload", "1");
-    else
-	return python_directive(cmd, mconfig, "PythonAutoReload", "0");
+    return python_directive_flag(mconfig, "PythonAutoReload", val);
 }
 
 /**
+ ** directive_PythonOption
  **
  *       This function is called every time PythonOption directive
  *       is encountered. It sticks the option into a table containing
@@ -1391,6 +1311,7 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
  *      This function called whenever PythonOptimize directive
  *      is encountered.
  */
+
 static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
 					    int val) {
     if ((val) && (Py_OptimizeFlag != 2))
@@ -1405,73 +1326,86 @@ static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
 
 static const char *directive_PythonAccessHandler(cmd_parms *cmd, void *mconfig, 
 						 const char *val) {
-    return python_directive(cmd, mconfig, "PythonAccessHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, 0);
 }
 static const char *directive_PythonAuthenHandler(cmd_parms *cmd, void *mconfig, 
 						 const char *val) {
-    return python_directive(cmd, mconfig, "PythonAuthenHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonAuthenHandler", val, 0);
 }
 static const char *directive_PythonAuthzHandler(cmd_parms *cmd, void *mconfig, 
 						const char *val) {
-    return python_directive(cmd, mconfig, "PythonAuthzHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, 0);
 }
 static const char *directive_PythonCleanupHandler(cmd_parms *cmd, void *mconfig, 
 						  const char *val) {
-    return python_directive(cmd, mconfig, "PythonCleanupHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, 0);
 }
 static const char *directive_PythonFixupHandler(cmd_parms *cmd, void *mconfig, 
 						const char *val) {
-    return python_directive(cmd, mconfig, "PythonFixupHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonFixupHandler", val, 0);
 }
 static const char *directive_PythonHandler(cmd_parms *cmd, void *mconfig, 
 					   const char *val) {
-    return python_directive(cmd, mconfig, "PythonHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonHandler", val, 0);
 }
 static const char *directive_PythonHeaderParserHandler(cmd_parms *cmd, void *mconfig, 
 						       const char *val) {
-    return python_directive(cmd, mconfig, "PythonHeaderParserHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, 0);
 }
 static const char *directive_PythonInitHandler(cmd_parms *cmd, void *mconfig,
 					       const char *val) {
-    return python_directive(cmd, mconfig, "PythonInitHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonInitHandler", val, 0);
 }
 static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
 					  const char *val) {
-    return python_directive(cmd, mconfig, "PythonHandlerModule", val);
+
+    /* This handler explodes into all other handlers */
+    python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonTransHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonInitHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonLogHandler", val, 1);
+    python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, 1);
+    return NULL;
 }
 static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd, 
 							  void * mconfig, 
 							  const char *val) {
-    return python_directive(cmd, mconfig, "PythonPostReadRequestHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val,0);
 }
+
 static const char *directive_PythonTransHandler(cmd_parms *cmd, void *mconfig, 
 						const char *val) {
-    return python_directive(cmd, mconfig, "PythonTransHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonTransHandler", val, 0);
 }
 static const char *directive_PythonTypeHandler(cmd_parms *cmd, void *mconfig, 
 					       const char *val) {
-    return python_directive(cmd, mconfig, "PythonTypeHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, 0);
 }
 static const char *directive_PythonLogHandler(cmd_parms *cmd, void *mconfig, 
 					      const char *val) {
-    return python_directive(cmd, mconfig, "PythonLogHandler", val);
+    return python_directive_handler(cmd, mconfig, "PythonLogHandler", val, 0);
 }
 static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig, 
-					       const char *func, const char *name) {
+					       const char *handler, const char *name) {
+
     py_dir_config *conf;
- 
+    py_filter_handler *fh;
+    
     if (!name)
-	name = apr_pstrdup(cmd->pool, func);
+	name = apr_pstrdup(cmd->pool, handler);
 
     conf = (py_dir_config *) mconfig;
-    
-    apr_table_set(conf->input_filters, name, func);
-    
-    /* remember the directory where the directive was found */
-    if (conf->config_dir)
-	apr_table_set(conf->input_filter_dirs, name, conf->config_dir);
-    else 
-	apr_table_set(conf->input_filter_dirs, name, "");
+
+    fh = (py_filter_handler *) apr_pcalloc(cmd->pool, sizeof(py_filter_handler));
+    fh->handler = (char *)handler;
+    fh->dir = conf->config_dir;
+
+    apr_hash_set(conf->in_filters, name, APR_HASH_KEY_STRING, fh);
 
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
@@ -1482,21 +1416,20 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
 }
 
 static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig, 
-						const char *func, const char *name) {
+						const char *handler, const char *name) {
     py_dir_config *conf;
+    py_filter_handler *fh;
  
     if (!name)
-	name = apr_pstrdup(cmd->pool, func);
+	name = apr_pstrdup(cmd->pool, handler);
 
     conf = (py_dir_config *) mconfig;
     
-    apr_table_set(conf->output_filters, name, func);
-    
-    /* remember the directory where the directive was found */
-    if (conf->config_dir)
-	apr_table_set(conf->output_filter_dirs, name, conf->config_dir);
-    else 
-	apr_table_set(conf->output_filter_dirs, name, "");
+    fh = (py_filter_handler *) apr_pcalloc(cmd->pool, sizeof(py_filter_handler));
+    fh->handler = (char *)handler;
+    fh->dir = conf->config_dir;
+
+    apr_hash_set(conf->out_filters, name, APR_HASH_KEY_STRING, fh);
 
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we

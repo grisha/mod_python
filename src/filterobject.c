@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.1 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.2 2001/11/03 04:24:30 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -54,19 +54,6 @@
 #include "mod_python.h"
 
 /**
- ** python_decref
- ** 
- *   This helper function is used with apr_pool_cleanup_register to destroy
- *   python objects when a certain pool is destroyed.
- */
-
-static apr_status_t python_decref(void *object)
-{
-    Py_XDECREF((PyObject *) object);
-    return 0;
-}
-
-/**
  **     MpFilter_FromFilter
  **
  *      This routine creates a Python filerobject.
@@ -74,7 +61,8 @@ static apr_status_t python_decref(void *object)
  */
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
-			      ap_input_mode_t mode, apr_size_t *readbytes)
+			      ap_input_mode_t mode, apr_size_t *readbytes,
+			      char * handler, char *dir)
 {
     filterobject *result;
 
@@ -104,6 +92,9 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
     result->closed = 0;
     result->softspace = 0;
     result->bytes_written = 0;
+
+    result->handler = handler;
+    result->dir = dir;
 
     result->request_obj = NULL; /* C object, "_req" */
     result->Request = NULL;     /* Python obj */
@@ -436,6 +427,8 @@ static struct memberlist filter_memberlist[] = {
     {"name",               T_OBJECT,    0,                       RO},
     {"req",                T_OBJECT,    OFF(Request),              },
     {"is_input",           T_INT,       OFF(is_input),           RO},
+    {"handler",            T_STRING,    OFF(handler),            RO},
+    {"dir",                T_STRING,    OFF(dir),                RO},
     {NULL}  /* Sentinel */
 };
 

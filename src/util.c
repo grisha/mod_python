@@ -44,7 +44,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.3 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: util.c,v 1.4 2001/11/03 04:24:30 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -110,6 +110,19 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
 	}
 	return t;
     }
+}
+
+/**
+ ** python_decref
+ ** 
+ *   This helper function is used with apr_pool_cleanup_register to destroy
+ *   python objects when a certain pool is destroyed.
+ */
+
+apr_status_t python_decref(void *object)
+{
+    Py_XDECREF((PyObject *) object);
+    return 0;
 }
 
 
