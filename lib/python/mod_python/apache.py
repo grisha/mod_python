@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.72 2003/08/01 01:53:13 grisha Exp $
+ # $Id: apache.py,v 1.73 2003/08/05 20:38:00 grisha Exp $
 
 import sys
 import traceback
@@ -783,6 +783,7 @@ log_error = _apache.log_error
 table = _apache.table
 config_tree = _apache.config_tree
 server_root = _apache.server_root
+mpm_query = _apache.mpm_query
 
 ## Some constants
 
@@ -942,20 +943,27 @@ AP_REQ_REJECT_PATH_INFO = 1  # Send 404 error if path_info was given
 AP_REQ_DEFAULT_PATH_INFO = 2 # Module's choice for handling path_info
 
 
+# for mpm_query
+AP_MPMQ_NOT_SUPPORTED      = 0  # This value specifies whether 
+                                # an MPM is capable of         
+                                # threading or forking.        
+AP_MPMQ_STATIC             = 1  # This value specifies whether 
+                                # an MPM is using a static # of
+                                # threads or daemons.          
+AP_MPMQ_DYNAMIC            = 2  # This value specifies whether 
+                                # an MPM is using a dynamic # of
+                                # threads or daemons.          
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+AP_MPMQ_MAX_DAEMON_USED    = 1  # Max # of daemons used so far 
+AP_MPMQ_IS_THREADED        = 2  # MPM can do threading         
+AP_MPMQ_IS_FORKED          = 3  # MPM can do forking           
+AP_MPMQ_HARD_LIMIT_DAEMONS = 4  # The compiled max # daemons   
+AP_MPMQ_HARD_LIMIT_THREADS = 5  # The compiled max # threads   
+AP_MPMQ_MAX_THREADS        = 6  # # of threads/child by config 
+AP_MPMQ_MIN_SPARE_DAEMONS  = 7  # Min # of spare daemons       
+AP_MPMQ_MIN_SPARE_THREADS  = 8  # Min # of spare threads       
+AP_MPMQ_MAX_SPARE_DAEMONS  = 9  # Max # of spare daemons       
+AP_MPMQ_MAX_SPARE_THREADS  = 10 # Max # of spare threads       
+AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon 
+AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config   
+                                                                                                                                                                                                                                    

@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.23 2003/08/04 23:24:01 grisha Exp $
+ * $Id: _apachemodule.c,v 1.24 2003/08/05 20:38:00 grisha Exp $
  *
  */
 
@@ -496,14 +496,34 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+/**
+ ** mpm_query
+ **
+ *   ap_mpm_query interface
+ */
 
+static PyObject *mpm_query(PyObject *self, PyObject *code)
+{
+    int result;
+
+    if (!PyInt_Check(code)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "The argument must be an integer");
+        return NULL;
+    }
+
+    ap_mpm_query(PyInt_AS_LONG(code), &result);
+    
+    return PyInt_FromLong(result);
+}
 
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
+    {"config_tree",               (PyCFunction)config_tree,      METH_NOARGS},
     {"log_error",                 (PyCFunction)mp_log_error,     METH_VARARGS},
+    {"mpm_query",                 (PyCFunction)mpm_query,        METH_O},
     {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
     {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
-    {"config_tree",               (PyCFunction)config_tree,      METH_NOARGS},
     {"server_root",               (PyCFunction)server_root,      METH_NOARGS},
     {"_global_lock",              (PyCFunction)_global_lock,     METH_VARARGS},
     {"_global_unlock",            (PyCFunction)_global_unlock,   METH_VARARGS},
