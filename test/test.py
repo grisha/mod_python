@@ -221,11 +221,12 @@ class HttpdCtrl:
             LogLevel("debug"),
             LogFormat(r'"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined'),
             CustomLog("logs/access_log combined"),
-            LockFile("logs/accept.lock"),
+            # LockFile("logs/accept.lock"),
             TypesConfig("conf/mime.types"),
             PidFile("logs/httpd.pid"),
             ServerName("127.0.0.1"),
             Listen(PORT),
+            PythonOption('PythonOptionTest sample_value'),
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % MOD_PYTHON_SO),
             IfModule("!mod_auth.c",
@@ -621,6 +622,49 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = self.vhost_get("test_req_sendfile")
 
         if (rsp != "test ok"):
+            self.fail(`rsp`)
+
+    def test_PythonOption_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_PythonOption"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::PythonOption_items"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_PythonOption(self):
+
+        print "\n  * Testing PythonOption"
+
+        rsp = self.vhost_get("test_PythonOption")
+
+        if (rsp != "[('PythonOptionTest', 'sample_value')]"):
+            self.fail(`rsp`)
+
+    def test_PythonOption_override_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_PythonOption_override"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::PythonOption_items"),
+                                  PythonOption('PythonOptionTest "new_value"'),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_PythonOption_override(self):
+
+        print "\n  * Testing PythonOption override"
+
+        rsp = self.vhost_get("test_PythonOption_override")
+
+        if (rsp != "[('PythonOptionTest', 'new_value')]"):
             self.fail(`rsp`)
 
     def test_util_fieldstorage_conf(self):
@@ -1023,6 +1067,8 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_headers_out"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile"))
+        perRequestSuite.addTest(PerRequestTestCase("test_PythonOption"))
+        perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_override"))
         perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
         perRequestSuite.addTest(PerRequestTestCase("test_trans"))
