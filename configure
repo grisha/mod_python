@@ -1379,84 +1379,6 @@ fi
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
 echo "$ac_t""$PY_INCLUDES" 1>&6
 
-
-
-# see if we have mkdep
-# Extract the first word of ""mkdep"", so it can be a program name with args.
-set dummy "mkdep"; ac_word=$2
-echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1389: checking for $ac_word" >&5
-if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  case "$MKDEP" in
-  /*)
-  ac_cv_path_MKDEP="$MKDEP" # Let the user override the test with a path.
-  ;;
-  ?:/*)			 
-  ac_cv_path_MKDEP="$MKDEP" # Let the user override the test with a dos path.
-  ;;
-  *)
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
-  ac_dummy="$PATH"
-  for ac_dir in $ac_dummy; do 
-    test -z "$ac_dir" && ac_dir=.
-    if test -f $ac_dir/$ac_word; then
-      ac_cv_path_MKDEP="$ac_dir/$ac_word"
-      break
-    fi
-  done
-  IFS="$ac_save_ifs"
-  ;;
-esac
-fi
-MKDEP="$ac_cv_path_MKDEP"
-if test -n "$MKDEP"; then
-  echo "$ac_t""$MKDEP" 1>&6
-else
-  echo "$ac_t""no" 1>&6
-fi
-
-
-if test -z "${MKDEP}"; then
-  # or makedepend
-  # Extract the first word of ""makedepend"", so it can be a program name with args.
-set dummy "makedepend"; ac_word=$2
-echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1427: checking for $ac_word" >&5
-if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  case "$MKDEP" in
-  /*)
-  ac_cv_path_MKDEP="$MKDEP" # Let the user override the test with a path.
-  ;;
-  ?:/*)			 
-  ac_cv_path_MKDEP="$MKDEP" # Let the user override the test with a dos path.
-  ;;
-  *)
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
-  ac_dummy="$PATH"
-  for ac_dir in $ac_dummy; do 
-    test -z "$ac_dir" && ac_dir=.
-    if test -f $ac_dir/$ac_word; then
-      ac_cv_path_MKDEP="$ac_dir/$ac_word"
-      break
-    fi
-  done
-  IFS="$ac_save_ifs"
-  ;;
-esac
-fi
-MKDEP="$ac_cv_path_MKDEP"
-if test -n "$MKDEP"; then
-  echo "$ac_t""$MKDEP" 1>&6
-else
-  echo "$ac_t""no" 1>&6
-fi
-
-fi
-
 # this for the test.py script
 
 TEST_SERVER_ROOT="`pwd`/test"
@@ -1629,7 +1551,6 @@ s%@PYTHON_SRC@%$PYTHON_SRC%g
 s%@PYTHON_BIN@%$PYTHON_BIN%g
 s%@PY_STD_LIB@%$PY_STD_LIB%g
 s%@INCLUDES@%$INCLUDES%g
-s%@MKDEP@%$MKDEP%g
 s%@TEST_SERVER_ROOT@%$TEST_SERVER_ROOT%g
 s%@MOD_PYTHON_SO@%$MOD_PYTHON_SO%g
 
@@ -1745,11 +1666,5 @@ rm -fr confdefs* $ac_clean_files
 test "$no_create" = yes || ${CONFIG_SHELL-/bin/sh} $CONFIG_STATUS || exit 1
 
 
-if test -n "$MKDEP"; then
-  # make dependencies
-  echo "analyzing dependencies" 
-  cd src
-  make depend > /dev/null 2>&1
-fi
 
 

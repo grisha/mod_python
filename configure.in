@@ -304,16 +304,6 @@ fi
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
 AC_MSG_RESULT($PY_INCLUDES)
 
-AC_SUBST(MKDEP)
-
-# see if we have mkdep
-AC_PATH_PROG(MKDEP, "mkdep")
-
-if test -z "${MKDEP}"; then
-  # or makedepend
-  AC_PATH_PROG(MKDEP, "makedepend")
-fi
-
 # this for the test.py script
 AC_SUBST(TEST_SERVER_ROOT)
 TEST_SERVER_ROOT="`pwd`/test"
@@ -322,11 +312,5 @@ MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 
 AC_OUTPUT(Makefile src/Makefile src/libpython.module Doc/Makefile test/testconf.py)
 
-if test -n "$MKDEP"; then
-  # make dependencies
-  echo "analyzing dependencies" 
-  cd src
-  make depend > /dev/null 2>&1
-fi
 
 
