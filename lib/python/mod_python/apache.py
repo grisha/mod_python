@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.18 2000/08/28 19:32:59 gtrubetskoy Exp $
+  $Id: apache.py,v 1.19 2000/08/28 21:33:41 gtrubetskoy Exp $
 
 """
 
@@ -127,6 +127,7 @@ class CallBack:
                         if sys.path != newpath:
                             sys.path = newpath
                 else:
+                    dir = req.get_all_dirs()[htype]
                     if dir not in sys.path:
                         sys.path[:0] = [dir]
 
