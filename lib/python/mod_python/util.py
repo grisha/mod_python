@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: util.py,v 1.5 2000/12/13 05:24:08 gtrubetskoy Exp $
+ # $Id: util.py,v 1.6 2000/12/13 23:45:48 gtrubetskoy Exp $
 
 import apache
 import string
@@ -50,9 +50,9 @@ import StringIO
 parse_qs = apache.parse_qs
 parse_qsl = apache.parse_qsl
 
-""" The classes below are a drop-in replacement for the standard
-    cgi.py FieldStorage class. They should have pretty much the same
-    functionality.
+""" The classes below are a (almost) a drop-in replacement for the
+    standard cgi.py FieldStorage class. They should have pretty much the
+    same functionality.
 
     These classes differ in that unlike cgi.FieldStorage, they are not
     recursive. The class FieldStorage contains a list of instances of
@@ -66,7 +66,6 @@ parse_qsl = apache.parse_qsl
 class Field:
 
     filename = None
-    list = None
     headers = {}
 
     def __init__(self, name, file, ctype, type_options,

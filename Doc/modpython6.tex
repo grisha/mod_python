@@ -1,8 +1,139 @@
-\chapter{Sample Handlers\label{handlers}}
+\chapter{Standard Handlers\label{handlers}}
+
+\section{Publisher Handler\label{hand-pub}}
+
+The \code{publisher} handler is a good way to avoid writing your own
+handlers and focus on rapid application development. It was inspired
+by \citetitle[http://www.zope.org/]{Zope} ZPublisher.
+
+\subsection{Introduction\label{hand-pub-intro}}
+
+To use the handler, you need the following lines in your configuration
+\begin{verbatim}
+<Directory /some/path}
+    SetHandler python-program 
+    PythonHandler mod_python.publisher
+</Directory>
+\end{verbatim}
+
+This handler allows access to functions and variables within a module
+via URL's. For example, if you have the following module, called 
+\file{hello.py}:
+
+\begin{verbatim}
+""" Publisher example """
+
+def say(req, what="NOTHING"):
+    return "I am saying %s" % what
+
+\end{verbatim}
+
+A URL \code{http://www.mysite.com/hello.py/say} would return 
+\samp{I am saying NOTHING}. A URL 
+\code{http://www.mysite.com/hello.py/say?what=hello} would
+return \samp{I am saying hello}.
+
+\subsection{The Publishing Algorithm\label{hand-pub-alg}}
+
+The Publisher handler maps a URI directly to a Python variable or
+callable object, then, respectively, returns it's string
+representation or calls it returning the string representation of the
+return value.
+
+\subsubsection{Traversal\label{hand-pub-alg-trav}}
+
+The Publisher handler locates and imports the module specified in the
+URI. The module location is determined from the
+\class{Request.filename} attribute. Before importing, the file extension, 
+if any, is discarded.
+
+Once module is imported, the remaining part of the URI up to the
+beginning of any query data (a.k.a. PATH_INFO) is used to find an
+object within the module. The Publisher handler \dfn{traverses} the 
+path, one element at a time from left to right, mapping the elements
+to Python object within the module.
+
+The traversal will stop and \constant{HTTP_FORBIDDEN} will be returned to
+the client if any of the traversed object's names begin with
+an underscore (\samp{\_}). Use underscores to protect objects that should
+not be accessible from the web. 
+
+If the an oject in the path could not be found, \constant{HTTP_NOT_FOUND}
+is returned to the client.
+
+\subsubsection{Argument Matching and Invocation\label{hand-pub-alg-args}}
+
+Once the destination object is found, if it is callable and not a
+class, the Publisher handler will get a list of arguments that the
+object expects. This list is compared with names of fields from HTML
+form data submitted by the client via \code{POST} or
+\code{GET}. Values of fields whose names match the names of callable
+object arguments will be passed as strings.
+
+If the destination is not callable or is a class, then its string
+representation is returned to the client.
+
+\subsubsection{Authentication\label{hand-pub-alg-auth}}
+
+At every traversal step, the Publisher handler checks for presence of
+an \method{__auth__} attribute. If found, it will be called with three
+arguments - the \class{Request} object, a string containing the user
+name and a string containing the password. If the return value of
+\code{__auth__} is false, then \constant{HTTP_UNAUTHORIZED} is
+returned to the client (which will usually cause a password dialog box
+to appear).
+
+If there exists an \code{__auth_realm__} string, it will be sent
+to the client as Authorization Realm (this is the text that usually
+appears at the top of the password dialog box).
+
+Since functions cannot be assigned attributes, to protect a function,
+an \code{__auth__} function can be defined within the function, e.g.:
+
+\begin{verbatim}
+def sensitive(req):
+
+    def __auth__(req, user, password):
+        if user == 'spam' and password == 'eggs':
+            # let them in
+            return 1
+        else:
+            # no access
+            return 0
+
+    # something involving sensitive information
+    return 'sensitive information`
+\end{verbatim}
+
+The most common use will probably be defining an \function{__auth__}
+function and an \code{__auth_realm__} string at the module level. 
+
+\strong{NOTE:} In order for mod_python to call the \function{__auth__}
+function, the module must first be imported. Therefore, any
+module-level code will get executed during the import even if
+\function{__auth__} returns false.  To truly protect the module from
+being accessed, use other authentication mechanisms, e.g. the Apache
+\code{mod_auth} or with a mod_python \citetitle[dir-handlers-auh.html]
+{PythonAuthenHandler} handler.
 
 \section{CGI Handler\label{hand-cgi}}
 
+\index{CGI}
+
 CGI handler is a handler that emulates the CGI environment under mod_python. 
+
+Note that this is not a "true" CGI environment in that it is emulated
+at the Python level. \code{stdin} and \code{stdout} are provided by
+substituting \code{sys.stdin} and \code{sys.stdout}, and the environment
+is replaced by a dictionary. The implication is that any outside programs
+called from within this environment via \code{os.system}, etc. will
+not see the environment available to the Python program, nor will they
+be able to read/write from standard input/output with the results expected
+in a "true" CGI environment.
+
+The handler is provide as a stepping stone for the migration of legacy
+code away from CGI. It is not recommended that you settle on using
+this handler as the preferred way to use mod_python for the long term.
 
 To use it, simply add this to your \file{.htaccess} file: 
 
@@ -23,12 +154,12 @@ them.
 If you do not want the above behavior, edit the \file{cgihandler.py}
 file and comment out the code delimited by \#\#\#.
 
-In my tests, the cgihandler was leaking some memory when processing a
-lot of file uploads. It is still not clear what causes this. The way
-to work around this is to set the Apache MaxRequestsPerChild to a
-non-zero value.
+Tests show the cgihandler leaking some memory when processing a lot of
+file uploads. It is still not clear what causes this. The way to work
+around this is to set the Apache \code{MaxRequestsPerChild} to a non-zero
+value.
 
-\section{Httpdpay handler\label{hand-httpdapy}}
+\section{Httpdapy handler\label{hand-httpdapy}}
 
 This handler is provided for people migrating from Httpdapy. To use
 it, add this to your \code{.htaccess} file:
@@ -64,6 +195,10 @@ NB: Make sure that the old httpdapi.py and apache.py are not in your
 python path anymore.
 
 \section{ZHandler\label{hand-z}}
+
+\strong{NOTE:} This handler is being phased out in favor of the
+\citetitle[hand-pub.html]{Publisher} handler described in 
+Section \ref{hand-pub}.
 
 This handler allows one to use the Z Object Publisher (formerly Bobo)
 with mod_python. This gives you the power of Zope Object Publishing

@@ -819,3 +819,184 @@ of the handler being invoked as a string.
 The Dispatch method then does the rest of the work of importing the
 user module, resolving the callable object in it and calling it
 passing it a request object.
+
+\section{\module{util} -- Miscellaneous Utilities\label{pyapi-util}}
+\declaremodule[util]{extension}{util}
+\modulesynopsis{Miscellaneous Utilities}
+\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+
+The \module{util} module provides a number of utilities handy to a 
+web application developer. 
+
+The functionality provided by \module{util} is also available in the
+standard Python library \module{cgi} module, but the
+implementation in \module{cgi} is specific to the CGI environment,
+making it not the most efficient one for mod_python. For example, the
+code in \module{util} does not use the environment variables since
+most of the information is available directly from the
+\class{Request} object. Some of the functions in the \module{util}
+module are implemented in C for even better performance.
+
+The recommended way of using this module is:
+\begin{verbatim}
+from mod_python import util
+\end{verbatim}
+
+\begin{seealso}
+  \seetitle[http://CGI-Spec.Golux.Com/]
+	{Common Gateway Interface RFC Project Page}
+	{for detailed information on the CGI specification}
+\end{seealso}
+
+\subsection{FieldStorage class\label{pyapi-util-fstor}}
+
+Access to form data is provided via the \class{FieldStorage}
+class. This class is similar to the standard library module \module{cgi}
+\class{FieldStorage} (but there are a few differences).
+
+\begin{classdesc}{FieldStorage}{req\optional{, keep_blank_values, strict_parsing}}
+This class provides uniform access to HTML form data submitted by the client.
+\var{req} is an instance of the mod_python \class{Request} object.
+
+The optional argument \var{keep_blank_values} is a flag indicating whether
+blank values in URL encoded form data should be treated as blank strings. The
+default is false, which means that blank values are ignored as if they were
+not included.
+
+The optional argument \var{strict_parsing} is not yet implemented.
+\end{classdesc}
+
+While being instantiated, the \class{FieldStorage} class reads all of
+the data provided by the client. Since all data provided by the client
+is consumed at this point, there should be no more than one
+\class{FieldStorage} class instantiated per signle request, nor should
+you make any attempts to read client data before or after
+instantiating a \class{FieldStorage}.
+
+The data read from the client is then parsed into separate fields
+and packaged in \class{Field} objects, one per field. For HTML form
+inputs of type \code{file}, a temporary file is created that can later be 
+accessed via the \member{file} attribute of a \class{Field} object.
+
+The \class{FieldStorage} class has a mapping object interface, i.e. it
+can be treated like a dictionary. When used as a dictionary, the dictionary 
+keys are form input names, and the returned dictionary value can be:
+
+\begin{itemize}
+\item
+A string, containing the form input value. This is only when there is a single
+value corresponding to the input name.
+\item
+An instances of a \class{Field} class, if the input is a file upload.
+\item
+A list of strings and/or \class{Field} objects. This is when multiple values
+exist, such as for a \code{<select>} HTML form element.
+\end{itemize}
+
+In addition to standard mapping object methods, \class{FieldStorage} objects
+have the following attributes:
+
+\begin{memberdesc}{list}
+This is a list of \class{Field} objects, one for each input. Multiple
+inputs with the same name will have multiple elements in this list.
+\end{memberdesc}
+
+\subsubsection{Field class\label{pyapi-util-fstor-fld}}
+
+\begin{classdesc}{Field}{}
+This class is used internally by \class{FieldStorage} and is not
+meant to be instantiated by the user. Each instance of a \class{Field}
+class represents an HTML Form input.
+\end{classdesc}
+
+\class{Field} instances have the following attributes:
+
+\begin{memberdesc}{name}
+The input name.
+\end{memberdesc}
+
+\begin{memberdesc}{value}
+The input value. This attribute can be used to read data from a file
+upload as well, but one has to excercise caution when dealing with
+large files since when accessed via \member{value}, the whole file is
+read into memory.
+\end{memberdesc}
+
+\begin{memberdesc}{file}
+This is a file object. For file uploads it points to a temporary file.
+For simple values, it is a \class{StringIO} object, so you can read
+simple string values via this attribute instead of using the \member{value}
+attribute as well.
+\end{memberdesc}
+
+\begin{memberdesc}{filename}
+The name of the file as provided by the client.
+\end{memberdesc}
+
+\begin{memberdesc}{type}
+The content-type for this input as provided by the client.
+\end{memberdesc}
+
+\begin{memberdesc}{type_opyions}
+This is what follows the actual content type in the \code{content-type}
+header provided by the client, if anything. This is a dictionary.
+\end{memberdesc}
+
+\begin{memberdesc}{disposition}
+The value of the first part of the \code{content-disposition} header.
+\end{memberdesc}
+
+\begin{memberdesc}{disposition_options}
+The second part (if any) of the \code{content-disposition} header in
+the form of a dictionary.
+\end{memberdesc}
+
+\begin{seealso}
+\seerfc{1867}{Form-based File Upload in HTML}{for a description of 
+form-based file uploads}
+\end{seealso}
+
+\subsection{Other functions\label{pyapi-util-funcs}}
+
+\begin{funcdesc}{parse_qs}{qs\optional{, keep_blank_values, strict_parsing}}
+
+This functnion is functionally equivalent to the standard library
+\module{cgi} \function{parse_qs}, except that it is written in C and is
+much faster. 
+
+Parse a query string given as a string argument (data of type
+\mimetype{application/x-www-form-urlencoded}).  Data are
+returned as a dictionary.  The dictionary keys are the unique query
+variable names and the values are lists of values for each name.
+
+The optional argument \var{keep_blank_values} is a flag indicating
+whether blank values in URL encoded queries should be treated as blank
+strings.  A true value indicates that blanks should be retained as
+blank strings.  The default false value indicates that blank values
+are to be ignored and treated as if they were not included.
+
+\strong{Note:} The \var{strict_parsing} argument is not yet implemented.
+
+\end{funcdesc}
+
+
+\begin{funcdesc}{parse_qsl}{qs\optional{, keep_blank_values, strict_parsing}}
+
+This functnion is functionally equivalent to the standard library
+\module{cgi} \function{parse_qsl}, except that it is written in C and is
+much faster. 
+
+Parse a query string given as a string argument (data of type
+\mimetype{application/x-www-form-urlencoded}).  Data are
+returned as a list of name, value pairs.
+
+The optional argument \var{keep_blank_values} is a flag indicating
+whether blank values in URL encoded queries should be treated as blank
+strings.  A true value indicates that blanks should be retained as
+blank strings.  The default false value indicates that blank values
+are to be ignored and treated as if they were not included.
+
+\strong{Note:} The \var{strict_parsing} argument is not yet implemented.
+
+\end{funcdesc}
+
