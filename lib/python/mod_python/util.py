@@ -168,6 +168,7 @@ class FieldStorage:
                 sline = line.strip()
                 while line and sline != boundary:
                     line = req.readline()
+                    sline = line.strip()
 
                 while 1:
 
@@ -176,7 +177,12 @@ class FieldStorage:
                     ctype, type_options = "text/plain", {}
                     disp, disp_options = None, {}
                     headers = apache.make_table()
+
                     line = req.readline()
+                    sline = line.strip()
+                    if not line or sline == (boundary + "--"):
+                        break
+                    
                     while line and line not in ["\n", "\r\n"]:
                         h, v = line.split(":", 1)
                         headers.add(h, v)
@@ -186,6 +192,7 @@ class FieldStorage:
                         elif h == "content-type":
                             ctype, type_options = parse_header(v)
                         line = req.readline()
+                        sline = line.strip()
 
                     if disp_options.has_key("name"):
                         name = disp_options["name"]
@@ -210,9 +217,6 @@ class FieldStorage:
                         field.filename = disp_options["filename"]
 
                     self.list.append(field)
-
-                    if not line or sline == (boundary + "--"):
-                        break
 
             else:
                 # we don't understand this content-type
@@ -294,7 +298,7 @@ def parse_header(line):
 
     """
     
-    plist = map(lambda a: a.strip(), line.splitfields(';'))
+    plist = map(lambda a: a.strip(), line.split(';'))
     key = plist[0].lower()
     del plist[0]
     pdict = {}
