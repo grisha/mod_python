@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.21 2003/01/23 20:20:00 grisha Exp $
+ * $Id: filterobject.c,v 1.22 2003/05/05 02:23:28 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -66,6 +66,45 @@
 
 #include "mod_python.h"
 
+/*** Some explanation of what is going on here:
+ *
+ * In Apache terminology, an "input" filter filters data flowing from
+ * network to application (aka "up"), an "output" filter filters data
+ * flowing from application to network (aka "down").
+ *
+ * An output filter is invoked as a result of ap_pass_brigade()
+ * call. It is given a populated brigade, which it then gives in the
+ * same fashion to the next filter via ap_pass_brigade(). (The filter
+ * may chose to create a new brigade pass that instead).
+ *
+ * An input filter is invoked as a result of ap_get_brigade() call. It
+ * is given an empty brigade, which it is expected to populate, which
+ * may in turn require the filter to invoke the next filter in the
+ * same fashion (via ap_get_brigade()).
+ *
+ * In mod_python Output filters: 
+ *
+ * filter.read() - copies data from *given* bucket brigade (saved in
+ * self->bb_in) into a Python string.
+ *
+ * filter.write() - copies data from a Python string into a *new*
+ * bucket brigade (saved in self->bb_out).
+ *
+ * filter.close() - passes the self->bb_out brigade to the next filter
+ * via ap_pass_brigade()
+ *
+ * In mod_python Input filters:
+ *
+ * filter.read() - copies data from a *new* and *populated via
+ * ap_get_brigade* (saved as self->bb_in) into a Python string.
+ *
+ * filter.write() - copies data from a Python string into a *given*
+ * brigade (saved as self->bb_out).
+ *
+ * filter.close() - is a noop.
+ *
+ */
+ 
 /**
  **     MpFilter_FromFilter
  **
