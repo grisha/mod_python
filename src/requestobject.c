@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.49 2003/07/12 03:44:53 grisha Exp $
+ * $Id: requestobject.c,v 1.50 2003/08/04 14:54:46 grisha Exp $
  *
  */
 
@@ -496,6 +496,12 @@ static PyObject * req_read(requestobject *self, PyObject *args)
     while ((self->rbuff_pos < self->rbuff_len) && (copied < len))
         buffer[copied++] = self->rbuff[self->rbuff_pos++];
     
+    /* Free rbuff if we're done with it */
+    if (self->rbuff_pos >= self->rbuff_len && self->rbuff != NULL) {
+	free(self->rbuff);
+	self->rbuff = NULL;
+    }
+
     if (copied == len)
         return result;  /* we're done! */
 
@@ -607,12 +613,21 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         }
     }
 
+    /* Free old rbuff as the old contents have been copied over and
+       we are about to allocate a new rbuff. Perhaps this could be reused
+       somehow? */
+    if (self->rbuff_pos >= self->rbuff_len && self->rbuff != NULL)
+    {
+	free(self->rbuff);
+	self->rbuff = NULL;
+    }
+
     /* if got this far, the buffer should be empty, we need to read more */
         
     /* create a read buffer */
     self->rbuff_len = len > HUGE_STRING_LEN ? len : HUGE_STRING_LEN;
     self->rbuff_pos = self->rbuff_len;
-    self->rbuff = apr_palloc(self->request_rec->pool, self->rbuff_len);
+    self->rbuff = malloc(self->rbuff_len);
     if (! self->rbuff)
         return PyErr_NoMemory();
 
@@ -633,6 +648,11 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         Py_END_ALLOW_THREADS
 
         if (chunk_len == -1) {
+
+	    /* Free rbuff since returning NULL here should end the request */
+	    free(self->rbuff);
+	    self->rbuff = NULL;
+
             PyErr_SetObject(PyExc_IOError, 
                             PyString_FromString("Client read error (Timeout?)"));
             return NULL;
@@ -651,6 +671,13 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
             (copied == len)) 
             /* our work is done */
             break;
+    }
+
+    /* Free rbuff if we're done with it */
+    if (self->rbuff_pos >= self->rbuff_len && self->rbuff != NULL)
+    {
+	free(self->rbuff);
+	self->rbuff = NULL;
     }
 
     /* resize if necessary */
