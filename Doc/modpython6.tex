@@ -86,20 +86,87 @@ representation is returned to the client.
 
 \subsubsection{Authentication\label{hand-pub-alg-auth}}
 
+The publisher handler provides simple ways to control access to
+modules and functions.
+
 At every traversal step, the Publisher handler checks for presence of
-an \method{__auth__} attribute. If found, it will be called with three
-arguments - the \class{Request} object, a string containing the user
-name and a string containing the password. If the return value of
+\method{__auth__}, \method{__access__} attributes, in this order, as 
+well as \method{__auth_realm__} attribute. 
+
+If \method{__auth__} is found, it will be called with three arguments:
+the \class{Request} object, a string containing the user name and a
+string containing the password. If the return value of
 \code{__auth__} is false, then \constant{HTTP_UNAUTHORIZED} is
 returned to the client (which will usually cause a password dialog box
 to appear).
+
+If \method{__auth__} is a dictionary, then the user name will be
+matched against the key and the password against the value associated
+with this key. If the key and password do not match, 
+\constant{HTTP_UNAUTHORIZED} is returned. Note that this requires
+storing passwords as clear text in source code, which is not very secure.
+
+\method{__auth__} can also be a constant. In this case, if it is false
+(i.e. \constant{None}, \code{0}, \code{""}, etc.), then 
+\constant{HTTP_UNAUTHORIZED} is returned.
 
 If there exists an \code{__auth_realm__} string, it will be sent
 to the client as Authorization Realm (this is the text that usually
 appears at the top of the password dialog box).
 
+If \method{__access__} is found, it will be called with two arguments:
+the \class{Request} object and a string containing the user name. If
+the return value of \code{__access__} is false, then
+\constant{HTTP_FORBIDDEN} is returned to the client.
+
+If \method{__access__} is a list, then the user name will be matched
+against the list elements. If the user name is not in the list, 
+\constant{HTTP_FORBIDDEN} is returned.
+
+Similarly to \method{__auth__}, \method{__access__} can be a constant.
+
+In the example below, only user "eggs" with password "spam" can access
+the \code{hello} function:
+
+\begin{verbatim}
+
+__auth_realm__ = "Members only"
+
+def __auth__(req, user, passwd):
+
+    if user == "eggs" and passwd == "spam" or \
+       user == "joe" and passwd == "eoj":
+        return 1
+    else:
+        return 0
+
+def __access__(req, user):
+    if user == "eggs":
+        return 1
+    else:
+        return 0
+
+def hello(req):
+    return "hello"
+
+\end{verbatim}
+
+Here is the same functionality, but using an alternative technique:
+
+\begin{verbatim}
+
+__auth_realm__ = "Members only"
+__auth__ = {"eggs":"spam", "joe":"eoj"}
+__access__ = ["eggs"]
+
+def hello(req):
+    return "hello"
+
+\end{verbatim}
+
 Since functions cannot be assigned attributes, to protect a function,
-an \code{__auth__} function can be defined within the function, e.g.:
+an \code{__auth__} or \code{__access__} function can be defined within
+the function, e.g.:
 
 \begin{verbatim}
 def sensitive(req):
@@ -116,13 +183,21 @@ def sensitive(req):
     return 'sensitive information`
 \end{verbatim}
 
-The most common use will probably be defining an \function{__auth__}
-function and an \code{__auth_realm__} string at the module level. 
+Note that this technique will also work if \code{__auth__} or
+\code{__access__} is a constant, but will not work is they are
+a dictionary or a list. 
 
-\strong{NOTE:} In order for mod_python to call the \function{__auth__}
-function, the module must first be imported. Therefore, any
+The \code{__auth__} and \code{__access__} mechanisms exist
+independently of the standard 
+\citetitle[dir-handlers-auh.html]{PythonAuthenHandler}. It
+is possible to use, for example, the handler to authenticate, then the
+\code{__access__} list to verify that the authenticated user is
+allowed to a particular function. 
+
+\strong{NOTE:} In order for mod_python to access \function{__auth__},
+the module containing it must first be imported. Therefore, any
 module-level code will get executed during the import even if
-\function{__auth__} returns false.  To truly protect the module from
+\function{__auth__} is false.  To truly protect a module from
 being accessed, use other authentication mechanisms, e.g. the Apache
 \code{mod_auth} or with a mod_python \citetitle[dir-handlers-auh.html]
 {PythonAuthenHandler} handler.
