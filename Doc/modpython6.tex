@@ -280,12 +280,13 @@ To use it, simply add this to your httpd configuration:
 \end{verbatim}
 
 The PSP code will be given a local variable \code{req}, and optionally
-\code{session}. A session will be created and a \code{session}
-variable passed in only if it is mentioned in the code (the PSP
-handler examines \code{co_names} of the code object to make that
-determination). Remember that a mere mention of \code{session} will
-generate cookies and turn on session locking, which may or may not be
-what you want.
+\code{session} and \code{form}. A session will be created and a
+\code{session} variable passed in only if it is mentioned in the code
+(the PSP handler examines \code{co_names} of the code object to make
+that determination). Remember that a mere mention of \code{session}
+will generate cookies and turn on session locking, which may or may
+not be what you want. Similarly, a mod_python \class{FieldStorage}
+object will be instantiated if \code{form} is referenced in the code.
 
 If \code{PythonDebug} server configuration is \code{On}, then by
 appending an underscore (\samp{_}) to the end of the url you can get a
@@ -298,9 +299,16 @@ Leaving debug on in a production environment will allow remote users
 to display source code of your PSP pages!
 \end{notice}
 
-Even though the PSP parser is plenty fast, you can make it even faster
-(2x+) by enabling dbm caching. This can be done via \code{PSPDbmCache}
-Python option, e.g.:
+By default, compiled PSP pages are cached in memory. The cache is
+limited to 512 pages, which depending on the size of the pages could
+potentially occupy a lot of memory. If memory is of concern, then you
+can switch to dbm file caching. Our simple tests showed only 20\%
+slower performance using bsd db. You will need to check which
+implementation \module{anydbm} defaults to on your system as some dbm
+libraries impose a limit on the size of the entry making them
+unsuitable. Dbm caching can be anbled via \code{PSPDbmCache} Python
+option, e.g.:
+
 \begin{verbatim}
 PythonOption PSPDbmCache "/tmp/pspcache.dbm"
 \end{verbatim}

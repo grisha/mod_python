@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.12 2003/08/06 20:03:29 grisha Exp $
+ # $Id: psp.py,v 1.13 2003/08/07 16:19:10 grisha Exp $
 
 # this trick lets us be used outside apache
 try:
@@ -78,7 +78,7 @@ from cgi import escape
 import anydbm, whichdb
 import tempfile
 
-# dbm typees for cache
+# dbm types for cache
 dbm_types = {}
 
 tempdir = tempfile.gettempdir()
@@ -124,9 +124,13 @@ def load_file(filename, dbmcache=None, srv=None):
         smtime = os.path.getmtime(filename)
 
     if dbmcache:
-        cached = cache_get(srv, dbmcache, filename, smtime)
+        cached = dbm_cache_get(srv, dbmcache, filename, smtime)
         if cached:
-            return str2code(cached)
+            return cached
+
+    cached = memcache.get(filename, smtime)
+    if cached:
+        return cached
 
     name, ext = os.path.splitext(filename)
 
@@ -155,7 +159,9 @@ def load_file(filename, dbmcache=None, srv=None):
     code = compile(source, filename, "exec")
 
     if dbmcache:
-        cache_store(srv, dbmcache, filename, smtime, code2str(code))
+        dbm_cache_store(srv, dbmcache, filename, smtime, code)
+    else:
+        memcache.store(filename, smtime, code)
 
     return code
 
@@ -209,9 +215,13 @@ def run_psp(req):
     if "session" in code.co_names:
         session = Session.Session(req)
 
+    form = None
+    if "form" in code.co_names:
+        form = util.FieldStorage(req, keep_blank_values=1)
+
     try:
         # give it it's own locals
-        exec code in globals(), {"req":req, "session":session}
+        exec code in globals(), {"req":req, "session":session, "form":form}
 
         # the mere instantiation of a session changes it
         # (access time), so it *always* has to be saved
@@ -235,7 +245,7 @@ def handler(req):
     else:
         return run_psp(req)
 
-def cache_type(dbmfile):
+def dbm_cache_type(dbmfile):
 
     global dbm_types
 
@@ -251,19 +261,21 @@ def cache_type(dbmfile):
         # this is a new file
         return anydbm
 
-def cache_store(srv, dbmfile, filename, mtime, val):
-    dbm_type = cache_type(dbmfile)
+def dbm_cache_store(srv, dbmfile, filename, mtime, val):
+    
+    dbm_type = dbm_cache_type(dbmfile)
     _apache._global_lock(srv, "pspcache")
     try:
         dbm = dbm_type.open(dbmfile, 'c')
-        dbm[filename] = "%d %s" % (mtime, val)
+        dbm[filename] = "%d %s" % (mtime, code2str(val))
     finally:
         try: dbm.close()
         except: pass
         _apache._global_unlock(srv, "pspcache")
 
-def cache_get(srv, dbmfile, filename, mtime):
-    dbm_type = cache_type(dbmfile)
+def dbm_cache_get(srv, dbmfile, filename, mtime):
+
+    dbm_type = dbm_cache_type(dbmfile)
     _apache._global_lock(srv, "pspcache")
     try:
         dbm = dbm_type.open(dbmfile, 'c')
@@ -271,10 +283,45 @@ def cache_get(srv, dbmfile, filename, mtime):
             entry = dbm[filename]
             t, val = entry.split(" ", 1)
             if long(t) == mtime:
-                return val
+                return str2code(val)
         except KeyError:
             return None
     finally:
         try: dbm.close()
         except: pass
         _apache._global_unlock(srv, "pspcache")
+
+class MemCache:
+
+    def __init__(self, size=512):
+        self.cache = {}
+        self.size = size
+
+    def store(self, filename, mtime, code):
+        self.cache[filename] = (1, mtime, code)
+        if len(self.cache) > self.size:
+            self.clean()
+
+    def get(self, filename, mtime):
+        try:
+            hits, c_mtime, code = self.cache[filename]
+            if mtime != c_mtime:
+                del self.cache[filename]
+                return None
+            else:
+                self.cache[filename] = (hits+1, mtime, code)
+                return code
+        except KeyError:
+            return None
+
+    def clean(self):
+        
+        byhits = [(n[1], n[0]) for n in self.cache.items()]
+        byhits.sort()
+
+        # delete enough least hit entries to make cache 75% full
+        for item in byhits[:len(self.cache)-int(self.size*.75)]:
+            entry, filename = item
+            del self.cache[filename]
+
+memcache = MemCache()
