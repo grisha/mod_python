@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.87 2003/01/09 19:43:56 grisha Exp $
+ * $Id: mod_python.c,v 1.88 2003/04/09 14:05:55 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -124,6 +124,7 @@ static PyObject * make_obcallback(server_rec *s)
      */
     /* Py_InitModule("_apache", _apache_module_methods); */
     init_apache();
+	_psp_module_init();
 
     /* Now execute the equivalent of
      * >>> import <module>
@@ -375,6 +376,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* release the lock; now other threads can run */
         PyEval_ReleaseLock();
 #endif
+		PSP_PG(files) = PyDict_New();
     }
     return OK;
 }

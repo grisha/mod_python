@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.27 2002/11/08 00:15:11 gstein Exp $
+ * $Id: mod_python.h,v 1.28 2003/04/09 14:05:56 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -83,6 +83,7 @@
 #include "apr_lib.h"
 #include "apr_hash.h"
 #include "scoreboard.h"
+#include "psp_parser.h"
 
 /* Python headers */
 /* this gets rid of some comile warnings */
