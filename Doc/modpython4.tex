@@ -524,6 +524,9 @@ between handlers.
   handler of the same type. One has to be careful as to not to create
   an infinite loop this way.
 
+  The \var{dir} argument will be ignored if there is a
+  \code{PythonPath} directive in effect.
+
   Dynamic handler registration is a useful technique that allows the
   code to dynamically decide what will happen next. A typical example
   might be a \code{PythonAuthenHandler} that will assign different
