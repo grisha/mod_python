@@ -54,7 +54,7 @@
  *
  * This file originally written by Stering Hughes
  * 
- * $Id: _pspmodule.c,v 1.3 2003/05/30 04:37:09 grisha Exp $
+ * $Id: _pspmodule.c,v 1.4 2003/07/25 05:07:57 grisha Exp $
  *
  * See accompanying documentation and source code comments for
  * details.
@@ -133,7 +133,10 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
 
     Py_END_ALLOW_THREADS
 
-    code = PyString_FromString(parser->pycode.blob);
+    if (parser->pycode.blob)
+	code = PyString_FromString(parser->pycode.blob);
+    else
+	code = PyString_FromString("");
     psp_parser_cleanup(parser);
     
     return code; 

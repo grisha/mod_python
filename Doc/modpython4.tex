@@ -1586,10 +1586,10 @@ spamcookie = mycookies["spam"]
     \class{Cookie}.
 
     \begin{notice}
-      Always check the type of the object returned by
-      \method{SignedCookie.parse()} is an instance of \class{Cookie}
-      (as oppsed to \class{SignedCookie}), the signature verification
-      failed:
+      Always check the types of objects returned by
+      \method{SignedCookie.parse()}.If it is an instance of
+      \class{Cookie} (as oppsed to \class{SignedCookie}), the
+      signature verification has failed:
       \begin{verbatim}
 # assume spam is supposed to be a signed cookie
 if type(spam) is not Cookie.SignedCookie:
@@ -1692,22 +1692,22 @@ def handler(req):
     return apache.OK
 \end{verbatim}
 
-\section{\module{psp} -- Python Server Pages\label{pyapi-psp}}
-\declaremodule[psp]{extension}{psp}
+\section{\module{_psp} -- Python Server Pages\label{pyapi-psp}}
+\declaremodule[psp]{extension}{_psp}
 \modulesynopsis{Python Server Pages}
 \moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
 
-The \module{psp} module provides a way to convert text documents
+The \module{_psp} module provides a way to convert text documents
 (including, but not limited to HTML documents) containing Python code
 embedded in special brackets into pure Python code suitable for
 execution within a mod_python handler, thereby providing a versatile
 mechanism for delivering dynamic content in a style similar to similar
 to ASP, JSP and others.
 
-The parser used by \module{psp} is written in C (genrated using flex)
+The parser used by \module{_psp} is written in C (genrated using flex)
 and is therefore very fast.
 
-Unlike other mod_python modules, \module{psp} is written in such a way
+Unlike other mod_python modules, \module{_psp} is written in such a way
 that it can be imported outside of the Apache httpd process, e.g. in
 stand-alone command-line programs.
 
