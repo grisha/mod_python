@@ -994,11 +994,6 @@ through.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[connection]{child_num}
-Integer. The number of the child handling the request.
-\emph{(Read-Only})
-\end{memberdesc}
-
 \begin{memberdesc}[connection]{local_addr}
 The (address, port) tuple for the server.
 \emph{(Read-Only})
@@ -1183,6 +1178,7 @@ Value of the \code{ServerName} directive. Same as CGI \envvar{SERVER_NAME}.\emph
 
 \begin{memberdesc}[server]{port}
 Integer. TCP/IP port number. Same as CGI \envvar{SERVER_PORT}.
+\emph{This member appears to be 0 on Apache 2.0, look at req.connection.local_addr instead}
 \emph{(Read-Only})
 \end{memberdesc}
 

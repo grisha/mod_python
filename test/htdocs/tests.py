@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.22 2003/01/23 20:20:00 grisha Exp $
+ # $Id: tests.py,v 1.23 2003/01/23 22:34:20 grisha Exp $
  #
 
 # mod_python tests
@@ -417,7 +417,7 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("server.server_hostname must be 'test_internal'")
         
         log("    server.port: %s" % `server.port`)
-        # hmm it reall is 0...
+        # hmm it really is 0...
         #if server.port == 0:
         #    self.fail("server.port should not be 0")
             
@@ -434,8 +434,8 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("server.is_virtual should be 1")
         
         log("    server.timeout: %s" % `server.timeout`)
-        if server.timeout != 5000000:
-            self.fail("server.timeout should be 5000000")
+        if not server.timeout in (5000000, 300000000):
+            self.fail("server.timeout should be 5000000 or 300000000")
         
         log("    server.keep_alive_timeout: %s" % `server.keep_alive_timeout`)
         if server.keep_alive_timeout != 15000000:
@@ -469,6 +469,70 @@ class SimpleTestCase(unittest.TestCase):
         if server.limit_req_fields != 100:
             self.fail("server.limit_req_fields should be 100")
 
+    def test_connection_members(self):
+
+        req = self.req
+        log = req.log_error
+        conn = req.connection
+
+        log("Examining connection memebers:")
+
+        log("    connection.base_server: %s" % `conn.base_server`)
+        if type(conn.base_server) is not type(req.server):
+            self.fail("conn.base_server should be same type as req.server")
+        
+        log("    connection.local_addr: %s" % `conn.local_addr`)
+        if conn.local_addr[0] != "127.0.0.1":
+            self.fail("conn.local_addr[0] should be '127.0.0.1'")
+        
+        log("    connection.remote_addr: %s" % `conn.remote_addr`)
+        if conn.remote_addr[0] != "127.0.0.1":
+            self.fail("conn.remote_addr[0] should be '127.0.0.1'")
+
+        log("    connection.remote_ip: %s" % `conn.remote_ip`)
+        if conn.remote_ip != "127.0.0.1":
+            self.fail("conn.remote_ip should be '127.0.0.1'")
+
+        log("    connection.remote_host: %s" % `conn.remote_host`)
+        if conn.remote_host is not None:
+            self.fail("conn.remote_host should be None")
+
+        log("    connection.remote_logname: %s" % `conn.remote_logname`)
+        if conn.remote_logname is not None:
+            self.fail("conn.remote_logname should be None")
+        
+        log("    connection.aborted: %s" % `conn.aborted`)
+        if conn.aborted != 0:
+            self.fail("conn.aborted should be 0")
+
+        log("    connection.keepalive: %s" % `conn.keepalive`)
+        if conn.keepalive != 2:
+            self.fail("conn.keepalive should be 2")
+        
+        log("    connection.double_reverse: %s" % `conn.double_reverse`)
+        if conn.double_reverse != 0:
+            self.fail("conn.double_reverse should be 0")
+        
+        log("    connection.keepalives: %s" % `conn.keepalives`)
+        if conn.keepalives != 1:
+            self.fail("conn.keepalives should be 1")
+
+        log("    connection.local_ip: %s" % `conn.local_ip`)
+        if conn.local_ip != "127.0.0.1":
+            self.fail("conn.local_ip should be '127.0.0.1'")
+
+        log("    connection.local_host: %s" % `conn.local_host`)
+        if conn.local_host is not None:
+            self.fail("conn.local_host should be None")
+
+        log("    connection.id: %s" % `conn.id`)
+        if conn.id != 0:
+            self.fail("conn.id should be 0")
+        
+        log("    connection.notes: %s" % `conn.notes`)
+        if `conn.notes` != '{}':
+            self.fail("conn.notes should be {}")
+
 def make_suite(req):
 
     mpTestSuite = unittest.TestSuite()
@@ -479,6 +543,7 @@ def make_suite(req):
     mpTestSuite.addTest(SimpleTestCase("test_req_get_config", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_get_remote_host", req))
     mpTestSuite.addTest(SimpleTestCase("test_server_members", req))
+    mpTestSuite.addTest(SimpleTestCase("test_connection_members", req))
     return mpTestSuite
 
 

@@ -72,6 +72,9 @@ Some changes in Mod_Python may impact your existing code:
    shouldn't have been used, but if you were using it anyway, your
    code will break. 
 
+   It appears that req.server.port is 0 always, but if you need the local
+   port number, you can look at req.connection.local_addr.
+
 4. OS Hints
 
 FreeBSD:        
