@@ -18,11 +18,12 @@ It may seem like a little too much for starters, but you need to
 understand what a handler is in order to use mod_python. And it's
 really rather simple.
 
-Apache processes requests in \dfn{phases}. For example, the first phase may
-be to authenticate the user, the next phase to verify whether that
-user is allowed to see a particular file, then (next phase) read the
-file and send it to the client. Most requests consist of two phases:
-(1) read the file and send it to the client, then (2) log the
+Apache processes requests in \dfn{phases}. For example, the first
+phase may be to authenticate the user, the next phase to verify
+whether that user is allowed to see a particular file, then (next
+phase) read the file and send it to the client. Most requests consist
+of three phases: (1) translate the requisted URI to a file location
+(2) read the file and send it to the client, then (3) log the
 request. Exactly which phases are processed and how varies greatly and
 depends on the configuration.
 
@@ -63,7 +64,7 @@ Let's pretend we have the following configuration:
 
 \strong{NB:} \filenq{/mywebdir} is an absolute physical path. 
 
-And let's say that we have a python program (windows users: substitute
+And let's say that we have a python program (Windows users: substitute
 forward slashes for backslashes) \file{/mywedir/myscript.py} that looks like
 this:
 
@@ -81,11 +82,13 @@ this:
 Here is what's going to happen: The \code{AddHandler} directive tells
 Apache that any request for any file ending with \file{.py} in the
 \file{/mywebdir} directory or a subdirectory thereof needs to be
-processed by mod_python.
+processed by mod_python. The \samp{PythonHandler myscript} directive
+tells mod_python to process the generic handler using the
+\code{myscript} script.
 
 When such a request comes in, Apache starts stepping through its
 request processing phases calling handlers in mod_python. The
-mod_python handlers check if a directive for that handler was
+mod_python handlers check whether a directive for that handler was
 specified in the configuration. (Remember, it acts as a dispatcher.)
 In our example, no action will be taken by mod_python for
 all handlers except for the generic handler. When we get to the
@@ -132,22 +135,21 @@ this line.
 def handler(req):
 \end{verbatim}
 
-\index{handler}
-This is our \dfn{handler} function declaration. It is called
-\code{"handler"} because mod_python takes the name of the directive,
-converts it to lower case and removes the word \code{"python"}. Thus
-\code{"PythonHandler"} becomes \code{"handler"}. You could name it 
-something else, and specify it explicitly in the directive using the
-special \samp{::} notation. For example, if the handler function was
-called \samp{spam}, then the directive would be
+\index{handler} This is our \dfn{handler} function declaration. It is
+called \code{"handler"} because mod_python takes the name of the
+directive, converts it to lower case and removes the word
+\code{"python"}. Thus \code{"PythonHandler"} becomes
+\code{"handler"}. You could name it something else, and specify it
+explicitly in the directive using \samp{::}. For example, if the
+handler function was called \samp{spam}, then the directive would be
 \samp{PythonHandler myscript::spam}.
 
-Note that a handler must take one argument - the mysterious
-\class{Request} object. There is really no mystery about it though.  The
-\class{Request} object is an object that provides all of the information
-about this particular request - such as the IP of client, the headers,
-the URI, etc. The communication back to the client is also done via
-the \class{Request} object, i.e. there is no "response" object.
+Note that a handler must take one argument - the \class{Request}
+object. The \class{Request} object is an object that provides all of
+the information about this particular request - such as the IP of
+client, the headers, the URI, etc. The communication back to the
+client is also done via the \class{Request} object, i.e. there is no
+"response" object.
 
 \item
 \begin{verbatim}
