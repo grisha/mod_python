@@ -128,7 +128,12 @@ def cleanup(data):
     # for req_register_cleanup above
 
     data.log_error(data.cleanup_data)
-    
+
+def util_fieldstorage(req):
+
+    from mod_python import util
+    req.write(`util.FieldStorage(req).list`)
+    return apache.OK
 
 def _test_table():
 

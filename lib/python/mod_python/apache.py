@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.50 2002/08/19 18:21:32 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.51 2002/08/20 19:05:06 gtrubetskoy Exp $
 
 import sys
 import string
@@ -138,6 +138,9 @@ class CallBack:
 
                 # always close the filter
                 filter.close()
+
+                assert (type(result) == type(int())), \
+                       "Filter '%s' returned invalid return code." % hlist.handler
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -243,6 +246,9 @@ class CallBack:
                     else:
                         result = object(req)
 
+                    assert (type(result) == type(int())), \
+                           "Handler '%s' returned invalid return code." % hlist.handler
+
                     # stop cycling through handlers
                     if result != OK:
                         break
@@ -253,7 +259,7 @@ class CallBack:
                 hlist.next()
 
         except SERVER_RETURN, value:
-            # SERVER_RETURN indicates a non-local abort from below
+            # SERVER_RETURN indicates an abort from below
             # with value as (result, status) or (result, None) or result
             try:
                 if len(value.args) == 2:
