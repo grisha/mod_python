@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.7 2000/08/21 17:16:37 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.8 2000/08/28 22:46:11 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -589,6 +589,14 @@
 	  <dd>
 	    The number of the child handling the request. 
 
+	  <dt><br><b>local_addr</b> <em>tuple, RO</em>
+	  <dd>
+	    The (address, port) tuple for the server.
+
+	  <dt><br><b>remote_iddr</b> <em>tuple, RO</em>
+	  <dd>
+	    The (address, port) tuple for the client.
+
 	  <dt><br><b>remote_ip</b> <em>string, RO</em>
 	  <dd>
 	    The IP of the client.
@@ -616,6 +624,14 @@
 	  <dd>
 	    The number of times this connection has been used. (?)
 	    
+	  <dt><br><b>local_ip</b> <em>string, RO</em>
+	  <dd>
+	    The IP of the server.
+
+	  <dt><br><b>local_host</b> <em>string, RO</em>
+	  <dd>
+	    The DNS name of the server.
+
 	</dl>
 
       </blockquote>
@@ -746,7 +762,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Fri Aug 18 16:12:59 EDT 2000
+Last modified: Mon Aug 28 18:42:10 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

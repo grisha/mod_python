@@ -1,3 +1,6 @@
+Aug 28 2000 -	Added Richard Barret's patch that gives python socket module 
+		behaviour from req.connection.local_addr and remote_addr.
+
 Aug 27 2000 -   Added PythonInitHandler. Also, it looks like dynamic handler
 		addition now works correctly, after trying 15 different ways of
 		implementing it, resorting to req->notes seems to be the only

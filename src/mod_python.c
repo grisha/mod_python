@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.25 2000/08/28 19:32:22 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.26 2000/08/28 22:46:11 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -77,6 +77,7 @@
  * May 1998 - initial release (httpdapy).
  *
  */
+
 
 /* Apache headers */
 #include "httpd.h"
@@ -94,6 +95,8 @@
 #if defined(WIN32) && !defined(WITH_THREAD)
 #error Python threading must be enabled on Windows
 #endif
+
+#include <sys/socket.h>
 
 /******************************************************************
                         Declarations
@@ -378,19 +381,20 @@ static PyTypeObject connobjecttype = {
 #undef OFF
 #define OFF(x) offsetof(conn_rec, x)
 static struct memberlist conn_memberlist[] = {
-  /* server in getattr */
-  /* base_server in getattr */
+  {"server",             T_OBJECT                                },
+  {"base_server",        T_OBJECT                                },
   /* XXX vhost_lookup_data? */
   {"child_num",          T_INT,       OFF(child_num),          RO},
   /* XXX BUFF? */
-  /* XXX struct sockaddr_in local_addr? */
-  /* XXX struct sockaddr_in remote_addr? */
+  {"local_addr",         T_OBJECT                                },
+  {"remote_addr",        T_OBJECT                                },
+  {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
   {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
   {"remote_host",        T_STRING,    OFF(remote_host),        RO},
   {"remote_logname",     T_STRING,    OFF(remote_logname),     RO},
   {"user",               T_STRING,    OFF(user),               RO},
   {"ap_auth_type",       T_STRING,    OFF(ap_auth_type),       RO},
-  /* XXX aborted, keepalive, keptalive, double_reverse, keepalives ? */
+  /* XXX aborted, keepalive, keptalive, double_reverse ? */
   {"local_ip",           T_STRING,    OFF(remote_ip),          RO},
   {"local_host",         T_STRING,    OFF(remote_host),        RO},
   {"keepalives",         T_INT,       OFF(keepalives),         RO},
@@ -475,6 +479,11 @@ static PyMethodDef requestobjectmethods[] = {
 #define OFF(x) offsetof(request_rec, x)
 static struct memberlist request_memberlist[] = {
     /* connection, server, next, prev, main in getattr */
+    {"connection",         T_OBJECT,                                 },
+    {"server",             T_OBJECT,                                 },
+    {"next",               T_OBJECT,                                 },
+    {"prev",               T_OBJECT,                                 },
+    {"main",               T_OBJECT,                                 },
     {"the_request",        T_STRING,    OFF(the_request),          RO},
     {"assbackwards",       T_INT,       OFF(assbackwards),         RO},
     {"proxyreq",           T_INT,       OFF(proxyreq),             RO},
@@ -504,7 +513,7 @@ static struct memberlist request_memberlist[] = {
     {"handler",            T_STRING,    OFF(handler),              RO},
     {"content_encoding",   T_STRING,    OFF(content_encoding),     RO},
     {"content_language",   T_STRING,    OFF(content_language),     RO},
-    /* content_languages in getattr*/
+    {"content_languages",  T_OBJECT,                                 },
     {"vlist_validator",    T_STRING,    OFF(vlist_validator),      RO},
     {"no_cache",           T_INT,       OFF(no_cache),             RO},
     {"no_local_copy",      T_INT,       OFF(no_local_copy),        RO},
@@ -1311,6 +1320,39 @@ static void conn_dealloc(connobject *self)
 }
 
 /**
+ ** makeipaddr
+ **
+ *  utility func to make an ip address
+ */
+
+static PyObject *makeipaddr(struct sockaddr_in *addr)
+{
+    long x = ntohl(addr->sin_addr.s_addr);
+    char buf[100];
+    sprintf(buf, "%d.%d.%d.%d",
+	    (int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
+	    (int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
+    return PyString_FromString(buf);
+}
+
+/**
+ ** makesockaddr
+ **
+ *  utility func to make a socket address
+ */
+
+static PyObject *makesockaddr(struct sockaddr_in *addr)
+{
+    PyObject *addrobj = makeipaddr(addr);
+    PyObject *ret = NULL;
+    if (addrobj) {
+	ret = Py_BuildValue("Oi", addrobj, ntohs(addr->sin_port));
+	Py_DECREF(addrobj);
+    }
+    return ret;
+}
+
+/**
  ** conn_getattr
  **
  *  Get conn object attributes
@@ -1356,6 +1398,12 @@ static PyObject * conn_getattr(connobject *self, char *name)
 	    Py_INCREF(self->base_server);
 	    return self->base_server;
 	}
+    }
+    else if (strcmp(name, "local_addr") == 0) {
+	return makesockaddr(&(self->conn->local_addr));
+    }
+    else if (strcmp(name, "remote_addr") == 0) {
+	return makesockaddr(&(self->conn->remote_addr));
     }
     else
 	return PyMember_Get((char *)self->conn, conn_memberlist, name);
