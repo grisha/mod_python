@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.2 2003/06/17 02:35:15 grisha Exp $
+ # $Id: Cookie.py,v 1.3 2003/06/27 16:59:05 grisha Exp $
 
 """
 
@@ -138,6 +138,10 @@ spam=a90f71893109ca246ab68860f552302ce3MEAAAAZWdnc2kYAAAAMA==; version=1
 {'eggs': 24}
 >>>
 
+NB: This module is named Cookie with a capital C so as to let people
+have a variable called cookie without accidently overwriting the
+module.
+
 """
 
 import time
@@ -145,8 +149,6 @@ import re
 import hmac
 import marshal
 import base64
-
-from mod_python import apache
 
 class CookieError(Exception):
     pass
@@ -196,9 +198,6 @@ class Cookie(object):
         for k in kw:
             setattr(self, k.lower(), kw[k])
 
-        if not hasattr(self, "version"):
-            self.version = "1"
-
 
     def __str__(self):
 
@@ -243,11 +242,6 @@ class Cookie(object):
             value = time.strftime("%a, %d-%b-%Y %H:%M:%S GMT",
                                   time.gmtime(t))
 
-        # if max-age not already set, make it
-        # match expires.
-        if not hasattr(self, "max_age"):
-            self.max_age = int(max(0, t - time.time()))
-        
         self._expires = "%s" % value
 
     def get_expires(self):
@@ -394,7 +388,7 @@ class MarshalCookie(SignedCookie):
 
 _cookiePattern = re.compile(
     r"(?x)"                       # Verbose pattern
-    r"\ *"                        # space before attr-val is eaten
+    r"[,\ ]*"                     # space/comma (RFC2616 4.2) before attr-val is eaten
     r"(?P<key>"                   # Start of group 'key'
     r"[^;\ =]+"                     # anything but ';', ' ' or '='
     r")"                          # End of group 'key'
@@ -446,3 +440,33 @@ def _parseCookie(str, Class):
 
     return result
 
+
+def setCookie(req, cookie):
+    """
+    Sets a cookie in outgoing headers and adds a cache
+    directive so that caches don't cache the cookie.
+    """
+
+    if not req.headers_out.has_key("Set-Cookie"):
+        req.headers_out.add("Cache-Control", 'no-cache="set-cookie"')
+        
+    req.headers_out.add("Set-Cookie", str(cookie))
+
+def getCookie(req, Class=Cookie, data=None):
+    """
+    A shorthand for retrieveing and parsing cookies given
+    a Cookie class. The class must be one of the classes from
+    this module.
+    """
+
+    if not req.headers_in.has_key("cookie"):
+        return None
+
+    cookies = req.headers_in["cookie"]
+    if type(cookies) == type([]):
+        cookies = '; '.join(cookies)
+
+    if data:
+        return Class.parse(data, cookies)
+    else:
+        return Class.parse(cookies)
