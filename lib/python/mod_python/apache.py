@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.28 2000/12/06 03:05:37 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.29 2001/04/11 02:52:09 gtrubetskoy Exp $
 
 import sys
 import string
@@ -304,10 +304,16 @@ def import_module(module_name, req=None, path=None):
     if  not autoreload:
 
         # import module
-        module = __import__(module_name)
-        components = string.split(module_name, '.')
-        for cmp in components[1:]:
-            module = getattr(module, cmp)
+        parts = string.split(module_name, '.')
+        for i in range(len(parts)):
+            f, p, d = imp.find_module(parts[i], path)
+            try:
+                mname = string.join(parts[:i+1], ".")
+                module = imp.load_module(mname, f, p, d)
+            finally:
+                if f: f.close()
+            if hasattr(module, "__path__"):
+                path = module.__path__
 
     else:
 
@@ -336,11 +342,6 @@ def import_module(module_name, req=None, path=None):
                     if f: f.close()
                 if hasattr(module, "__path__"):
                     path = module.__path__
-
-##            module = __import__(module_name)
-##            components = string.split(module_name, '.')
-##            for cmp in components[1:]:
-##                module = getattr(module, cmp)
 
         # find out the last modification time
         # but only if there is a __file__ attr

@@ -21,7 +21,7 @@
  # 4. The names "mod_python", "modpython" or "Gregory Trubetskoy" must not 
  #    be used to endorse or promote products derived from this software 
  #    without prior written permission. For written permission, please 
- #    contact grisha@ispol.com.
+ #    contact grisha@modpython.org.
  #
  # 5. Products derived from this software may not be called "mod_python"
  #    or "modpython", nor may "mod_python" or "modpython" appear in their 
@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.8 2001/01/22 05:14:12 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.9 2001/04/11 02:52:09 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
