@@ -1,0 +1,37 @@
+
+<IfModule prefork.c>
+  StartServers         1
+  MaxSpareServers      1
+</IfModule>
+<IfModule worker.c>
+  StartServers         1
+  MaxSpareThreads      1
+  MaxClients           1
+  MinSpareThreads      1
+  MaxSpareThreads      1
+  ThreadsPerChild      1
+  MaxRequestsPerChild  0
+</IfModule>
+<IfModule perchild.c>
+  NumServers           1
+  StartThreads         1
+  MaxSpareThreads      1
+  MaxThreadsPerChild   1
+</IfModule>
+<IfModule mpm_winnt.c>
+  ThreadsPerChild 1
+  MaxRequestsPerChild  0
+</IfModule>
+
+ServerRoot "%(server_root)s"
+ErrorLog "logs/error_log"
+TypesConfig "conf/mime.types"
+PidFile "logs/httpd.pid"
+
+ServerName "127.0.0.1"
+
+Listen "%(port)s"
+
+DocumentRoot "%(document_root)s"
+
+LoadModule python_module "%(mod_python_so)s"

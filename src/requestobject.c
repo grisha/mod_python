@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.20 2002/08/16 22:07:15 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.21 2002/08/18 18:43:36 gtrubetskoy Exp $
  *
  */
 
@@ -358,10 +358,8 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
     }
 }
 
-//XXX document - get_dirs and get_all_dirs gone
-
 /**
- ** request.get_remote_host(request self, [int type])
+ ** request.get_remodte_host(request self, [int type])
  **
  *    An interface to the ap_get_remote_host function.
  */

@@ -379,17 +379,10 @@ used.
 
 \begin{methoddesc}[Request]{get_config}{}
 Returns a reference to the table object containing the mod_python
-configuration in effect for this request. The table has directives as
+configuration in effect for this request except for
+\code{Python*Handler} and \code{PythonOption} (The latter can be
+obtained via \method{req.get_options()}. The table has directives as
 keys, and their values, if any, as values.
-\end{methoddesc}
-
-\begin{methoddesc}[Request]{get_dirs}{}
-Returns a reference to the table object keyed by directives currently
-in effect and having directory names of where the particular directive
-was last encountered as values. For every key in the table returned by
-\method{get_config()}, there will be a key in this table. If the directive was
-in one of the server config files outside of any \code{<Directory>},
-then the value will be an empty string.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_remote_host}{\optional{type, str_is_ip}}
@@ -403,7 +396,7 @@ The optional \var{type} argument can specify the following:
 \begin{itemize}
 
 \item
-\code{apache.REMOTE_HOST} Look up the DNS name. Fail if Apache 
+\code{apache.REMOTE_HOST} Look up the DNS name. Return None if Apache
 directive \code{HostNameLookups} is \code{off} or the hostname cannot
 be determined.
 
@@ -476,6 +469,18 @@ object, the optional argument \var{data} can be any object (default is
 \code{None}). At the very end of the request, just before the actual
 request record is destroyed by Apache, \var{callable} will be called
 with one argument, \var{data}.
+
+It is OK to pass the request object as data, but keep in mind that
+when the cleanup is executed, the request processing is already
+complete, so doing things like writing to the client is completely
+pointless. 
+
+If errors are encountered during cleanup processing, they should be in
+error log, but otherwise will not affect request processing in any
+way, which makes cleanup bugs sometimes hard to spot.
+
+If the server is shut down before the cleanup had a chance to run,
+it's possible that it will not be executed.
 
 \end{methoddesc}
 
@@ -718,7 +723,6 @@ The path portion of the URI.
 
 \begin{memberdesc}[Request]{filename}
 String. File name being requested.
-\emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{path_info}
