@@ -1,3 +1,11 @@
+Sep  9 2000 -   Added server.register_cleanup(). This happened to be a little
+		trickier than I thought since it turned out that server_rec does
+		not have a pool member. Py_Finalze() has been moved to a 
+		cleanup from the ChildExit handler because ChildExit runs *before*
+		any cleanups. (Now I know why mod_perl doesn't use child_exit.)
+
+Sep  8 2000 -   Sean True's fix to call note_basic_auth_failure added.
+
 Sep  6 2000 -   Stéphane Bidoul's Win32 fixes applied.
 
 Sep  5 2000 -   2.5 released.

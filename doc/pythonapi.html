@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.10 2000/09/04 19:21:20 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.11 2000/09/13 13:29:04 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -243,7 +243,6 @@
       <blockquote>
 
 	<dl>
-	  
 
 	  <dt><b>add_handler(string htype, string handler [,string dir])</b>
 	  <dd>
@@ -287,6 +286,8 @@
 	  <dd>
 	    Terminate a child process. This should terminate the current child 
 	    process in a nice fashion.
+	    <p>
+	      This function does nothing in multithreaded environments (e.g. Windows).
 
 	  <dt><br><b>get_basic_auth_pw()</b>
 	  <dd>
@@ -655,6 +656,21 @@
       </code> structure. The server structure describes the server (possibly
       virtual server) serving the request.
 
+      <h4>Functions</h4>
+      <blockquote>
+
+	<dl>
+	  <dt><br><b>register_cleanup(request, callable function, data=None)</b>
+	  <dd>
+	    Registers a cleanup. Very similar to <code>req.register_cleanup()</code>,
+	    except this cleanup will be executed at child termination time. This
+	    function requires one extra argument - the request object. 
+	</dl>
+
+      </blockquote>
+
+      <h4>Other Members</h4>
+
       <blockquote>
 
 	<dl>
@@ -774,7 +790,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon Sep  4 14:42:13 EDT 2000
+Last modified: Sat Sep  9 14:08:19 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
