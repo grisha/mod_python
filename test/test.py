@@ -216,6 +216,31 @@ class ModPythonTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail("test failed")
 
+    def test_req_document_root(self):
+
+        print "\n* Testing req.document_root()"
+
+        cfg = "<Directory %s/htdocs>\n" % PARAMS["server_root"]+ \
+              "  SetHandler python-program\n" + \
+              "  PythonHandler tests::req_document_root\n" + \
+              "  PythonDebug On\n" + \
+              "  PythonOption secret sauce\n" + \
+              "</Directory>\n"
+
+        self.makeConfig(cfg)
+        self.startApache()
+
+        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
+        print "    url: "+url
+        
+        f = urllib.urlopen(url)
+        rsp = f.read()
+        f.close()
+        print "    response: "+rsp
+
+        if (rsp != PARAMS["document_root"]):
+            self.fail("test failed")
+
     def test_req_get_config(self):
 
         print "\n* Testing req.get_config() and get_options()"
@@ -427,19 +452,20 @@ def findUnusedPort():
 def suite():
 
     mpTestSuite = unittest.TestSuite()
-#    mpTestSuite.addTest(ModPythonTestCase("testLoadModule"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_apache_log_error"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_apache_table"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_add_common_vars"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_add_handler"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_allow_methods"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_get_basic_auth_pw"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_get_config"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_get_remote_host"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_read"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))
+    mpTestSuite.addTest(ModPythonTestCase("testLoadModule"))
+    mpTestSuite.addTest(ModPythonTestCase("test_apache_log_error"))
+    mpTestSuite.addTest(ModPythonTestCase("test_apache_table"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_add_common_vars"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_add_handler"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_allow_methods"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_document_root"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_get_basic_auth_pw"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_get_config"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_get_remote_host"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_read"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_readlines"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()

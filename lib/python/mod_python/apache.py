@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.49 2002/08/16 22:07:15 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.50 2002/08/19 18:21:32 gtrubetskoy Exp $
 
 import sys
 import string
@@ -676,19 +676,6 @@ def init():
 
     return CallBack()
 
-def allow_methods(req, *methods):
-    """
-    Convenience function for dealing with req.allowed.
-    example: allow_method(M_GET, M_POST)
-    """
-
-    result = long()
-    
-    for meth in methods:
-        result |= long(1) << meth
-
-    req.allow = result
-    
 ## Some functions made public
 make_table = _apache.table
 log_error = _apache.log_error
@@ -817,7 +804,7 @@ PROXYREQ_NONE = 0       # No proxy
 PROXYREQ_PROXY = 1	# Standard proxy
 PROXYREQ_REVERSE = 2	# Reverse proxy
 
-# methods for allow_method()
+# methods for req.allow_method()
 M_GET = 0               # RFC 2616: HTTP
 M_PUT = 1
 M_POST = 2
