@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.70 2003/07/12 02:40:45 grisha Exp $
+ # $Id: apache.py,v 1.71 2003/07/16 20:23:24 grisha Exp $
 
 import sys
 import traceback
@@ -103,7 +103,7 @@ class CallBack:
         try:
 
             handler = conn.hlist.handler
-            
+
             # split module::handler
             l = handler.split('::', 1)
             module_name = l[0]
@@ -115,7 +115,7 @@ class CallBack:
 
             # add the directory to pythonpath if
             # not there yet, or pythonpath specified
-            
+
             if config.has_key("PythonPath"):
                 # we want to do as little evaling as possible,
                 # so we remember the path in un-evaled form and
@@ -161,7 +161,8 @@ class CallBack:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 result = self.ReportError(exc_type, exc_value, exc_traceback, srv=conn.base_server,
-                                          phase=filter.name, hname=handler, debug=debug)
+                                          phase="ConnectionHandler",
+                                          hname=handler, debug=debug)
             finally:
                 exc_traceback = None
 
