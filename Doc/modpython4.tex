@@ -1076,51 +1076,39 @@ information to adjacent filters in the filter stack.
 \subsubsection{Filter Methods\label{pyapi-mpfilt-meth}}
 
 \begin{methoddesc}[filter]{pass_on}{}
-
 Passes all data throught the filter without any processing.
+\end{methoddesc}
 
 \begin{methoddesc}[filter]{read}{\optional{length}}
-
 Reads at most \var{len} bytes from the next filter, returning a string
 with the data read or None if End Of Stream (EOS) has been reached. A
 filter \emph{must} be closed once the EOS has been encountered.
 
 If the \var{len} argument is negative or ommitted, reads all data
 currently available.
-
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{readline}{\optional{length}}
-
 Reads a line from the next filter or up to \var{length} bytes.
-
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{write}{string}
-
 Writes \var{string} to the next filter.
-
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{flush}{}
-
 Flushes the output by sending a FLUSH bucket.
-
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{close}{}
-
 Closes the filter and sends an EOS bucket. Any further IO operations on
 this filter will throw an exception.
-
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{disable}{}
-
 Tells mod_python to ignore the provided handler and just pass the data
 on. Used internally by mod_python to print traceback from exceptions
 encountered in filter handlers to avoid an infinite loop.
-
 \end{methoddesc}
 
 \subsubsection{Filter Members\label{pyapi-mpfilt-mem}}
