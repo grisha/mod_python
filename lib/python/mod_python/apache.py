@@ -228,7 +228,7 @@ class CallBack:
 
         # config
         self.config = req.get_config()
-        debug = self.config.has_key("PythonDebug"):
+        debug = self.config.has_key("PythonDebug")
 
         try:
             # cycle through the handlers
@@ -323,7 +323,7 @@ class CallBack:
                     s = s + e + '\n'
                 s = s + "\nNOTE: More output from other handlers, if any, may follow.\n"
                 s = s + "This will NOT happen, and request processing will STOP\n"
-                s = s + "at this point when you unset PythonOption debug.\n\n"
+                s = s + "at this point when you remove PythonDebug directive.\n\n"
 
                 req.write(s)
 
@@ -350,9 +350,9 @@ def import_module(module_name, req=None):
     autoreload, debug, pythonpath = 1, None, None
     if req:
         config = req.get_config()
-        autoreload = not config.has_key("PythonNoReload"):
-        debug = not config.has_key("PythonDebug"):
-        if conf.has_key("PythonPath"):
+        autoreload = not config.has_key("PythonNoReload")
+        debug = not config.has_key("PythonDebug")
+        if config.has_key("PythonPath"):
             pythonpath = config["PythonPath"]
 
     # unless pythonpath is set explicitely
@@ -475,11 +475,7 @@ class NullIO:
 
 class CGIStdin(NullIO):
 
-    def __del__(self):
-        _apache.log_error( "destroying si %d" % id(self))
-
     def __init__(self, req):
-        _apache.log_error( "creating si %d" % id(self))
         self.pos = 0
         self.req = req
         self.BLOCK = 65536 # 64K
@@ -541,11 +537,7 @@ class CGIStdout(NullIO):
     Class that allows writing to the socket directly for CGI.
     """
     
-    def __del__(self):
-        _apache.log_error( "destroying so %d" % id(self))
-
     def __init__(self, req):
-        _apache.log_error( "creating so %d" % id(self))
         self.pos = 0
         self.req = req
         self.headers_sent = 0
@@ -567,13 +559,14 @@ class CGIStdout(NullIO):
                 lines = string.split(ss[0], '\n')
                 for line in lines:
                     h, v = string.split(line, ":", 1)
+                    v = string.strip(v)
                     if string.lower(h) == "status":
                         status = int(string.split(v)[0])
                         self.req.status = status
                     elif string.lower(h) == "content-type":
-                        self.req.content_type = string.strip(v)
+                        self.req.content_type = v
+                        self.req.headers_out[h] = v
                     else:
-                        v = string.strip(v)
                         self.req.headers_out[h] = v
                 self.req.send_http_header()
                 self.headers_sent = 1

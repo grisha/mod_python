@@ -3,7 +3,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.3 2000/05/06 22:09:23 grisha Exp $
+ * $Id: mod_python.c,v 1.4 2000/05/08 23:24:52 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details. See COPYRIGHT file for Copyright. 
@@ -35,7 +35,7 @@
 #define INTERP_ATTR "__interpreter__"
 
 /* debugging? Use ./httpd -X when on */
-static int debug = 0;
+static int debug = 1;
 
 /* Are we in single interpreter mode? */
 static int single_mode = 0;
@@ -2545,6 +2545,30 @@ command_rec python_commands[] =
 };
 
 /* module definition */
+
+/* This is read by Configure script to provide "magical"
+ * linking with the Python libraries....
+ * Credit goes to Lele Gaifax and his amazing PyApache module!
+ *
+ * MODULE-DEFINITION-START
+ * Name: python_module
+ * ConfigStart
+ PyVERSION=`python1.5 -c "import sys; print sys.version[:3]"`
+ PyEXEC_INSTALLDIR=`python1.5 -c "import sys; print sys.exec_prefix"`
+ PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
+ PyLIBPL=${PyLIBP}/config
+ PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+ PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+ PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+ PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+ PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+ LIBS="${LIBS} ${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
+ LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
+ INCLUDES="${INCLUDES} -I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
+ * ConfigEnd
+ * MODULE-DEFINITION-END
+ */
+
 
 /* XXX
  * PythonChildInitHandler and PythonChildExitHandler

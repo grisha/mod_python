@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Introduction</title>
+  </head>
+
+  <body bgcolor=white>
+<center>
+      <h1>Introduction</h1>
+</center>
+
+<h3>Description</h3>
+
+Mod_python allows embedding Python within the Apache web server for a
+considerable boost in performance and added flexibility in designing
+web based applications.
+
+<h3>Performance</h3>
+
+Some very qiuck tests showed a very apparent performance increase:
+
+    <blockquote><pre>
+Platform:       300Mhz Pentium MMX (Sony Vaio PCG-505TR), FreeBSD
+Program:        A script that first imported the standard library 
+                cgi module, then outputed a single word "Hello!".
+Measuring tool: ab (included with apache), 1000 requests.
+
+Standart CGI:   5 requests/s
+Cgihandler:     40 requests/s
+As a handler:   140 requests/s
+      </pre></blockquote>
+
+<h3>Flexibility</h3>
+
+Apache processes requests in stages (e.g. read the request, parse headers,
+check access, etc.). These stages can be implemented by functions called
+handlers. Traditionally, handlers are written in C and compiled into Apache 
+modules. Mod_python provides a way to extend Apache functionality by writing Apache
+handlers in Python. For a detailed description of the Apache request processing 
+process, see the <a href="http://dev.apache.org/API.html">Apache API Notes</a>.
+
+<p>
+For most programmers, the request and the authentication handlers provide
+everything required.
+
+<p>
+To ease migration from CGI and Httpdapy, two handlers are provided that simulate
+these environments allowing a user to run his scripts under mod_python with
+(for the most part) no changes to the code.
+
+<h3>History</h3>
+Mod_python originates from a project called Httpdapy. 
+For a long time Httpdapy was not called mod_python because Httpdapy
+was not meant to be Apache-pecific. Httpdapy was designed to be
+cross-platform and in fact was initially written for the Netscape server.
+
+<p>
+
+This excerpt from the Httpdapy README file describes well the challenges
+and the solution provided by embedding Python within the HTTP server:
+
+    <blockquote><pre>
+
+While developing my first WWW applications a few years back, I found
+that using CGI for programs that need to connect to relational
+databases (commercial or not) is too slow because every hit requires
+loading of the interpreter executable which can be megabytes in size,
+any database libraries that can themselves be pretty big, plus, the
+database connection/authentication process carries a very significant
+overhead because it involves things like DNS resolutions, encryption,
+memory allocation, etc.. Under pressure to speed up the application, I
+nearly gave up the idea of using Python for the project and started
+researching other tools that claimed to specialize in www database
+integration. I did not have any faith in MS's ASP; was quite
+frustrated by Netscape LiveWire's slow performance and bugginess; Cold
+Fusion seemed promissing, but I soon learned that writing in html-like
+tags makes programs as readable as assembly. Same is true for
+PHP. Besides, I *really* wanted to write things in Python.
+
+Around the same time the Internet Programming With Python book came
+out and the chapter describing how to embed Python within Netscape
+server immediately caught my attention.  I used the example in my
+project, and developed an improved version of what I later called
+Nsapy that compiled on both Windows NT and Solaris.
+
+Although Nsapy only worked with Netscape servers, it was a very
+intelligent generic OO design that, in the spririt of Python, lended
+itself for easy portability to other web servers.
+
+Incidently, the popularity of Netscape's servers was taking a turn
+south, and so I set out to port Nsapy to other servers starting with
+the most popular one, Apache. And so from Nsapy was born Httpdapy.
+
+      </pre></blockquote>
+
+...continuing this story, I later learned that writing Httpdapy
+for eery server is a task a little bigger and less interesting than I
+originally imagined.
+
+<p>
+
+Instead, it seemed like providing a Python counterpart to the popular Perl 
+Apache extension mod_perl that would give Python users the same (or better)
+capability would be a much more exciting thing to do.
+
+<p>
+
+And so it was done.
+
+
+    <hr>
+<!-- Created: Sat May  6 19:30:02 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Sat May  6 21:03:48 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>
