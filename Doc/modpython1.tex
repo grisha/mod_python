@@ -23,9 +23,6 @@ begins), then output a single word "Hello!". The results are based on
 
 \section{Flexibility\label{intr-flexibility}}
 
-Mod_python allows for a level of functionality beyond the reach of
-CGI scripts.
-
 Apache processes requests in phases (e.g. read the request, parse
 headers, check access, etc.). These phases can be implemented by
 functions called handlers. Traditionally, handlers are written in C
@@ -34,10 +31,7 @@ Apache functionality by writing Apache handlers in Python. For a
 detailed description of the Apache request processing process, see the
 \citetitle[http://dev.apache.org/API.html]{Apache API Notes}, as well
 as the \citetitle[http://www.modpython.org/python10/]{Mod_python -
-Integrating Python with Apache} paper.
-
-For most programmers, the request and the authentication handlers
-provide everything required.
+Integrating Python with Apache} paper. 
 
 To ease migration from CGI, a standard mod_python handler is provided
 that simulates the CGI environment allowing a user to run legacy scripts

@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.61 2002/07/16 18:06:05 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.62 2002/07/26 13:10:30 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -746,23 +746,16 @@ static int python_handler(request_rec *req, char *phase)
 
     py_req_config *req_conf;
 
-    /*
-     * In Apache 2.0, all handlers receive a request and have
-     * a chance to process them.  Therefore, we need to only
-     * handle those that we explicitly agreed to handle (see 
-     * above).
-     */
-    if (!req->handler || strcmp(req->handler, "python-program"))
-        return DECLINED;
-
     /* get configuration */
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, 
 						  &python_module);
     /* get file extension */
-    ext = req->filename;
-    ap_getword(req->pool, &ext, '.');
-    if (*ext != '\0')
+    if (req->filename) {
+      ext = req->filename;
+      ap_getword(req->pool, &ext, '.');
+      if (*ext != '\0')
 	ext = apr_pstrcat(req->pool, ".", ext, NULL);
+    }
 
     /* is there an hlist entry, i.e. a handler? */
     /* try with extension */
@@ -1666,6 +1659,15 @@ static int PythonFixupHandler(request_rec *req) {
     return python_handler(req, "PythonFixupHandler");
 }
 static int PythonHandler(request_rec *req) {
+    /*
+     * In Apache 2.0, all handlers receive a request and have
+     * a chance to process them.  Therefore, we need to only
+     * handle those that we explicitly agreed to handle (see 
+     * above).
+     */
+    if (!req->handler || strcmp(req->handler, "python-program"))
+        return DECLINED;
+
     return python_handler(req, "PythonHandler");
 }
 static int PythonHeaderParserHandler(request_rec *req) {
