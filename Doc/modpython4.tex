@@ -58,7 +58,7 @@ A \dfn{handler} is a function that processes a particular phase of a
 request. Apache processes requests in phases - read the request,
 process headers, provide content, etc. For every phase, it will call
 handlers, provided by either the Apache core or one of its modules,
-such as mod_python, which passes control to functions provided b the
+such as mod_python, which passes control to functions provided by the
 user and written in Python. A handler written in Python is not any
 different than a handler written in C, and follows these rules:
 
@@ -147,8 +147,7 @@ raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 \end{verbatim}
               
 Handlers can send content to the client using the \method{Request.write()}
-method. Before sending the body of the response, headers must be
-sent using the \method{Request.send_http_header()} method.
+method. 
 
 Client data, such as POST requests, can be read by using the
 \method{Request.read()} function.
@@ -165,7 +164,6 @@ from mod_python import apache
 
 def requesthandler(req):
     req.content_type = "text/plain"
-    req.send_http_header()
     req.write("Hello World!")
     return apache.OK
 \end{verbatim}
@@ -297,11 +295,15 @@ call to this method, \member{Request.subprocess_env} will contain a
 lot of CGI information.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{child_terminate}{}
-Terminate a child process. This should terminate the current child
-process in a nice fashion.
-                  
-This method does nothing in multithreaded environments (e.g. Windows). 
+\begin{methoddesc}[Request]{allow_methods}{methods\optional{, reset}}
+Adds methods to the \member{Request.allowed_methods} list. This list
+will be passed in \code{Allowed:} header if \constant{HTTP_METHOD_NOT_ALLOWED}
+is returned to the client. Note that Apache doesn't do anything to restrict
+the methods, this list is only used to construct the header. The actual
+method-restricting logic has to be provided in the handler code.
+
+\var{methods} is a sequence of strings. If \var{reset} is 1, then
+the list of methods is first cleared.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_basic_auth_pw}{}
@@ -324,14 +326,13 @@ in one of the server config files outside of any \code{<Directory>},
 then the value will be an empty string.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{get_remote_host}{type}
+\begin{methoddesc}[Request]{get_remote_host}{\optional{type, str_is_ip}}
 
-Returns the a string with the remote client's DNS name or IP or
-\code{None} on failure. The first call to this function may entail a
-DNS look up, but subsequent calls will use the cached result from the
-first call.
+This method is used to determine remote client's DNS name or IP
+number. The first call to this function may entail a DNS look up, but
+subsequent calls will use the cached result from the first call.
 
-The optional type argument can specify the following: 
+The optional \var{type} argument can specify the following: 
 
 \begin{itemize}
 
@@ -355,6 +356,15 @@ cached host name is returned.
 failure, return None.
 
 \end{itemize}
+
+If \var{str_is_ip} is \code{None} or unspecified, then the return
+value is a string representing the DNS name or IP address.
+
+If the optional \var{str_is_ip} argument is not \code{None}, then the
+return value is an \code{(address, str_is_ip)} tuple, where \var{str_is_ip}
+is non-zero if \code{address} is an IP address string.
+
+On failure, \code{None} is returned.
 
 \end{methoddesc}
 
@@ -401,14 +411,6 @@ object, the optional argument \var{data} can be any object (default is
 request record is destroyed by Apache, \var{callable} will be called
 with one argument, \var{data}.
 
-\end{methoddesc}
-
-\begin{methoddesc}[Request]{send_http_header}{}
-Starts the output from the request by sending the HTTP headers. This
-function has no effect when called more than once within the same
-request. Any manipulation of \member{Request.headers_out} after this
-function has been called is pointless since the headers have already
-been sent to the client.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{write}{string}
@@ -492,7 +494,19 @@ Integer containg the method number.
 
 \begin{memberdesc}[Request]{allowed}
 Integer. A bitvector of the allowed methods. Used in relation with
-METHOD_NOT_ALLOWED.
+\constant{METHOD_NOT_ALLOWED}.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{allowed_xmethods}
+Tuple. Allowed extension methods.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{allowed_methods}
+Tuple. List of allowed methods. Used in relation with
+\constant{METHOD_NOT_ALLOWED}. This member can be modified via \method{Request.allow_methods} 
+described in section \ref{pyapi-mprequest-meth}.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -539,7 +553,7 @@ Long integer. Number of bytes read.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{read_body}
-Integer. How the request body should be read. (?)
+Integer. How the request body should be read.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -548,13 +562,9 @@ Boolean. Read chunked transfer coding.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{content_type}
-String. The content type. Mod_python maintains an internal flag
-(\member{_content_type_set}) to keep track of whether
-\member{content_type} was set manually from within Python. The
-publisher handler uses this flag; when \member{content_type} isn't
-set, it attempts to guess the content type by examining the
-first few bytes of the output.
+\begin{memberdesc}[Request]{expecting_100}
+Boolean. Is client waiting for a 100 (\constant{HTTP_CONTINUE}) response.
+\emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{headers_in}
@@ -563,14 +573,34 @@ A table object containing headers sent by the client.
 
 \begin{memberdesc}[Request]{headers_out}
 A \code{table} object representing the headers to be sent to the
-client. Note that manipulating this table after the
-\method{Request.send_http_headers()} has been called is meaningless, since the
-headers have already gone out to the client.
+client. 
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{err_headers_out}
 These headers get send with the error response, instead of
 headers_out.
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{subprocess_env}
+A \code{table} object containing environment information typically usable for CGI.
+You may have to call \member{Request.add_common_vars} first to fill in the information
+you need.
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{notes}
+A \code{table} object containing miscellaneous general purpose info that lives for
+as long as the request lives. Used internally by mod_python. If you need to pass
+data between handlers, it's better to simply add members to the \class{Request}
+object than to use \member{notes}.
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{content_type}
+String. The content type. Mod_python maintains an internal flag
+(\member{Request._content_type_set}) to keep track of whether
+\member{content_type} was set manually from within Python. The
+publisher handler uses this flag; when \member{content_type} isn't
+set, it attempts to guess the content type by examining the
+first few bytes of the output.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{handler}
@@ -586,6 +616,17 @@ String. Content encoding.
 
 \begin{memberdesc}[Request]{vlist_validator}
 Integer. Variant list validator (if negotiated).
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{user}
+If an authentication check is made, this will hold the user
+name. Same as CGI \envvar{REMOTE_USER}.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{ap_auth_type}
+Authentication type. Same as CGI \envvar{AUTH_TYPE}.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -620,6 +661,28 @@ anything. Same as CGI \envvar{PATH_INFO}.
 \emph{(Read-Only})
 \end{memberdesc}
 
+\begin{memberdesc}[Request]{parsed_uri}
+Tuple. The URI broken down into pieces.
+\code{(scheme, hostinfo, user, password, hostname, port, path, query, fragment)}. 
+The \code{apache} module defines a set of \constant{URI_*} constants that
+should be used to access elements of this tuple. Example:
+\begin{verbatim}
+fname = req.parsed_uri[apache.URI_PATH]
+\end{verbatim}
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{finfo}
+Tuple. A file information structure, analogous to POSIX stat, describing the file pointed to
+by the URI.
+\code{(valid, protection, user, group, inode, device, nlink, size, csize, atime, mtime, ctime, fname, name)}. The \code{apache} module defines a set of \constant{FINFO_*} constants that
+should be used to access elements of this tuple. Example:
+\begin{verbatim}
+fname = req.finfo[apache.FINFO_FNAME]
+\end{verbatim}
+\emph{(Read-Only})
+\end{memberdesc}
+
 \begin{memberdesc}[Request]{args}
 String. Same as CGI \envvar{QUERY_ARGS}.
 \emph{(Read-Only})
@@ -631,11 +694,6 @@ The connection object is a Python mapping to the Apache conn_rec
 structure.
 
 \subsubsection{Connection Members\label{pyapi-mpconn-mem}}
-
-\begin{memberdesc}[connection]{server}
-A \code{server} object associated with this connection.
-\emph{(Read-Only})
-\end{memberdesc}
 
 \begin{memberdesc}[connection]{base_server}
 A \code{server} object for the physical vhost that this connection came in
@@ -674,15 +732,20 @@ Remote name if using RFC1413 (ident). Same as CGI \envvar{REMOTE_IDENT}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[connection]{user}
-If an authentication check is made, this will hold the user
-name. \strong{NOTE:} You must call \code{get_basic_auth_pw()} before
-using this value. Same as CGI \envvar{REMOTE_USER}.
+\begin{memberdesc}[connection]{aborted}
+Boolean. True is the connection is aborted.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[connection]{ap_auth_type}
-Authentication type. (None == basic?). Same as CGI \envvar{AUTH_TYPE}.
+\begin{memberdesc}[connection]{keepalive}
+Integer. 1 means the connection will be kept for the next request, 0 means
+"undecided", -1 means fatal error.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[connection]{double_reverse}
+Ingeter. 1 means double reverse DNS lookup has been performed, 0 means
+not yet, -1 means yes and it failed.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -700,6 +763,17 @@ String with the IP of the server.
 DNS name of the server.
 \emph{(Read-Only})
 \end{memberdesc}
+
+\begin{memberdesc}[connection]{id}
+Long. A unique connection id.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[connection]{notes}
+A \code{table} object containing miscellaneous general purpose info that lives for
+as long as the connection lives. 
+\end{memberdesc}
+
 
 \subsection{Server Object (mp_server)\obindex{server}\label{pyapi-mpserver}}
 

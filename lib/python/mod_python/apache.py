@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.34 2001/05/25 03:27:31 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.35 2001/08/18 22:43:45 gtrubetskoy Exp $
 
 import sys
 import string
@@ -119,7 +119,119 @@ class CallBack:
                 self.req.hstack = string.join(handlers[1:], " ")
                 return handlers[0]
 
-    def Dispatch(self, _req, htype):
+    def FilterDispatch(self, filter, func):
+
+        _req = filter._req
+
+        # is there a Request object for this request?
+        if not _req._Request:
+            _req._Request = Request(_req)
+            
+        req = filter.req = _req._Request
+
+        # config
+        config = _req.get_config()
+        debug = config.has_key("PythonDebug")
+
+        try:
+
+            # split module::handler
+            l = string.split(func, '::', 1)
+            module_name = l[0]
+            if len(l) == 1:
+                # no oject, provide default
+                if filter.is_input:
+                    object_str = "inputfilter"
+                else:
+                    object_str = "outputfilter"
+            else:
+                object_str = l[1]
+
+            # add the direcotry to pythonpath if
+            # not there yet, or pythonpath specified
+            
+            if config.has_key("PythonPath"):
+                # we want to do as little evaling as possible,
+                # so we remember the path in un-evaled form and
+                # compare it
+                global _path
+                pathstring = config["PythonPath"]
+                if pathstring != _path:
+                    _path = pathstring
+                    newpath = eval(pathstring)
+                    if sys.path != newpath:
+                        sys.path[:] = newpath
+            else:
+                if filter.is_input:
+                    dir = _req.get_input_filter_dirs()[filter.name]
+                else:
+                    dir = _req.get_output_filter_dirs()[filter.name]
+                if dir not in sys.path:
+                    sys.path[:0] = [dir]
+
+            # import module
+            module = import_module(module_name, _req)
+
+            # find the object
+            silent = config.has_key("PythonHandlerModule")
+            object = resolve_object(req, module, object_str, silent)
+
+            if object:
+
+                # call the object
+                if config.has_key("PythonEnablePdb"):
+                    result = pdb.runcall(object, filter)
+                else:
+                    result = object(filter)
+
+                # always close the filter
+                filter.close()
+
+        except SERVER_RETURN, value:
+            # SERVER_RETURN indicates a non-local abort from below
+            # with value as (result, status) or (result, None) or result
+            try:
+                if len(value.args) == 2:
+                    (result, status) = value.args
+                    if status:
+                        _req.status = status
+                else:
+                    result = value.args[0]
+                    
+                if type(result) != type(7):
+                    s = "Value raised with SERVER_RETURN is invalid. It is a "
+                    s = s + "%s, but it must be a tuple or an int." % type(result)
+                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, _req.server)
+
+                    return
+
+            except:
+                pass
+
+        except PROG_TRACEBACK, traceblock:
+            # Program run-time error
+            try:
+                (etype, value, traceback) = traceblock
+                filter.disable()
+                result = self.ReportError(req, etype, value, traceback,
+                                          htype="Filter: " + filter.name,
+                                          hname=func, debug=debug)
+            finally:
+                traceback = None
+
+        except:
+            # Any other rerror (usually parsing)
+            try:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                filter.disable()
+                result = self.ReportError(req, exc_type, exc_value, exc_traceback,
+                                          htype=filter.name, hname=func, debug=debug)
+            finally:
+                exc_traceback = None
+
+	return
+
+    def HandlerDispatch(self, _req, htype):
         """
         This is the handler dispatcher.
         """
@@ -270,7 +382,6 @@ class CallBack:
                 # write to client
 
                 req.content_type = 'text/plain'
-                req.send_http_header()
 
                 s = '\nMod_python error: "%s %s"\n\n' % (htype, hname)
                 for e in traceback.format_exception(etype, evalue, etb):
@@ -555,8 +666,7 @@ class CGIStdout(NullIO):
                         self.req.headers_out[h] = v
                     else:
                         self.req.headers_out.add(h, v)
-                self.req.send_http_header()
-                self.headers_sent = 1
+
                 # write the body if any at this point
                 self.req.write(ss[1])
         else:
@@ -705,13 +815,39 @@ REMOTE_NAME = 1
 REMOTE_NOLOOKUP = 2
 REMOTE_DOUBLE_REV = 3
 
+# legacy/mod_python things
 REQ_ABORTED = HTTP_INTERNAL_SERVER_ERROR
 REQ_EXIT = "REQ_EXIT"         
 SERVER_RETURN = _apache.SERVER_RETURN
 PROG_TRACEBACK = "PROG_TRACEBACK"
 
+# the req.finfo tuple
+FINFO_VALID = 0
+FINFO_PROTECTION = 1
+FINFO_USER = 2
+FINFO_GROUP = 3
+FINFO_INODE = 4
+FINFO_DEVICE = 5
+FINFO_NLINK = 6
+FINFO_SIZE = 7
+FINFO_CSIZE = 8
+FINFO_ATIME = 9
+FINFO_MTIME = 10
+FINFO_CTIME = 11
+FINFO_FNAME = 12
+FINFO_NAME = 13
+#FINFO_FILEHAND = 14
 
-
+# the req.parsed_uri
+URI_SCHEME = 0
+URI_HOSTINFO = 1
+URI_USER = 2
+URI_PASSWORD = 3
+URI_HOSTNAME = 4
+URI_PORT = 5
+URI_PATH = 6
+URI_QUERY = 7
+URI_FRAGMENT = 8
 
 
 

@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.13 2000/12/13 05:24:08 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.14 2001/08/18 22:43:46 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -65,9 +65,11 @@
 #include "http_core.h"
 #include "http_main.h"
 #include "http_protocol.h"
+#include "http_request.h"
 #include "util_script.h"
+#include "util_filter.h"
 #include "http_log.h"
-
+#include "apr_strings.h"
 
 /* Python headers */
 /* this gets rid of some comile warnings */
@@ -90,10 +92,10 @@ void init_apache();
 
 /* pool given to us in ChildInit. We use it for 
    server.register_cleanup() */
-extern pool *child_init_pool;
+extern apr_pool_t *child_init_pool;
 
 /* Apache module declaration */
-extern module MODULE_VAR_EXPORT python_module;
+extern module AP_MODULE_DECLARE_DATA python_module;
 
 #include "mpversion.h"
 #include "util.h"
@@ -101,7 +103,7 @@ extern module MODULE_VAR_EXPORT python_module;
 #include "serverobject.h"
 #include "connobject.h"
 #include "requestobject.h"
-/* #include "arrayobject.h" */
+#include "filterobject.h"
 
 /** Things specific to mod_python, as an Apache module **/
 
@@ -130,9 +132,13 @@ typedef struct
 {
     int           authoritative;
     char         *config_dir;
-    table        *options;
-    table        *directives;
-    table        *dirs;
+    apr_table_t  *options;
+    apr_table_t  *directives;
+    apr_table_t  *dirs;
+    apr_table_t  *input_filters;
+    apr_table_t  *input_filter_dirs;
+    apr_table_t  *output_filters;
+    apr_table_t  *output_filter_dirs;
 } py_dir_config;
 
 /* register_cleanup info */
@@ -145,6 +151,12 @@ typedef struct
     PyObject     *data;
 } cleanup_info;
 
-void python_cleanup(void *data);
+/* filter context */
+typedef struct
+{
+    int transparent;
+} python_filter_ctx;
+
+apr_status_t python_cleanup(void *data);
 
 #endif /* !Mp_MOD_PYTHON_H */

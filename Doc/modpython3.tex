@@ -73,7 +73,6 @@ this:
     def handler(req):
 
         req.content_type = "text/plain"
-        req.send_http_header()
         req.write("Hello World!")
 
         return apache.OK
@@ -158,17 +157,6 @@ the \class{Request} object, i.e. there is no "response" object.
 This sets the content type to \code{"text/plain"}. The default is usually
 \code{"text/html"}, but since our handler doesn't produce any html,
 \code{"text/plain"} is more appropriate.
-
-\item
-\begin{verbatim}
-    req.send_http_header()
-\end{verbatim}
-
-This function sends the HTTP headers to the client. You can't really
-start writing to the client without sending the headers first. Note
-that one of the headers is \code{"Content-Type"}. So if you want to set
-custom content-types, you better do it before you call
-\code{req.send_http_header()}.
 
 \item
 \begin{verbatim}

@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: httpdapi.py,v 1.8 2000/12/06 03:05:37 gtrubetskoy Exp $
+ # $Id: httpdapi.py,v 1.9 2001/08/18 22:43:45 gtrubetskoy Exp $
 
 import string
 import sys
@@ -480,7 +480,6 @@ class NSAPI_Request:
 
 	if not self.response_started:
             self.req.content_type = self.req.headers_out["content-type"]
-	    self.req.send_http_header()
 	    self.response_started = 1
 
     def request_header(self, header, session=None):

@@ -44,21 +44,21 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.6 2001/05/28 20:00:41 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.7 2001/08/18 22:43:45 gtrubetskoy Exp $
  *
  */
 
 #include "mod_python.h"
 
 /**
- **     make_tableobject
+ **     MpTable_FromTable
  **
  *      This routine creates a Python tableobject given an Apache
  *      table pointer.
  *
  */
 
-PyObject * MpTable_FromTable(table *t)
+PyObject * MpTable_FromTable(apr_table_t *t)
 {
     tableobject *result;
 
@@ -88,12 +88,13 @@ PyObject * MpTable_FromTable(table *t)
 PyObject * MpTable_New()
 {
     tableobject *t;
-    pool *p;
+    apr_pool_t *p;
 
-    p = ap_make_sub_pool(NULL);
+    /* XXX need second arg abort function to report mem error */
+    p = apr_pool_sub_make(NULL, NULL);
     
     /* two is a wild guess */
-    t = (tableobject *)MpTable_FromTable(ap_make_table(p, 2));
+    t = (tableobject *)MpTable_FromTable(apr_table_make(p, 2));
 
     /* remember the pointer to our own pool */
     t->pool = p;
@@ -111,7 +112,7 @@ PyObject * MpTable_New()
 
 static int tablelength(tableobject *self) 
 { 
-    return ap_table_elts(self->table)->nelts;
+    return apr_table_elts(self->table)->nelts;
 }
 
 /**
@@ -127,7 +128,7 @@ static PyObject * tablegetitem(tableobject *self, PyObject *key)
 
     k = PyString_AsString(key);
 
-    v = ap_table_get(self->table, k);
+    v = apr_table_get(self->table, k);
 
     if (! v)
     {
@@ -163,7 +164,7 @@ static int tablesetitem(tableobject *self, PyObject *key,
     k = PyString_AsString(key);
 
     if ((val == Py_None) || (val == NULL)) {
-	ap_table_unset(self->table, k);
+	apr_table_unset(self->table, k);
     }
     else {
 	if (val && !PyString_Check(val)) {
@@ -171,7 +172,7 @@ static int tablesetitem(tableobject *self, PyObject *key,
 			    "table values must be strings");
 	    return -1;
 	}
-	ap_table_set(self->table, k, PyString_AsString(val));
+	apr_table_set(self->table, k, PyString_AsString(val));
     }
     return 0;
 }
@@ -195,12 +196,12 @@ static PyObject * table_keys(tableobject *self)
 {
 
     PyObject *v;
-    array_header *ah;
-    table_entry *elts;
+    apr_array_header_t *ah;
+    apr_table_entry_t *elts;
     int i, j;
 
-    ah = ap_table_elts(self->table);
-    elts = (table_entry *) ah->elts;
+    ah = apr_table_elts(self->table);
+    elts = (apr_table_entry_t *) ah->elts;
 
     v = PyList_New(ah->nelts);
 
@@ -229,7 +230,7 @@ static PyObject * table_has_key(tableobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "s", &key))
 	return NULL;
 
-    val = ap_table_get (self->table, key);
+    val = apr_table_get(self->table, key);
 
     if (val)
 	return PyInt_FromLong(1);
@@ -252,7 +253,7 @@ static PyObject * mp_table_add(tableobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "ss", &key, &val))
 	return NULL;
 
-    ap_table_add(self->table, key, val);
+    apr_table_add(self->table, key, val);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -277,7 +278,7 @@ static PyMethodDef tablemethods[] = {
 static void table_dealloc(tableobject *self)
 {  
     if (self->pool) 
-	ap_destroy_pool(self->pool);
+	apr_pool_destroy(self->pool);
     
     free(self);
 }
@@ -302,14 +303,14 @@ static PyObject * table_getattr(PyObject *self, char *name)
 static PyObject * table_repr(tableobject *self)
 {
     PyObject *s;
-    array_header *ah;
-    table_entry *elts;
+    apr_array_header_t *ah;
+    apr_table_entry_t *elts;
     int i;
 
     s = PyString_FromString("{");
 
-    ah = ap_table_elts (self->table);
-    elts = (table_entry *) ah->elts;
+    ah = apr_table_elts (self->table);
+    elts = (apr_table_entry_t *) ah->elts;
 
     i = ah->nelts;
     if (i == 0)

@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.12 2001/07/09 12:54:40 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.13 2001/08/18 22:43:45 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -77,7 +77,9 @@ def handler(req):
     # use direct access to _req for speed
     _req = req._req
 
-    args = {}
+    _req.allow_methods(["GET", "POST"])
+    if _req.method not in ["GET", "POST"]:
+        raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
     # get the path PATH_INFO (everthing after script)
     if not _req.subprocess_env.has_key("PATH_INFO"):
@@ -95,6 +97,8 @@ def handler(req):
     # process input, if any
     fs = util.FieldStorage(req, keep_blank_values=1)
     req.form = fs
+
+    args = {}
 
     # step through fields
     for field in fs.list:
@@ -183,8 +187,10 @@ def handler(req):
             else:
                 req.content_type = 'text/plain'
 
-        req.send_http_header()
-        req.write(result)
+        if _req.method != "HEAD":
+            req.write(result)
+        else:
+            req.write("")
         return apache.OK
     else:
         return apache.HTTP_INTERNAL_SERVER_ERROR

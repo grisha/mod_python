@@ -50,7 +50,7 @@ extern "C" {
  *
  * connobject.h
  *
- * $Id: connobject.h,v 1.2 2000/12/06 03:05:38 gtrubetskoy Exp $
+ * $Id: connobject.h,v 1.3 2001/08/18 22:43:46 gtrubetskoy Exp $
  *
  */
 
@@ -69,6 +69,7 @@ extern "C" {
 	conn_rec     *conn;
 	PyObject     *server;
 	PyObject     *base_server;
+	PyObject     *notes;
     } connobject;
     
     extern DL_IMPORT(PyTypeObject) MpConn_Type;

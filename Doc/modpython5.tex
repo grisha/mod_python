@@ -60,7 +60,7 @@ away from mod_python resulting in a modest performance gain..
 \strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
-server config, virtual host, directory, htaccess\\
+server config, virtual host\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
 not None\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
@@ -70,14 +70,18 @@ This routine is called after the request has been read but before any
 other phases have been processed. This is useful to make decisions
 based upon the input header fields.
 
-NOTE: At the time when this phase of the request is being processed,
-the URI has not been translated into a path name, therefore this
-directive will never be executed by Apache if specified within
-\code{<Directory>}, \code{<Location>}, \code{<File>} directives or in
-an \file{.htaccess} file. The only place this can be specified is the
-main configuration file, and the code for it will execute in the
-main interpreter.
-
+NOTE: When this phase of the request is processed, the URI has not yet
+been translated into a path name, therefore this directive could never
+be executed by Apache if it could specified within \code{<Directory>},
+\code{<Location>}, \code{<File>} directives or in an \file{.htaccess}
+file. The only place this directive is allowed is the main
+configuration file, and the code for it will execute in the main
+interpreter. And because this phase happens before any identification
+of the type of content being requested is done (i.e. is this a python
+program or a gif?), the python routine specified with this handler
+will be called for \emph{ALL} requests on this server (not just python
+programs), which is an important consideration if performance is a
+priority.
 
 \subsection{PythonTransHandler\label{dir-handlers-th}}
 \index{PythonTransHandler}
@@ -85,7 +89,7 @@ main interpreter.
 \strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
-server config, virtual host, directory, htaccess\\
+server config, virtual host\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
 not None\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}

@@ -1,9 +1,3 @@
-#ifndef Mp_REQUESTOBJECT_H
-#define Mp_REQUESTOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* ====================================================================
  * Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
  *
@@ -50,9 +44,15 @@ extern "C" {
  *
  * requestobject.h
  *
- * $Id: requestobject.h,v 1.5 2001/05/18 02:42:45 gtrubetskoy Exp $
+ * $Id: requestobject.h,v 1.6 2001/08/18 22:43:46 gtrubetskoy Exp $
  *
  */
+
+#ifndef Mp_REQUESTOBJECT_H
+#define Mp_REQUESTOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
     typedef struct requestobject {
 	PyObject_HEAD
@@ -68,7 +68,6 @@ extern "C" {
 	PyObject       * subprocess_env;
 	PyObject       * notes;
 	PyObject       * Request;
-	int              header_sent;
 	int              content_type_set;
 	char           * hstack;
 	char           * rbuff;      /* read bufer */
