@@ -52,7 +52,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.h,v 1.2 2003/05/24 03:55:27 grisha Exp $
+ * $Id: psp_parser.h,v 1.3 2003/05/29 14:15:52 grisha Exp $
  *
  */
 
@@ -69,12 +69,9 @@
 typedef struct {
 /*	PyObject   *files;   XXX removed until cache is fixed */
 	psp_string  whitespace;	
-	psp_string  ob;
 	psp_string  pycode;
-	int         in_block;
-	char        string_char;
 	unsigned    is_psp_echo : 1;
-	unsigned    is_string_escape : 1;
+        unsigned    after_colon : 1;
 } psp_parser_t;
 
 #endif /* __PSP_PARSER_H */

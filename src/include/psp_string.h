@@ -52,7 +52,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_string.h,v 1.1 2003/04/09 14:05:56 grisha Exp $
+ * $Id: psp_string.h,v 1.2 2003/05/29 14:15:53 grisha Exp $
  *
  */
 
@@ -60,6 +60,7 @@
 #define __PSP_STRING_H
 
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef PSP_STRING_BLOCK
 #define PSP_STRING_BLOCK 256

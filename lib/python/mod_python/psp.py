@@ -52,43 +52,25 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: psp.py,v 1.3 2003/05/24 03:56:40 grisha Exp $
+ # This file originally written by Sterling Hughes
+ #
+ # $Id: psp.py,v 1.4 2003/05/29 14:15:47 grisha Exp $
 
-import mod_python
+from mod_python import apache
 import sys
 import _psp
 
-class psp:
-	def parse(self, filename):
-		return _psp.parse(filename)
+def parse(filename):
 
-	def execute(self, code):
-		exec code
+        return _psp.parse(req.filename)
 
-	parse = classmethod(parse)
-	execute = classmethod(execute)
+def handler(req):
 
-class _stream:
-	def __init__(self, request):
-		self.old_stdout = sys.stdout
-		self.req = request
-	
-	def close(self):
-		sys.stdout = self.old_stdout
-	
-	def write(self, text):
-		self.req.write(text)
+	source = _psp.parse(req.filename)
 
-def handler(request):
-	global req
+        code = compile(source, req.filename, "exec")
 
-	request.content_type = "text/html"
-
-#	sys.stdout = _stream(request)
-
-	req = request
-	code = psp.parse(request.filename)
-
-	psp.execute(code)
+        # give it it's own locals
+        exec code in globals(), {"req":req}
 
 	return mod_python.apache.OK

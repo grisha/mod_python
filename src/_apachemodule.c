@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.20 2002/11/08 00:15:11 gstein Exp $
+ * $Id: _apachemodule.c,v 1.21 2003/05/29 14:15:47 grisha Exp $
  *
  */
 
@@ -412,5 +412,5 @@ DL_EXPORT(void) init_apache()
 
 PyObject *get_ServerReturn() 
 {
-  return Mp_ServerReturn;
+    return Mp_ServerReturn;
 }
