@@ -1,3 +1,30 @@
+Jan 18 2002 -   Between now and the last entry the following things took
+                place:
+
+                Problem with loading DSO on Solaris relating to _muldi3
+                fixed.
+
+                A problem fixed related to | .ext syntax.
+
+                An environ issue addressed.
+
+                Filtering by type should now work correctly.
+
+                Publisher's code for dealing with file uploads simplified.
+
+                A windows installer added.
+
+                Install adopted to use distutils.
+
+                A cgihandler problem resulting in double output fixed.
+
+                PyOS_AfterFork() added where needed.
+
+                The binary produced by MSVC no longer needs any MS dll's.
+
+                Filter flush() now cleans memory so large files can be
+                processed.
+
 Nov 26 2002 -   3.0.1 is about to be released. This was file has not been
                 updated during the 3.0 development because of too many
                 things changing.
