@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.53 2003/10/08 03:48:17 grisha Exp $
+ * $Id: requestobject.c,v 1.54 2003/11/04 20:30:39 grisha Exp $
  *
  */
 
@@ -848,7 +848,7 @@ static PyObject * req_set_content_length(requestobject *self, PyObject *args)
 }
 
 /**
- ** request.write(request self, string what)
+ ** request.write(request self, string what, flush=1)
  **
  *      write output to the client
  */
@@ -858,15 +858,16 @@ static PyObject * req_write(requestobject *self, PyObject *args)
     int len;
     int rc;
     char *buff;
+    int flush=1;
 
-    if (! PyArg_ParseTuple(args, "s#", &buff, &len))
+    if (! PyArg_ParseTuple(args, "s#|i", &buff, &len, &flush))
         return NULL;  /* bad args */
 
     if (len > 0 ) {
 
         Py_BEGIN_ALLOW_THREADS
         rc = ap_rwrite(buff, len, self->request_rec);
-        if (rc != -1)
+        if (flush && (rc != -1))
             rc = ap_rflush(self->request_rec);
         Py_END_ALLOW_THREADS
             if (rc == -1) {
@@ -879,6 +880,33 @@ static PyObject * req_write(requestobject *self, PyObject *args)
     return Py_None;
 
 }
+
+/**
+ ** request.flush(request self)
+ **
+ *      flush output buffer
+ */
+
+static PyObject * req_flush(requestobject *self)
+{
+    int rc;
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = ap_rflush(self->request_rec);
+    Py_END_ALLOW_THREADS
+    if (rc == -1) {
+        PyErr_SetString(PyExc_IOError, "Flush failed, client closed connection.");
+        return NULL;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** request.sendfile
+ **
+ */
 
 static PyObject * req_sendfile(requestobject *self, PyObject *args)
 {
@@ -933,6 +961,7 @@ static PyMethodDef request_methods[] = {
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
     {"document_root",         (PyCFunction) req_document_root,         METH_NOARGS},
+    {"flush",                 (PyCFunction) req_flush,                 METH_NOARGS},
     {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_NOARGS},
     {"get_addhandler_exts",   (PyCFunction) req_get_addhandler_exts,   METH_NOARGS},
     {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},

@@ -521,7 +521,7 @@ static yyconst flex_int16_t yy_chk[107] =
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.c,v 1.16 2003/10/15 01:32:20 grisha Exp $
+ * $Id: psp_parser.c,v 1.17 2003/11/04 20:30:39 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -880,7 +880,7 @@ case 3:
 YY_RULE_SETUP
 #line 102 "psp_parser.l"
 {    /* expression */
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\"); req.write(str("));
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0); req.write(str("));
     PSP_PG(is_psp_echo) = 1;
 
     BEGIN PYCODE;
@@ -890,7 +890,7 @@ case 4:
 YY_RULE_SETUP
 #line 109 "psp_parser.l"
 {     /* python code */
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\");")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0);")); 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     PSP_PG(seen_newline) = 0;
     BEGIN PYCODE;
@@ -935,7 +935,7 @@ case YY_STATE_EOF(TEXT):
     yypop_buffer_state(yyscanner);
     if (!YY_CURRENT_BUFFER) {
         /* this is really the end */
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0)\n"));
         yyterminate();
     }
     else {
@@ -961,7 +961,7 @@ YY_RULE_SETUP
 {
 
     if (PSP_PG(is_psp_echo)) {
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR(")); req.write(\"\"\""));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("),0); req.write(\"\"\""));
         PSP_PG(is_psp_echo) = 0;
     } 
     else {

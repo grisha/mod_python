@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.16 2003/09/10 02:11:22 grisha Exp $
+ * $Id: psp_parser.l,v 1.17 2003/11/04 20:30:39 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -100,14 +100,14 @@
 }
 
 <TEXT>"<%=" {    /* expression */
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\"); req.write(str("));
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0); req.write(str("));
     PSP_PG(is_psp_echo) = 1;
 
     BEGIN PYCODE;
 }
 
 <TEXT>"<%" {     /* python code */
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\");")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0);")); 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     PSP_PG(seen_newline) = 0;
     BEGIN PYCODE;
@@ -137,7 +137,7 @@
     yypop_buffer_state(yyscanner);
     if (!YY_CURRENT_BUFFER) {
         /* this is really the end */
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0)\n"));
         yyterminate();
     }
     else {
@@ -156,7 +156,7 @@
 <PYCODE>"%>" {
 
     if (PSP_PG(is_psp_echo)) {
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR(")); req.write(\"\"\""));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("),0); req.write(\"\"\""));
         PSP_PG(is_psp_echo) = 0;
     } 
     else {

@@ -738,8 +738,13 @@ require valid-user
   client.
 \end{methoddesc}
 
-\begin{methoddesc}[request]{write}{string}
-  Writes \var{string} directly to the client, then flushes the buffer. 
+\begin{methoddesc}[request]{write}{string\optional{, flush=1}}
+  Writes \var{string} directly to the client, then flushes the buffer,
+  unless flush is 0.
+\end{methoddesc}
+
+\begin{methoddesc}[request]{flush}{}
+  Flushes the output buffer.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{set_content_length}{len}
@@ -2139,13 +2144,16 @@ If the \function{parse()} function was called with the \var{dir}
 argument, then the file can be specified as a relative path, otherwise
 it has to be absolute.
 
-\begin{classdesc}{PSP}{req, \optional{, filename, string}}
+\begin{classdesc}{PSP}{req, \optional{, filename, string, vars}}
   This class represents a PSP object.
 
   \var{req} is a request object; \var{filename} and \var{string} are
   optional keyword arguments which indicate the source of the PSP
   code. Only one of these can be specified. If neither is specified,
   \code{req.filename} is used as \var{filename}.
+
+  \var{vars} is a dictionary of global variables. Vars passed in the
+  \method{run()} method will override vars passed in here.
 
   This class is used internally by the PSP handler, but can also be
   used as a general purpose templating tool.

@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.23 2003/09/08 19:31:50 grisha Exp $
+ # $Id: psp.py,v 1.24 2003/11/04 20:30:39 grisha Exp $
 
 import apache, Session, util, _psp
 import _apache
@@ -127,12 +127,12 @@ class PSP:
     code = None
     dbmcache = None
 
-    def __init__(self, req, filename=None, string=None):
+    def __init__(self, req, filename=None, string=None, vars={}):
 
         if (string and filename):
             raise ValueError, "Must specify either filename or string"
 
-        self.req = req
+        self.req, self.vars = req, vars
 
         if not filename and not string:
             filename = req.filename
@@ -140,6 +140,13 @@ class PSP:
         self.filename, self.string = filename, string
 
         if filename:
+
+            # if filename is not absolute, default to our guess
+            # of current directory
+            if not os.path.isabs(filename):
+                base = os.path.split(req.filename)[0]
+                self.filename = os.path.join(base, filename)
+
             self.load_from_file()
         else:
 
@@ -234,10 +241,12 @@ class PSP:
             global_scope = globals().copy()
             global_scope.update({"req":req, "session":session,
                                  "form":form, "psp":psp})
-            global_scope.update(vars)
+            global_scope.update(self.vars) # passed in __init__()
+            global_scope.update(vars)      # passed in run()
             try:
                 exec code in global_scope
-
+                req.flush()
+                
                 # the mere instantiation of a session changes it
                 # (access time), so it *always* has to be saved
                 if session:
@@ -252,6 +261,11 @@ class PSP:
         finally:
             if session:
                     session.unlock()
+
+    def __str__(self):
+        self.req.content_type = 'text/html'
+        self.run()
+        return ""
 
     def display_code(self):
         """
