@@ -71,6 +71,11 @@ dso: @DSO@
 do_dso:
 	@cd src && $(MAKE)
 	@cd dist && $(MAKE) build
+	@echo
+	@echo 'Now su and make install'
+	@echo '  (or, if you only want to perform a partial install,'
+	@echo '   you can use make install_dso and make install_py_lib)'
+	@echo
 
 no_dso:
 	@echo

@@ -88,12 +88,6 @@ mod_python.so: $(SRCS) @SOLARIS_HACKS@
 	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS) @SOLARIS_HACKS@
 	@rm -f mod_python.so
 	@ln -s .libs/mod_python.so mod_python.so
-	@echo
-	@echo 'Now su and make install'
-	@echo '  (or, if you only want to perform a partial install,'
-	@echo '   you can use make install_dso and make install_py_lib)'
-	@echo
-
 clean:
 	rm -rf $(OBJS) core libpython.a mod_python.so *~ .libs *.o *.slo *.lo *.la 
 

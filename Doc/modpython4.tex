@@ -1538,6 +1538,19 @@ class. This class is similar to the standard library module
 
 \end{funcdesc}
 
+\begin{funcdesc}{redirect}{req, location\optional{, permanent=0, text=None}}
+  This is a convenience function to redirect the browser to another
+  location. When \var{permanent} is true, \constant{MOVED_PERMANENTLY}
+  status is sent to the client, otherwise it is
+  \constant{MOVED_TEMPORARILY}. A short text is sent to the browser
+  informing that the document has moved (for those rare browsers that
+  do not support redirection); this text can be overriden by
+  supplying a \var{text} string.
+
+  If this function is called after the headers have already been sent,
+  an \exception{IOError} is raised.
+\end{funcdesc}
+
 \section{\module{Cookie} -- HTTP State Management\label{pyapi-cookie}}
 \declaremodule[Cookie]{extension}{Cookie}
 \modulesynopsis{HTTP State Management}
