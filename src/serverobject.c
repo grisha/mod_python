@@ -57,7 +57,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.18 2003/09/10 02:11:22 grisha Exp $
+ * $Id: serverobject.c,v 1.19 2003/10/23 03:06:39 grisha Exp $
  *
  */
 
@@ -276,6 +276,11 @@ static PyObject *getmakeobj(serverobject* self, void *objname)
     return result;
 }
 
+static PyObject *my_generation(serverobject *self, void *objname)
+{
+    return PyInt_FromLong((long)ap_my_generation);
+}
+
 static PyGetSetDef server_getsets[] = {
     /* XXX process */
     {"next",         (getter)getmakeobj,    NULL, "The next server in the list", "next"},
@@ -300,6 +305,7 @@ static PyGetSetDef server_getsets[] = {
     {"limit_req_line",    (getter)getsrv_recmbr, NULL, "limit on size of the HTTP request line", "limit_req_line"},
     {"limit_req_fieldsize",    (getter)getsrv_recmbr, NULL, "limit on size of any request header field", "limit_req_fieldsize"},
     {"limit_req_fields",    (getter)getsrv_recmbr, NULL, "limit on number of request header fields", "limit_req_fields"},
+    {"my_generation",    (getter)my_generation, NULL, "Generation of this child", "my_generation"},
     {NULL}  /* Sentinel */
 };
 
