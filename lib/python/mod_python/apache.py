@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.74 2003/08/08 14:50:09 grisha Exp $
+ # $Id: apache.py,v 1.75 2003/08/26 01:56:39 grisha Exp $
 
 import sys
 import traceback
@@ -130,7 +130,7 @@ class CallBack:
 
             # import module
             module = import_module(module_name,
-                                   autoreload=int(config.get("PythonAutoReload", 0)),
+                                   autoreload=int(config.get("PythonAutoReload", 1)),
                                    log=debug)
             # find the object
             object = resolve_object(module, object_str,
@@ -211,7 +211,7 @@ class CallBack:
 
             # import module
             module = import_module(module_name,
-                                   autoreload=int(config.get("PythonAutoReload", 0)),
+                                   autoreload=int(config.get("PythonAutoReload", 1)),
                                    log=debug)
 
             # find the object
@@ -322,7 +322,7 @@ class CallBack:
 
                 # import module
                 module = import_module(module_name,
-                                       autoreload=int(config.get("PythonAutoReload", 0)),
+                                       autoreload=int(config.get("PythonAutoReload", 1)),
                                        log=debug)
 
                 # find the object
