@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.19 2002/08/22 21:09:08 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.20 2002/08/23 19:45:41 gtrubetskoy Exp $
  *
  */
 
@@ -1190,7 +1190,7 @@ static PyObject *tableiter_iternext(tableiterobject *ti)
 }
 
 PyTypeObject MpTableIter_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,                                  /* ob_size */
     "dictionary-iterator",                      /* tp_name */
     sizeof(tableiterobject),                    /* tp_basicsize */

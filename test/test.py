@@ -549,8 +549,8 @@ def suite():
 #    mpTestSuite.addTest(ModPythonTestCase("test_req_readlines"))
 #    mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
 #    mpTestSuite.addTest(ModPythonTestCase("test_util_fieldstorage"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_postreadrequest"))
-    mpTestSuite.addTest(ModPythonTestCase("test_outputfilter"))
+    mpTestSuite.addTest(ModPythonTestCase("test_postreadrequest"))
+#    mpTestSuite.addTest(ModPythonTestCase("test_outputfilter"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()
