@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.7 2000/12/18 19:50:03 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.8 2001/04/08 04:54:20 gtrubetskoy Exp $
  *
  */
 
@@ -151,6 +151,7 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
 	    j++;
 	}
 	_PyString_Resize(&pair, j);
+	cpair = PyString_AS_STRING(pair);
 
 	PyList_Append(pairs, pair);
 	Py_DECREF(pair);
@@ -217,8 +218,9 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
 	    ap_unescape_url(cval);
 
 	    _PyString_Resize(&key, strlen(ckey));
+	    ckey = PyString_AS_STRING(key);
 	    _PyString_Resize(&val, strlen(cval));
-
+	    cval = PyString_AS_STRING(val);
 	
 	    if (PyMapping_HasKeyString(dict, ckey)) {
 		PyObject *list;
@@ -292,9 +294,9 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
 	}
 	cpair[j] = '\0';
 	_PyString_Resize(&pair, j);
+	cpair = PyString_AS_STRING(pair);
 
 	/* split the "abc=def" pair */
-
 	plen = strlen(cpair);
 	key = PyString_FromStringAndSize(NULL, plen);
 	if (key == NULL) 
