@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: installation.html,v 1.12 2000/10/12 14:34:13 gtrubetskoy Exp $ -->
+<!-- $Id: installation.html,v 1.13 2000/10/18 20:01:29 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -28,8 +28,9 @@ The installation involves the following steps:
 	  <li><a href="#make">Run make</a>
 	</ul>
       <li><a href="#install">3. Installing</a>
-      <li><a href="#test">4. Testing</a>
-      <li><a href="#trouble">5. Troubleshooting</a>
+      <li><a href="#config">4. Configuring Apache</a>
+      <li><a href="#test">5. Testing</a>
+      <li><a href="#trouble">6. Troubleshooting</a>
     </ul>
 
     <blockquote>
@@ -50,7 +51,7 @@ The installation involves the following steps:
       Solaris packages from sunsite, etc) then chances are, you just
       have the binaries and not the sources on your system. Often, the
       include files and the libraries are part of separate
-      "development" package. If you are not sure if you have all the
+      "development" package. If you are not sure whether you have all the
       necessary files, either compile and install Python and Apache
       from source, or refer to the documentation for your system on
       how to get the development packages.
@@ -58,7 +59,7 @@ The installation involves the following steps:
       <a name="compiling"><h2>2. Compiling</h2></a>
       
       There are two ways that this module can be compiled and linked to Apache -
-      statically, or as a Dynamic Shared Object. 
+      <em>statically</em>, or as a <em>DSO</em> (Dynamic Shared Object). 
       <p>
 	<em>Static</em> linking is a more &quot;traditional&quot; approach, and
 	most programmers prefer it for its simplicity. The drawback is
@@ -67,7 +68,8 @@ The installation involves the following steps:
 	hosting environment the Apache binary might not be writable by
 	the user.
       <p>
-	Dynamic Shared Object (<em>DSO</em>) is a newer and still somewhat experimental
+	Dynamic Shared Object (<em>DSO</em>) is a newer and still somewhat 
+	experimental
 	approach. The module gets compiled as a library that is dynamically
 	loaded by the server at run time. A more detailed description of the
 	Apache DSO mechanism is available 
@@ -79,32 +81,35 @@ The installation involves the following steps:
 	into a DSO can be a complicated process because Python, depending
 	on configuration, may rely on a number of other libraries, and you
 	need to make sure that the DSO is statically linked against each of
-	them. 
+	them. Luckely, the configure script below will solve this
+	headache for you by automatically figuring out all the necessary
+	parameters.
 
 	<a name="configure"><h3>Run ./configure</h3>
 
 	  The <code>./configure</code> script will analyze your environment and
 	  create custom Makefiles particular to your system. Aside from all the standard
-	  autoconf stuff, it will do the following:
+	  autoconf stuff, <code>./configure</code> does the following:
       <ul>
-	<li> Find out if a program called <code>apxs</code> is available. This program
+	<li> Finds out whether a program called <code>apxs</code> is available. This program
 	  is part of the standard Apache distribution, and is necessary for DSO
-	  compilation. If <code>apxs</code> cannot be found, DSO compilation will not
+	  compilation. If <code>apxs</code> cannot be found in your PATH or in
+	  <code>/usr/local/apache/bin</code>, DSO compilation will not
 	  be availale.
 	  <p>
-	    You can manually specify the location of apxs by using the 
+	    You can manually specify the location of <code>apxs</code> by using the 
 	    <code>--with-apxs</code> option, e.g.:
 	  <pre>
-            $ ./configure --with-apxs=/usr/local/apache/bin/apxs
-	  </pre>
-	<li>Check for <code>--with-apache</code> option. Use this option to tell
+            $ ./configure --with-apxs=/usr/local/apache/bin/apxs</pre>
+
+	<li>Checks for <code>--with-apache</code> option. Use this option to tell
 	  where the Apache sources are on your system. The Apache sources are 
 	  necessary for static compilation. If you do not specify this options,
 	  static compilation will not be available. Here is an example:
 	  <pre>
-            $ ./configure --with-apache=../src/apache_1.3.12 --with-apxs=/usr/local/apache/bin/apxs
-	  </pre>
-	<li>Check your Python version and attempt to figure out where <code>libpython</code>
+            $ ./configure --with-apache=../src/apache_1.3.12 --with-apxs=/usr/local/apache/bin/apxs</pre>
+
+	<li>Checks your Python version and attempt to figure out where <code>libpython</code>
 	  is by looking at various parameters compiled into your Python binary. By default,
 	  it will use the <code>python</code> program found in your PATH.
 	  <p>
@@ -158,8 +163,13 @@ The installation involves the following steps:
 	      and compile them.
 	  </ul>
 
-	  <p>
-	<li> Configure Apache for mod_python:
+	  </ul>
+
+      <a name="config"><h2>4. Configuring Apache</h2></a>
+
+      <ul>
+	    
+	<li> To configure Apache for mod_python:
 	  <p>
 
 	  <ul>
@@ -167,13 +177,14 @@ The installation involves the following steps:
 	  If you compiled mod_python as a DSO, you will need to
 	  tell Apache to load the module by adding the following line in
 	  the Apache configuration file, usually called
-	  <code>httpd.conf</code> or <code> apache.conf</code>
-	  (assuming you placed <code>mod_python.so</code> in the <code>libexec</code>
-	  directory in the <code>ServerRoot</code>) :
+	  <code>httpd.conf</code> or <code> apache.conf</code>:
 	  <pre>
-      LoadModule python_module libexec/mod_python.so
-	  </pre>
-	  The <code>make install</code> will tell you exactly where mod_python.so was placed.
+      LoadModule python_module libexec/mod_python.so</pre>
+	      The actual path to <code>mod_python.so</code> may vary, but
+	      <code>make install</code> should report at the very end exactly where
+	      <code>mod_python.so</code> was placed and how the 
+	      <code>LoadModule</code> directive should appear. 
+
 	  <p>
 	    If your Apache configuration uses
 	    <code>ClearModuleList</code> directive, you will need to add
@@ -208,7 +219,7 @@ The installation involves the following steps:
       </ul>
 
 
-      <a name="test"><h2>4. Testing</h2></a>
+      <a name="test"><h2>5. Testing</h2></a>
 
       <ul>
 	<li> Make some directory that would be visible on your website, for 
@@ -256,7 +267,7 @@ The installation involves the following steps:
 
       If everything worked well, move on to the <a href="tutorial.html">tutorial</a>.
       
-      <a name="trouble"><h2>5. Troubleshooting</h2></a>
+      <a name="trouble"><h2>6. Troubleshooting</h2></a>
 
       There are a couple things you can try to identify the problem:
 
@@ -288,7 +299,7 @@ The installation involves the following steps:
     <hr>
 <!-- Created: Wed May 10 09:06:54 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Wed Oct 11 20:38:53 EDT 2000
+Last modified: Wed Oct 18 12:07:07 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

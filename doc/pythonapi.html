@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.13 2000/10/17 21:55:45 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.14 2000/10/18 20:01:29 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -33,7 +33,8 @@
 
       When working with mod_python, it is important to be aware of a feature of
       Python that is normally not used when using the language for writing scripts to be
-      run from command line.
+      run from command line. This feature is not available from within Python itself
+      (at least in 1.5.2) and can only be accessed through the C language API.
       <p>
 	Python C API provides the ability to create <em>subinterpreters</em>. A more
 	detailed description of a subinterpreter is given in the documentation for the
@@ -48,15 +49,24 @@
 	initializes the global interpreter. The global interpreter contains a 
 	dictionary of subinterpreters. Initially, this dictionary is empty. With
 	every hit, as needed, subinterpreters are created, and references to them
-	are stored in this dictionary. The key, also known as 
-	<em>interpreter name</em>,
-	is a string representing the server name. This means that all scripts in the
-	same vrtual server execute in the same suinterpreter, but scripts in different
+	are stored in this dictionary. The dictionary is keyed on a string, also
+	known as <em>interpreter name</em>. This name can be anything, except
+	&quot;global_interpreter&quot;, which is the name reserved for the 
+	<em>global</em> interpreter.
+
+	The way interpreters are named
+	can be controlled by <code>PythonInterp</code> directives. Default behaviour
+	is to name interpreters using the Apache virtual server name 
+	(<code>ServerName</code> directive). 
+	This means that all scripts in the
+	same vrtual server execute in the same subinterpreter, but scripts in 
+	different
 	virtual servers execute in different subinterpreters with completely separate
 	namespaces. 
-	(This policy can be altered with
 	<code>PythonIterpPerDirectory</code> and <code>PythonInterpPerDirective</code>
-	directives).
+	directives alter the naming convention to use the absolute path of the
+	directory being accessed, or the directory in which the 
+	<code>Python*Handler</code> was encountered, respectively.
 	<p>
 	Once created, a subinterpreter will be reused for subsequent requests, but
 	it is never destroyed until the Apache child process dies. 
@@ -68,9 +78,9 @@
     
     <blockquote>
       A <em>handler</em> is a function that processes a particular
-      stage of a request.  Apache processes requests in stages - read
+      phase of a request.  Apache processes requests in phases - read
       the request, process headers, provide content, etc. For every
-      stage, it will call handlers, provided by either the Apache core
+      phase, it will call handlers, provided by either the Apache core
       or one of its modules, such as mod_python, which passes control
       to functions provided b the user and written in Python.  A
       handler written in Python is not any different than a handler
@@ -81,10 +91,10 @@
       <p>
 	Every handler can return
 	<ul>
-	<li><code>apache.OK</code>, meaning this stage of the request was handled by this
+	<li><code>apache.OK</code>, meaning this phase of the request was handled by this
 	  handler and no errors occurred.
 	<li><code>apache.DECLINED</code>, meaning this handler refused to handle this
-	  stage of the request and Apache needs to look for another handler.
+	  phase of the request and Apache needs to look for another handler.
 	<li><code>apache.<em>HTTP_ERROR</em></code>, meaning an HTTP error occurred. 
 	    <code><em>HTTP_ERROR</em></code> can be:
 	  <pre>
@@ -796,7 +806,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Tue Oct 17 17:54:23 EDT 2000
+Last modified: Wed Oct 18 11:34:43 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

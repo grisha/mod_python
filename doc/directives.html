@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.15 2000/10/03 03:24:39 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.16 2000/10/18 20:01:29 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -447,7 +447,8 @@ The module will be
 imported within the subinterpreter according with the directory name
 specified by the &lt;Directory&gt; directive. For all other
 subinterpreters, the module will not appear imported.
-
+<p>
+See also <a href="pythonapi.html#subinterpreters">Multiple Interpreters</a>.
 <hr>
 
 <h2><a name="PythonInterpreter">PythonInterpreter</a></h2>
@@ -462,11 +463,20 @@ subinterpreters, the module will not appear imported.
 
 <p>
 Forces the subinterpreter name to be <em>name</em>, instead of the
-name assigned by mod_python. Mod_python names subinterpreters by using
-full path of a directory thereby guaranteeing uniqueness per directory. By using
-this directive, scripts located in different directories and that would 
+name assigned by mod_python. By default, mod_python names subinterpreters by using
+the server name thereby guaranteeing that scripts in separate virtual 
+servers execute in seaparate intepreters and cannot share data. By using
+this directive, scripts that would 
 by default be executed in different
 subinterpreters, can be forced to execute in the same subinterpreter.
+<p>
+&quot;global_interpeter&quot; is a special name reserved for the <em>
+global interpreter</em>. If you like not to have subinterpreters at all
+and have all code execute in the global interpreter, put <pre>
+PythonInterpreter &quot;global_interpreter&quot;</pre>
+in your main configuration file.
+<p>
+See also <a href="pythonapi.html#subinterpreters">Multiple Interpreters</a>.
 
 <hr>
 
@@ -484,7 +494,7 @@ subinterpreters, can be forced to execute in the same subinterpreter.
 
 <p>
 Instructs mod_python to name subinterpreters using the directory of
-the file in the request (<code>request_rec->filename</code>) rather
+the file in the request (<code>req.filename</code>) rather
 than the the server name.
 
 
@@ -499,7 +509,7 @@ For example, assume there is a
 <code>/directory/subdirectory</code> doesn't have an .htacess. By
 default, scripts in <code>/directory</code> and
 <code>/directory/subdirectory</code> would execute in the same
-interpreter assuming both directories are in the same virtual server.
+interpreter assuming both directories are accessed via the same virtual server.
 With PythonInterpPerDirectory, there would be two different interpreters, 
 one for each <em>directory</em>.
 <p>
@@ -509,6 +519,8 @@ NOTE: In early phases of the request prior to the URI translation
       those phases and with PythonInterpPerDirectory on, all python code gets executed
       in the global intepreter. This may not be exactly what you want, but 
       unfortunately there is no way around this.
+<p>
+See also <a href="pythonapi.html#subinterpreters">Multiple Interpreters</a>.
 <hr>
 
 <h2><a name="PythonInterpPerDirective">PythonInterpPerDirective</a></h2>
@@ -538,6 +550,8 @@ default, scripts in <code>/directory</code> and
 interpreter assuming both directories are in the same virtual server.
 With PythonInterpPerDirective, there would be two different interpreters, 
 one for each <em>directive</em>.
+<p>
+See also <a href="pythonapi.html#subinterpreters">Multiple Interpreters</a>.
 <hr>
 
 <h2><a name="PythonNoReload">PythonNoReload</a></h2>
@@ -621,7 +635,7 @@ append a directory to the path, one can specify something like
 Mod_python tries to minimize the number of evals associated with the
 <code>PythonPath</code> directive because evals are slow and can
 negatively impact performance, especially when the directive is
-specified in an .htaccess file which gets parse at every
+specified in an .htaccess file which gets parsed at every
 hit. Mod_python will remember the arguments to the PythonPath
 directive in the un-evaled form, and before evaling the value it will
 compare it to the remembered value. If the value is the same, no
@@ -636,7 +650,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon Oct  2 23:05:55 EDT 2000
+Last modified: Wed Oct 18 11:47:44 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
