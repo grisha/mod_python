@@ -92,7 +92,7 @@ clean:
 	rm -rf $(OBJS) core libpython.a mod_python.so *~ .libs *.o *.slo *.lo *.la
 
 distclean: clean
-	rm -rf Makefile
+	rm -f Makefile .depend .install
 
 # this is a hack to help avoid a gcc/solaris problem
 # python uses assert() which needs _eprintf()
