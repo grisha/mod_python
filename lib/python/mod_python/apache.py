@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.14 2000/07/28 18:47:36 gtrubetskoy Exp $
+  $Id: apache.py,v 1.15 2000/08/10 13:26:34 gtrubetskoy Exp $
 
 """
 
@@ -421,15 +421,21 @@ class CGIStdout(NullIO):
 
         if not self.headers_sent:
             self.headers = self.headers + s
+
+            # are headers over yet?
+            headers_over = 0
+
             # first try RFC-compliant CRLF
             ss = string.split(self.headers, '\r\n\r\n', 1)
             if len(ss) < 2:
-                # Second try with \n\n
+                # second try with \n\n
                 ss = string.split(self.headers, '\n\n', 1)
-                if len(ss) < 2:
-                    # headers not over yet
-                    pass
+                if len(ss) >= 2:
+                    headers_over = 1
             else:
+                headers_over = 1
+                    
+            if headers_over:
                 # headers done, process them
                 string.replace(ss[0], '\r\n', '\n')
                 lines = string.split(ss[0], '\n')
@@ -443,7 +449,7 @@ class CGIStdout(NullIO):
                         self.req.content_type = v
                         self.req.headers_out[h] = v
                     else:
-                        self.req.headers_out[h] = v
+                        self.req.headers_out.add(h, v)
                 self.req.send_http_header()
                 self.headers_sent = 1
                 # write the body if any at this point

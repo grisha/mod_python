@@ -233,8 +233,8 @@
     <pre>
     def authenhandler(req):
 
-        user = req.connection.user     
         pw = req.get_basic_auth_pw()
+        user = req.connection.user     
         if user == "spam" and pw == "eggs":
             return apache.OK
         else:
@@ -253,6 +253,13 @@
 	
 	<blockquote>
 
+      <dt><br><code>pw = req.get_basic_auth_pw()</code>
+
+      <dd>This is how we obtain the password. The basic HTTP authentication
+	transmits the password in base64 encoded form to make it a
+	little bit less obvious. This function decodes the password and
+	returns it as a string.
+
       <dt><br><code>user = req.connection.user</code>
 
       <dd>This is how you obtain the username that the user
@@ -261,12 +268,10 @@
       connection. With HTTP Keep-Alive, a single connection can serve
       multiple requests.
 
-      <dt><br><code>pw = req.get_basic_auth_pw()</code>
-
-      <dd>This is how we obtain the password. The basic HTTP authentication
-	transmits the password in base64 encoded form to make it a
-	little bit less obvious. This function decodes the password and
-	returns it as a string.
+	<p><em>NOTE: The two lines above MUST be in that order. The reason
+	  is that connection.user is asigned a value by the get_basic_auth_pw()
+	  function. If you try to use the connection.user value without calling
+	  get_basic)auth_pw() first, it will be None.</em>
 
       <dt><br><code>if user == "spam" and pw == "eggs":<br>
 	  &nbsp;&nbsp;&nbsp;&nbsp;return apache.OK</code>
@@ -292,7 +297,7 @@
     <hr>
 <!-- Created: Wed Jun 14 15:51:49 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Wed Jul 19 11:10:46 EDT 2000
+Last modified: Thu Aug 10 09:07:30 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
