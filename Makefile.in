@@ -61,6 +61,7 @@ AP_SRC=@AP_SRC@
 AP_SRC_OWN=@AP_SRC_OWN@
 AP_SRC_GRP=@AP_SRC_GRP@
 INSTALL=@INSTALL@
+PYTHON_BIN=@PYTHON_BIN@
 PY_STD_LIB=@PY_STD_LIB@
 
 all: @ALL@
@@ -131,8 +132,8 @@ install_py_lib:
 	do \
 		$(INSTALL) $$f $(PY_STD_LIB)/site-packages/mod_python; \
 	done
-	${PYTHONBIN} $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
-	${PYTHONBIN} -O $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
+	${PYTHON_BIN} $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
+	${PYTHON_BIN} -O $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
 
 clean:
 	cd src && $(MAKE) clean
