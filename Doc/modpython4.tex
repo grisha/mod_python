@@ -335,6 +335,26 @@ objects. For a more in-depth look at Apache internals, see the
   information such as the source IP of the request to the log entry.
 \end{funcdesc}
 
+\begin{funcdesc}{import_module}{module_name\optional{, autoreload=1, log=0, path=None}}
+  This function can be used to import modules taking advantage of
+  mod_python's internal mechanism which reloads modules automatically
+  if they changed since last import. 
+
+  \var{module_name} is a string containing the module name (it can
+  contain dots, e.g. \code{mypackage.mymodule}); \var{autoreload}
+  indicates whether the module should be reloaded if it changed since
+  last import; when \var{log} is true, a message will be written to
+  the logs when a module is reloaded; \var{path} allows restricting
+  modules to specific paths.
+
+  Example:
+
+  \begin{verbatim}
+    from mod_python import apache
+    mymodule = apache.import_module('mymodule', log=1)
+  \end{verbatim}
+\end{funcdesc}
+
 \begin{funcdesc}{allow_methods}{\optional{*args}}
   A convenience function to set values in \member{req.allowed}.
   \member{req.allowed} is a bitmask that is used to construct the

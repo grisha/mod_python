@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.13 2003/08/07 16:19:10 grisha Exp $
+ # $Id: psp.py,v 1.14 2003/08/08 14:50:09 grisha Exp $
 
 # this trick lets us be used outside apache
 try:
@@ -235,10 +235,10 @@ def run_psp(req):
 
 def handler(req):
 
-    config = req.get_config()
-    debug = config.has_key("PythonDebug")
-    
     req.content_type = "text/html"
+
+    config = req.get_config()
+    debug = debug = int(config.get("PythonDebug", 0))
 
     if debug and req.filename[-1] == "_":
         return display_code(req)

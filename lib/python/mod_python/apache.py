@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.73 2003/08/05 20:38:00 grisha Exp $
+ # $Id: apache.py,v 1.74 2003/08/08 14:50:09 grisha Exp $
 
 import sys
 import traceback
@@ -98,7 +98,7 @@ class CallBack:
 
         # config
         config = conn.base_server.get_config()
-        debug = config.has_key("PythonDebug")
+        debug = int(config.get("PythonDebug", 0))
 
         try:
 
@@ -129,8 +129,9 @@ class CallBack:
                         sys.path[:] = newpath
 
             # import module
-            module = import_module(module_name, config)
-
+            module = import_module(module_name,
+                                   autoreload=int(config.get("PythonAutoReload", 0)),
+                                   log=debug)
             # find the object
             object = resolve_object(module, object_str,
                                     arg=conn, silent=0)
@@ -174,7 +175,7 @@ class CallBack:
 
         # config
         config = req.get_config()
-        debug = config.has_key("PythonDebug")
+        debug = int(config.get("PythonDebug", 0))
 
         try:
 
@@ -209,7 +210,9 @@ class CallBack:
                     sys.path[:0] = [filter.dir]
 
             # import module
-            module = import_module(module_name, config)
+            module = import_module(module_name,
+                                   autoreload=int(config.get("PythonAutoReload", 0)),
+                                   log=debug)
 
             # find the object
             object = resolve_object(module, object_str, arg=filter, silent=0)
@@ -282,7 +285,7 @@ class CallBack:
 
         # config
         config = req.get_config()
-        debug = config.has_key("PythonDebug")
+        debug = int(config.get("PythonDebug", 0))
 
         try:
             hlist = req.hlist
@@ -318,7 +321,9 @@ class CallBack:
                         sys.path[:0] = [dir]
 
                 # import module
-                module = import_module(module_name, config)
+                module = import_module(module_name,
+                                       autoreload=int(config.get("PythonAutoReload", 0)),
+                                       log=debug)
 
                 # find the object
                 object = resolve_object(module, object_str,
@@ -439,19 +444,12 @@ class CallBack:
             etb = None
             # we do not return anything
 
-def import_module(module_name, config=None, path=None):
+def import_module(module_name, autoreload=1, log=0, path=None):
     """
     Get the module to handle the request. If
     autoreload is on, then the module will be reloaded
     if it has changed since the last import.
     """
-
-    # Get options
-    debug, autoreload = 0, 1
-    if config:
-        debug = config.has_key("PythonDebug")
-        if config.has_key("PythonAutoReload"):
-            autoreload = int(config["PythonAutoReload"])
 
     # (Re)import
     if sys.modules.has_key(module_name):
@@ -486,7 +484,7 @@ def import_module(module_name, config=None, path=None):
     if mtime > oldmtime:
 
         # Import the module
-        if debug:
+        if log:
             if path:
                 s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
             else:
