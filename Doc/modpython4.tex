@@ -246,7 +246,7 @@ made.
 Unlike HTTP handlers, connection handlers receive a \emph{connection}
 object as an argument.
 
-Connection handlers can be used to implement protocols new. Here is an
+Connection handlers can be used to implement protocols. Here is an
 example of a simple echo server:
 
 Apache configuration:
@@ -934,7 +934,7 @@ Boolean. EOS bucket sent.
 The connection object is a Python mapping to the Apache conn_rec
 structure.
 
-\subsubsection{Connection Memthods\label{pyapi-mpconn-meth}}
+\subsubsection{Connection Methods\label{pyapi-mpconn-meth}}
 
 \begin{methoddesc}[connection]{read}{length}
 Reads \var{length} bytes from the connection. The read blocks
@@ -1043,6 +1043,85 @@ A \code{table} object containing miscellaneous general purpose info that lives f
 as long as the connection lives. 
 \end{memberdesc}
 
+\subsection{Filter Object (mp_filter)\obindex{filter}\label{pyapi-mpfilt}}
+
+A filter object is passed to mod_python input and output filters. It
+is used to obtain filter information, as well as get and pass
+information to adjacent filters in the filter stack.
+
+\subsubsection{Filter Methods\label{pyapi-mpfilt-meth}}
+
+\begin{methoddesc}[filter]{read}{\optional{length}}
+
+Reads at most \var{len} bytes from the next filter, returning a string
+with the data read or None if End Of Stream (EOS) has been reached. A
+filter \emph{must} be closed once the EOS has been encountered.
+
+If the \var{len} argument is negative or ommitted, reads all data
+currently available.
+
+\end{methoddesc}
+
+\begin{methoddesc}[filter]{readline}{\optional{length}}
+
+Reads a line from the next filter or up to \var{length} bytes.
+
+\end{methoddesc}
+
+\begin{methoddesc}[filter]{write}{string}
+
+Writes \var{string} to the next filter.
+
+\end{methoddesc}
+
+\begin{methoddesc}[filter]{flush}{}
+
+Flushes the output by sending a FLUSH bucket.
+
+\end{methoddesc}
+
+\begin{methoddesc}[filter]{close}{}
+
+Closes the filter and sends an EOS bucket. Any further IO operations on
+this filter will throw an exception.
+
+\end{methoddesc}
+
+\begin{methoddesc}[filter]{disable}{}
+
+Tells mod_python to ignore the provided handler and just pass the data
+on. Used internally by mod_python to print traceback from exceptions
+encountered in filter handlers to avoid an infinite loop.
+
+\end{methoddesc}
+
+\subsubsection{Filter Members\label{pyapi-mpfilt-mem}}
+
+\begin{memberdesc}[filter]{closed}
+A boolean value indicating whether a filter is closed.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[filter]{name}
+String. The name under which this filter is registered.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[filter]{req}
+A reference to the request object.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[filter]{is_input}
+Boolean. True if this is an input filter.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[filter]{handler}
+String. The name of the Python handler for this filter as specified in
+the configuration. 
+\emph{(Read-Only})
+\end{memberdesc}
 
 \subsection{Server Object (mp_server)\obindex{server}\label{pyapi-mpserver}}
 
