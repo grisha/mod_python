@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.86 2002/12/18 20:47:02 grisha Exp $
+ * $Id: mod_python.c,v 1.87 2003/01/09 19:43:56 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1581,6 +1581,16 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
     py_config *conf = ap_get_module_config(s->module_config, &python_module);
     
+    /* accordig Py C Docs we must do this after forking */
+
+#ifdef WITH_THREAD
+    PyEval_AcquireLock();
+#endif
+    PyOS_AfterFork();
+#ifdef WITH_THREAD
+    PyEval_ReleaseLock();
+#endif
+
     /*
      * Cleanups registered first will be called last. This will
      * end the Python enterpreter *after* all other cleanups.
