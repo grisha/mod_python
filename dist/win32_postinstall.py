@@ -110,7 +110,12 @@ if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
     if apachedir:
 
         # put mod_python.so there
-        shutil.copy2(mp, os.path.join(apachedir, "modules", "mod_python.so"))
+        mod_python_so_path = os.path.join(apachedir, "modules", "mod_python.so")
+        mod_python_uninstall_log = os.path.join(os.path.dirname(__file__),'mod_python_uninstall.log')
+        shutil.copy2(mp, mod_python_so_path)
+        f = file(mod_python_uninstall_log,'wb')
+        f.write(mod_python_so_path)
+        f.close()
         os.remove(mp)
 
         print """Important Note for Windows users, PLEASE READ!!!
@@ -148,3 +153,10 @@ if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
            http://www.modpython.org/live/current/doc-html/inst-testing.html
 
         """ % (mp, os.path.join(apachedir, "conf", "httpd.conf"))
+elif len(sys.argv) > 1 and sys.argv[1] == "-remove":
+    mod_python_uninstall_log = os.path.join(os.path.dirname(__file__),'mod_python_uninstall.log')
+    f = file(mod_python_uninstall_log,'rb')
+    mod_python_so_path = f.read()
+    f.close()
+    os.remove(mod_python_so_path)
+    os.remove(mod_python_uninstall_log)
