@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.49 2001/05/23 02:49:43 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.50 2001/05/24 02:53:53 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -406,6 +406,7 @@ static void *python_merge_dir_config(pool *p, void *cc, void *nc)
  *  cumulative, rather than overriding effect - i.e. values
  *  from same directives specified multiple times will be appended
  *  with a space in between.
+ *
  */
 
 static const char *python_directive(cmd_parms *cmd, void * mconfig, 
@@ -416,21 +417,29 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
     
     conf = (py_dir_config *) mconfig;
     
-    /* something there already? */
-    s = ap_table_get(conf->directives, key);
-    if (s)
-	val = ap_pstrcat(cmd->pool, s, " ", val, NULL);
-    
-    ap_table_set(conf->directives, key, val);
-    
-    /* remember the directory where the directive was found */
-    if (conf->config_dir) {
-	ap_table_set(conf->dirs, key, conf->config_dir);
+    if (! val) {
+	/*  If the value is NULL, then assume this is an "Off" FLAG
+	    and erase the directive from the config. */
+	ap_table_unset(conf->directives, key);
+	ap_table_unset(conf->dirs, key);
     }
     else {
-	ap_table_set(conf->dirs, key, "");
-    }
+
+	/* something there already? */
+	s = ap_table_get(conf->directives, key);
+	if (s)
+	    val = ap_pstrcat(cmd->pool, s, " ", val, NULL);
     
+	ap_table_set(conf->directives, key, val);
+    
+	/* remember the directory where the directive was found */
+	if (conf->config_dir) {
+	    ap_table_set(conf->dirs, key, conf->config_dir);
+	}
+	else {
+	    ap_table_set(conf->dirs, key, "");
+	}
+    }
     return NULL;
 }
 
@@ -1052,9 +1061,9 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
 static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
 					 int val) {
     if (val)
-	return python_directive(cmd, mconfig, "PythonDebug", "On");
+	return python_directive(cmd, mconfig, "PythonDebug", "1");
     else
-	return python_directive(cmd, mconfig, "PythonDebug", "");
+	return python_directive(cmd, mconfig, "PythonDebug", NULL);
 }
 
 /**
@@ -1066,9 +1075,9 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
 static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
 					     int val) {
     if (val)
-	return python_directive(cmd, mconfig, "PythonEnablePdb", "On");
+	return python_directive(cmd, mconfig, "PythonEnablePdb", "1");
     else
-	return python_directive(cmd, mconfig, "PythonEnablePdb", "");
+	return python_directive(cmd, mconfig, "PythonEnablePdb", NULL);
 }
 
 /**
@@ -1146,29 +1155,10 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
 
 static const char *directive_PythonNoReload(cmd_parms *cmd, 
 					    void *mconfig, int val) {
-
-    py_dir_config *conf;
-    const char *key = "PythonNoReload";
-    
-    conf = (py_dir_config *) mconfig;
-
-    if (val) {
-	ap_table_set(conf->directives, key, "1");
-
-	/* remember the directory where the directive was found */
-	if (conf->config_dir) {
-	    ap_table_set(conf->dirs, key, conf->config_dir);
-	}
-	else {
-	    ap_table_set(conf->dirs, key, "");
-	}
-    }
-    else {
-	ap_table_unset(conf->directives, key);
-	ap_table_unset(conf->dirs, key);
-    }
-
-    return NULL;
+    if (val)
+	return python_directive(cmd, mconfig, "PythonNoReload", "1");
+    else
+	return python_directive(cmd, mconfig, "PythonNoReload", NULL);
 }
 
 /**
