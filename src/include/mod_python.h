@@ -69,7 +69,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.h,v 1.5 2000/10/21 20:27:42 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.6 2000/10/21 20:31:46 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -93,7 +93,7 @@
 
 /* Python headers */
 /* this gets rid of some comile warnings */
-#if defined(POSIX_THREADS)
+#if defined(_POSIX_THREADS)
 #undef _POSIX_THREADS
 #endif
 #include "Python.h"
