@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.6 2000/05/29 17:00:02 grisha Exp $ -->
+<!-- $Id: directives.html,v 1.7 2000/06/08 12:42:31 grisha Exp $ -->
 
 <html>
   <head>
@@ -13,12 +13,17 @@
     <hr>
 
     <ul>
-      <li><a href="#PythonPath">PythonPath</a>
-      <li><a href="#PythonInterpreter">PythonInterpreter</a>
-      <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
       <li><a href="#PythonDebug">PythonDebug</a>
+      <li><a href="#PythonImport">PythonImport</a>
+      <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
+      <li><a href="#PythonInterpreter">PythonInterpreter</a>
       <li><a href="#PythonNoReload">PythonNoReload</a>
       <li><a href="#PythonOption">PythonOption</a>
+      <li><a href="#PythonPath">PythonPath</a>
+	<br><br>
+      <a href="#Handlers">Handlers</a>
+	<br><br>
+      <li><a href="#HandlerSyntax">Python*Handler Syntax</a>
       <li><a href="#PythonPostReadRequestHandler">PythonPostReadRequestHandler</a>
       <li><a href="#PythonTransHandler">PythonTransHandler</a>
       <li><a href="#PythonHeaderParserHandler">PythonHeaderParserHandler</a>
@@ -32,54 +37,11 @@
     </ul>
     <hr>
     <p>
-      <a name="HandlerSyntax">
-	<h3>Python*Handler Directive Syntax</h3>
-	All <b>Python*Handler</b> directives have the following syntax:
-	
-    <blockquote>
-      <pre>Python*Handler <em>handler [handler] ...</em></pre>
-      
-      Where <em>handler</em> is a callable object (e.g. a function) that accepts a
-      single argument - <em>request</em> object. Multiple handlers can be specified,
-      in which case they will be called sequentially, from left to right.
-      <p>
-	A <em>handler</em> has the following syntax:
-      <pre><em>module[::object] [module::[object]] ...</em></pre>
-      
-      Where <em>module</em> can be a full module name (package dot notation is
-      accepted), and the optional <em>object</em> is the name of an object inside the
-      module. 
-      <p>
-	<em>Object</em> can also contain dots, in which case it will be resolved
-	from left to right. During resolution, if mod_python encounters an object of
-	type &lt;class&gt;, it will try instantiate it passing it a single argument, a
-	request object.
-      <p>
-	If no <em>object</em> is specified, then it will default to the directive
-	of the handler, all lower case, with the word "Python" removed. E.g. the
-	default <em>object</em> for <code>PythonAuthenHandler</code> would be 
-	<code>authenhandler</code>.
-      <p>
-	Example: <pre>PythonAuthzHandler mypackage.mymodule::checkallowed</pre>
-      <p>
-	Side note: The &quot;::&quot; was chosen for performance reasons. In order
-	for Python to use objects inside modules, the modules first need to be imported.
-	However, if the separator were simply a &quot;.&quot;, it would involve a much
-	more complex process of sequentially evaluating every word to determine whether
-	it is a package, module, class etc. Using the (admittedly un-Python-like) 
-	&quot;::&quot; takes the time consuming work of figuring out where the 
-	module ends and the object inside of it begins away from mod_python resulting
-	in a modest performance gain..
-      <p>
-    </blockquote>
-
-      </a>
-
-    <hr>
-
-<h2><a name="PythonPath">PythonPath</a></h2>
+<h2><a name="PythonDebug">PythonDebug</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> PythonPath <em>path</em><br>
+<strong>Syntax:</strong></a> PythonDebug {On, Off}<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> PythonDebug Off<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -88,21 +50,47 @@
 <strong>Module:</strong></a> mod_python.c
 
 <p>
-PythonPath directive sets the PythonPath. The path must be specified
-in Python list notation, e.g.  
-<pre> PythonPath "['/usr/local/lib/python1.5', '/usr/local/lib/site_python', '/some/other/place']".
-</pre> 
-The path specified in this directive will <em>replace</em> the path,
-not <em>add</em> to it.  Note that this directive should not be used as a
-security measure since the Python path is easily manipulated from
-within the scripts.
+Normally, the traceback output resulting from uncaught Python errors
+is sent to the error log. With PythonDebug On directive specified, the
+output will be sent to the client (as well as the log), except when
+the error is IOError while writing, in which case it will go to the
+error log.
+<p>
+This directive is very useful during the development process. It is recommended
+that you do not use it production environment as it may reveal to the client 
+unintended, possibly sensitive security information.
+
+<hr>
+
+<h2><a name="PythonImport">PythonImport</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonImport <em>module ...</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> directory<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+Tells the server to import the Python module <em>module</em> at
+process startup.  This is useful for initialization tasks that could
+be time consuming and should not be done at the request processing
+time, e.g. initializing a database connection.
+
+<p>
+The actual import takes place at child process initialization, so the
+module will actually be imported once for every child process spawned.
+
+<p>
+Note that the module will be imported within the subinterpreter
+according with the directory name specified by the &lt;Directory&gt; 
+directive. For all other subinterpreters, the module will not appear
+imported.
 
 <hr>
 
 <h2><a name="PythonInterpreter">PythonInterpreter</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> PythonInterpreter <em>name</em><br>
-<!--<strong>Default:</strong></A> <code>AccessConfig conf/access.conf</code><br>-->
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -122,7 +110,9 @@ subinterpreters, can be forced to execute in the same subinterpreter.
 
 <h2><a name="PythonInterpPerDirectory">PythonInterpPerDirectory</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> PythonInterpPerDirectory<br>
+<strong>Syntax:</strong></a> PythonInterpPerDirectory {On, Off}<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> PythonInterpPerDirectory Off<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -151,32 +141,11 @@ different interpreters, one for each directory.
 
 <hr>
 
-<h2><a name="PythonDebug">PythonDebug</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> PythonDebug<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-
-<p>
-Normally, the traceback output resulting from uncaught Python errors
-is sent to the error log. With PythonDebug directive specified, the
-output will be sent to the client (as well as the log), except when
-the error is IOError while writing, in which case it will go to the
-error log.
-<p>
-This directive is very useful during the development process. It is recommended
-that you do not use it production environment as it may reveal to the client 
-unintended, possibly sensitive security information.
-
-<hr>
-
 <h2><a name="PythonNoReload">PythonNoReload</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> PythonNoReload<br>
+<strong>Syntax:</strong></a> PythonNoReload {On, Off}<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> PythonNoReload Off<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -212,6 +181,73 @@ between the apache configuration files (httpd.conf, .htaccess, etc) and the Pyth
 programs.
 
 <hr>
+
+<h2><a name="PythonPath">PythonPath</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonPath <em>path</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+PythonPath directive sets the PythonPath. The path must be specified
+in Python list notation, e.g.  
+<pre> PythonPath "['/usr/local/lib/python1.5', '/usr/local/lib/site_python', '/some/other/place']".
+</pre> 
+The path specified in this directive will <em>replace</em> the path,
+not <em>add</em> to it.  Note that this directive should not be used as a
+security measure since the Python path is easily manipulated from
+within the scripts.
+
+<hr>
+    <a name="Handlers"><h1>Handlers</h1></a>
+<hr>
+
+      <a name="HandlerSyntax">
+	<h2>Python*Handler Directive Syntax</h2>
+	All <b>Python*Handler</b> directives have the following syntax:
+	
+      <pre>Python*Handler <em>handler [handler] ...</em></pre>
+      
+      Where <em>handler</em> is a callable object (e.g. a function) that accepts a
+      single argument - <em>request</em> object. Multiple handlers can be specified,
+      in which case they will be called sequentially, from left to right.
+      <p>
+	A <em>handler</em> has the following syntax:
+      <pre><em>module[::object] [module::[object]] ...</em></pre>
+      
+      Where <em>module</em> can be a full module name (package dot notation is
+      accepted), and the optional <em>object</em> is the name of an object inside the
+      module. 
+      <p>
+	<em>Object</em> can also contain dots, in which case it will be resolved
+	from left to right. During resolution, if mod_python encounters an object of
+	type &lt;class&gt;, it will try instantiate it passing it a single argument, a
+	request object.
+      <p>
+	If no <em>object</em> is specified, then it will default to the directive
+	of the handler, all lower case, with the word "Python" removed. E.g. the
+	default <em>object</em> for <code>PythonAuthenHandler</code> would be 
+	<code>authenhandler</code>.
+      <p>
+	Example: <pre>PythonAuthzHandler mypackage.mymodule::checkallowed</pre>
+      <p>
+	Side note: The &quot;::&quot; was chosen for performance reasons. In order
+	for Python to use objects inside modules, the modules first need to be imported.
+	However, if the separator were simply a &quot;.&quot;, it would involve a much
+	more complex process of sequentially evaluating every word to determine whether
+	it is a package, module, class etc. Using the (admittedly un-Python-like) 
+	&quot;::&quot; takes the time consuming work of figuring out where the 
+	module ends and the object inside of it begins away from mod_python resulting
+	in a modest performance gain..
+      <p>
+
+      </a>
+
+    <hr>
 
 <h2><a name="PythonPostReadRequestHandler">PythonPostReadRequestHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
@@ -387,7 +423,7 @@ programs.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon May 29 12:59:27 EDT 2000
+Last modified: Thu Jun  8 08:34:55 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
