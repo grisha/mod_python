@@ -63,12 +63,13 @@ extern "C" {
  *
  * serverobject.h
  *
- * $Id: serverobject.h,v 1.4 2002/11/08 00:15:11 gstein Exp $
+ * $Id: serverobject.h,v 1.5 2003/07/12 03:44:53 grisha Exp $
  *
  */
 
     typedef struct serverobject {
 	PyObject_HEAD
+	PyObject       *dict;
 	server_rec     *server;
 	PyObject       *next;
     } serverobject;
