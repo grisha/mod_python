@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.78 2002/09/24 16:01:28 grisha Exp $
+ * $Id: mod_python.c,v 1.79 2002/09/27 17:59:00 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -817,7 +817,12 @@ static int python_handler(request_rec *req, char *phase)
                                                   &python_module);
     /* get file extension */
     if (req->filename) {        /* filename is null until after transhandler */
-        ext = req->filename;
+        /* get rid of preceeding path */
+        if ((ext = ap_strrchr_c(req->filename, '/')) == NULL)
+            ext = req->filename;
+        else 
+            ++ext;
+        /* get extension */
         ap_getword(req->pool, &ext, '.');
         if (*ext != '\0')
             ext = apr_pstrcat(req->pool, ".", ext, NULL);

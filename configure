@@ -1163,7 +1163,7 @@ echo "configure:1161: checking Apache version" >&5
   echo "$ac_t""$ver" 1>&6
 
   # make version begins with 2
-  if test -z "`echo $ver | egrep ^2`"; then
+  if test -z "`echo $ver | egrep \^2`"; then
     { echo "configure: error: This version of mod_python only works with Apache 2. The one you have seems to be $ver." 1>&2; exit 1; }
   fi
 
@@ -1489,6 +1489,8 @@ fi
 # this for the test.py script
 
 TEST_SERVER_ROOT="`pwd`/test"
+mkdir -p test/modules
+mkdir -p test/logs
 ln -fs ../../src/mod_python.so test/modules/mod_python.so
 
 trap '' 1 2 15
