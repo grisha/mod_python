@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.96 2003/08/11 18:12:55 grisha Exp $
+ * $Id: mod_python.c,v 1.97 2003/08/18 20:51:23 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -380,6 +380,10 @@ static apr_status_t init_mutexes(server_rec *s, py_global_config *glb)
 		return rc;
 	    }
 	}
+	else {
+	    if (fname)
+		chown(fname, unixd_config.user_id, -1);
+	}
     }
     return APR_SUCCESS;
 }
@@ -402,7 +406,7 @@ static apr_status_t reinit_mutexes(server_rec *s, py_global_config *glb)
 					 s->process->pool);
 	if (rc != APR_SUCCESS) {
 	    ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, s,
-			 "mod_python: Failed to reinit global modutex %s.",
+			 "mod_python: Failed to reinit global mutex %s.",
 			 (!fname) ? "<null>" : fname);
 	    return rc;
 	}
