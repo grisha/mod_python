@@ -1546,7 +1546,7 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
     }
     else {
     	/** We don't remove the value, but set it
-    	    to an empty string. There is possibility
+    	    to an empty string. There is no possibility
     	    of colliding with an actual value, since
     	    an entry string precisely means 'remove the value' */
         apr_table_set(conf->options, key, "");
