@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.8 2003/08/28 18:49:14 grisha Exp $
+ # $Id: Session.py,v 1.9 2004/01/14 02:18:36 grisha Exp $
 
 import apache, Cookie
 import _apache
@@ -68,7 +68,7 @@ import cPickle
 import tempfile
 
 COOKIE_NAME="pysid"
-DFT_TIMEOUT=30*60*60 # 30 min
+DFT_TIMEOUT=30*60 # 30 min
 CLEANUP_CHANCE=1000 # cleanups have 1 in CLEANUP_CHANCE chance
 
 tempdir = tempfile.gettempdir()
