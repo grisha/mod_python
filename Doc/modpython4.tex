@@ -388,6 +388,46 @@ objects. For a more in-depth look at Apache internals, see the
   This function is obsolete and is an alias to \class{table} (see below).
 \end{funcdesc}
 
+\begin{funcdesc}{mpm_query}{code}
+  Allows querying of the MPM for various parameters such as numbers of
+  processes and threads. The return value is one of three constants:
+  \begin{verbatim}
+AP_MPMQ_NOT_SUPPORTED      = 0  # This value specifies whether 
+                                # an MPM is capable of         
+                                # threading or forking.        
+AP_MPMQ_STATIC             = 1  # This value specifies whether 
+                                # an MPM is using a static # of
+                                # threads or daemons.          
+AP_MPMQ_DYNAMIC            = 2  # This value specifies whether 
+                                # an MPM is using a dynamic # of
+                                # threads or daemons.          
+  \end{verbatim}
+
+  The \var{code} argument must be one of the following:
+  \begin{verbatim}
+AP_MPMQ_MAX_DAEMON_USED    = 1  # Max # of daemons used so far 
+AP_MPMQ_IS_THREADED        = 2  # MPM can do threading         
+AP_MPMQ_IS_FORKED          = 3  # MPM can do forking           
+AP_MPMQ_HARD_LIMIT_DAEMONS = 4  # The compiled max # daemons   
+AP_MPMQ_HARD_LIMIT_THREADS = 5  # The compiled max # threads   
+AP_MPMQ_MAX_THREADS        = 6  # # of threads/child by config 
+AP_MPMQ_MIN_SPARE_DAEMONS  = 7  # Min # of spare daemons       
+AP_MPMQ_MIN_SPARE_THREADS  = 8  # Min # of spare threads       
+AP_MPMQ_MAX_SPARE_DAEMONS  = 9  # Max # of spare daemons       
+AP_MPMQ_MAX_SPARE_THREADS  = 10 # Max # of spare threads       
+AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon 
+AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config   
+  \end{verbatim}
+
+Example:
+  \begin{verbatim}
+if apache.mpm_query(apache.AP_MPMQ_IS_THREADED):
+    # do something
+else:
+    # do something else
+  \end{verbatim}
+\end{funcdesc}
+
 \subsection{Table Object (mp_table)\obindex{table}\label{pyapi-mptable}}
 
 \index{table}

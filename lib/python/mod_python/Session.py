@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.2 2003/08/04 23:24:01 grisha Exp $
+ # $Id: Session.py,v 1.3 2003/08/05 20:38:00 grisha Exp $
 
 from mod_python import apache, Cookie
 import _apache
@@ -75,23 +75,11 @@ def _init_rnd():
     this is key in multithreaded env, see
     python docs for random """
 
-    # guess max number of threads
-    config = apache.config_tree()
-    dict = {}
-    for line in config:
-        if type(line) == type(()):
-            if line[0].lower() in ("startthreads",
-                                   "maxthreadsperchild",
-                                   "threadsperchild"):
-                dict[line[0].lower()] = int(line[1])
+    # query max number of threads
 
-    # in order of preference
-    if dict.has_key("threadsperchild"):
-        gennum = dict["threadsperchild"]
-    elif dict.has_key("maxthreadsperchild"):
-        gennum = dict["maxthreadsperchild"]
-    elif dict.has_key("startthreads"):
-        gennum = dict["startthreads"]
+    
+    if _apache.mpm_query(apache.AP_MPMQ_IS_THREADED):
+        gennum = _apache.mpm_query(apache.AP_MPMQ_MAX_SPARE_THREADS)
     else:
         gennum = 10
 
