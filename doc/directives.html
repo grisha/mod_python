@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.13 2000/09/04 15:54:56 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.14 2000/09/05 12:46:55 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -27,6 +27,7 @@
       <li><a href="#PythonHandler">PythonHandler</a>
       <li><a href="#PythonInitHandler">PythonInitHandler</a>
       <li><a href="#PythonLogHandler">PythonLogHandler</a>
+      <li><a href="#PythonCleanupHandler">PythonCleanupHandler</a>
 	<br><br>
 	<a href="#other">Other Directives</a>
 	<br><br>
@@ -334,6 +335,36 @@
       over and above the normal server things.
 <p>
 <hr>
+<h2><a name="PythonCleanupHandler">PythonCleanupHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This is the very last handler, called just before the request object
+      is destroyed by Apache.
+    <p>
+      Unlike all the other handlers, the return value of this handler is ignored.
+      Any errors will be logged to the error log, but will not be sent to the
+      client, even if PythonDebug is On. 
+    <p>
+      This handler is not a valid argument to the rec.add_handler() function. 
+      For dynamic clean up registration, use req.register_cleanup(). 
+    <p>
+      Once cleanups have started, it is not possible to register more of them.
+      Terefore, req.register_cleanup() has no effect within this handler.
+    <p>
+      Cleanups registered with this directive will execute <em>after</em> cleanups
+      registered with req.register_cleanup().
+<p>
+<hr>
     <a name="other"><h1>Other Directives</h1></a>
 <hr>
 
@@ -591,7 +622,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Sat Sep  2 15:06:30 EDT 2000
+Last modified: Mon Sep  4 21:45:23 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
