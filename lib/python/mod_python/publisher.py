@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.11 2001/05/14 22:17:21 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.12.2.1 2002/04/10 21:18:22 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -290,7 +290,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
 
         # object cannot be a module
         if type(obj) == type(apache):
-            raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
+            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
         realm, user, passwd = process_auth(req, obj, realm,
                                            user, passwd)
@@ -305,9 +305,8 @@ class File:
     def __init__(self, field):
 
         # steal all the file-like methods
-        methods = field.file.__methods__
-        for m in methods:
-            self.__dict__[m] = methods[m]
+        for m in field.file.__methods__:
+            self.__dict__[m] = getattr(field.file, m)
 
         self.headers = field.headers
         self.filename = field.filename
