@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.33 2003/09/29 21:04:51 grisha Exp $
+ # $Id: publisher.py,v 1.34 2003/11/04 21:52:21 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -70,6 +70,7 @@
 import apache
 import util
 
+import sys
 import os
 import imp
 import re
@@ -77,6 +78,8 @@ import base64
 
 import new
 from types import *
+
+imp_suffixes = " ".join([x[0][1:] for x in imp.get_suffixes()])
 
 def handler(req):
 
@@ -110,6 +113,9 @@ def handler(req):
     #   AddHandler directive. Everything else will be considered
     #   a package.module rather than module.suffix
     exts = req.get_addhandler_exts()
+    if not exts:
+        # this is SetHandler, make an exception for Python suffixes
+        exts = imp_suffixes
     if req.extension:  # this exists if we're running in a | .ext handler
         exts += req.extension[1:] 
     if exts:
@@ -130,14 +136,19 @@ def handler(req):
                                       log=log,
                                       path=[path])
     except ImportError:
+        et, ev, etb = sys.exc_info()
         # try again, using default module, perhaps this is a
         # /directory/function (as opposed to /directory/module/function)
         func_path = module_name
         module_name = "index"
-        module = apache.import_module(module_name,
-                                      autoreload=autoreload,
-                                      log=log,
-                                      path=[path])
+        try:
+            module = apache.import_module(module_name,
+                                          autoreload=autoreload,
+                                          log=log,
+                                          path=[path])
+        except ImportError:
+            # raise the original exception
+            raise et, ev, etb
         
     # does it have an __auth__?
     realm, user, passwd = process_auth(req, module)
