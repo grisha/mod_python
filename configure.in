@@ -317,9 +317,7 @@ fi
 # this for the test.py script
 AC_SUBST(TEST_SERVER_ROOT)
 TEST_SERVER_ROOT="`pwd`/test"
-mkdir -p test/modules
-mkdir -p test/logs
-ln -fs ../../src/mod_python.so test/modules/mod_python.so
+MOD_PYTHON_SO="`pwd`/src/mod_pyhon.so"
 
 AC_OUTPUT(Makefile src/Makefile src/libpython.module Doc/Makefile test/testconf.py)
 

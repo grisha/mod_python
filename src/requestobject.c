@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.33 2002/09/24 16:20:42 grisha Exp $
+ * $Id: requestobject.c,v 1.34 2002/10/10 21:28:32 grisha Exp $
  *
  */
 
@@ -1011,7 +1011,7 @@ static PyObject *getreq_rec_ah(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
     apr_array_header_t *ah = 
-        (apr_array_header_t *)((void *)self->request_rec + md->offset);
+        (apr_array_header_t *)((char *)self->request_rec + md->offset);
 
     return tuple_from_array_header(ah);
 }
@@ -1026,7 +1026,7 @@ static PyObject *getreq_rec_ml(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     ap_method_list_t *ml = 
-        (ap_method_list_t *)((void *)self->request_rec + md->offset);
+        (ap_method_list_t *)((char *)self->request_rec + md->offset);
 
     return tuple_from_method_list(ml);
 }
@@ -1041,7 +1041,7 @@ static PyObject *getreq_rec_fi(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     apr_finfo_t *fi = 
-        (apr_finfo_t *)((void *)self->request_rec + md->offset);
+        (apr_finfo_t *)((char *)self->request_rec + md->offset);
 
     return tuple_from_finfo(fi);
 }
@@ -1055,7 +1055,7 @@ static PyObject *getreq_rec_fi(requestobject *self, void *name)
 static PyObject *getreq_rec_uri(requestobject *self, void *name) 
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
-    apr_uri_t *uri = (apr_uri_t *)((void *)self->request_rec + md->offset);
+    apr_uri_t *uri = (apr_uri_t *)((char *)self->request_rec + md->offset);
 
     return tuple_from_apr_uri(uri);
 }

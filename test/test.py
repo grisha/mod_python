@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.13 2002/10/09 15:06:53 grisha Exp $
+ # $Id: test.py,v 1.14 2002/10/10 21:28:32 grisha Exp $
  #
 
 """
@@ -160,40 +160,45 @@ import commands
 import urllib
 import httplib
 import os
+import shutil
 import time
+import socket
 
 HTTPD = testconf.HTTPD
 TESTHOME = testconf.TESTHOME
-PARAMS = {
-    "server_root": TESTHOME,
-    "config": os.path.join(TESTHOME, "conf", "test.conf"),
-    "config_tmpl": os.path.join(TESTHOME, "conf", "test.conf.tmpl"),
-    "document_root": os.path.join(TESTHOME, "htdocs"),
-    "mod_python_so": os.path.join(TESTHOME, "modules", "mod_python.so"),
-    "port": "", # this is set in fundUnusedPort()
-    }
+MOD_PYTHON_SO = testconf.MOD_PYTHON_SO
 
-def findUnusedPort(port=[54321]):
+SERVER_ROOT = TESTHOME
+CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
+DOCUMENT_ROOT = os.path.join(TESTHOME, "htdocs")
+PORT = 0 # this is set in fundUnusedPort()
+
+
+def findUnusedPort():
 
     # bind to port 0 which makes the OS find the next
     # unused port.
 
-    try:
-        import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
-        s.close()
-    except ImportError:
-        # try without socket. this uses a python "static" trick,
-        # a mutable default value for a keyword argument is defined
-        # with the method, see section 7.5 of Python Ref. Manual.
-        port += 1
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
 
     return port
 
 class HttpdCtrl:
     # a mixin providing ways to control httpd
+
+    def checkFiles(self):
+
+        modules = os.path.join(SERVER_ROOT, "modules")
+        if not os.path.exists(modules):
+            os.mkdir(modules)
+
+        logs = os.path.join(SERVER_ROOT, "logs")
+        if os.path.exists(logs):
+            shutil.rmtree(logs)
+        os.mkdir(logs)
 
     def makeConfig(self, append=""):
 
@@ -201,33 +206,84 @@ class HttpdCtrl:
 
         print "  Creating config...."
 
-        f = open(PARAMS["config_tmpl"])
-        tmpl = f.read()
-        f.close()
+        self.checkFiles()
 
-        PARAMS["port"] = findUnusedPort()
-        print "    listen port:", PARAMS["port"]
+        global PORT
+        PORT = findUnusedPort()
+        print "    listen port:", PORT
 
-        f = open(PARAMS["config"], "w")
-        f.write(tmpl % PARAMS)
+        # where other modules might be
+        modpath = os.path.split(os.path.split(HTTPD)[0])[0]
+        modpath = os.path.join(modpath, "modules")
+
+        s = Container(
+            IfModule("prefork.c",
+                     StartServers("1"),
+                     MaxSpareServers("1")),
+            IfModule("worker.c",
+                     StartServers("1"),
+                     MaxClients("1"),
+                     MinSpareThreads("1"),
+                     MaxSpareThreads("1"),
+                     ThreadsPerChild("1"),
+                     MaxRequestsPerChild("1")),
+            IfModule("perchild.c",
+                     NumServers("1"),
+                     StartThreads("1"),
+                     MaxSpareThreads("1"),
+                     MaxThreadsPerChild("2")),
+            IfModule("mpm_winnt.c",
+                     ThreadsPerChild("3"),
+                     MaxRequestsPerChild("0")),
+            IfModule("!mod_mime.c",
+                     LoadModule("mime_module %s" %
+                                self.quoteIfSpace(os.path.join(modpath, "mod_mime.so")))),
+            IfModule("!mod_log_config.c",
+                     LoadModule("log_config_module %s" %
+                                self.quoteIfSpace(os.path.join(modpath, "mod_log_config.so")))),
+            ServerRoot(SERVER_ROOT),
+            ErrorLog("logs/error_log"),
+            LogLevel("debug"),
+            LogFormat(r'"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined'),
+            CustomLog("logs/access_log combined"),
+            TypesConfig("conf/mime.types"),
+            PidFile("logs/httpd.pid"),
+            ServerName("127.0.0.1"),
+            Listen(PORT),
+            DocumentRoot(DOCUMENT_ROOT),
+            LoadModule("python_module %s" % MOD_PYTHON_SO))
+
+        f = open(CONFIG, "w")
+        f.write(str(s))
         f.write("\n# --APPENDED-- \n\n"+append)
         f.close()
+
+    def quoteIfSpace(self, s):
+
+        # Windows doesn't like quotes when there are
+        # no spaces, but needs them otherwise
+        if s.find(" ") != -1:
+            s = '"%s"' % s
+        return s
 
     def startHttpd(self):
 
         print "  Starting Apache...."
-        commands.getoutput("rm -f %s/logs/*log" % PARAMS["server_root"])
-        cmd = '%s -k start -f %s' % (HTTPD, PARAMS["config"])
+        httpd = self.quoteIfSpace(HTTPD)
+        config = self.quoteIfSpace(CONFIG)
+        cmd = '%s -k start -f %s' % (httpd, config)
         print "    ", cmd
-        commands.getoutput(cmd)
+        os.system(cmd)
         self.httpd_running = 1
 
     def stopHttpd(self):
 
         print "  Stopping Apache..."
-        cmd = '%s -k stop -f %s' % (HTTPD, PARAMS["config"]) 
+        httpd = self.quoteIfSpace(HTTPD)
+        config = self.quoteIfSpace(CONFIG)
+        cmd = '%s -k stop -f %s' % (httpd, config)
         print "    ", cmd
-        commands.getoutput(cmd)
+        os.system(cmd)
         time.sleep(1)
         self.httpd_running = 0
 
@@ -248,9 +304,9 @@ class PerRequestTestCase(unittest.TestCase):
     def vhost_get(self, vhost, path="/tests.py"):
         # allows to specify a custom host: header
 
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", path, skip_host=1)
-        conn.putheader("Host", "%s:%s" % (vhost, PARAMS["port"]))
+        conn.putheader("Host", "%s:%s" % (vhost, PORT))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -258,12 +314,14 @@ class PerRequestTestCase(unittest.TestCase):
 
         return rsp
 
+    ### Tests begin here
+
     def test_req_document_root_conf(self):
 
         c = VirtualHost("*",
                         ServerName("test_req_document_root"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_document_root"),
                                   PythonDebug("On")))
@@ -275,15 +333,15 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.document_root()"
         rsp = self.vhost_get("test_req_document_root")
 
-        if (rsp != PARAMS["document_root"]):
+        if rsp != DOCUMENT_ROOT.replace("\\", "/"):
             self.fail("test failed")
 
     def test_req_add_handler_conf(self):
 
         c = VirtualHost("*",
                         ServerName("test_req_add_handler"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_add_handler"),
                                   PythonDebug("On")))
@@ -301,8 +359,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_req_allow_methods"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_allow_methods"),
                                   PythonDebug("On")))
@@ -312,9 +370,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing req.allow_methods()"
 
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_allow_methods", PARAMS["port"]))
+        conn.putheader("Host", "%s:%s" % ("test_req_allow_methods", PORT))
         conn.endheaders()
         response = conn.getresponse()
         server_hdr = response.getheader("Allow", "")
@@ -326,12 +384,11 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_req_get_basic_auth_pw"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   AuthName("blah"),
                                   AuthType("basic"),
-                                  require("valid-user"),
                                   PythonAuthenHandler("tests::req_get_basic_auth_pw"),
                                   PythonHandler("tests::req_get_basic_auth_pw"),
                                   PythonDebug("On")))
@@ -341,9 +398,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing req.get_basic_auth_pw()"
         
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PARAMS["port"]))
+        conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
         import base64
         auth = base64.encodestring("spam:eggs").strip()
         conn.putheader("Authorization", "Basic %s" % auth)
@@ -359,8 +416,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_req_internal_redirect"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_internal_redirect | .py"),
                                   PythonHandler("tests::req_internal_redirect_int | .int"),
@@ -380,8 +437,8 @@ class PerRequestTestCase(unittest.TestCase):
         c = str(Timeout("5")) + \
             str(VirtualHost("*",
                         ServerName("test_req_read"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_read"),
                                   PythonDebug("On"))))
@@ -393,9 +450,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         params = '1234567890'*10000
         print "    writing %d bytes..." % len(params)
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_read:%s" % PARAMS["port"])
+        conn.putheader("Host", "test_req_read:%s" % PORT)
         conn.putheader("Content-Length", len(params))
         conn.endheaders()
         conn.send(params)
@@ -408,9 +465,9 @@ class PerRequestTestCase(unittest.TestCase):
             self.fail("test failed")
 
         print "    read/write ok, now lets try causing a timeout (should be 5 secs)"
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_read:%s" % PARAMS["port"])
+        conn.putheader("Host", "test_req_read:%s" % PORT)
         conn.putheader("Content-Length", 10)
         conn.endheaders()
         conn.send("123456789")
@@ -426,8 +483,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_req_readline"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_readline"),
                                   PythonDebug("On")))
@@ -439,9 +496,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         params = ('1234567890'*3000+'\n')*4
         print "    writing %d bytes..." % len(params)
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_readline:%s" % PARAMS["port"])
+        conn.putheader("Host", "test_req_readline:%s" % PORT)
         conn.putheader("Content-Length", len(params))
         conn.endheaders()
         conn.send(params)
@@ -457,8 +514,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_req_readlines"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_readlines"),
                                   PythonDebug("On")))
@@ -470,9 +527,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         params = ('1234567890'*3000+'\n')*4
         print "    writing %d bytes..." % len(params)
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_readlines:%s" % PARAMS["port"])
+        conn.putheader("Host", "test_req_readlines:%s" % PORT)
         conn.putheader("Content-Length", len(params))
         conn.endheaders()
         conn.send(params)
@@ -488,8 +545,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_req_register_cleanup"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::req_register_cleanup"),
                                   PythonDebug("On")))
@@ -503,7 +560,7 @@ class PerRequestTestCase(unittest.TestCase):
         
         # see what's in the log now
         time.sleep(1)
-        f = open("%s/logs/error_log" % PARAMS["server_root"])
+        f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
         log = f.read()
         f.close()
         if log.find("test ok") == -1:
@@ -513,8 +570,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_util_fieldstorage"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests::util_fieldstorage"),
                                   PythonDebug("On")))
@@ -528,7 +585,7 @@ class PerRequestTestCase(unittest.TestCase):
         headers = {"Host": "test_util_fieldstorage",
                    "Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
-        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.request("POST", "/tests.py", params, headers)
         response = conn.getresponse()
         rsp = response.read()
@@ -541,9 +598,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_postreadrequest"),
-                        DocumentRoot(PARAMS["document_root"]),
+                        DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("python-program"),
-                        PythonPath("['%s']+sys.path" % PARAMS["document_root"]),
+                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::postreadrequest"),
                         PythonDebug("On"))
         return str(c)
@@ -560,9 +617,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_outputfilter"),
-                        DocumentRoot(PARAMS["document_root"]),
+                        DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("python-program"),
-                        PythonPath("['%s']+sys.path" % PARAMS["document_root"]),
+                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::simplehandler"),
                         PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
                         PythonDebug("On"),
@@ -583,7 +640,7 @@ class PerRequestTestCase(unittest.TestCase):
         c = str(Listen("%d" % self.conport)) + \
             str(VirtualHost("127.0.0.1:%d" % self.conport,
                             SetHandler("python-program"),
-                            PythonPath("['%s']+sys.path" % PARAMS["document_root"]),
+                            PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                             PythonConnectionHandler("tests::connectionhandler")))
         return c
 
@@ -603,8 +660,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_internal"),
-                        DocumentRoot(PARAMS["document_root"]),
-                        Directory(PARAMS["document_root"],
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
                                   PythonHandler("tests"),
                                   PythonOption("testing 123"),
@@ -634,12 +691,12 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.makeConfig()
         self.startHttpd()
 
-        f = urllib.urlopen("http://127.0.0.1:%s/" % PARAMS["port"])
+        f = urllib.urlopen("http://127.0.0.1:%s/" % PORT)
         server_hdr = f.info()["Server"]
         f.close()
         self.failUnless(server_hdr.find("Python") > -1,
                         "%s does not appear to load, Server header does not contain Python"
-                        % PARAMS["mod_python_so"])
+                        % MOD_PYTHON_SO)
 
 
     def testPerRequestTests(self):
