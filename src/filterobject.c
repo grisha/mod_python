@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.24 2003/09/22 19:36:37 grisha Exp $
+ * $Id: filterobject.c,v 1.25 2003/10/09 03:18:45 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -219,7 +219,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
                                   APR_BLOCK_READ, self->readbytes);
         Py_END_ALLOW_THREADS;
 
-        if (! APR_STATUS_IS_SUCCESS(self->rc)) {
+        if (!APR_STATUS_IS_EAGAIN(self->rc) && !APR_STATUS_IS_SUCCESS(self->rc)) {
             PyErr_SetObject(PyExc_IOError, 
                             PyString_FromString("Input filter read error"));
             return NULL;
