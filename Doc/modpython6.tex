@@ -43,9 +43,11 @@ return value.
 \subsubsection{Traversal\label{hand-pub-alg-trav}}
 
 The Publisher handler locates and imports the module specified in the
-URI. The module location is determined from the
-\class{Request.filename} attribute. Before importing, the file extension, 
-if any, is discarded.
+URI. The module location is determined from the \class{req.filename}
+attribute. Before importing, the file extension, if any, is
+discarded. 
+
+If \class{req.filename} is empty, the module name defaults to "index".
 
 Once module is imported, the remaining part of the URI up to the
 beginning of any query data (a.k.a. PATH_INFO) is used to find an
