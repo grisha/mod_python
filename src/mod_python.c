@@ -3,7 +3,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.6 2000/05/13 02:22:37 grisha Exp $
+ * $Id: mod_python.c,v 1.7 2000/05/13 02:25:00 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details. See COPYRIGHT file for Copyright. 
@@ -29,7 +29,7 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.0a"
+#define VERSION_COMPONENT "mod_python/1.9a"
 #define MODULENAME "mod_python.apache"
 #define INITSTRING "mod_python.apache.init()"
 #define INTERP_ATTR "__interpreter__"
