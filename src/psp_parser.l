@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.18 2004/01/19 03:04:58 grisha Exp $
+ * $Id: psp_parser.l,v 1.19 2004/01/19 03:07:00 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -224,7 +224,11 @@
     filename = strchr(yytext, '"') + 1;
     filename[strchr(filename, '"')-filename] = '\0';
 
-    if (PSP_PG(dir) && !(filename[0] == '/' || filename[0] == '\\')) {
+    /* XXX The absolute path check won't work on Windows,
+     * needs to be corrected
+     */
+
+    if (PSP_PG(dir) && filename[0] != '/') {
         path = malloc(strlen(filename)+strlen(PSP_PG(dir))+1);
         if (path == NULL) {
             PyErr_NoMemory();
