@@ -54,6 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
+ # $Id: cgihandler.py,v 1.12 2002/12/28 03:43:40 grisha Exp $
 
 import apache
 import imp
