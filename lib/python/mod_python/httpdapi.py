@@ -3,7 +3,7 @@
 
      This file is part of mod_python. See COPYRIGHT file for details.
 
-     $Id: httpdapi.py,v 1.5 2000/06/11 19:36:43 grisha Exp $
+     $Id: httpdapi.py,v 1.6 2000/06/20 15:02:04 grisha Exp $
 
      Httpdapy handler module.
 """
@@ -481,3 +481,5 @@ class NSAPI_Session:
     def net_read(self, len):
         return self.req.read(len)
 
+    def form_data(self, len):
+        return self.req.read(len)

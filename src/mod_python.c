@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.17 2000/06/11 21:10:36 grisha Exp $
+ * $Id: mod_python.c,v 1.18 2000/06/20 15:02:05 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -306,10 +306,13 @@ static struct memberlist conn_memberlist[] = {
   /* XXX struct sockaddr_in remote_addr? */
   {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
   {"remote_host",        T_STRING,    OFF(remote_host),        RO},
-  {"remote_logname",     T_STRING,    OFF(remote_logname),    RO},
+  {"remote_logname",     T_STRING,    OFF(remote_logname),     RO},
   {"user",               T_STRING,    OFF(user),               RO},
   {"ap_auth_type",       T_STRING,    OFF(ap_auth_type),       RO},
   /* XXX aborted, keepalive, keptalive, double_reverse, keepalives ? */
+  {"local_ip",           T_STRING,    OFF(remote_ip),          RO},
+  {"local_host",         T_STRING,    OFF(remote_host),        RO},
+  {"keepalives",         T_INT,       OFF(keepalives),         RO},
   {NULL}  /* Sentinel */
 };
 
@@ -412,6 +415,7 @@ static struct memberlist request_memberlist[] = {
     {"content_encoding",   T_STRING,    OFF(content_encoding),     RO},
     {"content_language",   T_STRING,    OFF(content_language),     RO},
     /* XXX content_languages */
+    {"vlist_validator",    T_STRING,    OFF(vlist_validator),      RO},
     {"no_cache",           T_INT,       OFF(no_cache),             RO},
     {"no_local_copy",      T_INT,       OFF(no_local_copy),        RO},
     {"unparsed_uri",       T_STRING,    OFF(unparsed_uri),         RO},
@@ -1455,7 +1459,7 @@ void python_init(server_rec *s, pool *p)
 			 "python_init: PyDict_New() failed! No more memory?");
 	    exit(1);
 	}
-
+	
 #ifdef WITH_THREAD
 	
 	/* release the lock; now other threads can run */
@@ -1530,6 +1534,7 @@ PyObject * tuple_from_array_header(const array_header *ah)
 
 static void *python_merge_dir_config(pool *p, void *cc, void *nc)
 {
+
     py_dir_config *merged_conf = (py_dir_config *) ap_pcalloc(p, sizeof(py_dir_config));
     py_dir_config *current_conf = (py_dir_config *) cc;
     py_dir_config *new_conf = (py_dir_config *) nc;
@@ -1739,7 +1744,7 @@ static PyObject * log_error(PyObject *self, PyObject *args)
 	    }
 	    serv_rec = server->server;
 	}
-	ap_log_error(APLOG_MARK, level, serv_rec, message);
+	ap_log_error(APLOG_MARK, level, serv_rec, "%s", message);
     }
 
     Py_INCREF(Py_None);
@@ -1818,6 +1823,9 @@ static int python_handler(request_rec *req, char *handler)
     py_dir_config * conf;
     int result;
     const char * interpreter = NULL;
+#ifdef WITH_THREAD
+    PyThreadState *tstate;
+#endif
 
     /* get configuration */
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, &python_module);
@@ -2005,6 +2013,10 @@ static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig,
     /* get config */
     conf = (py_dir_config *) mconfig;
 
+#ifdef WITH_THREAD  
+    PyEval_AcquireLock();
+#endif
+
     /* make the table if not yet */
     if (! python_imports)
 	python_imports = ap_make_table(cmd->pool, 4);
@@ -2012,6 +2024,10 @@ static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig,
     /* remember the module name and the directory in which to
        import it (this is for ChildInit) */
     ap_table_add(python_imports, module, conf->config_dir);
+
+#ifdef WITH_THREAD  
+    PyEval_ReleaseLock();
+#endif
 
     /* the rest is basically for consistency */
 
@@ -2220,6 +2236,10 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
     interpreterdata *idata;
     int i;
     const char *interpreter;
+#ifdef WITH_THREAD
+    PyThreadState *tstate;
+#endif
+
 
     if (python_imports) {
 
@@ -2234,18 +2254,16 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
 	    char *dir = elts[i].val;
 
 	    // XXXXXX PythonInterpreter!!!
-	    // This needs to be addressed in config_merge
+	    // This needs to be addressed in config_merge?
 	    interpreter = dir;
 
 #ifdef WITH_THREAD  
-	    /* acquire lock */
 	    PyEval_AcquireLock();
 #endif
     
 	    idata = get_interpreter_data(interpreter, s);
 
 #ifdef WITH_THREAD
-	    /* release the lock */
 	    PyEval_ReleaseLock();
 #endif
 
