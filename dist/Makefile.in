@@ -54,13 +54,14 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.5 2003/05/29 14:44:33 grisha Exp $
+ # $Id: Makefile.in,v 1.6 2003/05/29 20:52:25 grisha Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
 MP_VERSION=@MP_VERSION@
 
 build: mod_python src
+	@cd src; $(MAKE) psp_parser.c
 	$(PYTHON_BIN) setup.py build
 
 # this one requires at least python 2.3

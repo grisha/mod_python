@@ -340,8 +340,8 @@ static void yy_fatal_error (yyconst char msg[] ,yyscan_t yyscanner );
 	*yy_cp = '\0'; \
 	yyg->yy_c_buf_p = yy_cp;
 
-#define YY_NUM_RULES 13
-#define YY_END_OF_BUFFER 14
+#define YY_NUM_RULES 14
+#define YY_END_OF_BUFFER 15
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -349,11 +349,12 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[30] =
+static yyconst flex_int16_t yy_accept[32] =
     {   0,
-        0,    0,    0,    0,    0,    0,    0,   10,   14,    1,
-       13,    5,    4,    4,    5,    9,    6,    6,    9,    8,
-       12,   12,   10,    3,    7,   11,   10,    2,    0
+        0,    0,    0,    0,    0,    0,    0,   11,   15,    2,
+        1,    1,    6,    5,    5,    6,   10,    7,    7,   10,
+        9,   13,   14,   13,   11,    4,    8,   12,   11,    3,
+        0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -393,38 +394,38 @@ static yyconst flex_int32_t yy_meta[10] =
         1,    1,    1,    1,    1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int16_t yy_base[33] =
+static yyconst flex_int16_t yy_base[35] =
     {   0,
-       29,   28,    0,    5,   12,    0,   19,   23,   30,   33,
-       33,   33,   33,   33,   24,   33,   33,   33,   18,   33,
-       33,   14,    9,    2,   33,   33,    4,   33,   33,    4,
-        1,    0
+        0,    2,    4,    9,   16,    0,   23,   27,   34,   35,
+       35,   35,   35,   35,   35,   28,   35,   35,   35,   22,
+       35,   35,   35,   18,   13,    6,   35,   35,    8,   35,
+       35,    8,    1,    0
     } ;
 
-static yyconst flex_int16_t yy_def[33] =
+static yyconst flex_int16_t yy_def[35] =
     {   0,
-       30,   30,   31,   31,   29,    5,   32,   32,   29,   29,
-       29,   29,   29,   29,   29,   29,   29,   29,   29,   29,
-       29,   29,   29,   29,   29,   29,   29,   29,    0,   29,
-       29,   29
+       32,   32,   33,   33,   31,    5,   34,   34,   31,   31,
+       31,   31,   31,   31,   31,   31,   31,   31,   31,   31,
+       31,   31,   31,   31,   31,   31,   31,   31,   31,   31,
+        0,   31,   31,   31
     } ;
 
-static yyconst flex_int16_t yy_nxt[43] =
+static yyconst flex_int16_t yy_nxt[45] =
     {   0,
-       21,   12,   13,   14,   10,   27,   15,   13,   14,   28,
-       27,   15,   16,   16,   17,   18,   19,   20,   16,   16,
-       16,   11,   26,   22,   23,   11,   25,   22,   24,   29,
-       11,   11,    9,   29,   29,   29,   29,   29,   29,   29,
-       29,   29
+       22,   13,   11,   12,   11,   12,   14,   15,   10,   29,
+       16,   14,   15,   30,   29,   16,   17,   17,   18,   19,
+       20,   21,   17,   17,   17,   23,   28,   24,   25,   23,
+       27,   24,   26,   31,    9,   31,   31,   31,   31,   31,
+       31,   31,   31,   31
     } ;
 
-static yyconst flex_int16_t yy_chk[43] =
+static yyconst flex_int16_t yy_chk[45] =
     {   0,
-       32,   31,    3,    3,   30,   27,    3,    4,    4,   24,
-       23,    4,    5,    5,    5,    5,    5,    5,    5,    5,
-        5,    7,   22,    7,    8,    8,   19,    8,   15,    9,
-        2,    1,   29,   29,   29,   29,   29,   29,   29,   29,
-       29,   29
+       34,   33,    1,    1,    2,    2,    3,    3,   32,   29,
+        3,    4,    4,   26,   25,    4,    5,    5,    5,    5,
+        5,    5,    5,    5,    5,    7,   24,    7,    8,    8,
+       20,    8,   16,    9,   31,   31,   31,   31,   31,   31,
+       31,   31,   31,   31
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -490,7 +491,7 @@ static yyconst flex_int16_t yy_chk[43] =
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.c,v 1.6 2003/05/29 14:44:33 grisha Exp $
+ * $Id: psp_parser.c,v 1.7 2003/05/29 20:52:25 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -507,7 +508,7 @@ static yyconst flex_int16_t yy_chk[43] =
 
 
 
-#line 511 "psp_parser.c"
+#line 512 "psp_parser.c"
 
 #define INITIAL 0
 #define TEXT 1
@@ -729,7 +730,7 @@ YY_DECL
 #line 76 "psp_parser.l"
 
 
-#line 733 "psp_parser.c"
+#line 734 "psp_parser.c"
 
 	if ( yyg->yy_init )
 		{
@@ -783,13 +784,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 30 )
+				if ( yy_current_state >= 32 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 33 );
+		while ( yy_base[yy_current_state] != 35 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -814,146 +815,162 @@ do_action:	/* This label is used only to access EOF actions. */
 			goto yy_find_action;
 
 case 1:
+/* rule 1 can match eol */
 YY_RULE_SETUP
 #line 78 "psp_parser.l"
 {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("#\n# This file is auto-generated by mod_python PSP.\n#\n")); 
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\nreq.write(\"\"\"")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
     yyless(0);
-
     BEGIN TEXT;
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 87 "psp_parser.l"
+#line 85 "psp_parser.l"
 {
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\"); req.write(str("));
-	PSP_PG(is_psp_echo) = 1;
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
-	BEGIN PYCODE;
+    yyless(0);
+    BEGIN TEXT;
 }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 94 "psp_parser.l"
+#line 92 "psp_parser.l"
 {
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n\n")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\"); req.write(str("));
+    PSP_PG(is_psp_echo) = 1;
 
-	BEGIN PYCODE;
+    BEGIN PYCODE;
 }
 	YY_BREAK
 case 4:
-/* rule 4 can match eol */
 YY_RULE_SETUP
-#line 100 "psp_parser.l"
+#line 99 "psp_parser.l"
 {
-	psp_string_appendc(&PSP_PG(pycode), '\n');
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")")); 
+    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    PSP_PG(seen_newline) = 0;
+    BEGIN PYCODE;
 }
 	YY_BREAK
 case 5:
+/* rule 5 can match eol */
 YY_RULE_SETUP
-#line 104 "psp_parser.l"
+#line 106 "psp_parser.l"
 {
-	if (yytext[0] == '"') {
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\""));
-	} else {
-		psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-	}
+    psp_string_appendc(&PSP_PG(pycode), '\n');
+}
+	YY_BREAK
+case 6:
+YY_RULE_SETUP
+#line 110 "psp_parser.l"
+{
+    if (yytext[0] == '"') {
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\""));
+    } else {
+        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+    }
 }
 	YY_BREAK
 case YY_STATE_EOF(TEXT):
-#line 112 "psp_parser.l"
+#line 118 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
     yyterminate();
 }
 	YY_BREAK
-case 6:
-/* rule 6 can match eol */
-YY_RULE_SETUP
-#line 117 "psp_parser.l"
-{
-	psp_string_appendc(&PSP_PG(pycode), '\n');
-
-        BEGIN INDENT;
-}
-	YY_BREAK
 case 7:
+/* rule 7 can match eol */
 YY_RULE_SETUP
 #line 123 "psp_parser.l"
 {
-
-	if (PSP_PG(is_psp_echo)) {
-            psp_string_appendl(&PSP_PG(pycode), STATIC_STR(")); req.write(\"\"\""));
-            PSP_PG(is_psp_echo) = 0;
-	} 
-        else {
-            if (PSP_PG(after_colon)) {
-                /* this is dumb mistake-proof measure, if %> 
-                   is immediately following where there should be an indent */
-                psp_string_appendc(&PSP_PG(whitespace), '\t');
-            }
-            OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-            psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
-        }
-
-        BEGIN TEXT;
+    psp_string_appendc(&PSP_PG(pycode), '\n');
+        
+    PSP_PG(seen_newline) = 1;
+    BEGIN INDENT;
 }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 142 "psp_parser.l"
+#line 130 "psp_parser.l"
 {
-        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-	PSP_PG(after_colon) = 1;
+
+    if (PSP_PG(is_psp_echo)) {
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR(")); req.write(\"\"\""));
+        PSP_PG(is_psp_echo) = 0;
+    } 
+    else {
+        if (!PSP_PG(seen_newline)) {
+            /* this will happen is you have <%%> */
+            psp_string_appendc(&PSP_PG(pycode), ';');
+        }
+
+        if (PSP_PG(after_colon)) {
+            /* this is dumb mistake-proof measure, if %> 
+               is immediately following where there should be an indent */
+            psp_string_appendc(&PSP_PG(whitespace), '\t');
+            PSP_PG(after_colon) = 0;
+        }
+        OUTPUT_WHITESPACE(&PSP_PG(whitespace));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
+    }
+    
+    BEGIN TEXT;
 }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 147 "psp_parser.l"
+#line 155 "psp_parser.l"
 {
-        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-        PSP_PG(after_colon) = 0;
+    psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+    PSP_PG(after_colon) = 1;
 }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 152 "psp_parser.l"
+#line 160 "psp_parser.l"
 {
-
-        CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
-        psp_string_appendl(&PSP_PG(whitespace), yytext, yyleng);
-        psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
-
-        BEGIN PYCODE;
+    psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+    PSP_PG(after_colon) = 0;
 }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 161 "psp_parser.l"
+#line 165 "psp_parser.l"
 {
-    yyless(0);
+
+    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    psp_string_appendl(&PSP_PG(whitespace), yytext, yyleng);
+    psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
+
     BEGIN PYCODE;
 }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 166 "psp_parser.l"
+#line 174 "psp_parser.l"
 {
-
-        CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
-        yyless(0);
-        BEGIN PYCODE;
+    yyless(0);
+    BEGIN PYCODE;
 }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 173 "psp_parser.l"
+#line 179 "psp_parser.l"
+{
+    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    yyless(0);
+    BEGIN PYCODE;
+}
+	YY_BREAK
+case 14:
+YY_RULE_SETUP
+#line 185 "psp_parser.l"
 ECHO;
 	YY_BREAK
-#line 957 "psp_parser.c"
+#line 974 "psp_parser.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PYCODE):
 case YY_STATE_EOF(INDENT):
@@ -1242,7 +1259,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 30 )
+			if ( yy_current_state >= 32 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
@@ -1271,11 +1288,11 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 30 )
+		if ( yy_current_state >= 32 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 29);
+	yy_is_jam = (yy_current_state == 31);
 
 	return yy_is_jam ? 0 : yy_current_state;
 }
@@ -2071,7 +2088,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 173 "psp_parser.l"
+#line 185 "psp_parser.l"
 
 
 
