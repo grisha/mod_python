@@ -56,7 +56,6 @@
  #
 
 CC=@CC@
-RANLIB=@RANLIB@
 AR=@AR@
 APXS=@APXS@
 MKDEP=@MKDEP@
@@ -68,17 +67,6 @@ OPT=
 CFLAGS=$(OPT) $(INCLUDES) 
 srcdir=.
 
-OBJS=		mod_python.o \
-		_apachemodule.o \
-		requestobject.o \
-		tableobject.o \
-		util.o \
-		serverobject.o \
-		connobject.o \
-		filterobject.o \
-		hlist.o \
-		hlistobject.o @EPRINTF_HACK@ @FLOATDIDF_HACK@
-
 SRCS=		mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
 		serverobject.c connobject.c filterobject.c hlist.c hlistobject.c
 
@@ -87,33 +75,18 @@ all:	@ALL@
 dso:	mod_python.so
 	@echo dso > .install
 
-mod_python.so: $(SRCS)
+mod_python.so: $(SRCS) 
 	@echo
 	@echo 'Compiling for DSO. For static, do "make static"'
 	@echo
-	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS)
-	@ln -fs .libs/mod_python.so > /dev/null 2>&1
+	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS) @EPRINTF_HACK@ @FLOATDIDF_HACK@
+	@rm -f mod_python.so
+	@ln -s .libs/mod_python.so > /dev/null 2>&1
 	@echo
 	@echo 'Now su and make install'
 	@echo '  (or, if you only want to perform a partial install,'
 	@echo '   you can use make install_dso and make install_py_lib)'
 	@echo
-
-libpython.a:  $(OBJS)
-	@echo 
-	@echo 'Making static version of mod_python. For DSO, do "make dso"'.
-	@echo
-	rm -f libpython.a
-	$(AR) cr libpython.a $(OBJS)
-	$(RANLIB) libpython.a
-	@echo
-	@echo 'Now su and make install'
-	@echo '  (or, if you only want to perform a partial install,'
-	@echo '   you can use make install_static and make install_py_lib)'
-	@echo
-
-static:	libpython.a
-	@echo static > .install
 
 depend:
 	@$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \

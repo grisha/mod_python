@@ -63,7 +63,6 @@ INCLUDES="-I`pwd`/src/include"
 
 dnl Checks for programs.
 AC_PROG_CC
-AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 AC_PROG_INSTALL
@@ -318,7 +317,8 @@ fi
 # this for the test.py script
 AC_SUBST(TEST_SERVER_ROOT)
 TEST_SERVER_ROOT="`pwd`/test"
-MOD_PYTHON_SO="`pwd`/src/mod_pyhon.so"
+AC_SUBST(MOD_PYTHON_SO)
+MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 
 AC_OUTPUT(Makefile src/Makefile src/libpython.module Doc/Makefile test/testconf.py)
 
