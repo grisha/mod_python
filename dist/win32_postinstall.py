@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: win32_postinstall.py,v 1.3 2003/07/10 23:21:42 grisha Exp $
+ # $Id: win32_postinstall.py,v 1.4 2003/08/27 15:39:03 grisha Exp $
  #
  # this script runs at the end of windows install
 
@@ -69,13 +69,20 @@ def askForApacheDir():
         from Tkinter import Tk
         root = Tk()
         root.withdraw()
-        return askdirectory(title="Where is Apache installed?",
+        path = askdirectory(title="Where is Apache installed?",
                             initialdir="C:/Program Files/Apache Group/Apache2",
                             mustexist=1, master=root)
         root.quit()
         root.destroy()
+        return path
     except ImportError:
-        return ""
+        try:
+            from win32com.shell import shell
+            pidl, displayname, imagelist = shell.SHBrowseForFolder(0, None, "Where is Apache installed?")
+            path = shell.SHGetPathFromIDList(pidl)
+            return path
+        except ImportError:
+            return ""
 
 # if we're called during removal, just exit
 if len(sys.argv) == 0 or sys.argv[1] != "-remove":
