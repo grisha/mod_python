@@ -262,6 +262,7 @@ save_LIBS="$LIBS"
 if test "$PyFRAMEWORKDIR" != "no-framework"; then
   if test -n "$PyFRAMEWORK"; then
     PyPYTHONLIBS="-framework $PyFRAMEWORK"
+    LDFLAGS="${LDFLAGS} -Wl,-framework,Python"
   fi
 else
   LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
