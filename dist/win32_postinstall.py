@@ -99,7 +99,7 @@ def askForApacheDir(apachediroptions):
             return ""
 
 # if we're called during removal, just exit
-if len(sys.argv) == 0 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
+if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
 
     mp = os.path.join(distutils.sysconfig.get_python_lib(), "mod_python_so.pyd")
 
