@@ -91,7 +91,7 @@ mod_python.so: $(SRCS)
 	@echo
 	@echo 'Compiling for DSO. For static, do "make static"'
 	@echo
-	$(APXS) $(INCLUDES) -c $(SRCS) $(LIBS)
+	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS)
 	ln -fs .libs/mod_python.so
 	@echo
 	@echo 'Now su and make install'
