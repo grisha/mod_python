@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.40 2002/03/23 17:54:02 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.41 2002/04/10 21:24:24 gtrubetskoy Exp $
 
 import sys
 import string
@@ -396,6 +396,11 @@ def import_module(module_name, req=None, path=None):
         
         # The module has been imported already
         module = sys.modules[module_name]
+
+        # but is it in the path?
+        file = module.__dict__.get("__file__")
+        if not file or (path and not file in path):
+                raise SERVER_RETURN, HTTP_NOT_FOUND
 
         if autoreload:
             oldmtime = module.__dict__.get("__mtime__", 0)
