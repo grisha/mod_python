@@ -280,6 +280,7 @@ tp_rules.update({
     ModuleType          : (False, False),
     ClassType           : (False, False),
     TypeType            : (False, False),
+    BuiltinFunctionType : (False, False),
     
     # XXX Generators should be publishable, see
     # http://issues.apache.org/jira/browse/MODPYTHON-15
