@@ -462,6 +462,11 @@ than simply "\textbackslash n".
 
 \end{methoddesc}
 
+\begin{methoddesc}[Request]{readlines}{\optional{sizehint}}
+Reads all or up to \var{sizehint} lines using \method{readline} and
+returns a list of the lines read.
+\end{methoddesc}
+
 \begin{methoddesc}[Request]{register_cleanup}{callable\optional{, data}}
 
 Registers a cleanup. Argument \var{callable} can be any callable

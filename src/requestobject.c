@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.21 2002/08/18 18:43:36 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.22 2002/08/19 14:18:11 gtrubetskoy Exp $
  *
  */
 
@@ -542,9 +542,9 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
     char *buffer;
     PyObject *result;
     int copied = 0;
-    int len = -1;
+    long len = -1;
 
-    if (! PyArg_ParseTuple(args, "|i", &len)) 
+    if (! PyArg_ParseTuple(args, "|l", &len)) 
 	return NULL;
 
     if (len == 0) {
@@ -662,6 +662,45 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.readlines
+ **
+ *    just like file.readlines()
+ */
+
+static PyObject *req_readlines(requestobject *self, PyObject *args)
+{
+
+    PyObject *result = PyList_New(0);
+    PyObject *line, *rlargs;
+    long sizehint = 0;
+    long size = 0;
+
+    if (! PyArg_ParseTuple(args, "|l", &sizehint)) 
+	return NULL;
+
+    if (result == NULL)
+	return PyErr_NoMemory();
+
+    rlargs = PyTuple_New(0);
+    if (result == NULL)
+	return PyErr_NoMemory();
+
+    line = req_readline(self, rlargs);
+    while (line && !(strcmp(PyString_AsString(line), "") == 0)) {
+	PyList_Append(result, line);
+	size += PyString_Size(line);
+	if (sizehint && (size >= size))
+	    break;
+	line = req_readline(self, args);
+    }
+
+    if (!line)
+	return NULL;
+
+    return result;
+}
+
+/**
  ** request.register_cleanup(handler, data)
  **
  *    registers a cleanup at request pool destruction time. 
@@ -761,6 +800,7 @@ static PyMethodDef request_methods[] = {
     {"log_error",             (PyCFunction) req_log_error,             METH_VARARGS},
     {"read",                  (PyCFunction) req_read,                  METH_VARARGS},
     {"readline",              (PyCFunction) req_readline,              METH_VARARGS},
+    {"readlines",             (PyCFunction) req_readlines,             METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
     {"send_http_header",      (PyCFunction) req_send_http_header,      METH_VARARGS},
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},

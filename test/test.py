@@ -43,7 +43,7 @@ class ModPythonTestCase(unittest.TestCase):
     def startApache(self):
 
         print "  Starting Apache...."
-        print commands.getoutput("rm -f %s/logs/*" % PARAMS["server_root"])
+        print commands.getoutput("rm -f %s/logs/*log" % PARAMS["server_root"])
         cmd = '%s -f %s' % (HTTPD, PARAMS["config"])
         print "  ", cmd
         print commands.getoutput(cmd)
@@ -348,6 +348,40 @@ class ModPythonTestCase(unittest.TestCase):
         if (rsp != params):
             self.fail("test failed")
 
+    def test_req_readlines(self):
+
+        print "\n* Testing req.readlines()"
+
+        cfg = "<Directory %s/htdocs>\n" % PARAMS["server_root"]+ \
+              "  SetHandler python-program\n" + \
+              "  PythonHandler tests::req_readlines\n" + \
+              "  PythonDebug On\n" + \
+              "</Directory>\n" + \
+              "Timeout 10\n"
+
+        self.makeConfig(cfg)
+        self.startApache()
+
+        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
+        print "    url: "+url
+
+        import httplib
+        params = ('1234567890'*3000+'\n')*4
+        print "    writing %d bytes..." % len(params)
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn.putrequest("POST", "/tests.py")
+        conn.putheader("Host", "127.0.0.1:%s" % PARAMS["port"])
+        conn.putheader("Content-Length", len(params))
+        conn.endheaders()
+        conn.send(params)
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        print "    response size: %d\n" % len(rsp)
+        if (rsp != params):
+            self.fail("test failed")
+
     def test_req_register_cleanup(self):
 
         print "\n* Testing req.register_cleanup()"
@@ -404,7 +438,8 @@ def suite():
 #    mpTestSuite.addTest(ModPythonTestCase("test_req_get_remote_host"))
 #    mpTestSuite.addTest(ModPythonTestCase("test_req_read"))
 #    mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))
-    mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_readlines"))
+#    mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()
