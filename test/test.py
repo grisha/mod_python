@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.30 2003/05/22 20:25:07 grisha Exp $
+ # $Id: test.py,v 1.31 2003/05/30 15:10:47 grisha Exp $
  #
 
 """
@@ -827,6 +827,26 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp[-8:] != "test ok\n"):
             self.fail("test failed")
 
+    def test_psphandler_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_psphandler"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("mod_python.psp"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_psphandler(self):
+
+        print "\n  * Testing mod_python.psp"
+
+        rsp = self.vhost_get("test_psphandler", path="/psptest.psp")
+
+        if (rsp[-8:] != "test ok\n"):
+            self.fail("test failed")
+
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
     # restart of httpd (e.g. we're using a fancy config)
@@ -874,6 +894,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_import"))
         perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
         perRequestSuite.addTest(PerRequestTestCase("test_cgihandler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_psphandler"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 

@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.7 2003/05/30 04:37:09 grisha Exp $
+ * $Id: psp_parser.l,v 1.8 2003/05/30 15:10:46 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -178,6 +178,12 @@
 }
 
 <INDENT>"%>" {
+    yyless(0);
+    BEGIN PYCODE;
+}
+
+<INDENT>[\r\n] {
+    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     yyless(0);
     BEGIN PYCODE;
 }
