@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.67 2002/08/20 19:05:06 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.68 2002/08/21 16:08:57 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -80,9 +80,9 @@ static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
 
 	    /* couldn't create an interpreter, this is bad */
 	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
-		 "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
+                         "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
 	}
-       return NULL;
+        return NULL;
     }
     else {
 
@@ -227,8 +227,8 @@ apr_status_t python_cleanup(void *data)
 			 PyString_AsString(handler));
 	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
 			 ci->server_rec,
-			  "    %s: %s", PyString_AsString(stype), 
-			  PyString_AsString(svalue));
+                         "    %s: %s", PyString_AsString(stype), 
+                         PyString_AsString(svalue));
 	}
 
 	Py_DECREF(handler);
@@ -262,7 +262,7 @@ apr_status_t python_cleanup(void *data)
  */
 
 static int python_init(apr_pool_t *p, apr_pool_t *ptemp, 
-			apr_pool_t *plog, server_rec *s)
+                       apr_pool_t *plog, server_rec *s)
 {
 
     char buff[255];
@@ -475,7 +475,7 @@ static void python_directive_hl_add(apr_pool_t *p,
  */
 
 static const char *python_directive_handler(cmd_parms *cmd, void * mconfig, 
-				    char *key, const char *val, int silent)
+                                            char *key, const char *val, int silent)
 {
     py_dir_config *conf;
     
@@ -601,7 +601,7 @@ static requestobject *get_request_object(request_rec *req)
 
     /* see if there is a request object already */
     req_config = (py_req_config *) ap_get_module_config(req->request_config,
-						     &python_module);
+                                                        &python_module);
 
     if (req_config) {
 	return req_config->request_obj;
@@ -643,8 +643,8 @@ static requestobject *get_request_object(request_rec *req)
 
 	/* register the clean up directive handler */
 	apr_pool_cleanup_register(req->pool, (void *)req, 
-			  python_cleanup_handler, 
-			  apr_pool_cleanup_null);
+                                  python_cleanup_handler, 
+                                  apr_pool_cleanup_null);
 
 	/* XXX why no incref here? */
 	return request_obj;
@@ -753,10 +753,10 @@ static int python_handler(request_rec *req, char *phase)
 						  &python_module);
     /* get file extension */
     if (req->filename) {
-      ext = req->filename;
-      ap_getword(req->pool, &ext, '.');
-      if (*ext != '\0')
-	ext = apr_pstrcat(req->pool, ".", ext, NULL);
+        ext = req->filename;
+        ap_getword(req->pool, &ext, '.');
+        if (*ext != '\0')
+            ext = apr_pstrcat(req->pool, ".", ext, NULL);
     }
 
     /* is there an hlist entry, i.e. a handler? */
@@ -1157,16 +1157,16 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 
 	/* if this is a PEEK */
 	/*
-	if (mode == AP_MODE_PEEK) {
-	    if (APR_STATUS_IS_SUCCESS(filter->rc) && 
-		filter->bytes_written == 0) {
+          if (mode == AP_MODE_PEEK) {
+          if (APR_STATUS_IS_SUCCESS(filter->rc) && 
+          filter->bytes_written == 0) {
 	*/
-		/* if the filter wrote no data, 
-		   there must not be any left */
+        /* if the filter wrote no data, 
+           there must not be any left */
 	/*
-		return APR_EOF;
-	    }
-	}
+          return APR_EOF;
+          }
+          }
 	*/
     }
     return filter->rc;
@@ -1263,7 +1263,7 @@ static const char *directive_PythonPath(cmd_parms *cmd, void *mconfig,
  *      is encountered.
  */
 static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig, 
-				       const char *val) {
+                                               const char *val) {
     return python_directive(cmd, mconfig, "PythonInterpreter", val);
 }
 
@@ -1310,7 +1310,7 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
  */
 
 static const char *directive_PythonAutoReload(cmd_parms *cmd, 
-					    void *mconfig, int val) {
+                                              void *mconfig, int val) {
     return python_directive_flag(mconfig, "PythonAutoReload", val);
 }
 
@@ -1323,7 +1323,7 @@ static const char *directive_PythonAutoReload(cmd_parms *cmd,
  */
 
 static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig, 
-				       const char *key, const char *val)
+                                          const char *key, const char *val)
 {
 
     py_dir_config *conf;
@@ -1387,7 +1387,7 @@ static const char *directive_PythonInitHandler(cmd_parms *cmd, void *mconfig,
     return python_directive_handler(cmd, mconfig, "PythonInitHandler", val, 0);
 }
 static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
-					  const char *val) {
+                                                 const char *val) {
 
     /* This handler explodes into all other handlers */
     python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val, 1);
@@ -1690,7 +1690,7 @@ static void python_register_hooks(apr_pool_t *p)
 
     /* module initializer */ 
     ap_hook_post_config(python_init, 
-			 NULL, NULL, APR_HOOK_MIDDLE);
+                        NULL, NULL, APR_HOOK_MIDDLE);
 
     /* [1] post read_request handling */ 
     ap_hook_post_read_request(PythonPostReadRequestHandler, 
@@ -1700,7 +1700,7 @@ static void python_register_hooks(apr_pool_t *p)
     ap_hook_translate_name(PythonTransHandler,
 			   NULL, NULL, APR_HOOK_MIDDLE);
 
-     /* [3] header parser */ 
+    /* [3] header parser */ 
     ap_hook_header_parser(PythonHeaderParserHandler,
  			  NULL, NULL, APR_HOOK_MIDDLE); 
 
