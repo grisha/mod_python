@@ -41,11 +41,10 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: util.py,v 1.9 2002/08/20 19:05:06 gtrubetskoy Exp $
+ # $Id: util.py,v 1.10 2002/09/07 02:43:49 gtrubetskoy Exp $
 
 import _apache
 import apache
-import string
 import StringIO
 
 parse_qs = _apache.parse_qs
@@ -144,7 +143,7 @@ class FieldStorage:
 
                 # figure out boundary
                 try:
-                    i = string.rindex(string.lower(ctype), "boundary=")
+                    i = ctype.lower().rindex("boundary=")
                     boundary = ctype[i+9:]
                     if len(boundary) >= 2 and boundary[0] == boundary[-1] == '"':
                         boundary = boundary[1:-1]
@@ -154,7 +153,7 @@ class FieldStorage:
 
                 #read until boundary
                 line = req.readline()
-                sline = string.strip(line)
+                sline = line.strip()
                 while line and sline != boundary:
                     line = req.readline()
 
@@ -167,9 +166,9 @@ class FieldStorage:
                     headers = apache.make_table()
                     line = req.readline()
                     while line and line not in ["\n", "\r\n"]:
-                        h, v = string.split(line, ":", 1)
+                        h, v = line.split(":", 1)
                         headers.add(h, v)
-                        h = string.lower(h)
+                        h = h.lower()
                         if h == "content-disposition":
                             disp, disp_options = parse_header(v)
                         elif h == "content-type":
@@ -214,16 +213,16 @@ class FieldStorage:
 
     def skip_to_boundary(self, req, boundary):
         line = req.readline()
-        sline = string.strip(line)
+        sline = line.strip()
         last_bound = boundary + "--"
         while line and sline != boundary and sline != last_bound:
             line = req.readline()
-            sline = string.strip(line)
+            sline = line.strip()
 
     def read_to_boundary(self, req, boundary, file):
         delim = ""
         line = req.readline()
-        sline = string.strip(line)
+        sline = line.strip()
         last_bound = boundary + "--"
         while line and sline != boundary and sline != last_bound:
             odelim = delim
@@ -235,7 +234,7 @@ class FieldStorage:
                 line = line[:-1]
             file.write(odelim + line)
             line = req.readline()
-            sline = string.strip(line)
+            sline = line.strip()
 
     def __getitem__(self, key):
         """Dictionary style indexing."""
@@ -282,15 +281,16 @@ def parse_header(line):
     Return the main content-type and a dictionary of options.
 
     """
-    plist = map(string.strip, string.splitfields(line, ';'))
-    key = string.lower(plist[0])
+    
+    plist = map(lambda a: a.strip(), line.splitfields(';'))
+    key = plist[0].lower()
     del plist[0]
     pdict = {}
     for p in plist:
-        i = string.find(p, '=')
+        i = p.find('=')
         if i >= 0:
-            name = string.lower(string.strip(p[:i]))
-            value = string.strip(p[i+1:])
+            name = p[:i].strip().lower()
+            value = p[i+1:].strip()
             if len(value) >= 2 and value[0] == value[-1] == '"':
                 value = value[1:-1]
             pdict[name] = value
