@@ -57,7 +57,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.11 2002/09/19 20:11:35 grisha Exp $
+ * $Id: util.c,v 1.12 2002/09/24 16:01:28 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -186,19 +186,19 @@ PyObject *tuple_from_finfo(apr_finfo_t *f)
         PyTuple_SET_ITEM(t, 6, Py_None);
     }
     if (f->valid & APR_FINFO_ATIME) {
-        PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f->atime/1000000));
+        PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f->atime*0.000001));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 7, Py_None);
     }
     if (f->valid & APR_FINFO_MTIME) {
-        PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f->mtime/1000000));
+        PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f->mtime*0.000001));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 8, Py_None);
     }
     if (f->valid & APR_FINFO_CTIME) {
-        PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f->ctime/10000000));
+        PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f->ctime*0.000001));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 9, Py_None);

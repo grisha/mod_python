@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.13 2002/09/17 03:37:23 grisha Exp $
+ * $Id: filterobject.c,v 1.14 2002/09/24 16:01:28 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -104,7 +104,6 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
 
     result->closed = 0;
     result->softspace = 0;
-    result->bytes_written = 0;
 
     result->handler = handler;
     result->dir = dir;
@@ -346,7 +345,6 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
 					      c->bucket_alloc);
 	APR_BRIGADE_INSERT_TAIL(self->bb_out, b);
 	
-	self->bytes_written += len;
     }
 
     Py_INCREF(Py_None);
@@ -401,24 +399,21 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
 
     if (! self->closed) {
 
-	if (self->bytes_written) {
+        /* does the output brigade exist? */
+        if (!self->bb_out) {
+            self->bb_out = apr_brigade_create(self->f->r->pool,
+                                              c->bucket_alloc);
+        }
 
-	    /* does the output brigade exist? */
-	    if (!self->bb_out) {
-		self->bb_out = apr_brigade_create(self->f->r->pool,
-						  c->bucket_alloc);
-	    }
-
-	    APR_BRIGADE_INSERT_TAIL(self->bb_out, 
-				    apr_bucket_eos_create(c->bucket_alloc));
+        APR_BRIGADE_INSERT_TAIL(self->bb_out, 
+                                apr_bucket_eos_create(c->bucket_alloc));
 	
-	    if (! self->is_input) {
-                Py_BEGIN_ALLOW_THREADS;
-		ap_pass_brigade(self->f->next, self->bb_out);
-                Py_END_ALLOW_THREADS;
-		self->bb_out = NULL;
-	    }
-	}
+        if (! self->is_input) {
+            Py_BEGIN_ALLOW_THREADS;
+            ap_pass_brigade(self->f->next, self->bb_out);
+            Py_END_ALLOW_THREADS;
+            self->bb_out = NULL;
+        }
 
 	self->closed = 1;
     }

@@ -16,6 +16,13 @@ import unittest
 import commands
 import urllib
 
+
+# need to incorporate the gdb into the testing process....
+# httpd needs to be invoked under gdb [make optional], and
+# the url fetching should be forked.
+# what's the deal with gdb's being different?
+
+
 def findUnusedPort():
 
     # bind to port 0 which makes the OS find the next
@@ -53,6 +60,11 @@ class ModPythonTestCase(unittest.TestCase):
         f.write("\n# --APPENDED-- \n\n"+append)
         f.close()
 
+    def makeGdbFile(file):
+        f = open(file, "w")
+        f.write("run -f %s -X" % PARAMS("config"))
+        f.close()
+
     def startApache(self):
 
         print "  Starting Apache...."
@@ -60,12 +72,17 @@ class ModPythonTestCase(unittest.TestCase):
         cmd = '%s -f %s' % (HTTPD, PARAMS["config"])
         print "  ", cmd
         print commands.getoutput(cmd)
+        self.apache_running = 1
 
-    def tearDown(self):
-
+    def stopApache(self):
         print "  Stopping Apache..."
         pid = commands.getoutput("cat %s/logs/httpd.pid" % PARAMS["server_root"])
         commands.getoutput("kill "+pid)
+        self.apache_running = 0
+
+    def tearDown(self):
+        if self.apache_running:
+            self.stopApache()
 
     def testLoadModule(self):
 
@@ -237,7 +254,6 @@ class ModPythonTestCase(unittest.TestCase):
               "  SetHandler python-program\n" + \
               "  PythonHandler tests::req_document_root\n" + \
               "  PythonDebug On\n" + \
-              "  PythonOption secret sauce\n" + \
               "</Directory>\n"
 
         self.makeConfig(cfg)
@@ -252,56 +268,6 @@ class ModPythonTestCase(unittest.TestCase):
         print "    response: "+rsp
 
         if (rsp != PARAMS["document_root"]):
-            self.fail("test failed")
-
-    def test_req_get_config(self):
-
-        print "\n* Testing req.get_config() and get_options()"
-
-        cfg = "<Directory %s/htdocs>\n" % PARAMS["server_root"]+ \
-              "  SetHandler python-program\n" + \
-              "  PythonHandler tests::req_get_config\n" + \
-              "  PythonDebug On\n" + \
-              "  PythonOption secret sauce\n" + \
-              "</Directory>\n"
-
-        self.makeConfig(cfg)
-        self.startApache()
-
-        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
-        print "    url: "+url
-        
-        f = urllib.urlopen(url)
-        rsp = f.read()
-        f.close()
-        print "    response: "+rsp
-
-        if (rsp != "test ok"):
-            self.fail("test failed")
-
-    def test_req_get_remote_host(self):
-
-        print "\n* Testing req.get_remote_host()"
-
-        cfg = "<Directory %s/htdocs>\n" % PARAMS["server_root"]+ \
-              "  SetHandler python-program\n" + \
-              "  PythonHandler tests::req_get_remote_host\n" + \
-              "  PythonDebug On\n" + \
-              "</Directory>\n" + \
-              "HostNameLookups Off\n"
-
-        self.makeConfig(cfg)
-        self.startApache()
-
-        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
-        print "    url: "+url
-        
-        f = urllib.urlopen(url)
-        rsp = f.read()
-        f.close()
-        print "    response: "+rsp
-
-        if (rsp != "test ok"):
             self.fail("test failed")
 
     def test_req_internal_redirect(self):
@@ -535,9 +501,9 @@ class ModPythonTestCase(unittest.TestCase):
         cfg = "  SetHandler python-program\n" + \
               "  PythonPath ['%s']+sys.path\n" % PARAMS["document_root"] + \
               "  PythonHandler tests::simplehandler\n" + \
-              "  PythonOutputFilter tests::outputfilter myfilter\n" + \
+              "  PythonOutputFilter tests::outputfilter MP_TEST_FILTER\n" + \
               "  PythonDebug On\n" + \
-              "  AddOutputFilter myfilter .py\n"
+              "  AddOutputFilter MP_TEST_FILTER .py\n"
 
         self.makeConfig(cfg)
         self.startApache()
@@ -575,19 +541,39 @@ class ModPythonTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail("test failed")
 
+    def test_internal(self):
+
+        print "\n* Testing internally"
+
+        cfg = "  SetHandler python-program\n" + \
+              "  PythonPath ['%s']+sys.path\n" % PARAMS["document_root"] + \
+              "  PythonHandler tests\n" + \
+              "  PythonOption testing 123\n" + \
+              "  PythonDebug On\n"
+
+        self.makeConfig(cfg)
+        self.startApache()
+
+        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
+        print "    url: "+url
+
+        f = urllib.urlopen(url)
+        rsp = f.read()
+        f.close()
+        print "    response: ", rsp
+
+        if (rsp[-7:] != "test ok"):
+            self.fail("Some tests failed, see error_log")
+
 def suite():
 
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(ModPythonTestCase("testLoadModule"))
-    mpTestSuite.addTest(ModPythonTestCase("test_apache_log_error"))
-    mpTestSuite.addTest(ModPythonTestCase("test_apache_table"))
-    mpTestSuite.addTest(ModPythonTestCase("test_req_add_common_vars"))
+    mpTestSuite.addTest(ModPythonTestCase("test_internal"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_add_handler"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_allow_methods"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_document_root"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_get_basic_auth_pw"))
-    mpTestSuite.addTest(ModPythonTestCase("test_req_get_config"))
-    mpTestSuite.addTest(ModPythonTestCase("test_req_get_remote_host"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_internal_redirect"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_read"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))

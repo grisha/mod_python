@@ -2,43 +2,355 @@
 # mod_python tests
 
 from mod_python import apache
+import unittest
+import re
+import time
+import os
 
-TestFailed = "TestFailed"
+class InternalTestCase(unittest.TestCase):
 
-def apache_log_error(req):
+    def __init__(self, methodName, req):
+        unittest.TestCase.__init__(self, methodName)
+        self.req = req
 
-    apache.log_error("This is a test message")
-    req.write("Just wrote something to log\n")
+    def test_apache_log_error(self):
 
-    return apache.OK
+        s = self.req.server
+        apache.log_error("Testing apache.log_error():", apache.APLOG_INFO, s)
+        apache.log_error("xEMERGx", apache.APLOG_EMERG, s)
+        apache.log_error("xALERTx", apache.APLOG_ALERT, s)
+        apache.log_error("xCRITx", apache.APLOG_CRIT, s)
+        apache.log_error("xERRx", apache.APLOG_ERR, s)
+        apache.log_error("xWARNINGx", apache.APLOG_WARNING, s)
+        apache.log_error("xNOTICEx", apache.APLOG_NOTICE, s)
+        apache.log_error("xINFOx", apache.APLOG_INFO, s)
+        apache.log_error("xDEBUGx", apache.APLOG_DEBUG, s)
 
-def apache_table(req):
+        # see what's in the log now
+        f = open("%s/logs/error_log" % apache.server_root())
+        # for some reason re doesn't like \n, why?
+        import string
+        log = "".join(map(string.strip, f.readlines()))
+        f.close()
 
-    # tests borrowed from Python test quite for dict
-    _test_table()
+        if not re.search("xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx", log):
+            self.fail("Could not find test messages in error_log")
+            
 
-    # inheritance
-    class mytable(apache.table):
-        def __str__(self):
-            return "str() from mytable"
-    mt = mytable({'a':'b'})
+    def test_apache_table(self):
 
-    # add()
-    a = apache.table({'a':'b'})
-    a.add('a', 'c')
-    if a['a'] != ['b', 'c']: raise TestFailed, 'table.add() broken: a["a"] is %s' % `a["a"]`
+        self.req.log_error("Testing table object.")
 
-    req.write("test ok")
-    return apache.OK
+        # tests borrowed from Python test quite for dict
+        _test_table()
 
-def req_add_common_vars(req):
+        # inheritance
+        class mytable(apache.table):
+            def __str__(self):
+                return "str() from mytable"
+        mt = mytable({'a':'b'})
 
-    a = len(req.subprocess_env)
-    req.add_common_vars()
-    b = len(req.subprocess_env)
-    if a >= b: raise TestFailed, 'req.subprocess_env() is same size before and after'
-    
-    req.write("test ok")
+        # add()
+        a = apache.table({'a':'b'})
+        a.add('a', 'c')
+        if a['a'] != ['b', 'c']:
+            self.fail('table.add() broken: a["a"] is %s' % `a["a"]`)
+
+    def test_req_add_common_vars(self):
+
+        self.req.log_error("Testing req.add_common_vars().")
+
+        a = len(self.req.subprocess_env)
+        self.req.add_common_vars()
+        b = len(self.req.subprocess_env)
+        if a >= b: 
+            self.fail("req.subprocess_env() is same size before and after")
+
+    def test_req_members(self):
+
+        # just run through request members making sure
+        # they make sense
+
+        req = self.req
+        log = req.log_error
+        log("Examining request memebers:")
+
+        log("    req.connection: %s" % `req.connection`)
+        s = str(type(req.connection))
+        if s != "<type 'mp_conn'>":
+            self.fail("strange req.connection type %s" % `s`)
+
+        log("    req.server: '%s'" % `req.server`)
+        s = str(type(req.server))
+        if s != "<type 'mp_server'>":
+            self.fail("strange req.server type %s" % `s`)
+
+        for x in ((req.next, "next"),
+                  (req.prev, "prev"),
+                  (req.main, "main")):
+            val, name = x
+            log("    req.%s: '%s'" % (name, `val`))
+            if val:
+                self.fail("strange, req.%s should be None, not %s" % (name, `val`))
+        
+        log("    req.the_request: '%s'" % req.the_request)
+        if not re.match(r"GET /.* HTTP/1\.", req.the_request):
+            self.fail("strange req.the_request %s" % `req.the_request`)
+
+        for x in ((req.assbackwards, "assbackwards"),
+                  (req.proxyreq, "proxyreq"),
+                  (req.header_only, "header_only")):
+            val, name = x
+            log("    req.%s: %s" % (name, `val`))
+            if val:
+                self.fail("%s should be 0" % name)
+
+        log("    req.protocol: %s" % `req.protocol`)
+        if not req.protocol == req.the_request.split()[-1]:
+            self.fail("req.protocol doesn't match req.the_request")
+
+        log("    req.proto_num: %s" % `req.proto_num`)
+        if req.proto_num != 1000 + int(req.protocol[-1]):
+            self.fail("req.proto_num doesn't match req.protocol")
+
+        log("    req.hostname: %s" % `req.hostname`)
+        if req.hostname != "127.0.0.1":
+            self.fail("req.hostname isn't '127.0.0.1'")
+
+        log("    req.request_time: %s" % `req.request_time`)
+        if (time.time() - req.request_time) > 2:
+            self.fail("req.request_time suggests request started more than 2 secs ago")
+
+        log("    req.status_line: %s" % `req.status_line`)
+        if req.status_line:
+            self.fail("req.status_line should be None at this point")
+
+        log("    req.status: %s" % `req.status`)
+        if req.status != 200:
+            self.fail("req.status should be 200")
+        req.status = req.status # make sure its writable
+
+        log("    req.method: %s" % `req.method`)
+        if req.method != "GET":
+            self.fail("req.method should be 'GET'")
+
+        log("    req.method_number: %s" % `req.method_number`)        
+        if req.method_number != 0:
+            self.fail("req.method_number should be 0")
+
+        log("    req.allowed: %s" % `req.allowed`)
+        if req.allowed != 0:
+            self.fail("req.allowed should be 0")
+            
+        log("    req.allowed_xmethods: %s" % `req.allowed_xmethods`)
+        if req.allowed_xmethods != ():
+            self.fail("req.allowed_xmethods should be an empty tuple")
+            
+        log("    req.allowed_methods: %s" % `req.allowed_methods`)
+        if req.allowed_methods:
+            self.fail("req.allowed_methods should be None")
+            
+        log("    req.sent_bodyct: %s" % `req.sent_bodyct`)
+        if req.sent_bodyct != 0:
+            self.fail("req.sent_bodyct should be 0")
+            
+        log("    req.bytes_sent: %s" % `req.bytes_sent`)
+        save = req.bytes_sent
+        log("       writing 4 bytes...")
+        req.write("1234")
+        log("       req.bytes_sent: %s" % `req.bytes_sent`)
+        if req.bytes_sent - save != 4:
+            self.fail("req.bytes_sent should have incremented by 4, but didn't")
+
+        log("    req.mtime: %s" % `req.mtime`)
+        if req.mtime != 0:
+            self.fail("req.mtime should be 0")
+        
+        log("    req.chunked: %s" % `req.chunked`)
+        if req.chunked != 0:
+            self.fail("req.chunked should be 0")
+            
+        log("    req.range: %s" % `req.range`)
+        if req.range:
+            self.fail("req.range should be None")
+            
+        log("    req.clength: %s" % `req.clength`)
+        log("        calling req.set_content_length(15)...")
+        req.set_content_length(15)
+        log("        req.clength: %s" % `req.clength`)
+        if req.clength != 15:
+            self.fail("req.clength should be 15")
+        
+        log("    req.remaining: %s" % `req.remaining`)
+        if req.remaining != 0:
+            self.fail("req.remaining should be 0")
+            
+        log("    req.read_length: %s" % `req.read_length`)
+        if req.read_length != 0:
+            self.fail("req.read_length should be 0")
+        
+        log("    req.read_body: %s" % `req.read_body`)
+        if req.read_body != 0:
+            self.fail("req.read_body should be 0")
+            
+        log("    req.read_chunked: %s" % `req.read_chunked`)
+        if req.read_chunked != 0:
+            self.fail("req.read_chunked should be 0")
+            
+        log("    req.expecting_100: %s" % `req.expecting_100`)
+        if req.expecting_100 != 0:
+            self.fail("req.expecting_100 should be 0")
+
+        log("    req.headers_int: %s" % `req.headers_in`)
+        if req.headers_in["User-agent"][:13].lower() != "python-urllib":
+            self.fail("The 'user-agnet' header should begin with 'Python-urllib'")
+            
+        log("    req.headers_out: %s" % `req.headers_out`)
+        if ((not req.headers_out.has_key("content-length")) or
+            req.headers_out["content-length"] != "15"):
+            self.fail("req.headers_out['content-length'] should be 15")
+            
+        log("    req.subprocess_env: %s" % `req.subprocess_env`)
+        if req.subprocess_env["SERVER_SOFTWARE"].find("Python") == -1:
+            self.fail("req.subprocess_env['SERVER_SOFTWARE'] should contain 'Python'")
+            
+        log("    req.notes: %s" % `req.notes`)
+        log("        doing req.notes['testing'] = '123' ...")
+        req.notes['testing'] = '123'
+        log("    req.notes: %s" % `req.notes`)
+        if req.notes["testing"] != '123':
+            self.fail("req.notes['testing'] should be '123'")
+        
+        log("    req.phase: %s" % `req.phase`)
+        if req.phase != "PythonHandler":
+            self.fail("req.phase should be 'PythonHandler'")
+            
+        log("    req.interpreter: %s" % `req.interpreter`)
+        if req.interpreter != req.server.server_hostname:
+            self.fail("req.interpreter should be same as req.server_hostname: %s" % `req.server_hostname`)
+            
+        log("    req.content_type: %s" % `req.content_type`)
+        log("        doing req.content_type = 'test/123' ...")
+        req.content_type = 'test/123'
+        log("        req.content_type: %s" % `req.content_type`)
+        if req.content_type != 'test/123' or not req._content_type_set:
+            self.fail("req.content_type should be 'test/123' and req._content_type_set 1")
+        
+        log("    req.handler: %s" % `req.handler`)
+        if req.handler != "python-program":
+            self.fail("req.handler should be 'python-program'")
+            
+        log("    req.content_encoding: %s" % `req.content_encoding`)
+        if req.content_encoding:
+            self.fail("req.content_encoding should be None")
+            
+        log("    req.vlist_validator: %s" % `req.vlist_validator`)
+        if req.vlist_validator:
+            self.fail("req.vlist_validator should be None")
+            
+        log("    req.user: %s" % `req.user`)
+        if req.user:
+            self.fail("req.user should be None")
+            
+        log("    req.ap_auth_type: %s" % `req.ap_auth_type`)
+        if req.ap_auth_type:
+            self.fail("req.ap_auth_type should be None")
+            
+        log("    req.no_cache: %s" % `req.no_cache`)
+        if req.no_cache != 0:
+            self.fail("req.no_cache should be 0")
+            
+        log("    req.no_local_copy: %s" % `req.no_local_copy`)
+        if req.no_local_copy != 0:
+            self.fail("req.no_local_copy should be 0")
+            
+        log("    req.unparsed_uri: %s" % `req.unparsed_uri`)
+        if req.unparsed_uri != "/tests.py":
+            self.fail("req.unparse_uri should be '/tests.py'")
+            
+        log("    req.uri: %s" % `req.uri`)
+        if req.uri != "/tests.py":
+            self.fail("req.uri should be '/tests.py'")
+            
+        log("    req.filename: %s" % `req.filename`)
+        if req.filename != req.document_root() + req.uri:
+            self.fail("req.filename should be req.document_root() + req.uri, but it isn't")
+            
+        log("    req.canonical_filename: %s" % `req.canonical_filename`)
+        if not req.canonical_filename:
+            self.fail("req.canonical_filename should not be blank")
+        
+        log("    req.path_info: %s" % `req.path_info`)
+        if req.path_info != '':
+            self.fail("req.path_info should be ''")
+        
+        log("    req.args: %s" % `req.args`)
+        if req.args:
+            self.fail("req.args should be None")
+            
+        log("    req.finfo: %s" % `req.finfo`)
+        if req.finfo[10] != req.canonical_filename:
+            self.fail("req.finfo[10] should be the (canonical) filename")
+        
+        log("    req.parsed_uri: %s" % `req.parsed_uri`)
+        if req.parsed_uri[6] != '/tests.py':
+            self.fail("req.parsed_uri[6] should be '/tests.py'")
+            
+        log("    req.used_path_info: %s" % `req.used_path_info`)
+        if req.used_path_info != 2:
+            self.fail("req.used_path_info should be 2") # XXX really? :-)
+            
+        log("    req.eos_sent: %s" % `req.eos_sent`)
+        if req.eos_sent:
+            self.fail("req.eos_sent says we sent EOS, but we didn't")
+
+    def test_req_get_config(self):
+
+        req = self.req
+        log = req.log_error
+
+        log("req.get_config(): %s" % `req.get_config()`)
+        if req.get_config()["PythonDebug"] != "1":
+            self.fail("get_config return should show PythonDebug 1")
+
+        log("req.get_options(): %s" % `req.get_options()`)
+        if req.get_options() != apache.table({"testing":"123"}):
+            self.fail("get_options() should contain 'testing':'123'")
+
+    def test_req_get_remote_host(self):
+
+        # simulating this test for real is too complex...
+        req = self.req
+        log = req.log_error
+        log("req.get_get_remote_host(): %s" % `req.get_remote_host(apache.REMOTE_HOST)`)
+        log("req.get_get_remote_host(): %s" % `req.get_remote_host()`)
+        if (req.get_remote_host(apache.REMOTE_HOST) != None) or \
+           (req.get_remote_host() != "127.0.0.1"):
+            self.fail("remote host test failed")
+
+
+def make_suite(req):
+
+    mpTestSuite = unittest.TestSuite()
+    mpTestSuite.addTest(InternalTestCase("test_apache_log_error", req))
+    mpTestSuite.addTest(InternalTestCase("test_apache_table", req))
+    mpTestSuite.addTest(InternalTestCase("test_req_add_common_vars", req))
+    mpTestSuite.addTest(InternalTestCase("test_req_members", req))
+    mpTestSuite.addTest(InternalTestCase("test_req_get_config", req))
+    mpTestSuite.addTest(InternalTestCase("test_req_get_remote_host", req))
+    return mpTestSuite
+
+
+def handler(req):
+
+    tr = unittest.TextTestRunner()
+    result = tr.run(make_suite(req))
+
+    if result.wasSuccessful():
+        req.write("test ok")
+    else:
+        req.write("test failed")
+
     return apache.OK
 
 def req_add_handler(req):
@@ -73,24 +385,6 @@ def req_get_basic_auth_pw(req):
 def req_document_root(req):
 
     req.write(req.document_root())
-    return apache.OK
-
-def req_get_config(req):
-
-    if req.get_config() == apache.table({"PythonDebug":"1"}) and \
-       req.get_options() == apache.table({"secret":"sauce"}):
-        req.write("test ok")
-
-    return apache.OK
-
-def req_get_remote_host(req):
-
-    # simulating this test for real is too complex...
-
-    if (req.get_remote_host(apache.REMOTE_HOST) == None) and \
-       (req.get_remote_host() != ""):
-        req.write("test ok")
-
     return apache.OK
 
 def req_internal_redirect(req):
@@ -158,7 +452,12 @@ def postreadrequest(req):
 def outputfilter(filter):
 
     s = filter.read()
-    filter.write(s.upper())
+    while s:
+        filter.write(s.upper())
+        s = filter.read()
+
+    if s is None:
+        filter.close()
 
     return apache.OK
 
@@ -178,6 +477,8 @@ def connectionhandler(conn):
     return apache.OK
 
 def _test_table():
+
+    log = apache.log_error
 
     d = apache.table()
     if d.keys() != []: raise TestFailed, '{}.keys()'
