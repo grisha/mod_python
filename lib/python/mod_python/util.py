@@ -41,9 +41,10 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: util.py,v 1.8 2002/08/16 22:07:15 gtrubetskoy Exp $
+ # $Id: util.py,v 1.9 2002/08/20 19:05:06 gtrubetskoy Exp $
 
 import _apache
+import apache
 import string
 import StringIO
 
@@ -95,6 +96,14 @@ class Field:
     def __del__(self):
         self.file.close()
 
+class StringField(str):
+    """ This class is basically a string with
+    a value attribute for compatibility with std lib cgi.py
+    """
+    
+    def __init__(self, str=""):
+        str.__init__(self, str)
+        self.value = self.__str__()
 
 class FieldStorage:
 
@@ -134,7 +143,6 @@ class FieldStorage:
             elif ctype[:10] == "multipart/":
 
                 # figure out boundary
-                # XXX what about req.boundary?
                 try:
                     i = string.rindex(string.lower(ctype), "boundary=")
                     boundary = ctype[i+9:]
@@ -204,7 +212,6 @@ class FieldStorage:
         import tempfile
         return tempfile.TemporaryFile("w+b")
 
-
     def skip_to_boundary(self, req, boundary):
         line = req.readline()
         sline = string.strip(line)
@@ -238,7 +245,7 @@ class FieldStorage:
         for item in self.list:
             if item.name == key:
                 if isinstance(item.file, StringIO.StringIO):
-                    found.append(item.value)
+                    found.append(StringField(item.value))
                 else:
                     found.append(item)
         if not found:
@@ -269,7 +276,6 @@ class FieldStorage:
         """Dictionary style len(x) support."""
         return len(self.keys())
 
-            
 def parse_header(line):
     """Parse a Content-type like header.
 

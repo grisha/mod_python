@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.17 2002/08/19 20:12:50 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.18 2002/08/20 19:05:07 gtrubetskoy Exp $
  *
  */
 
@@ -257,7 +257,7 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
 
     while (i--)
 	if (elts[i].key) {
-	    if (strcmp(elts[i].key, k) == 0) {
+	    if (apr_strnatcasecmp(elts[i].key, k) == 0) {
 		PyObject *v = PyString_FromString(elts[i].val);
 		PyList_Insert(list, 0, v);
 		Py_DECREF(v);

@@ -436,6 +436,39 @@ class ModPythonTestCase(unittest.TestCase):
         if log.find("test ok") == -1:
             self.fail("Could not find test message in error_log")
 
+    def test_util_fieldstorage(self):
+
+        print "\n* Testing util_fieldstorage()"
+
+        cfg = "<Directory %s/htdocs>\n" % PARAMS["server_root"]+ \
+              "  SetHandler python-program\n" + \
+              "  PythonHandler tests::util_fieldstorage\n" + \
+              "  PythonDebug On\n" + \
+              "</Directory>\n" + \
+              "Timeout 10\n"
+
+        self.makeConfig(cfg)
+        self.startApache()
+
+        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
+        print "    url: "+url
+
+        import httplib
+
+        params = urllib.urlencode([('spam',1),('spam',2),('eggs',3),('bacon',4)])
+        headers = {"Content-type": "application/x-www-form-urlencoded",
+                   "Accept": "text/plain"}
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PARAMS["port"])
+        conn.request("POST", "/tests.py", params, headers)
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        print "    response: ", rsp
+        if (rsp != "[Field('spam', '1'), Field('spam', '2'), Field('eggs', '3'), Field('bacon', '4')]"):
+            self.fail("test failed")
+
+
 def findUnusedPort():
 
     # bind to port 0 which makes the OS find the next
@@ -466,6 +499,7 @@ def suite():
     mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_readlines"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
+    mpTestSuite.addTest(ModPythonTestCase("test_util_fieldstorage"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()

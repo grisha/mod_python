@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.66 2002/08/19 20:12:49 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.67 2002/08/20 19:05:06 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1279,17 +1279,6 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
 }
 
 /**
- ** directive_PythonEnablePdb
- **
- *      This function called whenever PythonEnablePdb
- *      is encountered.
- */
-static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
-					     int val) {
-    return python_directive_flag(mconfig, "PythonEnablePdb", val);
-}
-
-/**
  ** directive_PythonInterpPerDirective
  **
  *      This function called whenever PythonInterpPerDirective directive
@@ -1773,9 +1762,6 @@ command_rec python_commands[] =
     AP_INIT_FLAG(
 	"PythonDebug", directive_PythonDebug, NULL, OR_ALL,
 	"Send (most) Python error output to the client rather than logfile."),
-    AP_INIT_FLAG(
-	"PythonEnablePdb", directive_PythonEnablePdb, NULL, OR_ALL,
-	"Run handlers in pdb (Python Debugger). Use with -X."),
     AP_INIT_RAW_ARGS(
 	"PythonFixupHandler", directive_PythonFixupHandler, NULL, OR_ALL,
 	"Python fixups handlers."),

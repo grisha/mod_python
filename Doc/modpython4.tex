@@ -625,10 +625,10 @@ Boolean value indicating when sending chunked transfer-coding.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{boundary}
-String. Multipart/byteranges boundary.
-\emph{(Read-Only})
-\end{memberdesc}
+%\begin{memberdesc}[Request]{boundary}
+%String. Multipart/byteranges boundary.
+%\emph{(Read-Only})
+%\end{memberdesc}
 
 \begin{memberdesc}[Request]{range}
 String. The \code{Range:} header.
@@ -772,7 +772,7 @@ String. File name being requested.
 
 \begin{memberdesc}[Request]{canonical_filename}
 String. The true filename (\member{req.filename} is canonicalized if
-they dont match).  \empth{(Read-Only)}
+they dont match).  \emph{(Read-Only)}
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{path_info}
@@ -1010,51 +1010,17 @@ GID under which the server is running.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\subsection{Debugging\label{pyapi-debug}}
-
-Mod_python supports the ability to execute handlers within the Python
-debugger (pdb) via the \code{PythonEnablePdb} Apache directive. Since
-the debugger is an interactive tool, httpd must be invoked with the -X
-option. (NB: When pdb starts, you will not see the usual \code{>>>}
-prompt. Just type in the pdb commands like you would if there was
-one.)
-
-\subsection{Internal Callback Object\label{pyapi-callback}\index{obCallBack}}
-
-The Apache server interfaces with the Python interpreter via a
-callback object obCallBack. When a subinterpreter is created, an
-instance of obCallBack is created in this
-subinterpreter. Interestingly, obCallBack is not written in C, it is
-written in Python and the code for it is in the apache module.
-Mod_python only uses the C API to import apache and then instantiate
-obCallBack, storing a reference to the instance in the interpreter
-dictionary described above. Thus, the values in the interpreter
-dictionary are callback object instances.
-
-When a request handler is invoked by Apache, mod_python uses the
-obCallBack reference to call its method Dispatch, passing it the name
-of the handler being invoked as a string.
-            
-The Dispatch method then does the rest of the work of importing the
-user module, resolving the callable object in it and calling it
-passing it a request object.
-
 \section{\module{util} -- Miscellaneous Utilities\label{pyapi-util}}
 \declaremodule[util]{extension}{util}
 \modulesynopsis{Miscellaneous Utilities}
 \moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
 
-The \module{util} module provides a number of utilities handy to a 
-web application developer. 
-
-The functionality provided by \module{util} is also available in the
-standard Python library \module{cgi} module, but the
-implementation in \module{cgi} is specific to the CGI environment,
-making it not the most efficient one for mod_python. For example, the
-code in \module{util} does not use the environment variables since
-most of the information is available directly from the
-request object. Some of the functions in the \module{util}
-module are implemented in C for even better performance.
+The \module{util} module provides a number of utilities handy to a web
+application developer similar to those in the standard library
+\module{cgi} module. The implementations in the \module{util} module
+are much more efficient because they call directly into Apache API's
+as opposed to using CGI which relies on the environment to pass
+information.
 
 The recommended way of using this module is:
 \begin{verbatim}
@@ -1070,53 +1036,57 @@ from mod_python import util
 \subsection{FieldStorage class\label{pyapi-util-fstor}}
 
 Access to form data is provided via the \class{FieldStorage}
-class. This class is similar to the standard library module \module{cgi}
-\class{FieldStorage} (but there are a few differences).
+class. This class is similar to the standard library module
+\module{cgi} \class{FieldStorage}.
 
 \begin{classdesc}{FieldStorage}{req\optional{, keep_blank_values, strict_parsing}}
-This class provides uniform access to HTML form data submitted by the client.
-\var{req} is an instance of the mod_python request object.
+This class provides uniform access to HTML form data submitted by the
+client.  \var{req} is an instance of the mod_python request object.
 
-The optional argument \var{keep_blank_values} is a flag indicating whether
-blank values in URL encoded form data should be treated as blank strings. The
-default is false, which means that blank values are ignored as if they were
-not included.
+The optional argument \var{keep_blank_values} is a flag indicating
+whether blank values in URL encoded form data should be treated as
+blank strings. The default is false, which means that blank values are
+ignored as if they were not included.
 
 The optional argument \var{strict_parsing} is not yet implemented.
-\end{classdesc}
 
-While being instantiated, the \class{FieldStorage} class reads all of
-the data provided by the client. Since all data provided by the client
-is consumed at this point, there should be no more than one
+During initialization, \class{FieldStorage} class reads all of the
+data provided by the client. Since all data provided by the client is
+consumed at this point, there should be no more than one
 \class{FieldStorage} class instantiated per signle request, nor should
 you make any attempts to read client data before or after
 instantiating a \class{FieldStorage}.
 
-The data read from the client is then parsed into separate fields
-and packaged in \class{Field} objects, one per field. For HTML form
-inputs of type \code{file}, a temporary file is created that can later be 
+The data read from the client is then parsed into separate fields and
+packaged in \class{Field} objects, one per field. For HTML form inputs
+of type \code{file}, a temporary file is created that can later be
 accessed via the \member{file} attribute of a \class{Field} object.
 
 The \class{FieldStorage} class has a mapping object interface, i.e. it
-can be treated like a dictionary. When used as a dictionary, the dictionary 
-keys are form input names, and the returned dictionary value can be:
+can be treated like a dictionary. When used as a mapping, the keys are
+form input names, and the returned dictionary value can be:
 
 \begin{itemize}
 \item
-A string, containing the form input value. This is only when there is a single
-value corresponding to the input name.
+An instance of \class{StringField}, containing the form input
+value. This is only when there is a single value corresponding to the
+input name. \class{StringField} is a subclass of \class{str} which
+provides the additional \member{value} attribute for compatibility
+with standard library \module{cgi} module.
 \item
 An instances of a \class{Field} class, if the input is a file upload.
 \item
-A list of strings and/or \class{Field} objects. This is when multiple values
-exist, such as for a \code{<select>} HTML form element.
+A list of \class{StringField} and/or \class{Field} objects. This is
+when multiple values exist, such as for a \code{<select>} HTML form
+element.
 \end{itemize}
 
 Note that unlike the standard library \module{cgi} module
-\class{FieldStorage} class, a
-\class{Field} object is returned \emph{only} when it is a file
-upload. This means that you do not need to use the \member{.value}
-attribute to access values of fields in most cases.
+\class{FieldStorage} class, a \class{Field} object is returned
+\emph{only} when it is a file upload. In all other cases an instance
+the return is an instance of \class{StringField}, which is a subclass
+of \class{str}. This means that you do not need to use the
+\member{.value} attribute to access values of fields in most cases.
 
 In addition to standard mapping object methods, \class{FieldStorage} objects
 have the following attributes:
@@ -1126,13 +1096,14 @@ This is a list of \class{Field} objects, one for each input. Multiple
 inputs with the same name will have multiple elements in this list.
 \end{memberdesc}
 
-\subsubsection{Field class\label{pyapi-util-fstor-fld}}
+\end{classdesc}
+
+\subsection{Field class\label{pyapi-util-fstor-fld}}
 
 \begin{classdesc}{Field}{}
 This class is used internally by \class{FieldStorage} and is not
 meant to be instantiated by the user. Each instance of a \class{Field}
 class represents an HTML Form input.
-\end{classdesc}
 
 \class{Field} instances have the following attributes:
 
@@ -1180,6 +1151,7 @@ the form of a dictionary.
 \seerfc{1867}{Form-based File Upload in HTML}{for a description of 
 form-based file uploads}
 \end{seealso}
+\end{classdesc}
 
 \subsection{Other functions\label{pyapi-util-funcs}}
 
