@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.20 2003/08/28 18:49:14 grisha Exp $
+ # $Id: psp.py,v 1.21 2003/09/02 20:44:19 grisha Exp $
 
 import apache, Session, util, _psp
 import _apache
@@ -258,8 +258,11 @@ def run_psp(req):
 
     try:
         try:
-            exec code in globals(), {"req":req, "session":session,
-                                     "form":form, "psp":psp}
+            global_scope = globals().copy()
+            global_scope.update({"req":req, "session":session,
+                                 "form":form, "psp":psp})
+            exec code in global_scope
+
             # the mere instantiation of a session changes it
             # (access time), so it *always* has to be saved
             if session:
