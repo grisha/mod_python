@@ -53,6 +53,9 @@ object within the module. The Publisher handler \dfn{traverses} the
 path, one element at a time from left to right, mapping the elements
 to Python object within the module.
 
+If no path_info was given in the URL, the Publisher handler will use
+the default value of "index".
+
 The traversal will stop and \constant{HTTP_NOTFOUND} will be returned to
 the client if:
 

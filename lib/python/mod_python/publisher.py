@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.19 2002/09/07 02:43:49 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.20 2002/09/07 03:53:04 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -71,14 +71,14 @@ def handler(req):
     if req.method not in ["GET", "POST"]:
         raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
-    # get the path PATH_INFO (everthing after script)
-    if not req.subprocess_env.has_key("PATH_INFO"):
-        raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
-    
-    func_path = req.subprocess_env["PATH_INFO"][1:] # skip first /
+    func_path = req.path_info[1:] # skip first /
     func_path = func_path.replace("/", ".")
-    if func_path[-1] == ".":
+    if func_path[-1:] == ".":
         func_path = func_path[:-1] 
+
+    # default to 'index' if no path_info was given
+    if not func_path:
+        func_path = "index"
 
     # if any part of the path begins with "_", abort
     if func_path[0] == '_' or func_path.count("._"):
