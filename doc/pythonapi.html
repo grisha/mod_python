@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.11 2000/09/13 13:29:04 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.12 2000/10/03 03:24:39 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -41,15 +41,22 @@
 	function. For this discussion, it will suffice to say that each
 	subinterpreter has its own separate namespace, not accessible from other
 	subinterpreters.
+	Subinterpreters are very useful to make sure that separate programs running 
+	under the same Apache server do not &quot;step&quot; on each other.
 	<p>
 	At server start-up or mod_python initialization time, mod_python 
 	initializes the global interpreter. The global interpreter contains a 
 	dictionary of subinterpreters. Initially, this dictionary is empty. With
 	every hit, as needed, subinterpreters are created, and references to them
-	are stored in this dictionary. The key, also known as <em>interpreter name</em>,
-	is a string representing the path where the Handler directive was encountered,
-	or where the the actual file is (this depends on whether the
-	<code>PythonInterpPerDirectory</code> directive is in effect).
+	are stored in this dictionary. The key, also known as 
+	<em>interpreter name</em>,
+	is a string representing the server name. This means that all scripts in the
+	same vrtual server execute in the same suinterpreter, but scripts in different
+	virtual servers execute in different subinterpreters with completely separate
+	namespaces. 
+	(This policy can be altered with
+	<code>PythonIterpPerDirectory</code> and <code>PythonInterpPerDirective</code>
+	directives).
 	<p>
 	Once created, a subinterpreter will be reused for subsequent requests, but
 	it is never destroyed until the Apache child process dies. 
@@ -790,7 +797,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Sat Sep  9 14:08:19 EDT 2000
+Last modified: Mon Oct  2 23:14:35 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

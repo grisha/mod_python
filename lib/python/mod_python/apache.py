@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.20 2000/10/03 02:07:39 gtrubetskoy Exp $
+  $Id: apache.py,v 1.21 2000/10/03 03:24:39 gtrubetskoy Exp $
 
 """
 
@@ -51,10 +51,7 @@ class Request:
                 setattr(self._req, attr, val)
             else:
                 self.__dict__["_req"] = val
-        except AttributeError, x:
-            a,b,c = sys.exc_info()
-            for e in traceback.format_exception(a,b,c):
-                print e
+        except AttributeError:
             self.__dict__[attr] = val
 
     def __nonzero__(self):
@@ -169,7 +166,7 @@ class CallBack:
                         _path = pathstring
                         newpath = eval(pathstring)
                         if sys.path != newpath:
-                            sys.path = newpath
+                            sys.path[:] = newpath
                 else:
                     dir = _req.get_all_dirs()[htype]
                     if dir not in sys.path:

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.14 2000/09/05 12:46:55 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.15 2000/10/03 03:24:39 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -20,7 +20,7 @@
       <li><a href="#PythonTransHandler">PythonTransHandler</a>
       <li><a href="#PythonHeaderParserHandler">PythonHeaderParserHandler</a>
       <li><a href="#PythonAccessHandler">PythonAccessHandler</a>
-      <li><a href="#PythonAuthenHandler">PythonAuthenHAndler</a>
+      <li><a href="#PythonAuthenHandler">PythonAuthenHandler</a>
       <li><a href="#PythonAuthzHandlerPath">PythonAuthzHandler</a>
       <li><a href="#PythonTypeHandler">PythonTypeHandler</a>
       <li><a href="#PythonFixupHandler">PythonFixupHandler</a>
@@ -35,7 +35,7 @@
       <li><a href="#PythonDebug">PythonDebug</a>
       <li><a href="#PythonImport">PythonImport</a>
       <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
-      <li><a href="#PythonInterpPerServer">PythonInterpPerServer</a>
+      <li><a href="#PythonInterpPerServer">PythonInterpPerDirective</a>
       <li><a href="#PythonInterpreter">PythonInterpreter</a>
       <li><a href="#PythonNoReload">PythonNoReload</a>
       <li><a href="#PythonOptimize">PythonOptimize</a>
@@ -219,14 +219,17 @@
       <pre>
     def authenhandler(req):
 
-        user = req.connection.user     
         pw = req.get_basic_auth_pw()
+        user = req.connection.user     
         if user == "spam" and pw == "eggs":
             return apache.OK
         else:
             return apache.HTTP_UNAUTHORIZED
     </pre>
-
+    Note that <code>req.get_basic_auth_pw()</code> must be called prior to using
+    the <code>req.connection.user</code> value. Apache makes no attempt to decode
+    the authentication information unless <code>req.get_basic_auth_pw()</code> is 
+    called.
 <hr>
 <h2><a name="PythonAuthzHandler">PythonAuthzHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
@@ -482,10 +485,12 @@ subinterpreters, can be forced to execute in the same subinterpreter.
 <p>
 Instructs mod_python to name subinterpreters using the directory of
 the file in the request (<code>request_rec->filename</code>) rather
-than the directory in which the Python*Handler directive currently in effect
-was encountered. This means that scripts in different directories will
+than the the server name.
+
+
+This means that scripts in different directories will
 execute in different subinterpreters as opposed to the default policy
-where scripts effected by the same Handler directive execute in the
+where scripts in the same virtual server execute in the
 same subinterpreter, even if they are in different directories.
 <p>
 For example, assume there is a
@@ -494,23 +499,23 @@ For example, assume there is a
 <code>/directory/subdirectory</code> doesn't have an .htacess. By
 default, scripts in <code>/directory</code> and
 <code>/directory/subdirectory</code> would execute in the same
-interpreter based on the directory where PythonHandler was encountered
-(<code>/directory</code>).  With PythonInterpPerDirectory, there would
-be two different interpreters, one for each directory.
+interpreter assuming both directories are in the same virtual server.
+With PythonInterpPerDirectory, there would be two different interpreters, 
+one for each <em>directory</em>.
 <p>
 NOTE: In early phases of the request prior to the URI translation 
       (PostReadRequestHandler and TransHandler) the path is not yet known 
       because the URI has not been translated. During
       those phases and with PythonInterpPerDirectory on, all python code gets executed
-      in the global intepreter. This may not be exactly what you want, but unfortunately
-      there is no way around this.
+      in the global intepreter. This may not be exactly what you want, but 
+      unfortunately there is no way around this.
 <hr>
 
-<h2><a name="PythonInterpPerServer">PythonInterpPerServer</a></h2>
+<h2><a name="PythonInterpPerDirective">PythonInterpPerDirective</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> PythonInterpPerServer {On, Off}<br>
+<strong>Syntax:</strong></a> PythonInterpPerDirective {On, Off}<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> PythonInterpPerServer Off<br>
+<strong>Default:</strong></A> PythonInterpPerDirective Off<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -518,12 +523,21 @@ NOTE: In early phases of the request prior to the URI translation
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
 <strong>Module:</strong></a> mod_python.c
 
-<p>
-Instructs mod_python to name subinterpreters using the virtual server name
-rather than the directory in which the Python*Handler directive currently in 
-effect was encountered. This means that all scripts in this virtual server
-will execute in the same subinterpreter.
-
+    <p>
+      Instructs mod_python to name subinterpreters using the directory
+      in which the Python*Handler directive currently in effect was
+      encountered.
+    <p>
+For example, assume there is a
+<code>/directory/subdirectory</code>. <code>/directory</code> has an
+.htaccess file with a PythonHandler directive.
+<code>/directory/subdirectory</code> has another .htacess file with
+another PythonHandler. By
+default, scripts in <code>/directory</code> and
+<code>/directory/subdirectory</code> would execute in the same
+interpreter assuming both directories are in the same virtual server.
+With PythonInterpPerDirective, there would be two different interpreters, 
+one for each <em>directive</em>.
 <hr>
 
 <h2><a name="PythonNoReload">PythonNoReload</a></h2>
@@ -622,7 +636,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon Sep  4 21:45:23 EDT 2000
+Last modified: Mon Oct  2 23:05:55 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.31 2000/10/03 02:07:39 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.32 2000/10/03 03:24:40 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -104,7 +104,7 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.5.1"
+#define VERSION_COMPONENT "mod_python/2.6"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define GLOBAL_INTERPRETER "global_interpreter"
@@ -2748,31 +2748,31 @@ static int python_handler(request_rec *req, char *handler)
 		    interpreter = NULL;
 	    }
 	}
-	else if (ap_table_get(conf->directives, "PythonInterpPerServer")) {
-	    interpreter = req->server->server_hostname;
-	}
-	else {
-	    /* - default -
+	else if (ap_table_get(conf->directives, "PythonInterpPerDirective")) {
+
+	    /* 
 	     * base interpreter name on directory where the handler directive
 	     * was last found. If it was in http.conf, then we will use the 
 	     * global interpreter.
 	     */
 	    
+	    s = ap_table_get(conf->dirs, handler);
 	    if (! s) {
-		s = ap_table_get(conf->dirs, handler);
-		if (! s) {
-		    /* this one must have been added via req.add_handler() */
-		    char * ss = ap_pstrcat(req->pool, handler, "_dir", NULL);
-		    s = ap_table_get(req->notes, ss);
-		}
-		if (strcmp(s, "") == 0)
-		    interpreter = NULL;
-		else
-		    interpreter = s;
+		/* this one must have been added via req.add_handler() */
+		char * ss = ap_pstrcat(req->pool, handler, "_dir", NULL);
+		s = ap_table_get(req->notes, ss);
 	    }
+	    if (strcmp(s, "") == 0)
+		interpreter = NULL;
+	    else
+		interpreter = s;
+	}
+	else {
+	    /* - default per server - */
+	    interpreter = req->server->server_hostname;
 	}
     }
-    
+
 #ifdef WITH_THREAD  
     /* acquire lock (to protect the interpreters dictionary) */
     PyEval_AcquireLock();
@@ -3105,25 +3105,26 @@ void python_cleanup_handler(void *data)
 		    interpreter = NULL;
 	    }
 	}
-	else if (ap_table_get(conf->directives, "PythonInterpPerServer")) {
-	    interpreter = req->server->server_hostname;
-	}
-	else {
-	    /* - default -
+	else if (ap_table_get(conf->directives, "PythonInterpPerDirective")) {
+
+	    /* 
 	     * base interpreter name on directory where the handler directive
 	     * was last found. If it was in http.conf, then we will use the 
 	     * global interpreter.
 	     */
 	    
-	    if (! s) {
-		s = ap_table_get(conf->dirs, handler);
-		if (strcmp(s, "") == 0)
-		    interpreter = NULL;
-		else
-		    interpreter = s;
-	    }
+	    s = ap_table_get(conf->dirs, handler);
+	    if (strcmp(s, "") == 0)
+		interpreter = NULL;
+	    else
+		interpreter = s;
+	}
+	else {
+	    /* - default per server - */
+	    interpreter = req->server->server_hostname;
 	}
     }
+
     
 #ifdef WITH_THREAD  
     /* acquire lock (to protect the interpreters dictionary) */
@@ -3334,6 +3335,39 @@ static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
 }
 
 /**
+ ** directive_PythonInterpPerDirective
+ **
+ *      This function called whenever PythonInterpPerDirective directive
+ *      is encountered.
+ */
+
+static const char *directive_PythonInterpPerDirective(cmd_parms *cmd, 
+						      void *mconfig, int val) {
+    py_dir_config *conf;
+    const char *key = "PythonInterpPerDirective";
+
+    conf = (py_dir_config *) mconfig;
+
+    if (val) {
+	ap_table_set(conf->directives, key, "1");
+
+	/* remember the directory where the directive was found */
+	if (conf->config_dir) {
+	    ap_table_set(conf->dirs, key, conf->config_dir);
+	}
+	else {
+	    ap_table_set(conf->dirs, key, "");
+	}
+    }
+    else {
+	ap_table_unset(conf->directives, key);
+	ap_table_unset(conf->dirs, key);
+    }
+
+    return NULL;
+}
+
+/**
  ** directive_PythonInterpPerDirectory
  **
  *      This function called whenever PythonInterpPerDirectory directive
@@ -3361,30 +3395,6 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
     else {
 	ap_table_unset(conf->directives, key);
 	ap_table_unset(conf->dirs, key);
-    }
-
-    return NULL;
-}
-
-/**
- ** directive_PythonInterpPerServer
- **
- *      This function called whenever PythonInterpPerServer directive
- *      is encountered.
- */
-
-static const char *directive_PythonInterpPerServer(cmd_parms *cmd, 
-						   void *mconfig, int val) {
-    py_dir_config *conf;
-    const char *key = "PythonInterpPerServer";
-
-    conf = (py_dir_config *) mconfig;
-
-    if (val) {
-	ap_table_set(conf->directives, key, "1");
-    }
-    else {
-	ap_table_unset(conf->directives, key);
     }
 
     return NULL;
@@ -3786,20 +3796,20 @@ command_rec python_commands[] =
 	"Python request initialization handler."
     },
     {
-	"PythonInterpPerDirectory",                 
+	"PythonInterpPerDirective",                 
+	directive_PythonInterpPerDirective,         
+	NULL,                                
+	OR_ALL,                         
+	FLAG,                               
+	"Create subinterpreters per directive."
+    },
+    {
+	"PythonInterpPerDirectory",
 	directive_PythonInterpPerDirectory,         
 	NULL,                                
 	OR_ALL,                         
 	FLAG,                               
-	"Create subinterpreters per directory rather than per directive."
-    },
-    {
-	"PythonInterpPerServer",
-	directive_PythonInterpPerServer,
-	NULL,                                
-	RSRC_CONF,
-	FLAG,                               
-	"Create subinterpreters per server rather than per directive."
+	"Create subinterpreters per directory."
     },
     {
 	"PythonInterpreter",                 
