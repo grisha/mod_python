@@ -1,3 +1,6 @@
+Dec 18 2000 -	2.7 had a typo in it + win32 wants types initialized
+		separately like I thought. Time for 2.7.1.
+
 Dec 16 2000 -	Releasing 2.7....
 
 Dec 16 2000 -   Found another bug related to ALLOW_THREADS macros which are

@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.4 2000/12/06 03:05:38 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.5 2000/12/18 19:50:03 gtrubetskoy Exp $
  *
  */
 
@@ -333,7 +333,7 @@ static PyObject * table_repr(tableobject *self)
 }
 
 PyTypeObject MpTable_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
     "mp_table",
     sizeof(tableobject),

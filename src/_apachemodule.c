@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.6 2000/12/06 03:05:37 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.7 2000/12/18 19:50:03 gtrubetskoy Exp $
  *
  */
 
@@ -362,6 +362,12 @@ struct PyMethodDef _apache_module_methods[] = {
 DL_EXPORT(void) init_apache()
 {
     PyObject *m, *d;
+
+    /* initialize types XXX break windows? */
+    MpTable_Type.ob_type = &PyType_Type; 
+    MpServer_Type.ob_type = &PyType_Type;
+    MpConn_Type.ob_type = &PyType_Type;  
+    MpRequest_Type.ob_type = &PyType_Type; 
 
     m = Py_InitModule("_apache", _apache_module_methods);
     d = PyModule_GetDict(m);
