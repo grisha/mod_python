@@ -80,7 +80,7 @@ static: @STATIC@
 
 no_static:
 	@echo
-	@echo "Static compilation not available. (Probably because --with-apache was not spcified)."
+	@echo "Static compilation not available. (Probably because --with-apache was not specified)."
 	@echo
 
 install: src/.install
