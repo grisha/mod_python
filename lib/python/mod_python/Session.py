@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.3 2003/08/05 20:38:00 grisha Exp $
+ # $Id: Session.py,v 1.4 2003/08/06 20:03:29 grisha Exp $
 
 from mod_python import apache, Cookie
 import _apache
@@ -65,10 +65,13 @@ import anydbm, whichdb
 import random
 import md5
 import cPickle
+import tempfile
 
 COOKIE_NAME="pysid"
 DFT_TIMEOUT=30*60*60 # 30 min
 CLEANUP_CHANCE=1000 # cleanups have 1 in CLEANUP_CHANCE chance
+
+tempdir = tempfile.gettempdir()
 
 def _init_rnd():
     """ initialize random number generators
@@ -127,14 +130,11 @@ def _new_sid(req):
     
 class BaseSession(dict):
 
-    def __init__(self, req, sid=None, secret=None, lock=1, lockfile="",
+    def __init__(self, req, sid=None, secret=None, lock=1,
                  timeout=0):
 
-        if lock and not lockfile:
-            raise ValueError, "lockfile is required when locking is on"
-
         self._req, self._sid, self._secret = req, sid, secret
-        self._lock, self._lockfile = lock, lockfile
+        self._lock = lock
         self._new = 1
         self._created = 0
         self._accessed = 0
@@ -238,23 +238,15 @@ class BaseSession(dict):
     def init_lock(self):
         pass
             
-    def lock(self, key=None):
-        if key is None:
-            if self._lock:
-                _apache._global_lock(self._req.server, self._sid)
-                self._locked = 1
-        else:
-            # just do what we're told
-            _apache._global_lock(self._req.server, key)
+    def lock(self):
+        if self._lock:
+            _apache._global_lock(self._req.server, self._sid)
+            self._locked = 1
 
-    def unlock(self, key=None):
-        if key is None: 
-            if self._lock and self._locked:
-                _apache._global_unlock(self._req.server, self._sid)
-                self._locked = 0
-        else:
-            # just do what we're told
-            _apache._global_unlock(self._req.server, key)
+    def unlock(self):
+        if self._lock and self._locked:
+            _apache._global_unlock(self._req.server, self._sid)
+            self._locked = 0
             
     def is_new(self):
         return not not self._new
@@ -282,7 +274,7 @@ class BaseSession(dict):
 
 def dbm_cleanup(data):
     dbm, server = data
-    _apache._global_lock(server, 1)
+    _apache._global_lock(server, None, 0)
     db = anydbm.open(dbm, 'c')
     try:
         old = []
@@ -305,19 +297,25 @@ def dbm_cleanup(data):
             except: pass
     finally:
         db.close()
-        _apache._global_unlock(server, 1)
-    
+        _apache._global_unlock(server, None, 0)
+
 class DbmSession(BaseSession):
 
-    def __init__(self, req, dbm, sid=0, secret=None, dbmtype=anydbm,
+    def __init__(self, req, dbm=None, sid=0, secret=None, dbmtype=anydbm,
                  timeout=0):
+
+        if not dbm:
+            opts = req.get_options()
+            if opts.has_key("SessionDbm"):
+                dbm = opts["SessionDbm"]
+            else:
+                dbm = os.path.join(tempdir, "mp_sess.dbm")
 
         self._dbmfile = dbm
         self._dbmtype = dbmtype
 
         BaseSession.__init__(self, req, sid=sid,
-                             secret=secret, lockfile=dbm+".lck",
-                             timeout=timeout)
+                             secret=secret, timeout=timeout)
 
     def _set_dbm_type(self):
         module = whichdb.whichdb(self._dbmfile)
@@ -337,7 +335,7 @@ class DbmSession(BaseSession):
                             apache.APLOG_NOTICE)
 
     def do_load(self):
-        self.lock(key=0)
+        _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
             if dbm.has_key(self._sid):
@@ -348,25 +346,70 @@ class DbmSession(BaseSession):
             return 0
         finally:
             dbm.close()
-            self.unlock(key=0)
+            _apache._global_unlock(self._req.server, None, 0)
 
     def do_save(self):
-        self.lock(key=0)
+        _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
             dbm[self._sid] = cPickle.dumps(self.copy())
         finally:
             dbm.close()
-            self.unlock(key=0)
+            _apache._global_unlock(self._req.server, None, 0)
 
     def do_delete(self):
-        self.lock(key=0)
+        _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
             del self._dbm[self._sid]
         finally:
             dbm.close()
-            self.unlock(key=0)
+            _apache._global_lock(self._req.server, None, 0)
 
-Session = DbmSession
+def mem_cleanup(sdict):
+    for sid in sdict:
+        dict = sdict[sid]
+        if (time.time() - dict["_accessed"]) > dict["_timeout"]:
+            del sdict[sid]
+
+class MemorySession(BaseSession):
+
+    sdict = {}
+
+    def __init__(self, req, sid=0, secret=None, timeout=0):
+
+        BaseSession.__init__(self, req, sid=sid,
+                             secret=secret, timeout=timeout)
+
+    def do_cleanup(self):
+        self._req.register_cleanup(mem_cleanup, MemorySession.sdict)
+        self._req.log_error("MemorySession: registered session cleanup.",
+                            apache.APLOG_NOTICE)
+
+    def do_load(self):
+        if MemorySession.sdict.has_key(self._sid):
+            self.clear()
+            self.update(MemorySession.sdict[self._sid])
+            return 1
+        return 0
+
+    def do_save(self):
+        MemorySession.sdict[self._sid] = self.copy()
+
+    def do_delete(self):
+        del MemorySession.sdict[self._sid]
+
+def Session(req, sid=0, secret=None, timeout=0):
+
+    threaded = _apache.mpm_query(apache.AP_MPMQ_IS_THREADED)
+    forked = _apache.mpm_query(apache.AP_MPMQ_IS_FORKED)
+    daemons =  _apache.mpm_query(apache.AP_MPMQ_MAX_DAEMONS)
+
+    if (threaded and ((not forked) or (daemons == 1))):
+        return MemorySession(req, sid=sid, secret=secret,
+                             timeout=timeout)
+    else:
+        return DbmSession(req, sid=sid, secret=secret,
+                          timeout=timeout)
+
     

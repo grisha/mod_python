@@ -1768,9 +1768,16 @@ delay.)
 
 \subsection{Classes\label{pyapi-sess-classes}}
 
-\begin{classdesc}{Session}{}{}
-  This is an alias to \class{DbmSession}. 
-\end{classdesc}
+\begin{funcdesc}{Session}{req\optional{, sid, secret, timeout, lock, lockfile}}
+  This function queries the MPM and based on that returns either a new
+  instance of \class{DbmSession} or \class{MemorySession}. It takes
+  same arguments as \class{BaseSession}.
+
+  \class{MemorySession} will be used if the MPM is threaded and not
+  forked (such is the case on Windows), or if it threaded, forked, but
+  only one process is allowed (the worker MPM can be configured to run
+  this way). In all other cases \class{DbmSession} is used.
+\end{funcdesc}
 
 \begin{classdesc}{BaseSession}{req\optional{, sid, secret, timeout, lock, lockfile}}
 
@@ -1828,7 +1835,7 @@ delay.)
     session. It is important to use this method to test whether an
     attempt to instantiate a session has succeeded, e.g.:
     \begin{verbatim}
-sess = Session(req, '/tmp/sessions')
+sess = Session(req)
 if sess.is_new():
     # redirect to login
     req.headers_out['location'] = 'http://www.mysite.com/login'  
@@ -1909,20 +1916,35 @@ if sess.is_new():
 
 \end{classdesc}
 
-\begin{classdesc}{DbmSession}{req, dbm\optional{, sid, secret, dbmtype, timeout}}
+\begin{classdesc}{MemorySession}{req, \optional{, sid, secret, dbmtype, timeout}}
 
-This class provides session storage using a dmb file. Generally, dbm
-access is very fast, and most dbm implementations memory-map files for
-faster access, which makes their performance nearly as fast as direct
-shared memory access.  \var{dbm} is the name of the dbm file (the file
-must be writable by the httpd process). This file is not deleted when
-the server process is stopped (a nice side benefit of this is that
-sessions can survive server restarts).
+  This class provides session storage using a global dictionary. This
+  class provides by far the best performance, but cannot be used in a
+  multi-process configuration, and also consumes memory for every
+  active session.
 
-The implementation uses Python \module{anydbm} module, which will
-default to \module{dbhash} on most systems. If you need to use a
-specific dbm implementation (e.g. \module{gdbm}), you can pass that
-module as \var{dbmtype}.
+\end{classdesc}
+
+\begin{classdesc}{DbmSession}{req, \optional{, dbm, sid, secret, dbmtype, timeout}}
+
+  This class provides session storage using a dmb file. Generally, dbm
+  access is very fast, and most dbm implementations memory-map files
+  for faster access, which makes their performance nearly as fast as
+  direct shared memory access.
+
+  \var{dbm} is the name of the dbm file (the file must be writable by
+  the httpd process). This file is not deleted when the server process
+  is stopped (a nice side benefit of this is that sessions can survive
+  server restarts). By default the session information is stored in a
+  dbmfile named \file{mp_sess.dbm} and stored in a temporary directory
+  returned by \code{tempfile.gettempdir()} standard library
+  function. It can be overriden by setting \code{PythonOption
+  SessionDbm filename}.
+
+  The implementation uses Python \module{anydbm} module, which will
+  default to \module{dbhash} on most systems. If you need to use a
+  specific dbm implementation (e.g. \module{gdbm}), you can pass that
+  module as \var{dbmtype}.
 
 \end{classdesc}
 

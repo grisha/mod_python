@@ -306,11 +306,6 @@ PythonOption PSPDbmCache "/tmp/pspcache.dbm"
 \end{verbatim}
 Note that the dbm cache file is not deleted when the server restarts.
 
-The session information is stored in a dbmfile named
-\file{psp_sess.dbm} and stored in a temporary directory returned by
-\code{tempfile.gettempdir()} standard library function. It can be
-overriden by setting \code{PythonOption PSPSessionDbm filename}.
-
 \section{CGI Handler\label{hand-cgi}}
 
 \index{CGI}
