@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.24 2003/01/09 19:14:31 grisha Exp $
+ # $Id: test.py,v 1.25 2003/01/09 19:15:33 grisha Exp $
  #
 
 """
@@ -795,23 +795,23 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         print "\n* Running the per-request test suite..."
 
         perRequestSuite = unittest.TestSuite()
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_document_root"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_trans"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_import"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
-##         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_document_root"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
+        perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
+        perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
+        perRequestSuite.addTest(PerRequestTestCase("test_trans"))
+        perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
+        perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_import"))
+        perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
+        perRequestSuite.addTest(PerRequestTestCase("test_internal"))
         perRequestSuite.addTest(PerRequestTestCase("test_cgihandler"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)
