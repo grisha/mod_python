@@ -52,12 +52,12 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * Originally developed by Gregory Trubetskoy <grisha@apache.org>
+ * Originally developed by Gregory Trubetskoy.
  *
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.11 2002/10/15 15:47:31 grisha Exp $
+ * $Id: connobject.c,v 1.12 2002/11/08 00:15:11 gstein Exp $
  *
  */
 

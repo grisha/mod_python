@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # Originally developed by Gregory Trubetskoy <grisha@apache.org>
+ # Originally developed by Gregory Trubetskoy.
  #
 
 CC=@CC@

@@ -52,12 +52,12 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * Originally developed by Gregory Trubetskoy <grisha@apache.org>
+ * Originally developed by Gregory Trubetskoy.
  *
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.24 2002/10/29 21:52:18 grisha Exp $
+ * $Id: tableobject.c,v 1.25 2002/11/08 00:15:11 gstein Exp $
  *
  */
 
