@@ -36,7 +36,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
 {
     requestobject *result;
 
-    result = PyObject_New(requestobject, &MpRequest_Type);
+    result = PyObject_GC_New(requestobject, &MpRequest_Type);
     if (! result)
         return PyErr_NoMemory();
 
@@ -62,6 +62,11 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->rbuff = NULL;
     result->rbuff_pos = 0;
     result->rbuff_len = 0;
+
+    // we make sure that the object dictionary is there
+    // before registering the object with the GC
+    _PyObject_GetDictPtr(result);
+    PyObject_GC_Track(result);
 
     return (PyObject *) result;
 }
@@ -1317,6 +1322,11 @@ static struct PyMemberDef request_members[] = {
 
 static void request_dealloc(requestobject *self)
 {  
+    // de-register the object from the GC
+    // before its deallocation, to prevent the
+    // GC to run on a partially de-allocated object
+    PyObject_GC_UnTrack(self);
+
     Py_XDECREF(self->dict);
     Py_XDECREF(self->connection);
     Py_XDECREF(self->server);
@@ -1331,7 +1341,48 @@ static void request_dealloc(requestobject *self)
     Py_XDECREF(self->phase);
     Py_XDECREF(self->hlo);
 
-    PyObject_Del(self);
+    PyObject_GC_Del(self);
+}
+
+/**
+ ** request_tp_traverse
+ **
+ *    Traversal of the request object
+ */
+static int request_tp_traverse(PyObject *self, visitproc visit, void *arg) {
+    PyObject *dict,*values,*item,*str;
+    int i,size;
+
+    // only traverse its dictionary since other fields defined in request_rec_mbrs with type T_OBJECT
+    // cannot be the source of memory leaks (unless you really want it)
+    dict=*_PyObject_GetDictPtr(self);
+    if(dict) {
+        // this check is not needed, I guess, _PyObject_GetDictPtr always give a pointer to a dict object.
+        if(PyDict_Check(dict)) {
+            i = visit(dict,arg); 
+            if(i) {
+                ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, ((requestobject*)self)->request_rec, "%s:%i Call to visit() failed",__LINE__,__FILE__);
+                // no need to Py_DECREF(dict) since the reference is borrowed
+                return i;
+            }
+        }
+        else {
+            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, ((requestobject*)self)->request_rec, "%s:%i Expected a dictionary",__LINE__,__FILE__);  
+        }
+    }
+    else {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, ((requestobject*)self)->request_rec, "%s:%i Expected a dictionary",__LINE__,__FILE__);  
+    }
+    // no need to Py_DECREF(dict) since the reference is borrowed
+    return 0;
+}
+
+static int request_tp_clear(PyObject *self) {
+    // No need to clear anything, as it is
+    // the object dictionary that will clear itself.
+    // Other fields defined in request_rec_mbrs with type T_OBJECT
+    // cannot be the source of memory leaks (unless you really want it)
+    return 0;
 }
 
 static char request_doc[] =
@@ -1359,10 +1410,11 @@ PyTypeObject MpRequest_Type = {
     PyObject_GenericSetAttr,         /* tp_setattro */
     0,                               /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
-    Py_TPFLAGS_BASETYPE,             /* tp_flags */
+    Py_TPFLAGS_BASETYPE|
+    Py_TPFLAGS_HAVE_GC ,             /* tp_flags */
     request_doc,                     /* tp_doc */
-    0,                               /* tp_traverse */
-    0,                               /* tp_clear */
+    request_tp_traverse,             /* tp_traverse */
+    request_tp_clear,                /* tp_clear */
     0,                               /* tp_richcompare */
     0,                               /* tp_weaklistoffset */
     0,                               /* tp_iter */
