@@ -51,7 +51,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.34 2000/10/16 20:58:57 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.35 2000/10/22 03:32:45 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -83,10 +83,12 @@ PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
     tstate = Py_NewInterpreter();
 
     if (! tstate) {
+	if (srv) {
 
-       /* couldn't create an interpreter, this is bad */
-       ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, srv,
-                     "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
+	    /* couldn't create an interpreter, this is bad */
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, srv,
+		 "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
+	}
        return NULL;
     }
     else {
@@ -282,7 +284,7 @@ void python_init(server_rec *s, pool *p)
     {
 
 	/* initialize types */
-	/* MpTable_Type.ob_type = &PyType_Type; */
+/*	MpTable_Type.ob_type = &PyType_Type; */
 /* 	MpServer_Type.ob_type = &PyType_Type; */
 /* 	MpConn_Type.ob_type = &PyType_Type; */
 /* 	MpRequest_Type.ob_type = &PyType_Type; */
@@ -1259,6 +1261,40 @@ static const char *directive_PythonLogHandler(cmd_parms *cmd, void * mconfig,
     return python_directive(cmd, mconfig, "PythonLogHandler", val);
 }
 
+/**
+ ** python_finalize
+ **
+ *  We create a thread state just so we can run Py_Finalize()
+ */
+
+
+void python_finalize()
+{
+    interpreterdata *idata;
+#ifdef WITH_THREAD
+    PyThreadState *tstate;
+#endif
+
+
+#ifdef WITH_THREAD  
+    PyEval_AcquireLock();
+#endif
+    
+    idata = get_interpreter_data(NULL, NULL);
+
+#ifdef WITH_THREAD
+    PyEval_ReleaseLock();
+    /* create thread state and acquire lock */
+    tstate = PyThreadState_New(idata->istate);
+    PyEval_AcquireThread(tstate);
+#endif
+
+    Py_Finalize();
+
+#ifdef WITH_THREAD
+    PyEval_ReleaseLock();
+#endif
+}
 
 /**
  ** Handlers
@@ -1282,7 +1318,8 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
      * Cleanups registered first will be called last. This will
      * end the Python enterpreter *after* all other cleanups.
      */
-    ap_register_cleanup(p, NULL, (void (*)(void *))Py_Finalize, ap_null_cleanup);
+    /* ap_register_cleanup(p, NULL, (void (*)(void *))Py_Finalize, ap_null_cleanup);*/
+    ap_register_cleanup(p, NULL, python_finalize, ap_null_cleanup);
 
     /*
      * remember the pool in a global var. we may use it
