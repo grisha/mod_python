@@ -291,9 +291,11 @@ It is best imported like this:
 from mod_python import apache
 \end{verbatim}
 
-\module{mod_python.apache} module defines the following objects and
-functions. For a more in-depth look at Apache internals, see the
+\module{mod_python.apache} module defines the following functions and
+objects. For a more in-depth look at Apache internals, see the
 \citetitle[http://httpd.apache.org/dev/]{Apache Developer page}
+
+\subsection{Functions\label{pyapi-apmeth}}
 
 \begin{funcdesc}{log_error}{message\optional{, level, server}}
 An interface to the Apache
@@ -360,6 +362,15 @@ M_MERGE
 M_INVALID
 \end{verbatim}
 
+\end{funcdesc}
+
+\begin{funcdesc}{config_tree}{}
+Returns the server-level configuration tree. This tree does not
+include directives from .htaccess files.
+\end{funcdesc}
+
+\begin{funcdesc}{server_root}{}
+Returns the value of ServerRoot.
 \end{funcdesc}
 
 \begin{funcdesc}{make_table}{} 

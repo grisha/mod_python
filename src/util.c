@@ -57,7 +57,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.10 2002/09/15 23:45:35 grisha Exp $
+ * $Id: util.c,v 1.11 2002/09/19 20:11:35 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -401,6 +401,7 @@ char * get_addhandler_extensions(request_rec *req)
  ** 
  *   Find a memberdef in a PyMemberDef array
  */
+
 PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
 {
     const PyMemberDef *md;
@@ -411,5 +412,43 @@ PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
 
     /* this should never happen or the mlist is screwed up */
     return NULL;
+}
+
+/**
+ ** cfgtree_walk
+ **
+ *  walks ap_directive_t tree returning a list of
+ *  tuples and lists
+ */
+
+PyObject *cfgtree_walk(ap_directive_t *dir)
+{
+
+    PyObject *list = PyList_New(0);
+    if (!list)
+        return PyErr_NoMemory();
+
+    while (dir) {
+
+        PyObject *t = Py_BuildValue("(s, s)", dir->directive, dir->args);
+        if (!t)
+            return PyErr_NoMemory();
+
+        PyList_Append(list, t);
+
+        if (dir->first_child) {
+
+            PyObject *child = cfgtree_walk(dir->first_child);
+            if (!child)
+                return PyErr_NoMemory();
+
+            PyList_Append(list, child);
+
+        }
+
+        dir = dir->next;
+    } 
+
+    return list;
 }
 

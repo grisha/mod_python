@@ -60,7 +60,7 @@
  *
  * util.h 
  *
- * $Id: util.h,v 1.7 2002/09/15 23:45:35 grisha Exp $
+ * $Id: util.h,v 1.8 2002/09/19 20:11:35 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -74,5 +74,6 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u);
 char * get_addhandler_extensions(request_rec *req);
 apr_status_t python_decref(void *object);
 PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name);
+PyObject *cfgtree_walk(ap_directive_t *dir);
 
 #endif /* !Mp_UTIL_H */
