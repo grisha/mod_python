@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.9 2002/09/06 22:06:28 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.10 2002/09/06 22:08:34 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -224,7 +224,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 	}
 
 	if (readline && newline) {
-//            apr_bucket_delete(b);
+            apr_bucket_delete(b);
 	    break;
         }
 
