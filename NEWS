@@ -1,3 +1,5 @@
+May 12 2000 -	2.7.3 released
+
 Apr 10 2000 - 	Fixed a PythonImport bug reported by Chris Hagner. Removed
 		the atol hack as per Miguel Marques patch. Fixed apache.py
 		to use a messier looking but for some obscure reason that
