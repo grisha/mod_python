@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.28 2003/02/12 16:10:13 grisha Exp $
+ # $Id: test.py,v 1.29 2003/03/07 20:04:31 grisha Exp $
  #
 
 """
@@ -573,8 +573,10 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_headers_out"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  SetHandler("python-program"),
+                                  AddHandler("python-program .py"),
+                                  DirectoryIndex("/tests.py"),
                                   PythonHandler("tests::req_headers_out"),
+                                  PythonAccessHandler("tests::req_headers_out_access"),
                                   PythonDebug("On")))
         return str(c)
 
@@ -583,7 +585,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.headers_out"
 
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
-        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putrequest("GET", "/", skip_host=1)
         conn.putheader("Host", "test_req_headers_out:%s" % PORT)
         conn.endheaders()
         response = conn.getresponse()

@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.25 2003/02/12 16:10:13 grisha Exp $
+ # $Id: tests.py,v 1.26 2003/03/07 20:04:32 grisha Exp $
  #
 
 # mod_python tests
@@ -651,6 +651,10 @@ def req_headers_out(req):
 
     req.headers_out["X-Test-Header"] = "test ok"
     req.write("test ok")
+
+    return apache.OK
+
+def req_headers_out_access(req):
 
     return apache.OK
 

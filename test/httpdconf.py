@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: httpdconf.py,v 1.6 2003/01/23 20:20:00 grisha Exp $
+ # $Id: httpdconf.py,v 1.7 2003/03/07 20:04:31 grisha Exp $
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
@@ -135,6 +135,10 @@ class Directory(ContainerTag):
     def __init__(self, dir, *args):
         ContainerTag.__init__(self, self.__class__.__name__, dir, args)
 
+class DirectoryIndex(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class DocumentRoot(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
@@ -208,6 +212,10 @@ class PythonDebug(Directive):
         Directive.__init__(self, self.__class__.__name__, val)
 
 class PythonHandler(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class PythonAccessHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 

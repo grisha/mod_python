@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.43 2002/12/31 15:03:36 grisha Exp $
+ * $Id: requestobject.c,v 1.44 2003/03/07 20:04:30 grisha Exp $
  *
  */
 
@@ -884,7 +884,7 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
 */
 
 #define OFF(x) offsetof(request_rec, x)
-
+ 
 static struct PyMemberDef request_rec_mbrs[] = {
     {"the_request",        T_STRING,  OFF(the_request)},
     {"assbackwards",       T_INT,     OFF(assbackwards)},
@@ -942,8 +942,46 @@ static struct PyMemberDef request_rec_mbrs[] = {
 
 static PyObject *getreq_recmbr(requestobject *self, void *name) 
 {
-    return PyMember_GetOne((char*)self->request_rec,
-                           find_memberdef(request_rec_mbrs, name));
+    /* 
+     * apparently at least ap_internal_fast_redirect blatently
+     * substitute request members, and so we always have to make
+     * sure that various apr_tables referenced haven't been
+     * replaced in between handlers and we're left with a stale.
+     */
+
+    if (strcmp(name, "headers_in") == 0) {
+        if (((tableobject*)self->headers_in)->table != self->request_rec->headers_in) 
+            ((tableobject*)self->headers_in)->table = self->request_rec->headers_in;
+        Py_INCREF(self->headers_in);
+        return self->headers_in;
+    }
+    else if (strcmp(name, "headers_out") == 0) {
+        if (((tableobject*)self->headers_out)->table != self->request_rec->headers_out) 
+            ((tableobject*)self->headers_out)->table = self->request_rec->headers_out;
+        Py_INCREF(self->headers_out);
+        return self->headers_out;
+    }
+    else if (strcmp(name, "err_headers_out") == 0) {
+        if (((tableobject*)self->err_headers_out)->table != self->request_rec->err_headers_out) 
+            ((tableobject*)self->err_headers_out)->table = self->request_rec->err_headers_out;
+        Py_INCREF(self->err_headers_out);
+        return self->err_headers_out;
+    }
+    else if (strcmp(name, "subprocess_env") == 0) {
+        if (((tableobject*)self->subprocess_env)->table != self->request_rec->subprocess_env) 
+            ((tableobject*)self->subprocess_env)->table = self->request_rec->subprocess_env;
+        Py_INCREF(self->subprocess_env);
+        return self->subprocess_env;
+    }
+    else if (strcmp(name, "notes") == 0) {
+        if (((tableobject*)self->notes)->table != self->request_rec->notes) 
+            ((tableobject*)self->notes)->table = self->request_rec->notes;
+        Py_INCREF(self->notes);
+        return self->notes;
+    }
+    else
+        return PyMember_GetOne((char*)self->request_rec,
+                               find_memberdef(request_rec_mbrs, name));
 }
 
 /**
@@ -1135,6 +1173,11 @@ static PyGetSetDef request_getsets[] = {
     {"finfo",         (getter)getreq_rec_fi, NULL, "File information", "finfo"},
     {"parsed_uri",    (getter)getreq_rec_uri, NULL, "Components of URI", "parsed_uri"},
     {"used_path_info", (getter)getreq_recmbr, NULL, "Flag to accept or reject path_info on current request", "used_path_info"},
+    {"headers_in", (getter)getreq_recmbr, NULL, "Incoming headers", "headers_in"},
+    {"headers_out", (getter)getreq_recmbr, NULL, "Outgoing headers", "headers_out"},
+    {"err_headers_out", (getter)getreq_recmbr, NULL, "Outgoing headers for errors", "err_headers_out"},
+    {"subprocess_env", (getter)getreq_recmbr, NULL, "Subprocess environment", "subprocess_env"},
+    {"notes", (getter)getreq_recmbr, NULL, "Notes", "notes"},
     /* XXX per_dir_config */
     /* XXX request_config */
     /* XXX htaccess */
@@ -1147,11 +1190,6 @@ static PyGetSetDef request_getsets[] = {
 #define OFF(x) offsetof(requestobject, x)
 
 static struct PyMemberDef request_members[] = {
-    {"headers_in",         T_OBJECT,    OFF(headers_in),        RO},
-    {"headers_out",        T_OBJECT,    OFF(headers_out),       RO},
-    {"err_headers_out",    T_OBJECT,    OFF(err_headers_out),   RO},
-    {"subprocess_env",     T_OBJECT,    OFF(subprocess_env),    RO},
-    {"notes",              T_OBJECT,    OFF(notes),             RO},
     {"_content_type_set",  T_INT,       OFF(content_type_set),  RO},
     {"phase",              T_OBJECT,    OFF(phase),             RO},
     {"extension",          T_STRING,    OFF(extension),         RO},
