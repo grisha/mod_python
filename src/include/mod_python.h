@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.21 2002/08/30 18:25:56 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.22 2002/09/02 21:26:03 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -121,6 +121,9 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define SLASH '/'
 #define SLASH_S "/"
 #endif
+/* used in python_directive_handler */
+#define SILENT 0
+#define NOTSILENT 1
 
 /* structure to hold interpreter data */
 typedef struct {
@@ -137,7 +140,7 @@ typedef struct {
     apr_hash_t   *hlists; /* hlists for every phase */
     apr_hash_t   *in_filters;
     apr_hash_t   *out_filters;
-} py_dir_config;
+} py_config;
 
 /* register_cleanup info */
 typedef struct

@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.71 2002/08/30 18:25:52 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.72 2002/09/02 21:25:59 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -216,7 +216,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
  *      NOTE: This function will release lock
  */
 
-static void release_interpreter() 
+static void release_interpreter(void) 
 {
     PyThreadState *tstate = PyThreadState_Get();
 #ifdef WITH_THREAD
@@ -358,6 +358,28 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
 }
 
 /**
+ ** python_create_config
+ **
+ *      Called by create_dir_config and create_srv_config
+ */
+
+static py_config *python_create_config(apr_pool_t *p)
+{
+    py_config *conf = 
+        (py_config *) apr_pcalloc(p, sizeof(py_config));
+
+    conf->authoritative = 1;
+    conf->options = apr_table_make(p, 4);
+    conf->directives = apr_table_make(p, 4);
+    conf->hlists = apr_hash_make(p);
+    conf->in_filters = apr_hash_make(p);
+    conf->out_filters = apr_hash_make(p);
+
+    return conf;
+}
+
+
+/**
  ** python_create_dir_config
  **
  *      Allocate memory and initialize the strucure that will
@@ -369,10 +391,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
 static void *python_create_dir_config(apr_pool_t *p, char *dir)
 {
 
-    py_dir_config *conf = 
-        (py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
-
-    conf->authoritative = 1;
+    py_config *conf = python_create_config(p);
 
     /* make sure directory ends with a slash */
     if (dir && (dir[strlen(dir) - 1] != SLASH))
@@ -380,11 +399,20 @@ static void *python_create_dir_config(apr_pool_t *p, char *dir)
     else
         conf->config_dir = apr_pstrdup(p, dir);
 
-    conf->options = apr_table_make(p, 4);
-    conf->directives = apr_table_make(p, 4);
-    conf->hlists = apr_hash_make(p);
-    conf->in_filters = apr_hash_make(p);
-    conf->out_filters = apr_hash_make(p);
+    return conf;
+}
+
+/**
+ ** python_create_srv_config
+ **
+ *      Allocate memory and initialize the strucure that will
+ *      hold configuration parametes.
+ */
+
+static void *python_create_srv_config(apr_pool_t *p, server_rec *srv)
+{
+
+    py_config *conf = python_create_config(p);
 
     return conf;
 }
@@ -394,14 +422,14 @@ static void *python_create_dir_config(apr_pool_t *p, char *dir)
  **
  */
 
-static void *python_merge_dir_config(apr_pool_t *p, void *current_conf, 
-                                     void *new_conf)
+static void *python_merge_config(apr_pool_t *p, void *current_conf, 
+                                 void *new_conf)
 {
 
-    py_dir_config *merged_conf = 
-        (py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
-    py_dir_config *cc = (py_dir_config *) current_conf;
-    py_dir_config *nc = (py_dir_config *) new_conf;
+    py_config *merged_conf = 
+        (py_config *) apr_pcalloc(p, sizeof(py_config));
+    py_config *cc = (py_config *) current_conf;
+    py_config *nc = (py_config *) new_conf;
 
     apr_hash_index_t *hi;
     char *key;
@@ -483,9 +511,9 @@ static void *python_merge_dir_config(apr_pool_t *p, void *current_conf,
 static const char *python_directive(cmd_parms *cmd, void * mconfig, 
                                     char *key, const char *val)
 {
-    py_dir_config *conf;
+    py_config *conf;
    
-    conf = (py_dir_config *) mconfig;
+    conf = (py_config *) mconfig;
     apr_table_set(conf->directives, key, val);
     
     return NULL;
@@ -526,11 +554,9 @@ static void python_directive_hl_add(apr_pool_t *p,
  *
  */
 
-static const char *python_directive_handler(cmd_parms *cmd, void * mconfig, 
+static const char *python_directive_handler(cmd_parms *cmd, py_config* conf, 
                                             char *key, const char *val, int silent)
 {
-    py_dir_config *conf;
-    
     /* a handler may be restricted to certain file type by 
      * extention using the "| .ext1 .ext2" syntax. When this
      * is the case, we will end up with a directive concatenated
@@ -542,8 +568,6 @@ static const char *python_directive_handler(cmd_parms *cmd, void * mconfig,
 
     const char *exts = val;
     val = ap_getword(cmd->pool, &exts, '|');
-
-    conf = (py_dir_config *) mconfig;
 
     if (*exts == '\0') {
         python_directive_hl_add(cmd->pool, conf->hlists, key, val,
@@ -581,9 +605,9 @@ static const char *python_directive_handler(cmd_parms *cmd, void * mconfig,
 static const char *python_directive_flag(void * mconfig, 
                                          char *key, int val)
 {
-    py_dir_config *conf;
+    py_config *conf;
 
-    conf = (py_dir_config *) mconfig;
+    conf = (py_config *) mconfig;
 
     if (val) {
         apr_table_set(conf->directives, key, "1");
@@ -603,18 +627,17 @@ static const char *python_directive_flag(void * mconfig,
  *      The pointer to request object is stored in req->request_config.
  */
 
-static requestobject *get_request_object(request_rec *req)
+static requestobject *get_request_object(request_rec *req, const char *interp_name, char *phase)
 {
     py_req_config *req_config;
-    requestobject *request_obj;
-    PyThreadState *_save;
+    requestobject *request_obj = NULL;
 
     /* see if there is a request object already */
     req_config = (py_req_config *) ap_get_module_config(req->request_config,
                                                         &python_module);
 
     if (req_config) {
-        return req_config->request_obj;
+        request_obj = req_config->request_obj;
     }
     else {
         if ((req->path_info) && 
@@ -625,10 +648,12 @@ static requestobject *get_request_object(request_rec *req)
             /* take out the slash */
             req->path_info[i - 1] = 0;
 
-            _save = PyEval_SaveThread();
+            Py_BEGIN_ALLOW_THREADS
             ap_add_cgi_vars(req);
-            PyEval_RestoreThread(_save);
+            Py_END_ALLOW_THREADS
+
             request_obj = (requestobject *)MpRequest_FromRequest(req);
+            if (!request_obj) return NULL;
 
             /* put the slash back in */
             req->path_info[i - 1] = SLASH; 
@@ -639,10 +664,12 @@ static requestobject *get_request_object(request_rec *req)
         } 
         else 
         { 
-            _save = PyEval_SaveThread();
+            Py_BEGIN_ALLOW_THREADS
             ap_add_cgi_vars(req);
-            PyEval_RestoreThread(_save);
+            Py_END_ALLOW_THREADS
+
             request_obj = (requestobject *)MpRequest_FromRequest(req);
+            if (!request_obj) return NULL;
         }
 
         /* store the pointer to this object in request_config */
@@ -655,10 +682,21 @@ static requestobject *get_request_object(request_rec *req)
         apr_pool_cleanup_register(req->pool, (void *)req, 
                                   python_cleanup_handler, 
                                   apr_pool_cleanup_null);
-
-        /* XXX why no incref here? */
-        return request_obj;
     }
+    /* make a note of which subinterpreter we're running under */
+    if (interp_name)
+        request_obj->interpreter = apr_pstrdup(req->pool, interp_name);
+    else
+        request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
+
+    /* make a note of which phase we are in right now */
+    Py_XDECREF(request_obj->phase);
+    if (phase)
+        request_obj->phase = PyString_FromString(phase);
+    else
+        request_obj->phase = PyString_FromString("");
+
+    return request_obj;
 }
 
 /**
@@ -671,7 +709,7 @@ static requestobject *get_request_object(request_rec *req)
  *      is specified, then its a connection handler.
  */
 
-static const char *select_interp_name(request_rec *req, conn_rec *con, py_dir_config *conf, 
+static const char *select_interp_name(request_rec *req, conn_rec *con, py_config *conf, 
                                       hl_entry *hle, const char *fname, int is_input)
 {
     const char *s;
@@ -752,9 +790,9 @@ static int python_handler(request_rec *req, char *phase)
     PyObject *resultobject = NULL;
     interpreterdata *idata;
     requestobject *request_obj;
-    py_dir_config * conf;
+    py_config * conf;
     int result;
-    const char * interpreter = NULL;
+    const char *interp_name = NULL;
     const char *ext;
     hl_entry *hle = NULL;
     hl_entry *dynhle = NULL;
@@ -762,7 +800,7 @@ static int python_handler(request_rec *req, char *phase)
     py_req_config *req_conf;
 
     /* get configuration */
-    conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, 
+    conf = (py_config *) ap_get_module_config(req->per_dir_config, 
                                                   &python_module);
     /* get file extension */
     if (req->filename) {        /* filename is null until after transhandler */
@@ -795,30 +833,16 @@ static int python_handler(request_rec *req, char *phase)
     }
     
     /* determine interpreter to use */
-    interpreter = select_interp_name(req, NULL, conf, hle, NULL, 0);
+    interp_name = select_interp_name(req, NULL, conf, hle, NULL, 0);
 
     /* get/create interpreter */
-    idata = get_interpreter(interpreter, req->server);
+    idata = get_interpreter(interp_name, req->server);
 
     if (!idata)
         return HTTP_INTERNAL_SERVER_ERROR;
     
     /* create/acquire request object */
-    request_obj = get_request_object(req);
-
-    /* 
-     * make a note of which subinterpreter we're running under.
-     * this information is used by register_cleanup()
-     */
-    
-    if (interpreter)
-        request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
-    else
-        request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
-
-    /* make a note of which phase we are in right now */
-    Py_XDECREF(request_obj->phase);
-    request_obj->phase = PyString_FromString(phase);
+    request_obj = get_request_object(req, interp_name, phase);
 
     /* create a hahdler list object */
     request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
@@ -957,9 +981,75 @@ static apr_status_t python_cleanup_handler(void *data)
 static apr_status_t python_connection(conn_rec *con)
 {
 
-    /* nothing here yet */
+    PyObject *resultobject = NULL;
+    interpreterdata *idata;
+    connobject *conn_obj;
+    py_config * conf;
+    int result;
+    const char *interp_name = NULL;
+    hl_entry *hle = NULL;
 
-    return DECLINED;
+    /* get configuration */
+    conf = (py_config *) ap_get_module_config(con->base_server->module_config, 
+                                                  &python_module);
+
+    /* is there a handler? */
+    hle = (hl_entry *)apr_hash_get(conf->hlists, "PythonConnectionHandler", 
+                                   APR_HASH_KEY_STRING);
+
+    if (! hle) {
+        /* nothing to do here */
+        return DECLINED;
+    }
+    
+    /* determine interpreter to use */
+    interp_name = select_interp_name(NULL, con, conf, hle, NULL, 0);
+
+    /* get/create interpreter */
+    idata = get_interpreter(interp_name, con->base_server);
+
+    if (!idata)
+        return HTTP_INTERNAL_SERVER_ERROR;
+    
+    /* create connection object */
+    conn_obj = (connobject*) MpConn_FromConn(con);
+
+    /* create a hahdler list object */
+    conn_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
+
+    /* 
+     * Here is where we call into Python!
+     * This is the C equivalent of
+     * >>> resultobject = obCallBack.Dispatch(request_object, phase)
+     */
+    resultobject = PyObject_CallMethod(idata->obcallback, "ConnectionDispatch", "O", 
+                                       conn_obj);
+     
+    /* release the lock and destroy tstate*/
+    release_interpreter();
+
+    if (! resultobject) {
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server, 
+                     "python_connection: ConnectionDispatch() returned nothing.");
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+    else {
+        /* Attempt to analyze the result as a string indicating which
+           result to return */
+        if (! PyInt_Check(resultobject)) {
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server, 
+                         "python_connection: ConnectionDispatch() returned non-integer.");
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
+        else 
+            result = PyInt_AsLong(resultobject);
+    } 
+
+    /* clean up */
+    Py_XDECREF(resultobject);
+
+    /* return the translated result (or default result) to the Server. */
+    return result;
 }
 
 /**
@@ -977,8 +1067,8 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     PyObject *resultobject = NULL;
     interpreterdata *idata;
     requestobject *request_obj;
-    py_dir_config * conf;
-    const char * interpreter = NULL;
+    py_config * conf;
+    const char * interp_name = NULL;
     request_rec *req;
     filterobject *filter;
     python_filter_ctx *ctx;
@@ -1006,31 +1096,22 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     }
         
     /* get configuration */
-    conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, 
+    conf = (py_config *) ap_get_module_config(req->per_dir_config, 
                                                   &python_module);
 
     /* determine interpreter to use */
-    interpreter = select_interp_name(req, NULL, conf, NULL, f->frec->name, is_input);
+    interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, is_input);
 
     /* get/create interpreter */
-    idata = get_interpreter(interpreter, req->server);
+    idata = get_interpreter(interp_name, req->server);
    
     if (!idata)
         return HTTP_INTERNAL_SERVER_ERROR;
 
     /* create/acquire request object */
-    request_obj = get_request_object(req);
-
-    /* 
-     * make a note of which subinterpreter we're running under.
-     * this information is used by register_cleanup()
-     */
+    request_obj = get_request_object(req, interp_name, 
+                                     is_input?"PythonInputFilter":"PythonOutputFilter");
     
-    if (interpreter)
-        request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
-    else
-        request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
-
     /* the name of python function to call */
     if (is_input)
         fh = apr_hash_get(conf->in_filters, f->frec->name, APR_HASH_KEY_STRING);
@@ -1063,20 +1144,6 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     else {
         /* clean up */
         Py_XDECREF(resultobject);
-
-        /* if this is a PEEK */
-        /*
-          if (mode == AP_MODE_PEEK) {
-          if (APR_STATUS_IS_SUCCESS(filter->rc) && 
-          filter->bytes_written == 0) {
-        */
-        /* if the filter wrote no data, 
-           there must not be any left */
-        /*
-          return APR_EOF;
-          }
-          }
-        */
     }
     return filter->rc;
 
@@ -1130,10 +1197,10 @@ static apr_status_t python_output_filter(ap_filter_t *f,
 static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig, 
                                           const char *module) 
 {
-    py_dir_config *conf;
+    py_config *conf;
 
     /* get config */
-    conf = (py_dir_config *) mconfig;
+    conf = (py_config *) mconfig;
 
 #ifdef WITH_THREAD  
     PyEval_AcquireLock();
@@ -1162,7 +1229,15 @@ static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig,
  */
 static const char *directive_PythonPath(cmd_parms *cmd, void *mconfig, 
                                         const char *val) {
-    return python_directive(cmd, mconfig, "PythonPath", val);
+
+    const char *rc = python_directive(cmd, mconfig, "PythonPath", val);
+
+    if (!rc) {
+        py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                               &python_module);
+        return python_directive(cmd, conf, "PythonPath", val);
+    }
+    return rc;
 }
 
 /**
@@ -1173,7 +1248,14 @@ static const char *directive_PythonPath(cmd_parms *cmd, void *mconfig,
  */
 static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig, 
                                                const char *val) {
-    return python_directive(cmd, mconfig, "PythonInterpreter", val);
+    const char *rc = python_directive(cmd, mconfig, "PythonInterpreter", val);
+
+    if (!rc) {
+        py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                               &python_module);
+        return python_directive(cmd, conf, "PythonInterpreter", val);
+    }
+    return rc;
 }
 
 /**
@@ -1184,7 +1266,14 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
  */
 static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
                                          int val) {
-    return python_directive_flag(mconfig, "PythonDebug", val);
+    const char *rc = python_directive_flag(mconfig, "PythonDebug", val);
+
+    if (!rc) {
+        py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                               &python_module);
+        return python_directive_flag(conf, "PythonDebug", val);
+    }
+    return rc;
 }
 
 /**
@@ -1196,7 +1285,14 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
 
 static const char *directive_PythonInterpPerDirective(cmd_parms *cmd, 
                                                       void *mconfig, int val) {
-    return python_directive_flag(mconfig, "PythonInterpPerDirective", val);
+    const char *rc = python_directive_flag(mconfig, "PythonInterpPerDirective", val);
+
+    if (!rc) {
+        py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                               &python_module);
+        return python_directive_flag(conf, "PythonInterpPerDirective", val);
+    }
+    return rc;
 }
 
 /**
@@ -1220,7 +1316,14 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
 
 static const char *directive_PythonAutoReload(cmd_parms *cmd, 
                                               void *mconfig, int val) {
-    return python_directive_flag(mconfig, "PythonAutoReload", val);
+    const char *rc = python_directive_flag(mconfig, "PythonAutoReload", val);
+
+    if (!rc) {
+        py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                               &python_module);
+        return python_directive_flag(conf, "PythonAutoReload", val);
+    }
+    return rc;
 }
 
 /**
@@ -1235,13 +1338,16 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
                                           const char *key, const char *val)
 {
 
-    py_dir_config *conf;
+    py_config *conf;
 
-    conf = (py_dir_config *) mconfig;
+    conf = (py_config *) mconfig;
+    apr_table_set(conf->options, key, val);
+
+    conf = ap_get_module_config(cmd->server->module_config,
+                                &python_module);
     apr_table_set(conf->options, key, val);
 
     return NULL;
-
 }
 
 /**
@@ -1265,54 +1371,65 @@ static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
 
 static const char *directive_PythonAccessHandler(cmd_parms *cmd, void *mconfig, 
                                                  const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, NOTSILENT);
 }
 static const char *directive_PythonAuthenHandler(cmd_parms *cmd, void *mconfig, 
                                                  const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonAuthenHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonAuthenHandler", val, NOTSILENT);
 }
 static const char *directive_PythonAuthzHandler(cmd_parms *cmd, void *mconfig, 
                                                 const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, NOTSILENT);
 }
 static const char *directive_PythonCleanupHandler(cmd_parms *cmd, void *mconfig, 
                                                   const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, NOTSILENT);
 }
 static const char *directive_PythonConnectionHandler(cmd_parms *cmd, void *mconfig, 
                                                      const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonConnectionHandler", val, 0);
+    py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                           &python_module);
+    return python_directive_handler(cmd, conf, "PythonConnectionHandler", val, NOTSILENT);
 }
 static const char *directive_PythonFixupHandler(cmd_parms *cmd, void *mconfig, 
                                                 const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonFixupHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonFixupHandler", val, NOTSILENT);
 }
 static const char *directive_PythonHandler(cmd_parms *cmd, void *mconfig, 
                                            const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonHandler", val, NOTSILENT);
 }
 static const char *directive_PythonHeaderParserHandler(cmd_parms *cmd, void *mconfig, 
                                                        const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, NOTSILENT);
 }
 static const char *directive_PythonInitHandler(cmd_parms *cmd, void *mconfig,
                                                const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonInitHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonInitHandler", val, NOTSILENT);
 }
 static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
                                                  const char *val) {
 
-    /* This handler explodes into all other handlers */
-    python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonTransHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonInitHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonLogHandler", val, 1);
-    python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, 1);
+    /* 
+     * This handler explodes into all other handlers, but their absense will be
+     * silently ignored.
+     */
+    py_config *srv_conf = ap_get_module_config(cmd->server->module_config,
+                                               &python_module);
+
+    python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonTransHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonInitHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonLogHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, SILENT);
+
+    python_directive_handler(cmd, srv_conf, "PythonConnectionHandler", val, SILENT);
+
     return NULL;
 }
 static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd, 
@@ -1322,7 +1439,7 @@ static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd,
     if (strchr((char *)val, '|'))
         return "PythonPostReadRequestHandler does not accept \"| .ext\" syntax.";
 
-    return python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val,0);
+    return python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val,NOTSILENT);
 }
 
 static const char *directive_PythonTransHandler(cmd_parms *cmd, void *mconfig, 
@@ -1330,26 +1447,26 @@ static const char *directive_PythonTransHandler(cmd_parms *cmd, void *mconfig,
     if (strchr((char *)val, '|'))
         return "PythonTransHandler does not accept \"| .ext\" syntax.";
 
-    return python_directive_handler(cmd, mconfig, "PythonTransHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonTransHandler", val, NOTSILENT);
 }
 static const char *directive_PythonTypeHandler(cmd_parms *cmd, void *mconfig, 
                                                const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, NOTSILENT);
 }
 static const char *directive_PythonLogHandler(cmd_parms *cmd, void *mconfig, 
                                               const char *val) {
-    return python_directive_handler(cmd, mconfig, "PythonLogHandler", val, 0);
+    return python_directive_handler(cmd, mconfig, "PythonLogHandler", val, NOTSILENT);
 }
 static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig, 
                                                const char *handler, const char *name) {
 
-    py_dir_config *conf;
+    py_config *conf;
     py_filter_handler *fh;
     
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
 
-    conf = (py_dir_config *) mconfig;
+    conf = (py_config *) mconfig;
 
     fh = (py_filter_handler *) apr_pcalloc(cmd->pool, sizeof(py_filter_handler));
     fh->handler = (char *)handler;
@@ -1367,13 +1484,13 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
 
 static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig, 
                                                 const char *handler, const char *name) {
-    py_dir_config *conf;
+    py_config *conf;
     py_filter_handler *fh;
  
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
 
-    conf = (py_dir_config *) mconfig;
+    conf = (py_config *) mconfig;
     
     fh = (py_filter_handler *) apr_pcalloc(cmd->pool, sizeof(py_filter_handler));
     fh->handler = (char *)handler;
@@ -1428,7 +1545,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     PyObject *sys, *path, *dirstr;
     interpreterdata *idata;
     int i;
-    const char *interpreter;
+    const char *interp_name;
 
     /*
      * Cleanups registered first will be called last. This will
@@ -1456,10 +1573,10 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
             char *dir = elts[i].val;
 
             /* Note: PythonInterpreter has no effect */
-            interpreter = dir;
+            interp_name = dir;
 
             /* get interpreter */
-            idata = get_interpreter(interpreter, s);
+            idata = get_interpreter(interp_name, s);
 
             if (!idata)
                 return;
@@ -1701,9 +1818,9 @@ module python_module =
 {
     STANDARD20_MODULE_STUFF,
     python_create_dir_config,      /* per-directory config creator */
-    python_merge_dir_config,       /* dir config merger */ 
-    NULL,                          /* server config creator */ 
-    NULL,                          /* server config merger */ 
+    python_merge_config,           /* dir config merger */ 
+    python_create_srv_config,      /* server config creator */ 
+    python_merge_config,           /* server config merger */ 
     python_commands,               /* command table */ 
     python_register_hooks          /* register hooks */
 };
