@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.13 2003/08/05 19:28:26 grisha Exp $
+ * $Id: psp_parser.l,v 1.14 2003/08/08 22:44:26 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -81,6 +81,7 @@
 %x PYCODE
 %x INDENT
 %x DIR
+%x COMMENT
 
 %%
 
@@ -114,6 +115,10 @@
 
 <TEXT>"<%@" {     /* directive */
     BEGIN DIR;
+}
+
+<TEXT>"<%--" {    /* comment */
+    BEGIN COMMENT;
 }
 
 <TEXT>\r\n|\n {
@@ -242,6 +247,10 @@
 }
 
 <DIR>"%>" {
+    BEGIN TEXT;
+}
+
+<COMMENT>"--%>" {
     BEGIN TEXT;
 }
 
