@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.7 2000/06/08 12:42:31 grisha Exp $ -->
+<!-- $Id: directives.html,v 1.8 2000/06/20 15:02:04 grisha Exp $ -->
 
 <html>
   <head>
@@ -77,14 +77,22 @@ be time consuming and should not be done at the request processing
 time, e.g. initializing a database connection.
 
 <p>
-The actual import takes place at child process initialization, so the
+The import takes place at child process initialization, so the
 module will actually be imported once for every child process spawned.
 
 <p>
-Note that the module will be imported within the subinterpreter
-according with the directory name specified by the &lt;Directory&gt; 
-directive. For all other subinterpreters, the module will not appear
-imported.
+Note that at the time when the import takes place, the configuration
+is not completely read yet, so all other directives, including <a
+href="#PythonInterpeter">PythonInterpreter</a> have no effect on the
+behaviour of modules imported by this directive. Because of this limitation,
+the use of this directive should be limited to situations where it is absolutely
+necessary, and the recommended approach to one-time initializations should be 
+to use the Python import mechanism.
+<p>
+The module will be
+imported within the subinterpreter according with the directory name
+specified by the &lt;Directory&gt; directive. For all other
+subinterpreters, the module will not appear imported.
 
 <hr>
 
@@ -101,7 +109,7 @@ imported.
 <p>
 Forces the subinterpreter name to be <em>name</em>, instead of the
 name assigned by mod_python. Mod_python names subinterpreters by using
-full path of a directory thereby guaranteeing uniqueness. By using
+full path of a directory thereby guaranteeing uniqueness per directory. By using
 this directive, scripts located in different directories and that would 
 by default be executed in different
 subinterpreters, can be forced to execute in the same subinterpreter.
@@ -129,15 +137,15 @@ execute in different subinterpreters as opposed to the default policy
 where scripts effected by the same Handler directive execute in the
 same subinterpreter, even if they are in different directories.
 <p>
-Let's say you have a
+For example, assume there is a
 <code>/directory/subdirectory</code>. <code>/directory</code> has an
 .htaccess file with a PythonHandler directive.
 <code>/directory/subdirectory</code> doesn't have an .htacess. By
 default, scripts in <code>/directory</code> and
 <code>/directory/subdirectory</code> would execute in the same
-interpreter based on the directory where PythonHandler was
-encountered.  With PythonInterpPerDirectory, there would be two
-different interpreters, one for each directory.
+interpreter based on the directory where PythonHandler was encountered
+(<code>/directory</code>).  With PythonInterpPerDirectory, there would
+be two different interpreters, one for each directory.
 
 <hr>
 
@@ -336,6 +344,30 @@ within the scripts.
       This routine is called to check the authentication information sent with
       the request (such as looking up the user in a database and verifying that
       the [encrypted] password sent matches the one in the database).
+    <p>
+      To obtain the username, use <code>req.connection.user</code>. To obtain
+      the password entered by the user, use the <code>req.get_basic_auth_pw()</code>
+      function.
+    <p>
+      A return of <code>apache.OK</code> means the authentication succeeded. A
+      return of <code>apache.HTTP_UNAUTHORIZED</code> with most browser will 
+      bring up the password dialog box again. A return of 
+      <code>apache.HTTP_FORBIDDEN</code> will usually show the error on the
+      browser and not bring up the password dialog again. <code>HTTP_FORBIDDEN</code>
+      should be used when authentication succeeded, but the user is not permitted to
+      access a particular URL.
+    <p>
+      An example authentication handler might look like this:
+      <pre>
+    def authenhandler(req):
+
+        user = req.connection.user     
+        pw = req.get_basic_auth_pw()
+        if user == "spam" and pw == "eggs":
+            return apache.OK
+        else:
+            return apache.HTTP_UNAUTHORIZED
+    </pre>
 
 <hr>
 <h2><a name="PythonAuthzHandler">PythonAuthzHandler</a></h2>
@@ -423,7 +455,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Thu Jun  8 08:34:55 EDT 2000
+Last modified: Tue Jun 20 09:55:56 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

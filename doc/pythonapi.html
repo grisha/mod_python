@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.2 2000/05/13 02:22:36 grisha Exp $ -->
+<!-- $Id: pythonapi.html,v 1.3 2000/06/20 15:02:04 grisha Exp $ -->
 
 <html>
   <head>
@@ -10,8 +10,23 @@
   <body bgcolor="white">
     <h1>Python API</h1>
 
+    <hr>
 
-    <h3>Multiple Interpreters</h3>
+    <ul>
+      <li><a href="#subinterpreters">Multiple Interpreters</a>
+      <li><a href="#handler">Overview of a Handler</a>
+      <li><a href="#apachemodule">Apache module</a>
+	<ul>
+	  <li><a href="#table">Table Object</a>
+	  <li><a href="#request">Request Object</a>
+	  <li><a href="#connection">Connection Object</a>
+	  <li><a href="#server">Server Object</a>
+	</ul>
+    </ul>
+
+    <hr>
+
+    <a name="subinterpreters"><h3>Multiple Interpreters</h3></a>
 
     <blockquote>
 
@@ -20,7 +35,7 @@
       run from command line.
       <p>
 	Python C API provides the ability to create <em>subinterpreters</em>. A more
-	detailed description of a subintepreter is given in the documentation for the
+	detailed description of a subinterpreter is given in the documentation for the
 	<a href="http://www.python.org/doc/current/api/initialization.html#l2h-439">Py_NewInterpreter</a> 
 	function. For this discussion, it will suffice to say that each
 	subinterpreter has its own separate namespace, not accessible from other
@@ -40,30 +55,8 @@
 
     </blockquote>
 
-    <h3>Internal Callback Object</h4>
 
-    <blockquote>
-
-      The Apache server interfaces with the Python interpreter via a callback
-      object <code>obCallBack</code>. When a subinterpreter is created, an instance of
-      <code>obCallBack</code> is created in this subinterpreter. Interestingly, 
-      <code>obCallBack</code> is not written in C, it is written in Python and the code
-      for it is in the <code>apache</code> module. Mod_python only uses the C API to 
-      import <code>apache</code> and then instantiate <code>obCallBack</code>,
-      storing a reference to the instance in the interpreter dictionary described above.
-      Thus, the values in the interpreter dictionary are callback object instances.
-      <p>
-	When a request handler is invoked by Apache, mod_python uses the
-	<code>obCallBack</code> reference to call its method <code>Dispatch</code>, 
-	passing it the name of the handler being invoked as a string. 
-      <p>
-	The <code>Dispatch</code> method then does the rest of the work of importing
-	the user module, resolving the callable object in it and calling it passing it
-	a <code>request</code> object.
-
-    </blockquote>
-
-    <h3>Overview of a handler</h3>
+    <a name="handler"><h3>Overview of a handler</h3></a>
     
     <blockquote>
       A <em>handler</em> is a function that processes a particular
@@ -152,10 +145,10 @@
 	Client data, such as POST requests, can be read by using the 
 	<code>req.read()</code> function.
       <p>
-	<em>NOTE:</em>The current working directory of the process in which a handler
-	is executed is that of the Apache Python*Handler directive in effect. If the
-	directive was specified in a server config file outside any &lt;Directory&gt;,
-	then the current working directory could be anything.
+	<em>NOTE:</em>The directory of the Apache Python*Handler in
+	effect is prepended to the Python Path. If the directive was
+	specified in a server config file outside any
+	&lt;Directory&gt;, then the directory is unknown and not prepended.
       <p>
 	An example of a minimalistic handler might be:
 <pre>	  from mod_python import apache
@@ -167,7 +160,7 @@
 	      return apache.OK</pre>
     </blockquote>
 
-    <h3>apache module</h3>
+    <a name="apachemodule"><h3>apache module</h3></a>
 
     <blockquote>
 
@@ -213,7 +206,7 @@
       <b>make_table()</b><br>
 	Returns a new empty <code>table</code> object.
 
-      <h4>Table Object</h4>
+      <a name="table"><h4>Table Object</h4></a>
 
       The <code>table</code> object is a Python mapping to the Apache <code>
 	<a href="http://dev.apache.org/apidoc/apidoc_table.html">table</a>
@@ -229,115 +222,450 @@
 	object are actual mappings to the Apache structures, so changing the Python
 	table also changes the underlying Apache table.
 
-      <h4>Request Object</h4>
+      <a name="request"><h4>Request Object</h4></a>
 
       The <code>request</code> object is a Python mapping to the Apache <code>
 	<a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a>
       </code> structure.
       <p>
-	When a handler is invoked, it is always passed a single argument - the 
-	<code>request</code> object. Here is an outline of the most important
+	When a handler is invoked, it is always passed a single
+	argument - the <code>request</code> object. Here are the
 	attributes of the <code>request</code> object:
+
+      <h4>Functions</h4>
+      
       <blockquote>
 
-	<h4>Functions</h4>
+	<dl>
+	  
+	  <dt><b>send_http_header()</b>
+	  <dd>
+	    Starts the output from the request by sending
+	    the HTTP headers. This function has no effect when called more than
+	    once within the same request. Any manipulation of 
+	    <code>request.headers_out</code> after this function has been called is 
+	    pointless since the headers have already been sent to the client.
 
-	<b>send_http_header()</b><br>
-	Starts the output from the request by sending
-	the HTTP headers. This function has no effect when called more than
-	once within the same request. Any manipulation of 
-	<code>request.headers_out</code> after this function has been called is 
-	pointless since the headers have already been sent to the client.
-	<p>
-	  <b>get_basic_auth_pw()</b><br>
-	  Returns a string containing the password when basic authentication is used.
-	<p>
-	  <b>write(string)</b><br>
-	  Writes <em>string</em> directly to the client, then flushes the buffer.
-	<p>
-	  <b>read()</b><br>
-	  Reads directly from the client, returning a string with the data read. When
-	  there is nothing more to read, None is returned.
-	<p>
-	  <b>get_config()</b><br>
-	  Returns a reference to the <code>table</code> object containing the 
-	  configuration in effect for this request. The table has directives as keys,
-	  and their values, if any, as values.
-	<p>
-	  <b>get_options()</b><br>
-	  Returns a reference to the <code>table</code> object containing the options
-	  set by the PythonOption directives.
-	<p>
-	  <b>get_dirs()</b><br> Returns a reference to the
-	  <code>table</code> object keyed by directives currently in
-	  effect and having directory names of where the particular
-	  directive was last encountered as values. For every key in
-	  the table returned by get_config(), there will be a key in
-	  this table. If the directive was in one of the server config
-	  files outside of any &lt;Directory&gt;, then the value will
-	  be an empty string.
-	<p>
-	  <b>add_common_vars()</b><br>
-	  Calls the Apache 
-	  <a href="http://dev.apache.org/apidoc/apidoc_ap_add_common_vars.html">ap_add_common_vars</a> function. After a call to this function, <code>request.subprocess_env</code> will contain a lot of CGI information.
+	  <dt><br><b>get_basic_auth_pw()</b>
+	  <dd>
+	    Returns a string containing the password when basic authentication is used.
 
-	  <h4>Other Members</h4>
+	  <dt><br><b>write(string)</b>
+	  <dd>
+	    Writes <em>string</em> directly to the client, then flushes the buffer.
 
-	The request object contains most of the members of the underlying
-	<code><a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a></code>.
-	Only the most important or frequently used ones are mentioned here.
-	<p>
-	  <b>status</b><br>
-	  An integer, whose value will be used in building the status line of the
-	  HTTP reply headers. Normally, there is no reason to change this. The correct
-	  way to provide status is to return the status code from the handler.
-	<p>
-	  <b>content_type</b><br>
-	  A string, representing the response content type.
-	<p>
-	  <b>headers_in</b><br>
-	  A <code>table</code> object containing the headers send by the client.
-	<p>
-	  <b>headers_out</b>
-	  A <code>table</code> object representing the headers to be sent to the
-	  client. Note that manipulating this table after the 
-	  <code>request.send_http_headers()</code> has been called is meaningless,
-	  since the headers have already gone out to the client.
-	<p>
-	  <b>connection</b>
-	  A <code>connection</code> object associated with this request.
-	<p>
-	  <b>subprocess_env</b><br>
-	  A <code>table</code> representing the subprocess environment. See also
-	  <code>request.add_common_vars()</code>.
-	<p>
+	  <dt><br><b>read(len)</b>
+	  <dd>
+	    Reads <em>len</em> bytes directly from the client, returning a string with 
+	    the data read. When there is nothing more to read, None is returned. To
+	    find out how much there is to read, use the <code>Content-length</code>
+	    header sent by the client, for example:
+	    <pre>
+            len = int(req.headers_in["content-length"])
+            form_data = req.read(len)
+	    </pre>
+
+	  <dt><br><b>get_config()</b>
+	  <dd>
+	    Returns a reference to the <code>table</code> object containing the 
+	    configuration in effect for this request. The table has directives as keys,
+	    and their values, if any, as values.
+
+	  <dt><br><b>get_options()</b>
+	  <dd>
+	    Returns a reference to the <code>table</code> object containing the options
+	    set by the PythonOption directives.
+
+	  <dt><br><b>get_dirs()</b>
+	  <dd>
+	    Returns a reference to the
+	    <code>table</code> object keyed by directives currently in
+	    effect and having directory names of where the particular
+	    directive was last encountered as values. For every key in
+	    the table returned by get_config(), there will be a key in
+	    this table. If the directive was in one of the server config
+	    files outside of any &lt;Directory&gt;, then the value will
+	    be an empty string.
+	    
+	  <dt><br><b>add_common_vars()</b>
+	  <dd>
+	    Calls the Apache 
+	    <a href="http://dev.apache.org/apidoc/apidoc_ap_add_common_vars.html">ap_add_common_vars</a>
+	    function. After a call to this function,
+	    <code>request.subprocess_env</code> will contain a lot of
+	    CGI information.
+	    
+	</dl>
 
       </blockquote>
 
-      <h4>Connection Object</h4>
+      <h4>Other Members</h4>
 
-      The <code>connection</code> object is a Python mapping to the Apache <code>
-      <a href="http://dev.apache.org/apidoc/apidoc_conn_rec.html">conn_rec</a>
-      </code> structure.
+      <blockquote>
 
-      <h4>Server Object</h4>
+	The request object contains most of the members of the underlying
+	<code><a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a></code>.
+
+	<dl>
+
+	  <dt><b>connection</b> <em>connection object, RO</em> 
+	  <dd>
+	    A <code>connection</code> object associated with this request. See 
+	    <a href="#connection">Connection Object</a> below for details.
+	    
+	  <dt><br><b>server</b> <em>server object, RO</em>
+	  <dd>
+	    A <code>server</code> object associate with this request. See
+	    <a href="#server">Server Object</a> below for details.
+	    
+	  <dt><br><b>next</b> <em>request object, RO</em>
+	  <dd>
+	    If this is an internal redirect, the request object we redirect to.
+
+	  <dt><br><b>prev</b> <em>request object, RO</em>
+	  <dd>
+	    If this is an internal redirect, the request object we redirect from.
+
+	  <dt><br><b>main</b> <em>request object, RO</em>
+	  <dd>
+	    If this is a sub-request, pointer to the main request.
+
+	  <dt><br><b>the_request</b> <em>string, RO</em>
+	  <dd>
+	    First line of the request.
+
+	  <dt><br><b>assbackwards</b> <em>int, RO</em>
+	  <dd>
+	    Is this an HTTP/0.9 &quot;simple&quot; request?
+
+	  <dt><br><b>header_only</b> <em>int, RO</em>
+	  <dd>
+	    HEAD request, as opposed to GET.
+
+	  <dt><br><b>protocol</b> <em>string, RO</em>
+	  <dd>
+	    Protocol, as given by the client, or &quot;HTTP/0.9&quot;
+
+	  <dt><br><b>proto_num</b> <em>int, RO</em>
+	  <dd>
+	    Number version of protocol; 1.1 = 1001
+
+	  <dt><br><b>hostname</b> <em>string, RO</em>
+	  <dd>
+	    Host, as set by full URI or Host:
+
+	  <dt><br><b>request_time</b> <em>long, RO</em>
+	  <dd>
+	    When request started.
+
+	  <dt><br><b>status_line</b> <em>string, RO</em>
+	  <dd>
+	    Status line. E.g. &quot;200 OK&quot;.
+	    
+	  <dt><br><b>status</b> <em>int, RW</em>
+	  <dd>
+	    An integer, whose value will be used in building the status line of the
+	    HTTP reply headers. Normally, there is no reason to change this. The correct
+	    way to provide status is to return the status code from the handler.
+	    
+	  <dt><br><b>method</b> <em>string, RO</em>
+	  <dd>
+	    Method - GET, HEAD, POST, etc.
+
+	  <dt><br><b>method_number</b> <em>int, RO</em>
+	  <dd>
+	    Method number. 
+
+	  <dt><br><b>allowed</b> <em>int, RO</em>
+	  <dd>
+	    A bitvector of the allowed methods. Used in relation with 
+	    METHOD_NOT_ALLOWED.
+
+	  <dt><br><b>sent_body</b> <em>int, RO</em>
+	  <dd>
+	    Byte count in stream is for body. (?)
+
+	  <dt><br><b>bytes_sent</b> <em>long, RO</em>
+	  <dd>
+	    Bytes sent.
+
+	  <dt><br><b>mtime</b> <em>long, RO</em>
+	  <dd>
+	    Time the resource was last modified.
+	    
+	  <dt><br><b>boundary</b> <em>string, RO</em>
+	  <dd>
+	    Multipart/byteranges boundary.
+
+	  <dt><br><b>range</b> <em>string, RO</em>
+	  <dd>
+	    The Range: header.
+
+	  <dt><br><b>clength</b> <em>long, RO</em>
+	  <dd>
+	    The &quot;real&quot; content length. (I.e. can only be used
+	    after the content's been read?)
+
+	  <dt><br><b>remaining</b> <em>long, RO</em>
+	  <dd>
+	    Bytes left to read. (Only makes sense inside a read operation.)
+	    
+	  <dt><br><b>read_length</b> <em>long, RO</em>
+	  <dd>
+	    Bytes that have been read.
+
+	  <dt><br><b>read_body</b> <em>int, RO</em>
+	  <dd>
+	    How the request body should be read. (?)
+
+	  <dt><br><b>read_chunked</b> <em>int, RO</em>
+	  <dd>
+	    Read chunked transfer coding.
+
+	  <dt><br><b>headers_in</b>
+	  <dd>
+	    A <code>table</code> object containing the headers send by the client.
+
+	  <dt><br><b>headers_out</b>
+	  <dd>
+	    A <code>table</code> object representing the headers to be sent to the
+	    client. Note that manipulating this table after the 
+	    <code>request.send_http_headers()</code> has been called is meaningless,
+	    since the headers have already gone out to the client.
+
+	  <dt><br><b>err_headers_out</b> <em>table</em>
+	  <dd>
+	    These headers get send with the error response, instead of headers_out.
+
+	  <dt><br><b>subprocess_env</b> <em>table</em>
+	  <dd>
+	    A <code>table</code> representing the subprocess environment. See also
+	    <code>request.add_common_vars()</code>.
+
+	  <dt><br><b>notes</b> <em>table</em>
+	  <dd>
+	    A place-holder for request-specific information to be used by 
+	    modules.
+	   
+	  <dt><br><b>content_type</b> <em>string, RW</em>
+	  <dd>
+	    A string, representing the response content type.
+
+	  <dt><br><b>headers_out</b> <em>table</em>
+	  <dd>
+	    Headers going out to the client.
+	    
+	  <dt><br><b>handler</b> <em>string, RO</em>
+	  <dd>
+	    The hame of the handler currently being processed. In all
+	    cases with mod_python, this should be &quot;python-program&quot;.
+
+	  <dt><br><b>content_encoding</b> <em>string, RO</em>
+	  <dd>
+	    Content encoding
+
+	  <dt><br><b>vlist_validator</b> <em>string, RO</em>
+	  <dd>
+	    Variant list validator (if negotiated)
+
+	  <dt><br><b>no_cache</b> <em>int, RO</em>
+	  <dd>
+	    No cache.
+
+	  <dt><br><b>no_local_copy</b> <em>int, RO</em>
+	  <dd>
+	    No local copy exists.
+
+	  <dt><br><b>unparsed_uri</b> <em>string, RO</em>
+	  <dd>
+	    The URI without any parsing performed.
+
+	  <dt><br><b>uri</b> <em>string, RO</em>
+	  <dd>
+	    The path portion of the URI
+
+	  <dt><br><b>filename</b> <em>string, RO</em>
+	  <dd>
+	    The file name being requested.
+
+	  <dt><b><br>path_info</b> <em>string, RO</em>
+	  <dd>
+	    What follows after the file name.
+
+	  <dt><b><br>args</b> <em>string, RO</em>
+	  <dd>
+	    QUERY_ARGS, if any
+
+	</dl>
+
+      </blockquote>
+
+      <a name="connection"><h4>Connection Object</h4></a>
+
+      <blockquote>
+
+	The <code>connection</code> object is a Python mapping to the Apache <code>
+	  <a href="http://dev.apache.org/apidoc/apidoc_conn_rec.html">conn_rec</a>
+	</code> structure.
+
+	<dl>
+	  <dt><br><b>server</b> <em>server object, RO</em>
+	  <dd>
+	    A <code>server</code> object associate with this connection. See
+	    <a href="#server">Server Object</a> below for details.
+	    
+	  <dt><br><b>base_server</b> <em>server object, RO</em>
+	  <dd>
+	    A <code>server</code> object for the physical vhost that this connection
+	    came in through.
+
+	  <dt><br><b>child_num</b> <em>int, RO</em>
+	  <dd>
+	    The number of the child handling the request. 
+
+	  <dt><br><b>remote_ip</b> <em>string, RO</em>
+	  <dd>
+	    The IP of the client.
+
+	  <dt><br><b>remote_host</b> <em>string, RO</em>
+	  <dd>
+	    The DNS name of the remote client. <code>None</code> if DNS has not
+	    been checked, &quot;&quot; (empty string) if no name found.
+
+	  <dt><br><b>remote_logname</b> <em>string, RO</em>
+	  <dd>
+	    Remote name if using RFC1413 (ident).
+
+	  <dt><br><b>user</b> <em>string, RO</em>
+	  <dd>
+	    If an authentication check is made, this will hold the user name.
+
+	  <dt><br><b>ap_auth_type</b> <em>string, RO</em>
+	  <dd>
+	    Authentication type. (None == basic?)
+
+	  <dt><br><b>keepalives</b> <em>int, RO</em>
+	  <dd>
+	    The number of times this connection has been used. (?)
+	    
+	</dl>
+
+      </blockquote>
+
+      <a name="server"><h4>Server Object</h4></a>
 
       The <code>request</code> object is a Python mapping to the Apache <code>
 	<a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a>
-      </code> structure.
+      </code> structure. The server structure describes the server (possibly
+      virtual server) serving the request.
 
-      
+      <blockquote>
+
+	<dl>
+	  <dt><b>defn_name</b> <em>string, RO</em>
+	  <dd>
+	    The name of the configuration file where the server definition was found.
+	    
+	  <dt><br><b>defn_line_number</b> <em>int, RO</em>
+	  <dd>
+	    Line number in the config file where the server definition is found.
+	    
+	  <dt><br><b>srm_confname</b> <em>string, RO</em>
+	  <dd>
+	    Location of the srm config file.
+	    
+	  <dt><br><b>server_admin</b> <em>string, RO</em>
+	  <dd>
+	    Value of the <code>ServerAdmin</code> directive.
+	    
+	  <dt><br><b>server_hostname</b> <em>string, RO</em>
+	  <dd>
+	    Value of the <code>ServerName</code> directive.
+	    
+	  <dt><br><b>port</b> <em>int, RO</em>
+	  <dd>
+	    TCP/IP port number.
+	    
+	  <dt><br><b>error_fname</b> <em>string, RO</em>
+	  <dd>
+	    The name of the error log file for this server, if any.
+	    
+	  <dt><br><b>loglevel</b> <em>int, RO</em>
+	  <dd>
+	    Logging level.
+	    
+	  <dt><br><b>is_virtual</b> <em>int, RO</em>
+	  <dd>
+	    1 if this is a virtual server.
+	    
+	  <dt><br><b>timeout</b> <em>int, RO</em>
+	  <dd>
+	    Timeout before we give up.
+
+	  <dt><br><b>keep_alive_timeout</b> <em>int, RO</em>
+	  <dd>
+	    Keep-Alive timeout.
+	    
+	  <dt><br><b>keep_alive_max</b> <em>int, RO</em>
+	  <dd>
+	    Maximum number of requests per Keep-Alive.
+	    
+	  <dt><br><b>keep_alive</b> <em>int, RO</em>
+	  <dd>
+	    1 if keep-alive is on.
+	    
+	  <dt><br><b>send_buffer_size</b> <em>int, RO</em>
+	  <dd>
+	    Size of the TCP send buffer.
+	 
+	  <dt><br><b>path</b> <em>string, RO</em>
+	  <dd>
+	    Path for <code>ServerPath</code>.
+	    
+	  <dt><br><b>pathlen</b> <em>int, RO</em>
+	  <dd>
+	    Path length.
+	    
+	  <dt><br><b>server_uid</b> <em>int, RO</em>
+	  <dd>
+	    UID under which the server is running.
+	    
+	  <dt><br><b>server_gid</b> <em>int, RO</em>
+	  <dd>
+	    GID under which the server is running.
+	    
+	</dl>
+	
+      </blockquote>
+
+      <h3>Internal Callback Object</h4>
+
+    <blockquote>
+
+      The Apache server interfaces with the Python interpreter via a callback
+      object <code>obCallBack</code>. When a subinterpreter is created, an instance of
+      <code>obCallBack</code> is created in this subinterpreter. Interestingly, 
+      <code>obCallBack</code> is not written in C, it is written in Python and the code
+      for it is in the <code>apache</code> module. Mod_python only uses the C API to 
+      import <code>apache</code> and then instantiate <code>obCallBack</code>,
+      storing a reference to the instance in the interpreter dictionary described above.
+      Thus, the values in the interpreter dictionary are callback object instances.
+      <p>
+	When a request handler is invoked by Apache, mod_python uses the
+	<code>obCallBack</code> reference to call its method <code>Dispatch</code>, 
+	passing it the name of the handler being invoked as a string. 
+      <p>
+	The <code>Dispatch</code> method then does the rest of the work of importing
+	the user module, resolving the callable object in it and calling it passing it
+	a <code>request</code> object.
 
     </blockquote>
 
     
-
-
-
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Fri May 12 22:04:45 EDT 2000
+Last modified: Tue Jun 20 10:54:49 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
