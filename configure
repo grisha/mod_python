@@ -1261,7 +1261,7 @@ else
   ;;
   *)
   IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
-  ac_dummy="$PYTHON_BASE"
+  ac_dummy="$PYTHON_SRC"
   for ac_dir in $ac_dummy; do 
     test -z "$ac_dir" && ac_dir=.
     if test -f $ac_dir/$ac_word; then
@@ -1293,39 +1293,64 @@ echo "configure:1293: checking Python version" >&5
 PyVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:3]'`
 echo "$ac_t""$PyVERSION" 1>&6
 
-if test -z "$PYTHON_SRC"; then
-  # find out where Python is installed
-  echo $ac_n "checking Python install prefix""... $ac_c" 1>&6
-echo "configure:1300: checking Python install prefix" >&5
-  PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
-  echo "$ac_t""$PyEXEC_INSTALLDIR" 1>&6
+# check if python is compiled with threads
+echo $ac_n "checking whether Python is compiled with thread support""... $ac_c" 1>&6
+echo "configure:1299: checking whether Python is compiled with thread support" >&5
+PyTHREADS=`$PYTHON_BIN -c "import sys; print \"thread\" in sys.builtin_module_names"`
+if test "$PyTHREADS" = "1"; then
+  echo "$ac_t""yes" 1>&6
+  echo
+  echo "****** WARNING ******"
+  echo "  Python is compiled with thread support. Apache 1.3 does not use threads."
+  echo "  On some systems this will cause problems during compilation, on others "
+  echo "  it may result in unpredictable behaviour of your Apache server. Yet on"
+  echo "  others it will work just fine. The recommended approach is to compile"
+  echo "  Python without thread support in a separate location and specify it with"
+  echo "  --with-python option to this ./configure script."
+  echo 
+else
+  echo "$ac_t""no threads, good" 1>&6
 fi
 
-# set python std library variable
+# find out compiled in install prefix
+echo $ac_n "checking Python install prefix""... $ac_c" 1>&6
+echo "configure:1318: checking Python install prefix" >&5
+PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
+echo "$ac_t""$PyEXEC_INSTALLDIR" 1>&6
+
+# this is where the Python libraries will get installed
 
 PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 
+# set python std library variable
 echo $ac_n "checking what libraries Python was linked with""... $ac_c" 1>&6
-echo "configure:1310: checking what libraries Python was linked with" >&5
+echo "configure:1328: checking what libraries Python was linked with" >&5
 
 if test -z "$PYTHON_SRC"; then
   PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
   PyLIBPL=${PyLIBP}/config
   PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIBSMC=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 else
   PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIBSMC=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 fi
+ 
+## XXX this is a small work around for a weird RedHat problem
+## erase -lieee from library list
+if test -f /etc/redhat-release; then
+  PY_LIBS="`echo $PY_LIBS | sed s/-lieee//`"
+fi
+
 LIBS="${LIBS} ${PY_LIBS}"
 echo "$ac_t""$PY_LIBS" 1>&6
 
 echo $ac_n "checking linker flags used to link Python""... $ac_c" 1>&6
-echo "configure:1329: checking linker flags used to link Python" >&5
+echo "configure:1354: checking linker flags used to link Python" >&5
 
 if test -z "$PYTHON_SRC"; then
   PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
@@ -1340,7 +1365,7 @@ LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 echo "$ac_t""$PY_LDFLAGS" 1>&6
 
 echo $ac_n "checking where Python include files are""... $ac_c" 1>&6
-echo "configure:1344: checking where Python include files are" >&5
+echo "configure:1369: checking where Python include files are" >&5
 
 if test -z "$PYTHON_SRC"; then
   PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
@@ -1350,9 +1375,7 @@ fi
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
 echo "$ac_t""$PY_INCLUDES" 1>&6
 
-# GT STOPPED HERE - 
-# MAKE NEEDS TO INSTALL WHAT WAS COMPILED - DSO OR STATIC, REGARDLESS OF DEFAULT
-# CHECK FOR THREADS?
+### XXX CHECK FOR THREADS?
 
 trap '' 1 2 15
 cat > confcache <<\EOF
