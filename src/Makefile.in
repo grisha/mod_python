@@ -92,7 +92,7 @@ mod_python.so: $(SRCS)
 	@echo 'Compiling for DSO. For static, do "make static"'
 	@echo
 	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS)
-	ln -fs .libs/mod_python.so
+	@ln -fs .libs/mod_python.so > /dev/null 2>&1
 	@echo
 	@echo 'Now su and make install'
 	@echo '  (or, if you only want to perform a partial install,'
