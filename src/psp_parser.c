@@ -494,7 +494,7 @@ static yyconst flex_int16_t yy_chk[47] =
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.c,v 1.10 2003/07/24 17:59:34 grisha Exp $
+ * $Id: psp_parser.c,v 1.11 2003/07/25 05:07:57 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -859,7 +859,7 @@ case 4:
 YY_RULE_SETUP
 #line 107 "psp_parser.l"
 {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\");")); 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     PSP_PG(seen_newline) = 0;
     BEGIN PYCODE;

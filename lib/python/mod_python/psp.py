@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.8 2003/06/13 02:36:23 sterling Exp $
+ # $Id: psp.py,v 1.9 2003/07/25 05:07:57 grisha Exp $
 
 # this trick lets us be used outside apache
 try:
@@ -69,6 +69,7 @@ import sys
 import os
 import marshal
 import new
+from cgi import escape
 
 def parse(filename):
 
@@ -124,14 +125,60 @@ def load_file(filename):
     source = _psp.parse(filename)
     return compile(source, filename, "exec")
 
+def display_code(req):
+    """
+    Display a niceliy HTML-formatted side-by-side of
+    what PSP generated next to orinial code
+    """
 
-def handler(req):
+    source = open(req.filename[:-1]).read().splitlines()
+    pycode = _psp.parse(req.filename[:-1]).splitlines()
+
+    source = [s.rstrip() for s in source]
+    pycode = [s.rstrip() for s in pycode]
+
+    req.write("<table>\n<tr>")
+    for s in ("", "&nbsp;PSP-produced Python Code:",
+              "&nbsp;%s:" % req.filename[:-1]):
+        req.write("<td><tt>%s</tt></td>" % s)
+    req.write("</tr>\n")
+
+    n = 1
+    for line in pycode:
+        req.write("<tr>")
+        left = escape(line).replace("\t", " "*4).replace(" ", "&nbsp;")
+        right = escape(source[n-1]).replace("\t", " "*4).replace(" ", "&nbsp;")
+        for s in ("%d.&nbsp;" % n,
+                  "<font color=blue>%s</font>" % left,
+                  "&nbsp;<font color=green>%s</font>" % right):
+            req.write("<td><tt>%s</tt></td>" % s)
+        req.write("</tr>\n")
+                      
+        n += 1
+    req.write("</table>\n")
+
+    return apache.OK
+
+def run_psp(req):
 
     code = load_file(req.filename)
-
-    req.content_type = "text/html"
 
     # give it it's own locals
     exec code in globals(), {"req":req}
 
     return apache.OK
+
+def handler(req):
+
+    config = req.get_config()
+    debug = config.has_key("PythonDebug")
+    
+    req.content_type = "text/html"
+
+    if debug and req.filename[-1] == "_":
+        return display_code(req)
+    else:
+        return run_psp(req)
+
+
+
