@@ -433,3 +433,33 @@ def authenhandler(req):
 
 \end{itemize}
 
+\section{Your Own 404 Handler\label{tut-404-handler}}
+
+In some cases, you may wish to return a 404 (\constant{HTTP_NOT_FOUND}) or
+other non-200 result from your handler.  There is a trick here.  if you
+return \constant{HTTP_NOT_FOUND} from your handler, Apache will handle
+rendering an error page.  This can be problematic if you wish your handler
+to render it's own error page.
+
+In this case, you need to set \code{req.status = apache.HTTP_NOT_FOUND},
+render your page, and then \code{return(apache.OK)}:
+
+\begin{verbatim}
+   from mod_python import apache
+
+   def handler(req):
+      if req.filename[-17:] == 'apache-error.html':
+         #  make Apache report an error and render the error page
+         return(apache.HTTP_NOT_FOUND)
+      if req.filename[-18:] == 'handler-error.html':
+         #  use our own error page
+         req.status = apache.HTTP_NOT_FOUND
+         pagebuffer = 'Page not here.  Page left, not know where gone.'
+      else:
+         #  use the contents of a file
+         pagebuffer = open(req.filename, 'r').read()
+
+      #  fall through from the latter two above
+      req.write(pagebuffer)
+      return(apache.OK)
+\end{verbatim}
