@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.32 2003/08/01 01:53:13 grisha Exp $
+ # $Id: tests.py,v 1.33 2003/08/08 14:50:09 grisha Exp $
  #
 
 # mod_python tests
@@ -792,15 +792,13 @@ def Session_Session(req):
 
     from mod_python import Session, Cookie
 
-    tmp = req.args
-
-    s = Session.Session(req, tmp)
+    s = Session.Session(req)
     if s.is_new():
         s.save()
         
     cookies = Cookie.get_cookies(req)
     if cookies.has_key(Session.COOKIE_NAME) and s.is_new():
-        req.write(str(cookies[Session.COOKIE_NAME])+" "+tmp)
+        req.write(str(cookies[Session.COOKIE_NAME]))
     else:
         req.write("test ok")
 

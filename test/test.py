@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.35 2003/08/04 23:24:01 grisha Exp $
+ # $Id: test.py,v 1.36 2003/08/08 14:50:09 grisha Exp $
  #
 
 """
@@ -924,10 +924,8 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing Session.Session"
 
-        tempf = tempfile.mktemp()
-
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
-        conn.putrequest("GET", "/tests.py?%s" % tempf, skip_host=1)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "test_Session_Session:%s" % PORT)
         conn.endheaders()
         response = conn.getresponse()
@@ -939,7 +937,7 @@ class PerRequestTestCase(unittest.TestCase):
             self.fail("session did not set a cookie")
 
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
-        conn.putrequest("GET", "/tests.py?%s" % tempf, skip_host=1)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "test_Session_Session:%s" % PORT)
         conn.putheader("Cookie", setcookie)
         conn.endheaders()
