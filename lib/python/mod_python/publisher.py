@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.31 2003/08/22 02:22:44 grisha Exp $
+ # $Id: publisher.py,v 1.32 2003/09/29 20:21:54 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -163,7 +163,7 @@ def handler(req):
         
         result = util.apply_fs_data(object, req.form, req=req)
 
-    if result:
+    if result or req.bytes_sent > 0:
         result = str(result)
 
         # unless content_type was manually set, we will attempt
@@ -182,6 +182,7 @@ def handler(req):
             req.write("")
         return apache.OK
     else:
+        req.log_error("mod_python.publisher: %s returned nothing." % `object`)
         return apache.HTTP_INTERNAL_SERVER_ERROR
 
 def process_auth(req, object, realm="unknown", user=None, passwd=None):
