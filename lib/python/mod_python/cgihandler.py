@@ -1,9 +1,9 @@
 """
  (C) Gregory Trubetskoy, 1998 <grisha@ispol.com>
 
- XXX This handler leaks memory whith scripts processing large
- POST operations with cgi.py.
- 
+ $Id: cgihandler.py,v 1.3 2000/05/13 02:22:37 grisha Exp $
+
+ This file is part of mod_python. See COPYRIGHT file for details.
 
 """
 

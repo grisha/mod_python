@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.1 2000/05/11 22:54:39 grisha Exp $ -->
+<!-- $Id: pythonapi.html,v 1.2 2000/05/13 02:22:36 grisha Exp $ -->
 
 <html>
   <head>
@@ -27,7 +27,7 @@
 	subinterpreters.
 	<p>
 	At server start-up or mod_python initialization time, mod_python 
-	initializes the global interpeter. The global interpreter contains a 
+	initializes the global interpreter. The global interpreter contains a 
 	dictionary of subinterpreters. Initially, this dictionary is empty. With
 	every hit, as needed, subinterpreters are created, and references to them
 	are stored in this dictionary. The key, also known as <em>interpreter name</em>,
@@ -54,7 +54,7 @@
       Thus, the values in the interpreter dictionary are callback object instances.
       <p>
 	When a request handler is invoked by Apache, mod_python uses the
-	<code>obCallBack</code> referenece to call its method <code>Dispatch</code>, 
+	<code>obCallBack</code> reference to call its method <code>Dispatch</code>, 
 	passing it the name of the handler being invoked as a string. 
       <p>
 	The <code>Dispatch</code> method then does the rest of the work of importing
@@ -68,7 +68,7 @@
     <blockquote>
       A <em>handler</em> is a function that processes a particular
       stage of a request.  Apache processes requests in stages - read
-      the request, processs headers, provide content, etc. For evey
+      the request, process headers, provide content, etc. For every
       stage, it will call handlers, provided by either the Apache core
       or one of its modules, such as mod_python, which passes control
       to functions provided b the user and written in Python.  A
@@ -81,10 +81,10 @@
 	Every handler can return
 	<ul>
 	<li><code>apache.OK</code>, meaning this stage of the request was handled by this
-	  handler and no errors occured.
+	  handler and no errors occurred.
 	<li><code>apache.DECLINED</code>, meaning this handler refused to handle this
 	  stage of the request and Apache needs to look for another handler.
-	<li><code>apache.<em>HTTP_ERROR</em></code>, meaning an HTTP error occured. 
+	<li><code>apache.<em>HTTP_ERROR</em></code>, meaning an HTTP error occurred. 
 	    <code><em>HTTP_ERROR</em></code> can be:
 	  <pre>
                 HTTP_CONTINUE                     = 100
@@ -171,7 +171,7 @@
 
     <blockquote>
 
-    The Python Application Programmer interface to Apache internals is conatined 
+    The Python Application Programmer interface to Apache internals is contained 
       in a module appropriately named <code>apache</code>, located 
       inside the <code>mod_python</code> package. This module provides some important
       objects that map to Apache internal structures, as well as some useful functions,
@@ -179,7 +179,7 @@
     <p>
       The <code>apache</code> module can only be imported by a script
       running under mod_python. This is because it depends on a
-      builtin module <code>_apache</code> provided by mod_python. It
+      built-in module <code>_apache</code> provided by mod_python. It
       is best imported like this:
 
       <pre>from mod_python import apache</pre>
@@ -225,7 +225,7 @@
 	example, <code>request.header_in</code> and 
 	<code>request.headers_out</code>.
       <p>
-	All the talbles that mod_python provides inside the <code>request</code>
+	All the tables that mod_python provides inside the <code>request</code>
 	object are actual mappings to the Apache structures, so changing the Python
 	table also changes the underlying Apache table.
 
@@ -235,7 +235,7 @@
 	<a href="http://dev.apache.org/apidoc/apidoc_request_rec.html">request_rec</a>
       </code> structure.
       <p>
-	When a handler is envoked, it is always passed a single argument - the 
+	When a handler is invoked, it is always passed a single argument - the 
 	<code>request</code> object. Here is an outline of the most important
 	attributes of the <code>request</code> object:
       <blockquote>
@@ -266,7 +266,7 @@
 	<p>
 	  <b>get_options()</b><br>
 	  Returns a reference to the <code>table</code> object containing the options
-	  set by the PythonOption drectives.
+	  set by the PythonOption directives.
 	<p>
 	  <b>get_dirs()</b><br> Returns a reference to the
 	  <code>table</code> object keyed by directives currently in
@@ -308,7 +308,7 @@
 	  A <code>connection</code> object associated with this request.
 	<p>
 	  <b>subprocess_env</b><br>
-	  A <code>table</code> representing the subprocess environmanet. See also
+	  A <code>table</code> representing the subprocess environment. See also
 	  <code>request.add_common_vars()</code>.
 	<p>
 
@@ -337,7 +337,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Thu May 11 18:27:39 EDT 2000
+Last modified: Fri May 12 22:04:45 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

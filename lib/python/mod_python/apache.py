@@ -2,7 +2,9 @@
 """
   (C) Gregory Trubetskoy <grisha@ispol.com> May 1998, Nov 1998
 
-  $Id: apache.py,v 1.4 2000/05/11 22:54:39 grisha Exp $
+  This file is part of mod_python. See COPYRIGHT file for details.
+
+  $Id: apache.py,v 1.5 2000/05/13 02:22:37 grisha Exp $
 
 """
 
