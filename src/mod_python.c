@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.58 2002/03/04 21:19:17 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.59 2002/03/05 01:43:39 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -261,7 +261,7 @@ apr_status_t python_cleanup(void *data)
  *      Called at Apache mod_python initialization time.
  */
 
-static void python_init(apr_pool_t *p, apr_pool_t *ptemp, 
+static int python_init(apr_pool_t *p, apr_pool_t *ptemp, 
 			apr_pool_t *plog, server_rec *s)
 {
 
@@ -271,7 +271,7 @@ static void python_init(apr_pool_t *p, apr_pool_t *ptemp,
     ap_add_version_component(p, VERSION_COMPONENT);
     
     /* Python version */
-    sprintf(buff, "Python/%s", strtok((char *)Py_GetVersion(), " "));
+    sprintf(buff, "Python/%.200s", strtok((char *)Py_GetVersion(), " "));
     ap_add_version_component(p, buff);
 
     /* initialize global Python interpreter if necessary */
@@ -302,6 +302,7 @@ static void python_init(apr_pool_t *p, apr_pool_t *ptemp,
 	PyEval_ReleaseLock();
 #endif
     }
+    return OK;
 }
 
 /**
