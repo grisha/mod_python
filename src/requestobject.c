@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.50 2003/08/04 14:54:46 grisha Exp $
+ * $Id: requestobject.c,v 1.51 2003/09/09 21:48:01 grisha Exp $
  *
  */
 
@@ -823,10 +823,11 @@ static PyObject * req_write(requestobject *self, PyObject *args)
     if (len > 0 ) {
 
         Py_BEGIN_ALLOW_THREADS
-        ap_rwrite(buff, len, self->request_rec);
-        rc = ap_rflush(self->request_rec);
+	rc = ap_rwrite(buff, len, self->request_rec);
+	if (rc != -1)
+	    rc = ap_rflush(self->request_rec);
         Py_END_ALLOW_THREADS
-            if (rc == EOF) {
+            if (rc == -1) {
                 PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
                 return NULL;
             }
