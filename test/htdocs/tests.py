@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.20 2002/12/02 21:53:11 grisha Exp $
+ # $Id: tests.py,v 1.21 2002/12/18 20:47:02 grisha Exp $
  #
 
 # mod_python tests
@@ -574,6 +574,12 @@ def connectionhandler(conn):
     conn.write("test ok")
 
     return apache.OK
+
+def pipe_ext(req):
+
+    # this is called by publisher
+
+    return "pipe ext"
 
 def _test_table():
 
