@@ -44,7 +44,7 @@
  *
  * hlist.c 
  *
- * $Id: hlistobject.c,v 1.2 2001/11/06 05:06:58 gtrubetskoy Exp $
+ * $Id: hlistobject.c,v 1.3 2001/11/28 05:31:47 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -70,7 +70,7 @@ PyObject *MpHList_FromHLEntry(hl_entry *hle)
 	PyErr_NoMemory();
 
     /* XXX need second arg abort function to report mem error */
-    p = apr_pool_sub_make(NULL, NULL);
+    apr_pool_sub_make(&p, NULL, NULL);
 
     result->pool = p;
     result->head = hlist_copy(p, hle);

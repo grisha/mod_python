@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.56 2001/11/06 05:09:09 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.57 2001/11/28 05:31:47 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -375,17 +375,17 @@ static void *python_merge_dir_config(apr_pool_t *p, void *current_conf,
     apr_table_overlap(merged_conf->options, cc->options,
 		      APR_OVERLAP_TABLES_SET);
 
-    for (hi = apr_hash_first(cc->hlists); hi; hi=apr_hash_next(hi)) {
+    for (hi = apr_hash_first(p, cc->hlists); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
 	apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
     }
 
-    for (hi = apr_hash_first(cc->in_filters); hi; hi=apr_hash_next(hi)) {
+    for (hi = apr_hash_first(p, cc->in_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
 	apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
     }
 
-    for (hi = apr_hash_first(cc->out_filters); hi; hi=apr_hash_next(hi)) {
+    for (hi = apr_hash_first(p, cc->out_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
 	apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
     }
@@ -402,17 +402,17 @@ static void *python_merge_dir_config(apr_pool_t *p, void *current_conf,
     apr_table_overlap(merged_conf->options, nc->options,
 		      APR_OVERLAP_TABLES_SET);
 
-    for (hi = apr_hash_first(nc->hlists); hi; hi=apr_hash_next(hi)) {
+    for (hi = apr_hash_first(p, nc->hlists); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
 	apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
     }
 
-    for (hi = apr_hash_first(nc->in_filters); hi; hi=apr_hash_next(hi)) {
+    for (hi = apr_hash_first(p, nc->in_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
 	apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
     }
 
-    for (hi = apr_hash_first(nc->out_filters); hi; hi=apr_hash_next(hi)) {
+    for (hi = apr_hash_first(p, nc->out_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
 	apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
     }
@@ -1022,7 +1022,7 @@ static apr_status_t python_cleanup_handler(void *data)
 static apr_status_t python_filter(int is_input, ap_filter_t *f, 
 				  apr_bucket_brigade *bb,
 				  ap_input_mode_t mode,
-				  apr_size_t *readbytes) {
+				  apr_off_t *readbytes) {
 
     PyObject *resultobject = NULL;
     interpreterdata *idata;

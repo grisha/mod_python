@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.14 2001/11/06 05:06:58 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.15 2001/11/28 05:31:48 gtrubetskoy Exp $
  *
  */
 
@@ -760,7 +760,6 @@ static struct memberlist request_memberlist[] = {
     {"_content_type_set",  T_INT,       0,                         RO},
     {"handler",            T_STRING,    OFF(handler),              RO},
     {"content_encoding",   T_STRING,    OFF(content_encoding),     RO},
-    {"content_language",   T_STRING,    OFF(content_language),     RO},
     {"content_languages",  T_OBJECT,                                 },
     {"vlist_validator",    T_STRING,    OFF(vlist_validator),      RO},
     {"user",               T_STRING,    OFF(user),                   },
@@ -862,7 +861,7 @@ static PyObject *tuple_from_finfo(apr_finfo_t f)
  *
  */
 
-static PyObject *tuple_from_parsed_uri(uri_components u)
+static PyObject *tuple_from_parsed_uri(apr_uri_t u)
 {
     PyObject *t;
 
