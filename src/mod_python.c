@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.105 2003/10/21 19:11:51 grisha Exp $
+ * $Id: mod_python.c,v 1.106 2003/10/21 20:43:30 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -340,7 +340,13 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     }
     ap_mpm_query(AP_MPMQ_IS_FORKED, &is_forked);
     if (is_forked != AP_MPMQ_NOT_SUPPORTED) {
+        /* XXX This looks strange, and it is. prefork.c seems to use
+           MAX_DAEMON_USED the same way that worker.c uses
+           MAX_DAEMONS (prefork is wrong IMO) */
         ap_mpm_query(AP_MPMQ_MAX_DAEMON_USED, &max_procs);
+        if (max_procs == -1) {
+            ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &max_procs);
+        }
     }
     max_clients = (((max_threads <= 0) ? 1 : max_threads) *
                    ((max_procs <= 0) ? 1 : max_procs));
