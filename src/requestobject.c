@@ -926,6 +926,7 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
         status = ap_send_fd(fd, self->request_rec, offset, 
                             len, &nbytes);
     Py_END_ALLOW_THREADS
+    apr_file_close(fd);
     
     if (status != APR_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
