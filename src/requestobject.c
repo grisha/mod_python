@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.41 2002/12/20 19:27:02 grisha Exp $
+ * $Id: requestobject.c,v 1.42 2002/12/30 20:25:15 grisha Exp $
  *
  */
 
@@ -1012,8 +1012,8 @@ static PyObject *getreq_recmbr_off(requestobject *self, void *name)
 {
     PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
     char *addr = (char *)self->request_rec + md->offset;
-    if (sizeof(apr_off_t) == sizeof(long long)) {
-	long long l = *(long long*)addr;
+    if (sizeof(apr_off_t) == sizeof(LONG_LONG)) {
+	LONG_LONG l = *(LONG_LONG*)addr;
 	return PyLong_FromLongLong(l);
     }
     else {
