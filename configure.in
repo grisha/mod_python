@@ -42,7 +42,7 @@
  # ====================================================================
  #
 
-dnl $Id: configure.in,v 1.12 2001/09/06 20:27:31 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.13 2001/09/06 20:39:04 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -115,6 +115,7 @@ fi
 # if apxs was still not found, then no DSO
 AC_SUBST(LIBEXECDIR)
 AC_SUBST(EPRINTF_HACK)
+AC_SUBST(FLOATDIDF_HACK)
 if test -z "$APXS"; then
   AC_MSG_WARN([**** apxs was not found, DSO compilation will not be available.])
   AC_MSG_WARN([**** You can use --with-apxs to specify where your apxs is.])
@@ -139,6 +140,7 @@ else
     AC_MSG_CHECKING([for gcc on Solaris possible missing _eprintf problem])
     if test "$CC" = "gcc"; then
       EPRINTF_HACK="_eprintf.o"
+      FLOATDIDF_HACK="_floatdidf.o"
     fi
     AC_MSG_RESULT("done")
   fi
