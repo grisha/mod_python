@@ -16,6 +16,19 @@ import unittest
 import commands
 import urllib
 
+def findUnusedPort():
+
+    # bind to port 0 which makes the OS find the next
+    # unused port.
+
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+
+    return port
+
 class ModPythonTestCase(unittest.TestCase):
 
     def __init__(self, methodName="runTest", configPart=""):
@@ -540,18 +553,27 @@ class ModPythonTestCase(unittest.TestCase):
         if (rsp != "TEST OK"):
             self.fail("test failed")
 
-def findUnusedPort():
+    def test_connectionhandler(self):
 
-    # bind to port 0 which makes the OS find the next
-    # unused port.
+        print "\n* Testing PythonConnectionHandler"
 
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("127.0.0.1", 0))
-    port = s.getsockname()[1]
-    s.close()
+        cfg = "  SetHandler python-program\n" + \
+              "  PythonPath ['%s']+sys.path\n" % PARAMS["document_root"] + \
+              "  PythonConnectionHandler tests::connectionhandler\n"
 
-    return port
+        self.makeConfig(cfg)
+        self.startApache()
+
+        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
+        print "    url: "+url
+
+        f = urllib.urlopen(url)
+        rsp = f.read()
+        f.close()
+        print "    response: ", rsp
+
+        if (rsp != "test ok"):
+            self.fail("test failed")
 
 def suite():
 
@@ -574,6 +596,7 @@ def suite():
     mpTestSuite.addTest(ModPythonTestCase("test_util_fieldstorage"))
     mpTestSuite.addTest(ModPythonTestCase("test_postreadrequest"))
     mpTestSuite.addTest(ModPythonTestCase("test_outputfilter"))
+    mpTestSuite.addTest(ModPythonTestCase("test_connectionhandler"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()

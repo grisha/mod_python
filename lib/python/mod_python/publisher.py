@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.17 2002/08/15 21:46:35 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.18 2002/09/06 22:06:28 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -131,7 +131,7 @@ def handler(req):
     # import module (or reload if needed)
     # the [path] argument tells import_module not to allow modules whose
     # full path is not in [path] or below.
-    module = apache.import_module(module_name, req, [path])
+    module = apache.import_module(module_name, req.get_config(), [path])
 
     # does it have an __auth__?
     realm, user, passwd = process_auth(req, module)
@@ -255,7 +255,8 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
     if found_auth:
 
         if not user:
-            s = 'Basic realm = "%s"' % realm
+            # note that Opera supposedly doesn't like spaces around "=" below
+            s = 'Basic realm="%s"' % realm 
             req.err_headers_out["WWW-Authenticate"] = s
             raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED    
 

@@ -168,6 +168,15 @@ def simplehandler(req):
 
     return apache.OK
 
+def connectionhandler(conn):
+
+    # fake an HTTP response
+    conn.write("HTTP/1.1 200 OK\r\n")
+    conn.write("Content-Length: 7\r\n\r\n")
+    conn.write("test ok")
+
+    return apache.OK
+
 def _test_table():
 
     d = apache.table()

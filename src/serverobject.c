@@ -44,7 +44,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.10 2002/08/19 18:21:32 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.11 2002/09/06 22:06:29 gtrubetskoy Exp $
  *
  */
 
@@ -73,6 +73,21 @@ PyObject * MpServer_FromServer(server_rec *s)
 
     _Py_NewReference(result);
     return (PyObject *)result;
+}
+
+/**
+ ** server.get_config(server self)
+ **
+ *     Returns the config directives set through Python* apache directives.
+ *     unlike req.get_config, this one returns the per-server config
+ */
+
+static PyObject * server_get_config(serverobject *self)
+{
+    py_config *conf =
+        (py_config *) ap_get_module_config(self->server->module_config, 
+                                           &python_module);
+    return MpTable_FromTable(conf->directives);
 }
 
 /**
@@ -138,6 +153,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
 }
 
 static PyMethodDef serverobjectmethods[] = {
+    {"get_config",           (PyCFunction) server_get_config,        METH_NOARGS},
     {"register_cleanup",     (PyCFunction) server_register_cleanup,  METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };

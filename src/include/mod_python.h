@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.22 2002/09/02 21:26:03 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.23 2002/09/06 22:06:29 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -166,12 +166,13 @@ typedef struct
     int transparent;
 } python_filter_ctx;
 
-/* filter handler, used in configuration */
+/* a structure to hold a handler, 
+   used in configuration for filters */
 typedef struct
 {
     char *handler;
     char *dir;
-} py_filter_handler;
+} py_handler;
 
 apr_status_t python_cleanup(void *data);
 static apr_status_t python_cleanup_handler(void *data);
