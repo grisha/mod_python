@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.42 2000/12/13 05:24:08 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.43 2000/12/16 16:22:13 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -494,6 +494,7 @@ static requestobject *get_request_object(request_rec *req)
     requestobject *request_obj;
     char *s;
     char s2[40];
+    PyThreadState *_save;
 
     /* see if there is a request object already */
     /* XXX there must be a cleaner way to do this, atol is slow? */
@@ -513,9 +514,9 @@ static requestobject *get_request_object(request_rec *req)
 	    /* take out the slash */
 	    req->path_info[i - 1] = 0;
 
-	    Py_BEGIN_ALLOW_THREADS;
+	    _save = PyEval_SaveThread();
 	    ap_add_cgi_vars(req);
-	    Py_END_ALLOW_THREADS;
+	    PyEval_RestoreTread(_save);
 	    request_obj = (requestobject *)MpRequest_FromRequest(req);
 
 	    /* put the slash back in */
@@ -524,9 +525,9 @@ static requestobject *get_request_object(request_rec *req)
 	} 
 	else 
 	{ 
-	    Py_BEGIN_ALLOW_THREADS;
+	    _save = PyEval_SaveThread();
 	    ap_add_cgi_vars(req);
-	    Py_END_ALLOW_THREADS;
+	    PyEval_RestoreThread(_save);
 	    request_obj = (requestobject *)MpRequest_FromRequest(req);
 	}
 	
