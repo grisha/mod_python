@@ -1,5 +1,5 @@
 dnl Copyright 2000 Gregory Trubetskoy <grisha@ispol.com>
-dnl $Id: configure.in,v 1.4 2000/10/18 20:01:28 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.5 2000/10/22 03:32:44 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -93,6 +93,8 @@ fi
 
 # check for --with-apache
 AC_SUBST(AP_SRC)
+AC_SUBST(AP_SRC_OWN)
+AC_SUBST(AP_SRC_GRP)
 AC_MSG_CHECKING(for --with-apache)
 AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
 [
@@ -104,6 +106,10 @@ AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
   fi
   AP_SRC=$withval
   AP_INCLUDES="-I${withval}/src/include -I${withval}/src/os/unix"
+
+  # note who owns the apache source directory
+  AP_SRC_OWN="`ls -ld $AP_SRC | awk '{print $3}'`"
+  AP_SRC_GRP="`ls -ld $AP_SRC | awk '{print $4}'`"
 ],
 AC_MSG_RESULT(no))
 
@@ -186,8 +192,8 @@ if test -z "$PYTHON_SRC"; then
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 else
   PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 fi
  

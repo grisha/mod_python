@@ -49,12 +49,14 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.3 2000/10/20 22:35:59 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.4 2000/10/22 03:32:44 gtrubetskoy Exp $
 
 @SET_MAKE@
-INSTALL=@INSTALL@
 LIBEXECDIR=@LIBEXECDIR@
 AP_SRC=@AP_SRC@
+AP_SRC_OWN=@AP_SRC_OWN@
+AP_SRC_GRP=@AP_SRC_GRP@
+INSTALL=@INSTALL@
 PY_STD_LIB=@PY_STD_LIB@
 
 all: @ALL@
@@ -102,11 +104,11 @@ install_static:	static
 	@echo
 	@echo "Performing static instalation."
 	@echo
-	$(INSTALL) -d $(AP_SRC)/src/modules/python
-	$(INSTALL) src/libpython.a $(AP_SRC)/src/modules/python/libpython.a
-	$(INSTALL) src/Makefile.libdir $(AP_SRC)/src/modules/python/Makefile.libdir
-	$(INSTALL) src/Makefile.tmpl $(AP_SRC)/src/modules/python/Makefile.tmpl
-	$(INSTALL) src/libpython.module $(AP_SRC)/src/modules/python/libpython.module
+	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) -d $(AP_SRC)/src/modules/python
+	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/libpython.a $(AP_SRC)/src/modules/python/libpython.a
+	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/Makefile.libdir $(AP_SRC)/src/modules/python/Makefile.libdir
+	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/Makefile.tmpl $(AP_SRC)/src/modules/python/Makefile.tmpl
+	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/libpython.module $(AP_SRC)/src/modules/python/libpython.module
 	@$(MAKE) install_py_lib
 	@echo
 	@echo "Now cd into $(AP_SRC) and reconfigure and rebuild apache with"
