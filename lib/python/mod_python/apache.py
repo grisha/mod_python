@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.32 2001/05/23 02:49:43 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.33 2001/05/24 02:53:53 gtrubetskoy Exp $
 
 import sys
 import string
@@ -188,8 +188,7 @@ class CallBack:
 
                     # call the object
                     if config.has_key("PythonEnablePdb"):
-                        if config["PythonEnablePdb"]:
-                            result = pdb.runcall(object, req)
+                        result = pdb.runcall(object, req)
                     else:
                         result = object(req)
 
@@ -240,7 +239,7 @@ class CallBack:
                                           htype=htype, hname=handler, debug=debug)
             finally:
                 exc_traceback = None
-
+        print "RRRR", result
 	return result
 
 
@@ -284,7 +283,7 @@ class CallBack:
         finally:
             # erase the traceback
             etb = None
-            return DONE
+            # we do not return anything
 
 def import_module(module_name, req=None, path=None):
     """ 
@@ -298,7 +297,7 @@ def import_module(module_name, req=None, path=None):
     if req:
         config = req.get_config()
         autoreload = not config.has_key("PythonNoReload")
-        debug = not config.has_key("PythonDebug")
+        debug = config.has_key("PythonDebug")
 
     # try to import the module
 
@@ -308,16 +307,10 @@ def import_module(module_name, req=None, path=None):
     if  not autoreload:
 
         # import module
-        parts = string.split(module_name, '.')
-        for i in range(len(parts)):
-            f, p, d = imp.find_module(parts[i], path)
-            try:
-                mname = string.join(parts[:i+1], ".")
-                module = imp.load_module(mname, f, p, d)
-            finally:
-                if f: f.close()
-            if hasattr(module, "__path__"):
-                path = module.__path__
+        module = __import__(module_name)
+        components = string.split(module_name, '.')
+        for cmp in components[1:]:
+            module = getattr(module, cmp)
 
     else:
 
