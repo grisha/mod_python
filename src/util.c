@@ -44,7 +44,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.7 2002/08/28 16:50:11 gtrubetskoy Exp $
+ * $Id: util.c,v 1.8 2002/09/07 03:53:04 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -369,12 +369,15 @@ char * get_addhandler_extensions(request_rec *req)
     module *mod_mime = find_module("mod_mime.c");
     mconf = (mime_dir_config *) ap_get_module_config(req->per_dir_config, mod_mime);
 
-    for (hi = apr_hash_first(req->pool, mconf->extension_mappings); hi; hi = apr_hash_next(hi)) {
-        apr_hash_this(hi, &key, NULL, &val);
-        ei = (extension_info *)val;
-        if (ei->handler) 
-            if (strcmp("python-program", ei->handler) == 0) 
-                result = apr_pstrcat(req->pool, (char *)key, " ", result, NULL);
+    if (mconf->extension_mappings) {
+
+        for (hi = apr_hash_first(req->pool, mconf->extension_mappings); hi; hi = apr_hash_next(hi)) {
+            apr_hash_this(hi, &key, NULL, &val);
+            ei = (extension_info *)val;
+            if (ei->handler) 
+                if (strcmp("python-program", ei->handler) == 0) 
+                    result = apr_pstrcat(req->pool, (char *)key, " ", result, NULL);
+        }
     }
 
     return result;

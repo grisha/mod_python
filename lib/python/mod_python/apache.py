@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.55 2002/09/07 02:56:48 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.56 2002/09/07 03:53:04 gtrubetskoy Exp $
 
 import sys
 import traceback
@@ -473,7 +473,10 @@ def import_module(module_name, config=None, path=None):
 
         # Import the module
         if debug:
-            s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
+            if path:
+                s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
+            else:
+                s = "mod_python: (Re)importing module '%s'" % module_name
             _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
 
         parts = module_name.split('.')
