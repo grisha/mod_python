@@ -1,3 +1,6 @@
+Sep  2 2000 -   Added PythonInterpPerServer directive. Fixed a bug relating
+		to ap_add_version_component.
+
 Aug 28 2000 -	Added Richard Barret's patch that gives python socket module 
 		behaviour from req.connection.local_addr and remote_addr.
 

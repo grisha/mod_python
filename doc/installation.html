@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: installation.html,v 1.8 2000/07/28 18:47:36 gtrubetskoy Exp $ -->
+<!-- $Id: installation.html,v 1.9 2000/09/04 15:54:56 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -168,7 +168,13 @@ The installation involves the following steps:
       this procedure and hopefully come up with a simple script that
       will compile a DSO on your system. Until then, however, these
       notes is all I have:
+      <p>
+	First, 
+	  <pre>
+    $ cp mod_python-xxx/src/mod_python.c apache_1.3.12/src/modules/extra/
+	  </pre>
 
+Then:
 <pre>
 
     On Linux, I was able to get dso to work the following way:
@@ -177,7 +183,7 @@ The installation involves the following steps:
      standard Debian Python development package installed]
 
     1. cd src/modules/extra
-    2. axps -I /usr/local/include/python1.5 -c mod_python.c \
+    2. apxs -I /usr/local/include/python1.5 -c mod_python.c \
             /usr/local/lib/python1.5/config/libpython1.5.a -lpthread
       (You don't nead -lpthread if your Python is compiled without threads)
 
@@ -192,7 +198,7 @@ The installation involves the following steps:
     2. cd Python-1.5.2
     3. ./configure
     4. make
-    5. now cd to the mod_python directory 
+    5. now cd to the apache source directory
     6. cd src/modules/extra
     7. apxs -I ~/src/Python-1.5.2/Include -I ~/src/Python-1.5.2 \
        -c mod_python.c ~/src/Python-1.5.2/libpython1.5.a -lm
@@ -301,7 +307,7 @@ The installation involves the following steps:
     <hr>
 <!-- Created: Wed May 10 09:06:54 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Wed Jul 19 16:08:47 EDT 2000
+Last modified: Mon Sep  4 10:52:19 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
