@@ -159,7 +159,7 @@ import traceback
 import time
 import os
 import stat
-import exceptions
+import imp
 import types
 import _apache
 
@@ -393,9 +393,9 @@ def import_module(module_name, req=None):
 
         if  not autoreload:
 
-            # we could use __import__ but it can't handle packages
-            exec "import " + module_name
-            module = eval(module_name)
+            # import module
+            fd, path, desc = imp.find_module(module_name)
+            module = imp.load_module(module_name, fd, path, desc)
 
         else:
 
@@ -415,8 +415,10 @@ def import_module(module_name, req=None):
             else:
 
                 # we could use __import__ but it can't handle packages
-                exec "import " + module_name
-                module = eval(module_name)
+                # GT STOPPED HERE. READ ABOUT PACKAGES AND WHY apache.cgihandler
+                # won't work inside apache package
+                fd, path, desc = imp.find_module(module_name)
+                module = imp.load_module(module_name, fd, path, desc)
 
             # find out the last modification time
             # but only if there is a __file__ attr
@@ -449,8 +451,9 @@ def import_module(module_name, req=None):
 
         if debug :
             # pass it on
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise exc_type, exc_value
+            traceblock = sys.exc_info()
+            raise PROG_TRACEBACK, traceblock
+
         else:
             # show and HTTP error
             raise SERVER_RETURN, HTTP_INTERNAL_SERVER_ERROR
@@ -663,7 +666,6 @@ def init():
 ## Some functions made public
 make_table = _apache.make_table
 log_error = _apache.log_error
-
 
 ## Some constants
 
