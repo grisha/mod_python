@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.13 2000/06/04 18:42:45 grisha Exp $
+ * $Id: mod_python.c,v 1.14 2000/06/06 12:48:32 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -93,13 +93,10 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.2"
+#define VERSION_COMPONENT "mod_python/2.3"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define INTERP_ATTR "__interpreter__"
-
-/* Are we in single interpreter mode? */
-static int single_mode = 0;
 
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
@@ -109,7 +106,7 @@ static PyObject * interpreters = NULL;
 void python_decref(void *object);
 PyObject * make_obcallback();
 PyObject * tuple_from_array_header(const array_header *ah);
-PyObject * get_obcallback(const char *name, request_rec * req);
+PyObject * get_obcallback(const char *name);
 
 /*********************************
            Python things 
@@ -118,7 +115,7 @@ PyObject * get_obcallback(const char *name, request_rec * req);
   members of _apache module 
  *********************************/
 
-/* froward declarations */
+/* forward declarations */
 static PyObject * log_error(PyObject *self, PyObject *args);
 static PyObject * make_table(PyObject *self, PyObject *args);
 
@@ -1407,22 +1404,22 @@ void python_init(server_rec *s, pool *p)
     char buff[255];
     PyObject *obcallback = NULL;
 
-    /* initialize types */
-    tableobjecttype.ob_type = &PyType_Type;
-    serverobjecttype.ob_type = &PyType_Type;
-    connobjecttype.ob_type = &PyType_Type;
-    requestobjecttype.ob_type = &PyType_Type;
-
-    /* mod_python version */
-    ap_add_version_component(VERSION_COMPONENT);
-
-    /* Python version */
-    sprintf(buff, "Python/%s", strtok((char *)Py_GetVersion(), " "));
-    ap_add_version_component(buff);
-
     /* initialize global Python interpreter if necessary */
     if (! Py_IsInitialized()) 
     {
+
+	/* initialize types */
+	tableobjecttype.ob_type = &PyType_Type;
+	serverobjecttype.ob_type = &PyType_Type;
+	connobjecttype.ob_type = &PyType_Type;
+	requestobjecttype.ob_type = &PyType_Type;
+
+	/* mod_python version */
+	ap_add_version_component(VERSION_COMPONENT);
+
+	/* Python version */
+	sprintf(buff, "Python/%s", strtok((char *)Py_GetVersion(), " "));
+	ap_add_version_component(buff);
 
 	/* initialze the interpreter */
 	Py_Initialize();
@@ -1433,7 +1430,6 @@ void python_init(server_rec *s, pool *p)
 #endif
 	/* create the obCallBack dictionary */
 	interpreters = PyDict_New();
-
 	if (! interpreters) {
 	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
 			 "python_init: PyDict_New() failed! No more memory?");
@@ -1441,7 +1437,13 @@ void python_init(server_rec *s, pool *p)
 	}
 
 	/* make obCallBack for the global interpeter */
-	obcallback = get_obcallback(NULL, NULL);
+	obcallback = get_obcallback(NULL);
+
+	if (!obcallback) {
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
+			 "python_init: get_obcallback returned no obCallBack. Possibly no more memory.");
+	    exit(1);
+	}
 	
 #ifdef WITH_THREAD
 	
@@ -1574,7 +1576,6 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
     }
 
     return NULL;
-
 }
 
 /**
@@ -1628,14 +1629,14 @@ PyObject * make_obcallback()
  *      2. If yes - return it
  *      3. If no - create one doing Python initialization
  *
- *      Lock must be acquired prior to entering this function.
+ *      Python thread state Lock must be acquired prior to entering this function.
  *      This function might make the resulting interpreter's state current,
  *      use PyThreadState_Swap to be sure.
  *
  *      name NULL means use global interpreter.
  */
 
-PyObject * get_obcallback(const char *name, request_rec * req)
+PyObject * get_obcallback(const char *name)
 {
 
     PyObject * obcallback = NULL;
@@ -1644,22 +1645,6 @@ PyObject * get_obcallback(const char *name, request_rec * req)
 
     if (! name)
 	name = "global_interpreter";
-
-    /* 
-     * Note that this is somewhat of a hack because to store 
-     * PyThreadState pointers in a Python object we are
-     * casting PyThreadState * to an integer and back.
-     *
-     * The bad news is that one cannot cast a * to int on systems
-     * where sizeof(void *) != sizeof(int). 
-     *
-     * The good news is that I don't know of any systems where
-     * sizeof(void *) != sizeof(int) except for 16 bit DOS.
-     *
-     * The proper way to do this would be to write a separate
-     * hashable Python type that contains a PyThreadState. At this
-     * point it doesn't seem worth the trouble.
-     */
 
     /* see if one exists by that name */
     obcallback = PyDict_GetItemString(interpreters, (char *) name);
@@ -1671,10 +1656,6 @@ PyObject * get_obcallback(const char *name, request_rec * req)
 	tstate = Py_NewInterpreter();
 
 	if (! tstate) {
-
-	    /* couldn't create an interpreter, this is bad */
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
-			  "get_obcallback: Py_NewInterpreter() returned NULL. No more memory?");
 	    return NULL;
 	}
       
@@ -1753,12 +1734,12 @@ static requestobject *get_request_object(request_rec *req,
     char s2[40];
 
     /* see if there is a request object already */
-    /* XXX there must be a cleaner way to do this, atoi is slow? */
+    /* XXX there must be a cleaner way to do this, atol is slow? */
     /* since tables only understand strings, we need to do some conversion */
     
     s = (char *) ap_table_get(req->notes, "python_request_ptr");
     if (s) {
-	request_obj = (requestobject *) atoi(s);
+	request_obj = (requestobject *) atol(s);
 	return request_obj;
     }
     else {
@@ -1789,11 +1770,19 @@ static requestobject *get_request_object(request_rec *req,
 	
 	/* store the pointer to this object in notes */
 	/* XXX this is not good... */
-	sprintf(s2, "%d", (int) request_obj);
+	sprintf(s2, "%ld", (long) request_obj);
 	ap_table_set(req->notes, "python_request_ptr", s2);
 	return request_obj;
     }
 }
+
+
+/**
+ ** select_intepreter
+ **
+ *      Select the interpeter to use, switch to it. 
+ *      WARNING: This function acquiers the lock!
+ */
 
 /**
  ** python_handler
@@ -1827,29 +1816,25 @@ static int python_handler(request_rec *req, char *handler)
 	interpreter = s;
     }
     else {
-	if (single_mode)
-	    interpreter = NULL;
+	if ((s = ap_table_get(conf->directives, "PythonInterpPerDirectory"))) {
+	    /* base interpreter on directory where the file is found */
+	    if (ap_is_directory(req->filename))
+		interpreter = ap_make_dirstr_parent(req->pool, 
+						    ap_pstrcat(req->pool, req->filename, "/", NULL ));
+	    else
+		interpreter = ap_make_dirstr_parent(req->pool, req->filename);
+	}
 	else {
-	    if ((s = ap_table_get(conf->directives, "PythonInterpPerDirectory"))) {
-		/* base interpreter on directory where the file is found */
-		if (ap_is_directory(req->filename))
-		    interpreter = ap_make_dirstr_parent(req->pool, 
-				 ap_pstrcat(req->pool, req->filename, "/", NULL ));
-		else
-		    interpreter = ap_make_dirstr_parent(req->pool, req->filename);
-	    }
-	    else {
-		/* - default -
-		 * base interpreter name on directory where the handler directive
-		 * was last found. If it was in http.conf, then we will use the 
-		 * global interpreter.
-		 */
-		s = ap_table_get(conf->dirs, handler);
-		if (strcmp(s, "") == 0)
-		    interpreter = NULL;
-		else
-		    interpreter = s;
-	    }
+	    /* - default -
+	     * base interpreter name on directory where the handler directive
+	     * was last found. If it was in http.conf, then we will use the 
+	     * global interpreter.
+	     */
+	    s = ap_table_get(conf->dirs, handler);
+	    if (strcmp(s, "") == 0)
+		interpreter = NULL;
+	    else
+		interpreter = s;
 	}
     }
 
@@ -1859,19 +1844,18 @@ static int python_handler(request_rec *req, char *handler)
 #endif
 
     /* get/create obcallback */
-    obcallback = get_obcallback(interpreter, req);
+    obcallback = get_obcallback(interpreter);
 
     /* we must have a callback object to succeed! */
-    if (!obcallback) 
-    {
+    if (!obcallback) {
 	ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
-		     "python_handler: get_obcallback returned no obCallBack!");
-	return HTTP_INTERNAL_SERVER_ERROR;
+		      "python_handler: get_obcallback returned NULL. No more memory?");
+	return NULL;
     }
 
     /* find __interpreter__ in obCallBack */
     tstate = (PyThreadState *) PyCObject_AsVoidPtr(PyObject_GetAttrString(obcallback, INTERP_ATTR));
-
+    
     /* make this thread state current */
     PyThreadState_Swap(tstate);
 
@@ -1901,7 +1885,7 @@ static int python_handler(request_rec *req, char *handler)
 
     if (! resultobject) {
 	ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req, 
-		     "python_handler: Dispatch() returned nothing.");
+		      "python_handler: Dispatch() returned nothing.");
 	return HTTP_INTERNAL_SERVER_ERROR;
     }
     else {
@@ -1909,7 +1893,7 @@ static int python_handler(request_rec *req, char *handler)
 	   result to return */
 	if (! PyInt_Check(resultobject)) {
 	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req, 
-			 "python_handler: Dispatch() returned non-integer.");
+			  "python_handler: Dispatch() returned non-integer.");
 	    return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	else {
@@ -1959,6 +1943,98 @@ static int python_handler(request_rec *req, char *handler)
 }
 
 /**
+ ** directive_PythonImport
+ **
+ *      This function called whenever PythonImport directive
+ *      is encountered.
+ */
+static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig, 
+					  const char *module) 
+{
+    const char *s; /* general purpose string */
+    py_dir_config *conf;
+    PyObject *obcallback;
+    PyObject *sys, *path, *dot;
+    PyThreadState *tstate;
+    const char *interpreter = NULL;
+    const char *key = "PythonImport";
+
+    /* this directive needs Python to be initialized and may be
+       processed before python_init is called */
+    python_init(cmd->server, cmd->pool);
+
+    /* get config */
+    conf = (py_dir_config *) mconfig;
+
+    /* Append the module to the directive. (ITERATE calls multiple times) */
+    if ((s = ap_table_get(conf->directives, key))) {
+	ap_pstrcat(cmd->pool, s, " ", module);
+    }
+    else {
+	ap_table_set(conf->directives, key, module);
+    }
+
+    /* determine interpreter to use */
+    if ((s = ap_table_get(conf->directives, "PythonInterpreter"))) {
+	/* forced by configuration */
+	interpreter = s;
+    }
+    else { 
+	interpreter = conf->config_dir;
+    }
+    
+#ifdef WITH_THREAD  
+    /* acquire lock */
+    PyEval_AcquireLock();
+#endif
+    
+    /* get/create obcallback */
+    obcallback = get_obcallback(interpreter);
+    
+    /* we must have a callback object to succeed! */
+    if (!obcallback) {
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, cmd->server,
+		      "directive_PythonImport: get_obcallback returned NULL. No more memory?");
+	return NULL;
+    }
+
+    /* find __interpreter__ in obCallBack */
+    tstate = (PyThreadState *) PyCObject_AsVoidPtr(PyObject_GetAttrString(obcallback, INTERP_ATTR));
+    
+    /* make this thread state current */
+    PyThreadState_Swap(tstate);
+
+    /* remember and chdir to the directory where the directive was found */
+    if (conf->config_dir) {
+	ap_table_set(conf->dirs, key, conf->config_dir);
+	chdir(conf->config_dir);
+    }
+    else {
+	ap_table_set(conf->dirs, key, "");
+    }
+
+    /* add '.' to pythonpath */
+    sys = PyImport_ImportModule("sys");
+    path = PyObject_GetAttrString(sys, "path");
+    dot = Py_BuildValue("[s]", ".");
+    PyList_SetSlice(path, 0, 0, dot);
+    Py_DECREF(dot);
+    Py_DECREF(path);
+    Py_DECREF(sys);
+
+    /* now import the specified module */
+    if (! PyImport_ImportModule((char *)module)) {
+	if (PyErr_Occurred())
+	    PyErr_Print();
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, cmd->server,
+		      "directive_PythonImport: error importing %s", module);
+    }
+
+    return NULL;
+
+}
+
+/**
  ** directive_PythonPath
  **
  *      This function called whenever PythonPath directive
@@ -1986,8 +2062,12 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
  *      This function called whenever PythonDebug directive
  *      is encountered.
  */
-static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig) {
-    return python_directive(cmd, mconfig, "PythonDebug", "1");
+static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
+					 const char *val) {
+    if (strcmp(val, "On") == NULL)
+	return python_directive(cmd, mconfig, "PythonDebug", "On");
+    else
+	return python_directive(cmd, mconfig, "PythonDebug", "");
 }
 
 /**
@@ -1998,9 +2078,29 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig) {
  */
 
 static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd, 
-						      void *mconfig) {
-    return python_directive(cmd, mconfig, 
-			    "PythonInterpPerDirectory", "");
+						      void *mconfig, const char* val) {
+    py_dir_config *conf;
+    const char *key = "PythonInterpPerDirectory";
+
+    conf = (py_dir_config *) mconfig;
+
+    if (strcmp(val, "On") == NULL) {
+	ap_table_set(conf->directives, key, val);
+
+	/* remember the directory where the directive was found */
+	if (conf->config_dir) {
+	    ap_table_set(conf->dirs, key, conf->config_dir);
+	}
+	else {
+	    ap_table_set(conf->dirs, key, "");
+	}
+    }
+    else {
+	ap_table_unset(conf->directives, key);
+	ap_table_unset(conf->dirs, key);
+    }
+
+    return NULL;
 }
 
 /**
@@ -2009,10 +2109,32 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
  *      This function called whenever PythonNoReload directive
  *      is encountered.
  */
+
 static const char *directive_PythonNoReload(cmd_parms *cmd, 
-						      void *mconfig) {
-    return python_directive(cmd, mconfig, 
-			    "PythonNoReload", "");
+					    void *mconfig, const char *val) {
+
+    py_dir_config *conf;
+    const char *key = "PythonNoReload";
+    
+    conf = (py_dir_config *) mconfig;
+
+    if (strcmp(val, "On") == NULL) {
+	ap_table_set(conf->directives, key, val);
+
+	/* remember the directory where the directive was found */
+	if (conf->config_dir) {
+	    ap_table_set(conf->dirs, key, conf->config_dir);
+	}
+	else {
+	    ap_table_set(conf->dirs, key, "");
+	}
+    }
+    else {
+	ap_table_unset(conf->directives, key);
+	ap_table_unset(conf->dirs, key);
+    }
+
+    return NULL;
 }
 
 /**
@@ -2028,7 +2150,6 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
 {
 
     py_dir_config *conf;
-    table * options;
 
     conf = (py_dir_config *) mconfig;
     ap_table_set(conf->options, key, val);
@@ -2162,7 +2283,7 @@ command_rec python_commands[] =
 	directive_PythonInterpPerDirectory,         
 	NULL,                                
 	OR_ALL,                         
-	NO_ARGS,                               
+	FLAG,                               
 	"Create subinterpreters per directory rather than per directive."
     },
     {
@@ -2170,7 +2291,7 @@ command_rec python_commands[] =
 	directive_PythonDebug,         
 	NULL,                                
 	OR_ALL,                         
-	NO_ARGS,                               
+	FLAG,                               
 	"Send (most) Python error output to the client rather than logfile."
     },
     {
@@ -2178,7 +2299,7 @@ command_rec python_commands[] =
 	directive_PythonNoReload,         
 	NULL,                                
 	OR_ALL,                         
-	NO_ARGS,                               
+	FLAG,                               
 	"Do not reload already imported modules if they changed."
     },
     {
@@ -2188,6 +2309,14 @@ command_rec python_commands[] =
 	OR_ALL,                                      
 	TAKE2,                                            
 	"Useful to pass custom configuration information to scripts."
+    },
+    {
+	"PythonImport",
+	directive_PythonImport,
+	NULL,
+	ACCESS_CONF,
+	ITERATE,
+	"Modules to be imported when this directive is processed."
     },
     {
 	"PythonPostReadRequestHandler",
