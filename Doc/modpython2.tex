@@ -21,15 +21,17 @@ Python and Apache from source, then you already have everything that's
 needed. However, if you are using prepackaged software (e.g. Linux Red
 Hat RPM, Debian, or Solaris packages from sunsite, etc) then chances
 are, you just have the binaries and not the sources on your
-system. Often, the include files and the libraries are part of
-separate "development" package. If you are not sure whether you have
-all the necessary files, either compile and install Python and Apache
-from source, or refer to the documentation for your system on how to
-get the development packages.
+system. Often, the Apache and Python include files and libraries
+necessary to compile mod_python are part of separate "development"
+package. If you are not sure whether you have all the necessary files,
+either compile and install Python and Apache from source, or refer to
+the documentation for your system on how to get the development
+packages.
 
 \section{Compiling\label{inst-compiling}}
+\indexii{compiling}{mod_python}
 
-There are two ways that this module can be compiled and linked to
+There are two ways in which modules can be compiled and linked to
 Apache - statically, or as a DSO (Dynamic Shared Object).
 
 \dfn{Static} linking is an older approach. With dynamic linking
@@ -37,13 +39,16 @@ available on most platforms it is used less and less. The main
 drawback is that it entails recompiling Apache, which some people
 cannot do for a variety of reasons.
 
-\dfn{DSO} is a more popular approach nowadays. The module gets
-compiled as a shared library that is dynamically loaded by the server
-at run time. A more detailed description of the Apache DSO mechanism
-is available at \url{http://httpd.apache.org/docs-2.0/dso.html}.
+\dfn{DSO} is a more popular approach nowadays and is the recommended
+one for mod_python. The module gets compiled as a shared library that
+is dynamically loaded by the server at run time. 
 
 The advantage of DSO is that a module can be installed without
-recompiling Apache and used as needed. 
+recompiling Apache and used as needed.  A more detailed description of
+the Apache DSO mechanism is available at
+\url{http://httpd.apache.org/docs-2.0/dso.html}.
+
+At this time only DSO is supported by mod_python.
 
 \subsection{Running ./configure\label{inst-configure}}
 \index{./configure}
@@ -70,18 +75,20 @@ $ ./configure --with-apxs=/usr/local/apache/bin/apxs
 \end{verbatim}
 %$ keep emacs happy
 
-\item
-\indexii{./configure}{\longprogramopt{with-apache}}
-Checks for \longprogramopt{with-apache} option. Use this option to
-tell \program{./configure} where the Apache sources are on your
-system. The Apache sources are necessary for static compilation. If
-you do not specify this option, static compilation will not be
-available. Here is an example:
+It is strongly recommended that you do specify this option.
 
-\begin{verbatim}
-$ ./configure --with-apache=../src/apache_1.3.12 --with-apxs=/usr/local/apache/bin/apxs
-\end{verbatim}
-%$ keep emacs happy
+%\item
+%\indexii{./configure}{\longprogramopt{with-apache}}
+%Checks for \longprogramopt{with-apache} option. Use this option to
+%tell \program{./configure} where the Apache sources are on your
+%system. The Apache sources are necessary for static compilation. If
+%you do not specify this option, static compilation will not be
+%available. Here is an example:
+
+%\begin{verbatim}
+%$ ./configure --with-apache=../src/apache_1.3.12 --with-apxs=/usr/local/apache/bin/apxs
+%\end{verbatim}
+%%$ keep emacs happy
 
 \item
 \index{libpython.a}
@@ -90,30 +97,32 @@ Checks your Python version and attempts to figure out where
 your Python binary. By default, it will use the \program{python}
 program found in your \envvar{PATH}.
 
-\indexii{./configure}{\longprogramopt{with-python}}
-If the Python installation on your system is not suitable for
-mod_python (which can be the case if Python is compiled with thread
-support), you can specify an alternative location with the
+\indexii{./configure}{\longprogramopt{with-python}} If the Python
+installation on your system is not suitable or not the one desired for
+mod_python, you can specify an alternative location with the
 \longprogramopt{with-python} options. This option needs to point to
 the root directory of the Python source, e.g.:
 
 \begin{verbatim}
-$ ./configure --with-python=/usr/local/src/Python-2.0
+$ ./configure --with-python=/usr/local/src/Python-2.2.1
 \end{verbatim}                      
 %$ keep emacs happy
 
-Note that the directory needs to contain already configured and
+Note that the directory specified needs to contain already configured and
 compiled Python. In other words, you must at least run \program{./configure} and
-\program{make}.
+\program{make} in this directory.
 
-Also note that while it is possible to point the \longprogramopt{with-python}
-to a version of Python different from the one installed in your standard
-\envvar{PATH}, you will need to have that version of Python installed as well.
-This is because the path to the Python library, which is retrieved from the
-\file{python} binary is going to point to the
-place where Python would be ultimately installed, not the source
-deirectory. Generally, it's best to try to keep the version of Python that
-you use for mod_python the same as the one you use everywhere on the system.
+Also note that while it is possible to point the
+\longprogramopt{with-python} to a version of Python different from the
+one installed in your standard \envvar{PATH}, you will need to have
+that version of Python installed as well.  This is because the path to
+the Python library, which is retrieved from the \file{python} binary
+is going to point to the place where Python would be ultimately
+installed, not the source deirectory. (Consider that until Python is
+installed, the location for third party libraries,
+\filenq{site-packages}, does not exist). Generally, it's best to try
+to keep the version of Python that you use for mod_python the same as
+the one you use everywhere on the system.
 
 \end{itemize}
 
@@ -122,28 +131,29 @@ you use for mod_python the same as the one you use everywhere on the system.
 \begin{itemize}
 
 \item
-If possible, the \program{./configure} script will default to DSO
-compilation, otherwise, it will default to static. To stay with
-whatever \program{./configure} decided, simply run
+%If possible, the \program{./configure} script will default to DSO
+%compilation, otherwise, it will default to static. To stay with
+%whatever \program{./configure} decided, simply run
+Simply run
 \begin{verbatim}
 $ make
 \end{verbatim}
 %$ emacs happy
 
-\indexii{make targets}{static}
-\indexii{make targets}{dso}
+%\indexii{make targets}{static}
+%\indexii{make targets}{dso}
 
-Or, if you would like to be specific, give \program{make} a
-\programopt{dso} or \programopt{static} target:
-\begin{verbatim}
-$ make dso
-\end{verbatim}
-%$ emacs happy
-OR
-\begin{verbatim}
-$ make static
-\end{verbatim}
-%$
+%Or, if you would like to be specific, give \program{make} a
+%\programopt{dso} or \programopt{static} target:
+%\begin{verbatim}
+%$ make dso
+%\end{verbatim}
+%%$ emacs happy
+%OR
+%\begin{verbatim}
+%$ make static
+%\end{verbatim}
+%%$
 
 \end{itemize}
 
@@ -164,11 +174,12 @@ $ su
 \begin{itemize}
 
 \item
-For DSO, this will simply copy the library into your Apache \filenq{libexec}
+%For DSO, this will simply copy the library into your Apache \filenq{libexec}
+This will simply copy the library into your Apache \filenq{libexec}
 directory, where all the other modules are.
 
-\item
-For static, it will copy some files into your Apache source tree.
+%\item
+%For static, it will copy some files into your Apache source tree.
 
 \item
 Lastly, it will install the Python libraries in \filenq{site-packages} and
@@ -177,13 +188,14 @@ compile them.
 \end{itemize} 
 
 \indexii{make targets}{install_py_lib}
-\indexii{make targets}{install_static}
+%\indexii{make targets}{install_static}
 \indexii{make targets}{install_dso}
-\strong{NB:} If you wish to selectively install just the Python libraries,
-the static library or the DSO (which may not always require superuser
+\strong{NB:} If you wish to selectively install just the Python libraries
+%the static library or the DSO (which may not always require superuser
+or the DSO (which may not always require superuser
 privileges), you can use the following \program{make} targets:
-\programopt{install_py_lib},
-\programopt{install_static} and \programopt{install_dso}
+\programopt{install_py_lib} and \programopt{install_dso}
+%\programopt{install_static} and \programopt{install_dso}
 
 \end{itemize}
 
@@ -214,33 +226,29 @@ configuration file:
 AddModule mod_python.c
 \end{verbatim}
 
-\strong{NB:} 
-Some (not all) RedHat Linux users reported that mod_python needs to be
-first in the module list, or Apache will crash.
+%\item
+%If you used the static installation, you now need to recompile Apache: 
 
-\item
-If you used the static installation, you now need to recompile Apache: 
-
-\begin{verbatim}
-$ cd ../src/apache_1.3.12
-$ ./configure --activate-module=src/modules/python/libpython.a
-$ make
-\end{verbatim}
-%$ emacs happy
+%\begin{verbatim}
+%$ cd ../src/apache_1.3.12
+%$ ./configure --activate-module=src/modules/python/libpython.a
+%$ make
+%\end{verbatim}
+%%$ emacs happy
                             
-Or, if you prefer the old "Configure" style, edit
-\filenq{src/Configuration} to have
+%Or, if you prefer the old "Configure" style, edit
+%\filenq{src/Configuration} to have
 
-\begin{verbatim}
-AddModule modules/python/libpython.a
-\end{verbatim}
-then run 
-\begin{verbatim}
-$ cd src
-$ ./Configure
-$ Make
-\end{verbatim}
-%$ emacs happy
+%\begin{verbatim}
+%AddModule modules/python/libpython.a
+%\end{verbatim}
+%then run 
+%\begin{verbatim}
+%$ cd src
+%$ ./Configure
+%$ Make
+%\end{verbatim}
+%%$ emacs happy
 
 \end{itemize}
 
