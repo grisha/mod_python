@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.10 2000/06/11 19:36:43 grisha Exp $
+  $Id: apache.py,v 1.11 2000/06/23 20:29:44 gtrubetskoy Exp $
 
 """
 
@@ -185,6 +185,8 @@ def import_module(module_name, req=None):
     autoreload is on, then the module will be reloaded
     if it has changed since the last import.
     """
+
+    print sys.path
 
     # get the options
     autoreload, debug = 1, None
