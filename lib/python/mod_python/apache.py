@@ -41,10 +41,9 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.53 2002/09/06 22:06:28 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.54 2002/09/07 02:43:49 gtrubetskoy Exp $
 
 import sys
-import string
 import traceback
 import time
 import os
@@ -74,12 +73,12 @@ class CallBack:
 
         def pop(self):
 
-            handlers = string.split(self.req.hstack)
+            handlers = self.req.hstack.split()
 
             if not handlers:
                 return None
             else:
-                self.req.hstack = string.join(handlers[1:], " ")
+                self.req.hstack = " ".join(handlers[1:])
                 return handlers[0]
 
     def ConnectionDispatch(self, conn):
@@ -93,7 +92,7 @@ class CallBack:
             handler = conn.hlist.handler
             
             # split module::handler
-            l = string.split(handler, '::', 1)
+            l = handler.split('::', 1)
             module_name = l[0]
             if len(l) == 1:
                 # no oject, provide default
@@ -170,7 +169,7 @@ class CallBack:
         try:
 
             # split module::handler
-            l = string.split(filter.handler, '::', 1)
+            l = filter.handler.split('::', 1)
             module_name = l[0]
             if len(l) == 1:
                 # no oject, provide default
@@ -282,12 +281,12 @@ class CallBack:
             while hlist.handler:
 
                 # split module::handler
-                l = string.split(hlist.handler, '::', 1)
+                l = hlist.handler.split('::', 1)
 
                 module_name = l[0]
                 if len(l) == 1:
                     # no oject, provide default
-                    object_str = string.lower(req.phase[len("python"):])
+                    object_str = req.phase[len("python"):].lower()
                 else:
                     object_str = l[1]
 
@@ -481,7 +480,7 @@ def import_module(module_name, config=None, path=None):
         for i in range(len(parts)):
             f, p, d = imp.find_module(parts[i], path)
             try:
-                mname = string.join(parts[:i+1], ".")
+                mname = ".".join(parts[:i+1])
                 module = imp.load_module(mname, f, p, d)
             finally:
                 if f: f.close()
@@ -532,7 +531,7 @@ def resolve_object(module, object_str, arg=None, silent=0):
 
     obj = module
 
-    for obj_str in  string.split(object_str, '.'):
+    for obj_str in  object_str.split('.'):
 
         parent = obj
 
@@ -590,7 +589,7 @@ class NullIO:
     def readlines(self): return []
     def write(self, s): pass
     def writelines(self, list):
-        self.write(string.joinfields(list, ''))
+        self.write("".join(list))
     def isatty(self): return 0
     def flush(self): pass
     def close(self): pass
@@ -629,7 +628,7 @@ class CGIStdin(NullIO):
             return s
 
     def readlines(self):
-        s = string.split(self.buf + self.read(), '\n')
+        s = (self.buf + self.read()).split('\n')
         return map(lambda s: s + '\n', s)
 
     def readline(self, n = -1):
@@ -641,7 +640,7 @@ class CGIStdin(NullIO):
         self.buf = self.buf + self.req.read(self.BLOCK)
 
         # look for \n in the buffer
-        i = string.find(self.buf, '\n')
+        i = self.buf.find('\n')
         while i == -1: # if \n not found - read more
             if (n != -1) and (len(self.buf) >= n): # we're past n
                 i = n - 1
@@ -651,7 +650,7 @@ class CGIStdin(NullIO):
             if len(self.buf) == x: # nothing read, eof
                 i = x - 1
                 break 
-            i = string.find(self.buf, '\n', x)
+            i = self.buf.find('\n', x)
         
         # carve out the piece, then shorten the buffer
         result = self.buf[:i+1]
@@ -683,10 +682,10 @@ class CGIStdout(NullIO):
             headers_over = 0
 
             # first try RFC-compliant CRLF
-            ss = string.split(self.headers, '\r\n\r\n', 1)
+            ss = self.headers.split('\r\n\r\n', 1)
             if len(ss) < 2:
                 # second try with \n\n
-                ss = string.split(self.headers, '\n\n', 1)
+                ss = self.headers.split('\n\n', 1)
                 if len(ss) >= 2:
                     headers_over = 1
             else:
@@ -694,15 +693,15 @@ class CGIStdout(NullIO):
                     
             if headers_over:
                 # headers done, process them
-                string.replace(ss[0], '\r\n', '\n')
-                lines = string.split(ss[0], '\n')
+                ss[0] = ss[0].replace('\r\n', '\n')
+                lines = ss[0].split('\n')
                 for line in lines:
-                    h, v = string.split(line, ":", 1)
-                    v = string.strip(v)
-                    if string.lower(h) == "status":
-                        status = int(string.split(v)[0])
+                    h, v = line.split(":", 1)
+                    v = v.strip()
+                    if h.lower() == "status":
+                        status = int(v.split()[0])
                         self.req.status = status
-                    elif string.lower(h) == "content-type":
+                    elif h.lower() == "content-type":
                         self.req.content_type = v
                         self.req.headers_out[h] = v
                     else:

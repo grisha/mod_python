@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.18 2002/09/06 22:06:28 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.19 2002/09/07 02:43:49 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -58,7 +58,6 @@ import apache
 import util
 
 import os
-import string
 import imp
 import re
 import base64
@@ -77,12 +76,12 @@ def handler(req):
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
     
     func_path = req.subprocess_env["PATH_INFO"][1:] # skip first /
-    func_path = string.replace(func_path, "/", ".")
+    func_path = func_path.replace("/", ".")
     if func_path[-1] == ".":
         func_path = func_path[:-1] 
 
     # if any part of the path begins with "_", abort
-    if func_path[0] == '_' or string.count(func_path, "._"):
+    if func_path[0] == '_' or func_path.count("._"):
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
     # process input, if any
@@ -124,7 +123,7 @@ def handler(req):
     exts = req.get_addhandler_exts()
     if exts:
         suffixes = exts.strip().split()
-        exp = "\\." + string.join(suffixes, "$|\\.")
+        exp = "\\." + "$|\\.".join(suffixes)
         suff_matcher = re.compile(exp) # python caches these, so its fast
         module_name = suff_matcher.sub("", module_name)
 
@@ -183,8 +182,8 @@ def handler(req):
         # to guess it
         if not req._content_type_set:
             # make an attempt to guess content-type
-            if string.lower(string.strip(result[:100])[:6]) == '<html>' \
-               or string.find(result,'</') > 0:
+            if result[:100].strip()[:6].lower() == '<html>' \
+               or result.find('</') > 0:
                 req.content_type = 'text/html'
             else:
                 req.content_type = 'text/plain'
@@ -212,7 +211,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         try:
             s = req.headers_in["Authorization"][6:]
             s = base64.decodestring(s)
-            user, passwd = string.split(s, ":", 1)
+            user, passwd = s.split(":", 1)
         except:
             raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
 
@@ -294,7 +293,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     (period) to find the last one we're looking for.
     """
 
-    for obj_str in  string.split(object_str, '.'):
+    for obj_str in  object_str.split('.'):
         obj = getattr(obj, obj_str)
 
         # object cannot be a module
