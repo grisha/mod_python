@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.95 2003/08/09 18:08:17 grisha Exp $
+ * $Id: mod_python.c,v 1.96 2003/08/11 18:12:55 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -792,37 +792,37 @@ static requestobject *get_request_object(request_rec *req, const char *interp_na
         request_obj = req_config->request_obj;
     }
     else {
-        if ((req->path_info) && 
-            (req->path_info[strlen(req->path_info) - 1] == SLASH))
-        {
-            int i;
-            i = strlen(req->path_info);
-            /* take out the slash */
-            req->path_info[i - 1] = 0;
+/*         if ((req->path_info) &&  */
+/*             (req->path_info[strlen(req->path_info) - 1] == SLASH)) */
+/*         { */
+/*             int i; */
+/*             i = strlen(req->path_info); */
+/*             /\* take out the slash *\/ */
+/*             req->path_info[i - 1] = 0; */
 
+/*             Py_BEGIN_ALLOW_THREADS */
+/*             ap_add_cgi_vars(req); */
+/*             Py_END_ALLOW_THREADS */
+
+/*             request_obj = (requestobject *)MpRequest_FromRequest(req); */
+/*             if (!request_obj) return NULL; */
+
+/*             /\* put the slash back in *\/ */
+/*             req->path_info[i - 1] = SLASH;  */
+/*             req->path_info[i] = 0; */
+
+/*             /\* and also make PATH_INFO == req->subprocess_env *\/ */
+/*             apr_table_set(req->subprocess_env, "PATH_INFO", req->path_info); */
+/*         }  */
+/*         else  */
+/*         {  */
             Py_BEGIN_ALLOW_THREADS
             ap_add_cgi_vars(req);
             Py_END_ALLOW_THREADS
 
             request_obj = (requestobject *)MpRequest_FromRequest(req);
             if (!request_obj) return NULL;
-
-            /* put the slash back in */
-            req->path_info[i - 1] = SLASH; 
-            req->path_info[i] = 0;
-
-            /* and also make PATH_INFO == req->subprocess_env */
-            apr_table_set(req->subprocess_env, "PATH_INFO", req->path_info);
-        } 
-        else 
-        { 
-            Py_BEGIN_ALLOW_THREADS
-            ap_add_cgi_vars(req);
-            Py_END_ALLOW_THREADS
-
-            request_obj = (requestobject *)MpRequest_FromRequest(req);
-            if (!request_obj) return NULL;
-        }
+/*         } */
 
         /* store the pointer to this object in request_config */
         req_config = apr_pcalloc(req->pool, sizeof(py_req_config));

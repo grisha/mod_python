@@ -279,14 +279,21 @@ To use it, simply add this to your httpd configuration:
   PythonHandler mod_python.psp
 \end{verbatim}
 
-The PSP code will be given a local variable \code{req}, and optionally
-\code{session} and \code{form}. A session will be created and a
-\code{session} variable passed in only if it is mentioned in the code
-(the PSP handler examines \code{co_names} of the code object to make
-that determination). Remember that a mere mention of \code{session}
-will generate cookies and turn on session locking, which may or may
-not be what you want. Similarly, a mod_python \class{FieldStorage}
-object will be instantiated if \code{form} is referenced in the code.
+The PSP code will be given local variables \code{req}, \code{psp},
+\code{session} and \code{form}. A session will be created and assigned
+to \code{session} variable only if \code{session} is referenced in the
+code (the PSP handler examines \code{co_names} of the code object to
+make that determination). Remember that a mere mention of
+\code{session} will generate cookies and turn on session locking,
+which may or may not be what you want. Similarly, a mod_python
+\class{FieldStorage} object will be instantiated if \code{form} is
+referenced in the code.
+
+The object passed in \code{psp} variable at this point supports only
+one function, \code{set_error_page(string)} which can be used to set
+(a relative path to) a psp page to be process when an exception
+occurs. This page will receive one additional variable,
+\code{exception}, which is a 3-tuple returned by \code{sys.exc_info()}.
 
 If \code{PythonDebug} server configuration is \code{On}, then by
 appending an underscore (\samp{_}) to the end of the url you can get a

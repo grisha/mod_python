@@ -54,21 +54,10 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.14 2003/08/08 14:50:09 grisha Exp $
+ # $Id: psp.py,v 1.15 2003/08/11 18:12:55 grisha Exp $
 
-# this trick lets us be used outside apache
-try:
-    from mod_python import apache
-    import _apache
-except:
-    from mod_python import apache
-    apache.OK = 0
-
-try:
-    import Session
-except: pass
-
-import _psp
+from mod_python import apache, Session, util, _psp
+import _apache
 
 import sys
 import os
@@ -105,7 +94,7 @@ def str2code(s):
 
     return apply(new.code, marshal.loads(s))
 
-def load_file(filename, dbmcache=None, srv=None):
+def load_file(dir, fname, dbmcache=None, srv=None):
 
     """ In addition to dbmcache, this function will check for
     existence of a file with same name, but ending with c and load it
@@ -119,6 +108,8 @@ def load_file(filename, dbmcache=None, srv=None):
 
     smtime = 0
     cmtime = 0
+
+    filename = os.path.join(dir, fname)
 
     if os.path.isfile(filename):
         smtime = os.path.getmtime(filename)
@@ -140,20 +131,11 @@ def load_file(filename, dbmcache=None, srv=None):
     if os.path.isfile(name + cext):
         cmtime = os.path.getmtime(cname)
 
-        if cmtime > smtime:
+        if cmtime >= smtime:
             # we've got a code file!
             code = str2code(open(name + cext).read())
 
             return code
-
-    # extract dir from filename to be passed
-    # to psp - this way it can process includes wihtout
-    # needing an absolute path
-    dir, fname = os.path.split(filename)
-    if os.name == "nt":
-        dir += "\\"
-    else:
-        dir += "/"
 
     source = _psp.parse(fname, dir)
     code = compile(source, filename, "exec")
@@ -165,14 +147,26 @@ def load_file(filename, dbmcache=None, srv=None):
 
     return code
 
+def path_split(filename):
+
+    dir, fname = os.path.split(filename)
+    if os.name == "nt":
+        dir += "\\"
+    else:
+        dir += "/"
+
+    return dir, fname
+
 def display_code(req):
     """
     Display a niceliy HTML-formatted side-by-side of
     what PSP generated next to orinial code
     """
 
+    dir, fname = path_split(req.filename[:-1])
+
     source = open(req.filename[:-1]).read().splitlines()
-    pycode = _psp.parse(req.filename[:-1]).splitlines()
+    pycode = _psp.parse(fname, dir).splitlines()
 
     source = [s.rstrip() for s in source]
     pycode = [s.rstrip() for s in pycode]
@@ -202,6 +196,19 @@ def display_code(req):
 
     return apache.OK
 
+class PSPInterface:
+
+    def __init__(self, req, dir, fname, dbmcache):
+        self._req = req
+        self._dir = dir
+        self._fname = fname
+        self._dbmcache = dbmcache
+        self._error_page = None
+
+    def set_error_page(self, page):
+        self._error_page = load_file(self._dir, page, self._dbmcache,
+                                     srv=self._req.server)
+
 def run_psp(req):
 
     dbmcache = None
@@ -209,7 +216,9 @@ def run_psp(req):
     if opts.has_key("PSPDbmCache"):
         dbmcache = opts["PSPDbmCache"]
 
-    code = load_file(req.filename, dbmcache, srv=req.server)
+    dir, fname = path_split(req.filename)
+
+    code = load_file(dir, fname, dbmcache, srv=req.server)
 
     session = None
     if "session" in code.co_names:
@@ -219,18 +228,30 @@ def run_psp(req):
     if "form" in code.co_names:
         form = util.FieldStorage(req, keep_blank_values=1)
 
-    try:
-        # give it it's own locals
-        exec code in globals(), {"req":req, "session":session, "form":form}
+    psp = PSPInterface(req, dir, fname, dbmcache)
 
-        # the mere instantiation of a session changes it
-        # (access time), so it *always* has to be saved
-        if session:
-            session.save()
+    try:
+        try:
+            exec code in globals(), {"req":req, "session":session,
+                                     "form":form, "psp":psp}
+            # the mere instantiation of a session changes it
+            # (access time), so it *always* has to be saved
+            if session:
+                session.save()
+        except:
+            et, ev, etb = sys.exc_info()
+            if psp._error_page:
+                # run error page
+                exec psp._error_page in globals(), {"req":req, "session":session,
+                                                    "form":form, "psp":psp,
+                                                    "error": (et, ev, etb)}
+            else:
+                # pass it on
+                raise et, ev, etb
     finally:
         if session:
-            session.unlock()
-    
+                session.unlock()
+        
     return apache.OK
 
 def handler(req):
