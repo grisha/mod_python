@@ -1,5 +1,5 @@
+<%-- $Id: psptest.psp,v 1.2 2003/08/08 22:44:26 grisha Exp $ --%>
 <%
-# $Id: psptest.psp,v 1.1 2003/05/30 15:10:47 grisha Exp $
 if 1:
     req.write("t")
 %>est<%=" "+"ok"%>
