@@ -187,6 +187,9 @@ request object is available as well via \code{filter.req}, but all
 writing and reading should be done via the filter's object read and
 write methods.
 
+Filters need to be closed when a read operation returns None 
+(indicating End-Of-Stream).
+
 Similarly to a phase handler, a filter handler must return one of the
 status return codes.
 
@@ -210,7 +213,14 @@ from mod_python import apache
 
 def outputfilter(filter):
 
-    filter.write(filter.read().upper())
+    s = filter.read()
+    while s:
+        filter.write(s.upper())
+        s = filter.read()
+
+    if s is None:
+        filter.close()
+
     return apache.OK
 
 \end{verbatim}
