@@ -1,7 +1,7 @@
 """
  (C) Gregory Trubetskoy, 1998 <grisha@ispol.com>
 
- $Id: cgihandler.py,v 1.3 2000/05/13 02:22:37 grisha Exp $
+ $Id: cgihandler.py,v 1.4 2000/06/11 19:36:43 grisha Exp $
 
  This file is part of mod_python. See COPYRIGHT file for details.
 
@@ -10,6 +10,16 @@
 import apache
 import imp
 import os
+try:
+    import threading
+    _lock = threading.Lock()
+except ImportError:
+    class DummyLock:
+        def acquire(self):
+            pass
+        def release(self):
+            pass
+    _lock = DummyLock()
 
 # the next statement  deserves some explaining.
 # it seems that the standard os.environ object looses
@@ -28,33 +38,38 @@ def handler(req):
         dir, file = os.path.split(req.filename)
     module_name, ext = os.path.splitext(file)
 
-    # we must chdir, because mod_python will cd into
-    # directory where the handler directive was last
-    # encountered, which is not always the same as
-    # where the file is....
-    os.chdir(dir)
-
+    _lock.acquire()
     try:
 
-        # simulate cgi environment
-        env, si, so = apache.setup_cgi(req)
-
         try:
-            # we do not search the pythonpath (security reasons)
-            fd, path, desc = imp.find_module(module_name, [dir])
-        except ImportError:
-            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
-        # this executes the module
-        imp.load_module(module_name, fd, path, desc)
+            # The CGI spec requires us to set current working
+            # directory to that of the script. This is not
+            # thread safe, this is why we must obtain the lock.
+            cwd = os.getcwd()
+            os.chdir(dir)
 
-        return apache.OK
+            # simulate cgi environment
+            env, si, so = apache.setup_cgi(req)
 
+            try:
+                # we do not search the pythonpath (security reasons)
+                fd, path, desc = imp.find_module(module_name, [dir])
+            except ImportError:
+                raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+
+            # this executes the module
+            imp.load_module(module_name, fd, path, desc)
+
+            return apache.OK
+
+        finally:
+            # unsimulate the cgi environment
+            apache.restore_nocgi(env, si, so)
+            try:
+                fd.close()
+            except: pass
+            os.chdir(cwd)
     finally:
-        # unsimulate the cgi environment
-        apache.restore_nocgi(env, si, so)
-        try:
-            fd.close()
-        except: pass
-
+        _lock.release()
 

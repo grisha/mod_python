@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.15 2000/06/07 23:21:57 grisha Exp $
+ * $Id: mod_python.c,v 1.16 2000/06/11 19:36:44 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -89,14 +89,30 @@
 #include "Python.h"
 #include "structmember.h"
 
+#if defined(WIN32) && !defined(WITH_THREAD)
+#error Python threading must be enabled on Windows
+#endif
+
 /******************************************************************
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.3"
+#define VERSION_COMPONENT "mod_python/2.4"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
-#define INTERP_ATTR "__interpreter__"
+#ifdef WIN32
+#define SLASH '\\'
+#define SLASH_S "\\"
+#else
+#define SLASH '/'
+#define SLASH_S "\\"
+#endif
+
+/* structure to hold interpreter data */
+typedef struct {
+    PyInterpreterState *istate;
+    PyObject *obcallback;
+} interpreterdata;
 
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
@@ -109,7 +125,6 @@ static table *python_imports = NULL;
 void python_decref(void *object);
 PyObject * make_obcallback();
 PyObject * tuple_from_array_header(const array_header *ah);
-PyObject * get_obcallback(const char *name);
 
 /*********************************
            Python things 
@@ -1405,7 +1420,6 @@ void python_init(server_rec *s, pool *p)
 {
 
     char buff[255];
-    PyObject *obcallback = NULL;
 
     /* initialize global Python interpreter if necessary */
     if (! Py_IsInitialized()) 
@@ -1429,7 +1443,10 @@ void python_init(server_rec *s, pool *p)
 
 #ifdef WITH_THREAD
 	/* create and acquire the interpreter lock */
-	PyEval_InitThreads();         
+	PyEval_InitThreads();
+	/* Release the thread state because we will never use 
+	 * the main interpreter, only sub interpreters created later. */
+        PyThreadState_Swap(NULL); 
 #endif
 	/* create the obCallBack dictionary */
 	interpreters = PyDict_New();
@@ -1439,15 +1456,6 @@ void python_init(server_rec *s, pool *p)
 	    exit(1);
 	}
 
-	/* make obCallBack for the global interpeter */
-	obcallback = get_obcallback(NULL);
-
-	if (!obcallback) {
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
-			 "python_init: get_obcallback returned no obCallBack. Possibly no more memory.");
-	    exit(1);
-	}
-	
 #ifdef WITH_THREAD
 	
 	/* release the lock; now other threads can run */
@@ -1473,9 +1481,8 @@ static void *python_create_dir_config(pool *p, char *dir)
 
     conf->authoritative = 1;
     /* make sure directory ends with a slash */
-    /* XXX what about win32 "\" ? */
-    if (dir && (dir[strlen(dir) - 1] != '/'))
-	conf->config_dir = ap_pstrcat(p, dir, "/", NULL);
+    if (dir && (dir[strlen(dir) - 1] != SLASH))
+	conf->config_dir = ap_pstrcat(p, dir, SLASH_S, NULL);
     else
 	conf->config_dir = ap_pstrdup(p, dir);
     conf->options = ap_make_table(p, 4);
@@ -1586,6 +1593,78 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
     return NULL;
 }
 
+
+/**
+ ** make_interpreter
+ **
+ *      Creates a new Python interpeter.
+ */
+
+PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
+{
+    PyThreadState *tstate;
+    
+    /* create a new interpeter */
+    tstate = Py_NewInterpreter();
+
+    if (! tstate) {
+
+       /* couldn't create an interpreter, this is bad */
+       ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, srv,
+                     "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
+       return NULL;
+    }
+    else {
+
+#ifdef WITH_THREAD
+        /* release the thread state */
+        PyThreadState_Swap(NULL); 
+#endif
+        /* Strictly speaking we don't need that tstate created
+	 * by Py_NewInterpreter but is preferable to waste it than re-write
+	 * a cousin to Py_NewInterpreter 
+	 * XXX (maybe we can destroy it?)
+	 */
+        return tstate->interp;
+    }
+    
+}
+
+/**
+ ** get_interpreter_data
+ **
+ *      Get interpreter given its name. 
+ *      NOTE: Lock must be acquired prior to entering this function.
+ */
+
+interpreterdata *get_interpreter_data(const char *name, server_rec *srv)
+{
+    PyObject *p;
+    interpreterdata *idata = NULL;
+    
+    if (! name)
+	name = "global_interpreter";
+
+    p = PyDict_GetItemString(interpreters, (char *)name);
+    if (!p)
+    {
+        PyInterpreterState *istate = make_interpreter(name, srv);
+	if (istate) {
+	    idata = (interpreterdata *)malloc(sizeof(interpreterdata));
+	    idata->istate = istate;
+	    /* obcallback will be created on first use */
+	    idata->obcallback = NULL; 
+	    p = PyCObject_FromVoidPtr((void *) idata, NULL);
+	    PyDict_SetItemString(interpreters, (char *)name, p);
+	}
+    }
+    else {
+	idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
+    }
+
+    return idata;
+}
+
 /**
  ** make_obcallback
  **
@@ -1624,65 +1703,6 @@ PyObject * make_obcallback()
     
     return obCallBack;
 
-}
-
-/**
- ** get_obcallback
- **
- *      We have a list of obCallBack's, one per each instance of
- *      interpreter we use.
- *
- *      This function gets an obCallBack instance:
- *      1. It checks if obCallBack with such name already exists
- *      2. If yes - return it
- *      3. If no - create one doing Python initialization
- *
- *      Python thread state Lock must be acquired prior to entering this function.
- *      This function might make the resulting interpreter's state current,
- *      use PyThreadState_Swap to be sure.
- *
- *      name NULL means use global interpreter.
- */
-
-PyObject * get_obcallback(const char *name)
-{
-
-    PyObject * obcallback = NULL;
-    PyThreadState * tstate = NULL;
-    PyObject *p;
-
-    if (! name)
-	name = "global_interpreter";
-
-    /* see if one exists by that name */
-    obcallback = PyDict_GetItemString(interpreters, (char *) name);
-
-    /* if obcallback is NULL at this point, no such interpeter exists */
-    if (! obcallback) {
-
-	/* create a new interpeter */
-	tstate = Py_NewInterpreter();
-
-	if (! tstate) {
-	    return NULL;
-	}
-      
-	/* create an obCallBack */
-	obcallback = make_obcallback();
-
-	if (obcallback) {
-
-	    /* cast PyThreadState and save it in obCallBack  as CObject */
-	    p = PyCObject_FromVoidPtr((void *) tstate, NULL);
-	    PyObject_SetAttrString(obcallback, INTERP_ATTR, p);
-	    Py_DECREF(p);
-	  
-	    /* save the obCallBack */
-	    PyDict_SetItemString(interpreters, (char *)name, obcallback);
-	}
-    }
-
-    return  obcallback;
 }
 
 /** 
@@ -1730,12 +1750,10 @@ static PyObject * log_error(PyObject *self, PyObject *args)
  ** get_request_object
  **
  *      This creates or retrieves a previously created request object.
- *      The pointer to request object is stored in tstate->dict, a 
- *      special dictionary provided by Python for per-thread state.
+ *      The pointer to request object is stored in req->notes.
  */
 
-static requestobject *get_request_object(request_rec *req, 
-					 PyThreadState *tstate)
+static requestobject *get_request_object(request_rec *req)
 {
     requestobject *request_obj;
     char *s;
@@ -1752,7 +1770,7 @@ static requestobject *get_request_object(request_rec *req,
     }
     else {
 	if ((req->path_info) && 
-	    (req->path_info[strlen(req->path_info) - 1] == '/'))
+	    (req->path_info[strlen(req->path_info) - 1] == SLASH))
 	{
 	    int i;
 	    i = strlen(req->path_info);
@@ -1765,7 +1783,7 @@ static requestobject *get_request_object(request_rec *req,
 	    request_obj = make_requestobject(req);
 
 	    /* put the slash back in */
-	    req->path_info[i - 1] = '/'; 
+	    req->path_info[i - 1] = SLASH; 
 	    req->path_info[i] = 0;
 	} 
 	else 
@@ -1784,14 +1802,6 @@ static requestobject *get_request_object(request_rec *req,
     }
 }
 
-
-/**
- ** select_intepreter
- **
- *      Select the interpeter to use, switch to it. 
- *      WARNING: This function acquiers the lock!
- */
-
 /**
  ** python_handler
  **
@@ -1802,8 +1812,7 @@ static int python_handler(request_rec *req, char *handler)
 {
 
     PyObject *resultobject = NULL;
-    PyThreadState *tstate;
-    PyObject *obcallback;
+    interpreterdata *idata;
     requestobject *request_obj;
     const char *s;
     py_dir_config * conf;
@@ -1828,7 +1837,8 @@ static int python_handler(request_rec *req, char *handler)
 	    /* base interpreter on directory where the file is found */
 	    if (ap_is_directory(req->filename))
 		interpreter = ap_make_dirstr_parent(req->pool, 
-						    ap_pstrcat(req->pool, req->filename, "/", NULL ));
+						    ap_pstrcat(req->pool, req->filename, 
+							       SLASH_S, NULL ));
 	    else
 		interpreter = ap_make_dirstr_parent(req->pool, req->filename);
 	}
@@ -1847,47 +1857,68 @@ static int python_handler(request_rec *req, char *handler)
     }
 
 #ifdef WITH_THREAD  
-    /* acquire lock */
+    /* acquire lock (to protect the interpreters dictionary) */
     PyEval_AcquireLock();
 #endif
 
-    /* get/create obcallback */
-    obcallback = get_obcallback(interpreter);
+    /* get/create interpreter */
+    idata = get_interpreter_data(interpreter, req->server);
+   
+#ifdef WITH_THREAD
+    /* release the lock */
+    PyEval_ReleaseLock();
+#endif
 
-    /* we must have a callback object to succeed! */
-    if (!obcallback) {
-	ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
-		      "python_handler: get_obcallback returned NULL. No more memory?");
-	return NULL;
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
+		      "python_handler: get_interpreter_data returned NULL!");
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    /* find __interpreter__ in obCallBack */
-    tstate = (PyThreadState *) PyCObject_AsVoidPtr(PyObject_GetAttrString(obcallback, INTERP_ATTR));
+#ifdef WITH_THREAD  
+    /* create thread state and acquire lock */
+    tstate = PyThreadState_New(idata->istate);
+    PyEval_AcquireThread(tstate);
+#endif
+
+    if (!idata->obcallback) {
+
+        idata->obcallback = make_obcallback();
+        /* we must have a callback object to succeed! */
+        if (!idata->obcallback) 
+        {
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
+			  "python_handler: make_obcallback returned no obCallBack!");
+#ifdef WITH_THREAD
+	    PyThreadState_Swap(NULL);
+	    PyThreadState_Delete(tstate);
+	    PyEval_ReleaseLock();
+#endif
+	    return HTTP_INTERNAL_SERVER_ERROR;
+        }
+    }
     
-    /* make this thread state current */
-    PyThreadState_Swap(tstate);
-
     /* create/acquire request object */
-    request_obj = get_request_object(req, tstate);
+    request_obj = get_request_object(req);
 
-    /* 
-     * The current directory will be that of the last encountered 
-     * Python*Handler directive. If the directive was in httpd.conf,
-     * then the directory is null, and cwd could be anything (most
-     * likely serverroot).
-     */
-    if ((s = ap_table_get(conf->dirs, handler)))
-	chdir(s);
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
      * >>> resultobject = obCallBack.Dispatch(request_object, handler)
      */
-
-    resultobject = PyObject_CallMethod(obcallback, "Dispatch", "Os", request_obj, handler);
+    resultobject = PyObject_CallMethod(idata->obcallback, "Dispatch", "Os", 
+				       request_obj, handler);
 
 #ifdef WITH_THREAD
-    /* release the lock */
+    /* release the lock and destroy tstate*/
+    /* XXX Do not use 
+     * . PyEval_ReleaseThread(tstate); 
+     * . PyThreadState_Delete(tstate);
+     * because PyThreadState_delete should be done under 
+     * interpreter lock to work around a bug in 1.5.2 (see patch to pystate.c 2.8->2.9) 
+     */
+    PyThreadState_Swap(NULL);
+    PyThreadState_Delete(tstate);
     PyEval_ReleaseLock();
 #endif
 
@@ -1897,7 +1928,7 @@ static int python_handler(request_rec *req, char *handler)
 	return HTTP_INTERNAL_SERVER_ERROR;
     }
     else {
-	/* Attempt to analyse the result as a string indicating which
+	/* Attempt to analyze the result as a string indicating which
 	   result to return */
 	if (! PyInt_Check(resultobject)) {
 	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req, 
@@ -2185,13 +2216,10 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
 
     array_header *ah;
     table_entry *elts;
-    PyObject *sys, *path, *dot;
+    PyObject *sys, *path, *dirstr;
+    interpreterdata *idata;
     int i;
     const char *interpreter;
-    PyThreadState *tstate;
-    py_dir_config *conf;
-    PyObject *obcallback;
-    const char *x = NULL;
 
     /* iterate throught the python_imports table and import all
        modules specified by PythonImport */
@@ -2203,49 +2231,60 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
 	char *module = elts[i].key;
 	char *dir = elts[i].val;
 
-	/* determine interpreter to use */
-	if ((x = ap_table_get(conf->directives, "PythonInterpreter"))) {
-	    /* forced by configuration */
-	    interpreter = x;
-	}
-	else {
-	    interpreter = dir;
-	}
-    
+	// XXXXXX PythonInterpreter!!!
+	// This needs to be addressed in config_merge
+	interpreter = dir;
+
 #ifdef WITH_THREAD  
 	/* acquire lock */
 	PyEval_AcquireLock();
 #endif
     
-	/* get/create obcallback */
-	obcallback = get_obcallback(interpreter);
-    
-	/* we must have a callback object to succeed! */
-	if (!obcallback) {
+	idata = get_interpreter_data(interpreter, s);
+
+#ifdef WITH_THREAD
+	/* release the lock */
+	PyEval_ReleaseLock();
+#endif
+
+	if (!idata) {
 	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
-			 "directive_PythonImport: get_obcallback returned NULL. No more memory?");
+		"ChildInitHandler: (PythonImport) get_interpreter_data returned NULL!");
 	    return;
 	}
 
-	/* find __interpreter__ in obCallBack */
-	tstate = (PyThreadState *) PyCObject_AsVoidPtr(
-	    PyObject_GetAttrString(obcallback, INTERP_ATTR));
-	
-	/* make this thread state current */
-	PyThreadState_Swap(tstate);
+#ifdef WITH_THREAD  
+	/* create thread state and acquire lock */
+	tstate = PyThreadState_New(idata->istate);
+	PyEval_AcquireThread(tstate);
+#endif
 
-	/* chdir to the directory where the directive was found */
-	if (dir)
-	    chdir(dir);
+	if (!idata->obcallback) {
+	    idata->obcallback = make_obcallback();
+	    /* we must have a callback object to succeed! */
+	    if (!idata->obcallback) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
+			      "python_handler: get_obcallback returned no obCallBack!");
+#ifdef WITH_THREAD
+		PyThreadState_Swap(NULL);
+		PyThreadState_Delete(tstate);
+		PyEval_ReleaseLock();
+#endif
+		return;
+	    }
+	}
 	
-	/* add '.' to pythonpath */
-	sys = PyImport_ImportModule("sys");
-	path = PyObject_GetAttrString(sys, "path");
-	dot = Py_BuildValue("[s]", ".");
-	PyList_SetSlice(path, 0, 0, dot);
-	Py_DECREF(dot);
-	Py_DECREF(path);
-	Py_DECREF(sys);
+	/* add dir to pythonpath if not in there already */
+	if (dir) {
+	    sys = PyImport_ImportModule("sys");
+	    path = PyObject_GetAttrString(sys, "path");
+	    dirstr = PyString_FromString(dir);
+	    if (PySequence_Index(path, dirstr) == -1)
+		PyList_SetSlice(path, 0, 0, dirstr);
+	    Py_DECREF(dirstr);
+	    Py_DECREF(path);
+	    Py_DECREF(sys);
+	}
 
 	/* now import the specified module */
 	if (! PyImport_ImportModule(module)) {
@@ -2254,6 +2293,13 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
 	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
 			 "directive_PythonImport: error importing %s", module);
 	}
+
+#ifdef WITH_THREAD
+	PyThreadState_Swap(NULL);
+	PyThreadState_Delete(tstate);
+	PyEval_ReleaseLock();
+#endif
+
     }
 }
 

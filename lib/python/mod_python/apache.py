@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.9 2000/05/29 16:55:11 grisha Exp $
+  $Id: apache.py,v 1.10 2000/06/11 19:36:43 grisha Exp $
 
 """
 
@@ -62,12 +62,12 @@ class CallBack:
         self.req = req
 
         # config
-        self.config = req.get_config()
-        debug = self.config.has_key("PythonDebug")
+        config = req.get_config()
+        debug = config.has_key("PythonDebug")
 
         try:
             # cycle through the handlers
-            handlers = string.split(self.config[htype])
+            handlers = string.split(config[htype])
 
             for handler in handlers:
 
@@ -79,6 +79,15 @@ class CallBack:
                     object_str = string.lower(htype[len("python"):])
                 else:
                     object_str = l[1]
+
+                # add the direcotry to pythonpath if
+                # not there yet, or pythonpath specified
+                if config.has_key("PythonPath"):
+                    sys.path = eval(config["PythonPath"])
+                else:
+                    dir = req.get_dirs()[htype]
+                    if dir not in sys.path:
+                        sys.path[:0] = [dir]
 
                 # import module
                 module = import_module(module_name, req)
@@ -178,21 +187,11 @@ def import_module(module_name, req=None):
     """
 
     # get the options
-    autoreload, debug, pythonpath = 1, None, None
+    autoreload, debug = 1, None
     if req:
         config = req.get_config()
         autoreload = not config.has_key("PythonNoReload")
         debug = not config.has_key("PythonDebug")
-        if config.has_key("PythonPath"):
-            pythonpath = config["PythonPath"]
-
-    # unless pythonpath is set explicitely
-    if pythonpath:
-        sys.path = eval(pythonpath)
-    else:
-        # add '.' to sys.path 
-        if '.' not in sys.path:
-            sys.path[:0] = ['.']
 
     # try to import the module
 
