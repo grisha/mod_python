@@ -57,7 +57,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.26 2002/12/19 15:55:02 grisha Exp $
+ * $Id: tableobject.c,v 1.27 2003/06/09 23:09:31 grisha Exp $
  *
  */
 
@@ -253,7 +253,7 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
     register int i;
     PyObject *list;
 
-    if (key && !PyString_Check(key)) {
+    if (key && !PyString_CheckExact(key)) {
         PyErr_SetString(PyExc_TypeError,
                         "table keys must be strings");
         return NULL;
@@ -283,8 +283,9 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
             }
         }
 
-    /* if no mach */
+    /* if no match */
     if (PyList_Size(list) == 0) {
+        Py_DECREF(list);
         PyErr_SetObject(PyExc_KeyError, key);
         return NULL;
     }
@@ -317,7 +318,7 @@ static int table_ass_subscript(tableobject *self, PyObject *key,
 
     char *k;
 
-    if (key && !PyString_Check(key)) {
+    if (key && !PyString_CheckExact(key)) {
         PyErr_SetString(PyExc_TypeError,
                         "table keys must be strings");
         return -1;
@@ -329,7 +330,7 @@ static int table_ass_subscript(tableobject *self, PyObject *key,
         apr_table_unset(self->table, k);
     }
     else {
-        if (val && !PyString_Check(val)) {
+        if (val && !PyString_CheckExact(val)) {
             PyErr_SetString(PyExc_TypeError,
                             "table values must be strings");
             return -1;
@@ -679,8 +680,11 @@ static PyObject * table_has_key(tableobject *self, PyObject *key)
 
     const char *val;
 
-    if (!PyString_CheckExact(key))
+    if (!PyString_CheckExact(key)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "table keys must be strings");
         return NULL;
+    }
 
     val = apr_table_get(self->table, PyString_AsString(key));
 
@@ -735,13 +739,13 @@ static PyObject *table_setdefault(register tableobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
         return NULL;
 
-    if (!PyString_Check(key)) {
+    if (!PyString_CheckExact(key)) {
         PyErr_SetString(PyExc_TypeError,
                         "table keys must be strings");
         return NULL;
     }
 
-    if (failobj && !PyString_Check(failobj)) {
+    if (failobj && !PyString_CheckExact(failobj)) {
         PyErr_SetString(PyExc_TypeError,
                         "table values must be strings");
         return NULL;
