@@ -1,56 +1,58 @@
-May 28 2000 -	Renamed make_table, log_error, table_add and copy_table with
+Jun  4 2001 -	2.7.4 released.
+
+May 28 2001 -	Renamed make_table, log_error, table_add and copy_table with
 		mp_ so as to not get confused with the ones in ap_compat.h
 
-May 24 2000 -	PythonNoReload obsoleted in favor of PythonAutoReload.
+May 24 2001 -	PythonNoReload obsoleted in favor of PythonAutoReload.
 
-May 23 2000 -	The "fix" re import on Apr 10 turned out to be a bug and
+May 23 2001 -	The "fix" re import on Apr 10 turned out to be a bug and
 		I put it back. But in the process found that the FLAG directives
 		were not read correctly - e.g. mere presence sometimes indicated
 		On. Also, ReportError was returning DONE in finally clause which 
 		was wrong.
 
-May 22 2000 -   The bug that was supposedly fixed below was a bit more 
+May 22 2001 -   The bug that was supposedly fixed below was a bit more 
 		complicated than it seemed at first. The fix below caused
 		a circular reference, and some further fixing had to be done,
 		and now it's really fixed, thanks to Chris's dilligence.
 
-May 17 2000 -	Fixed a threading bug reported by Chris Trengove where
+May 17 2001 -	Fixed a threading bug reported by Chris Trengove where
 		the callback object could have the reference to self.req
 		overwritten by other threads. The reference to the Request
 		object is now stored inside the requestobject C structure.
 
-May 12 2000 -	2.7.3 released
+May 12 2001 -	2.7.3 released
 
-Apr 10 2000 - 	Fixed a PythonImport bug reported by Chris Hagner. Removed
+Apr 10 2001 - 	Fixed a PythonImport bug reported by Chris Hagner. Removed
 		the atol hack as per Miguel Marques patch. Fixed apache.py
 		to use a messier looking but for some obscure reason that
 		now escapes me necessary way of importing modules via imp.
 
-Apr  7 2000 -   "Dissapearing args" on Solaris fixed. It was a problem
+Apr  7 2001 -   "Dissapearing args" on Solaris fixed. It was a problem
 		in parse_qsl.
 
-Apr  6 2000 -   Missing _eprintf() on Solaris/gcc workaround added. I
+Apr  6 2001 -   Missing _eprintf() on Solaris/gcc workaround added. I
 		wonder if this applies to other OS's?
 
-Apr  5 2000 -	A couple doc fixes.
+Apr  5 2001 -	A couple doc fixes.
 
-Feb 10 2000 -	2.7.2 released
+Feb 10 2001 -	2.7.2 released
 
-Feb 10 2000 -   Fixed the dissapearing / in PATH_INFO.
+Feb 10 2001 -   Fixed the dissapearing / in PATH_INFO.
 
-Jan 23 2000 -	Fixed the bug where req.server.register_cleanup was 
+Jan 23 2001 -	Fixed the bug where req.server.register_cleanup was 
 		expecting a builtin _req object rather than the new real 
 		Python Request.
 
-Jan 21 2000 -	The Publisher handler __auth__ can now be a dictionary or.
+Jan 21 2001 -	The Publisher handler __auth__ can now be a dictionary or.
 		a const. There is also new __access__, which can be a list.
 
-Jan 19 2000 -	Added req._content_type_set flag which is set to 1 when
+Jan 19 2001 -	Added req._content_type_set flag which is set to 1 when
 		a value is assigned to content_type from Python. This way
 		the publisher handler can know if it's been purposely set
 		and will not attempt to guess it.
 
-Jan 18 2000 -	Documented req.form. Fixed a security problem with the
+Jan 18 2001 -	Documented req.form. Fixed a security problem with the
 		Publisher handler - it now does not allow modules to be
 		published, so a user can't access test.os.renames, etc.
 
