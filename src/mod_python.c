@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.111 2004/01/19 05:06:14 grisha Exp $
+ * $Id: mod_python.c,v 1.112 2004/02/05 12:26:39 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1695,7 +1695,7 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
-    frec = ap_register_input_filter(name, python_input_filter, NULL, AP_FTYPE_CONNECTION);
+    frec = ap_register_input_filter(name, python_input_filter, NULL, AP_FTYPE_RESOURCE);
  
     conf = (py_config *) mconfig;
 
