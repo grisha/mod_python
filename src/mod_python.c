@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.102 2003/10/08 03:48:17 grisha Exp $
+ * $Id: mod_python.c,v 1.103 2003/10/10 14:16:18 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -322,8 +322,10 @@ apr_status_t python_cleanup(void *data)
 
 static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config *glb)
 {
-    int max_threads;
-    int max_procs;
+    int max_threads = 0;
+    int max_procs = 0;
+    int is_threaded = 0;
+    int is_forked = 0;
     int max_clients;
     int locks;
     int n;
@@ -332,8 +334,14 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     /* MAX_DAEMON_USED seems to account for MaxClients, as opposed to
        MAX_DAEMONS, which is ServerLimit
     */
-    ap_mpm_query(AP_MPMQ_MAX_THREADS, &max_threads);
-    ap_mpm_query(AP_MPMQ_MAX_DAEMON_USED, &max_procs);
+    ap_mpm_query(AP_MPMQ_IS_THREADED, &is_threaded);
+    if (is_threaded != AP_MPMQ_NOT_SUPPORTED) {
+        ap_mpm_query(AP_MPMQ_MAX_THREADS, &max_threads);
+    }
+    ap_mpm_query(AP_MPMQ_IS_FORKED, &is_forked);
+    if (is_forked != AP_MPMQ_NOT_SUPPORTED) {
+        ap_mpm_query(AP_MPMQ_MAX_DAEMON_USED, &max_procs);
+    }
     max_clients = (((!max_threads) ? 1 : max_threads) *
                    ((!max_procs) ? 1 : max_procs));
     locks = max_clients; /* XXX this is completely out of the blue */

@@ -1,3 +1,11 @@
+
+Aug 29 2003 - 	3.1.0a (Alpha) is out
+
+Mar 17 2003 -	3.0.3 is released 
+
+		This file will no longer have details, since those
+		are in CVS anyway.
+
 Feb 12 2003 -   Added a test for req.headers_out
 
                 Fixed a bug where None was added to sys.path
