@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.34 2003/11/04 21:52:21 grisha Exp $
+ # $Id: publisher.py,v 1.35 2003/12/11 03:41:30 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -174,8 +174,12 @@ def handler(req):
         
         result = util.apply_fs_data(object, req.form, req=req)
 
-    if result or req.bytes_sent > 0:
-        result = str(result)
+    if result or req.bytes_sent > 0 or req.next:
+        
+        if result is None:
+            result = ""
+        else:
+            result = str(result)
 
         # unless content_type was manually set, we will attempt
         # to guess it

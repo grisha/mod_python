@@ -57,7 +57,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.28 2003/07/14 20:51:32 grisha Exp $
+ * $Id: tableobject.c,v 1.29 2003/12/11 03:41:30 grisha Exp $
  *
  */
 
@@ -88,15 +88,13 @@ PyObject * MpTable_FromTable(apr_table_t *t)
 {
     tableobject *result;
 
-    result = PyMem_NEW(tableobject, 1);
+    result = PyObject_New(tableobject, &MpTable_Type);
     if (! result)
         return PyErr_NoMemory();
 
     result->table = t;
-    result->ob_type = &MpTable_Type;
     result->pool = NULL;
 
-    _Py_NewReference(result);
     return (PyObject *)result;
 }
 
@@ -144,7 +142,7 @@ static void table_dealloc(register tableobject *self)
     if (MpTable_Check(self)) {
         if (self->pool) 
             apr_pool_destroy(self->pool);
-        free(self);
+        PyObject_Del(self);
     }
     else
         self->ob_type->tp_free((PyObject *)self);

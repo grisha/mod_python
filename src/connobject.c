@@ -57,7 +57,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.16 2003/09/10 02:11:22 grisha Exp $
+ * $Id: connobject.c,v 1.17 2003/12/11 03:41:30 grisha Exp $
  *
  */
 
@@ -80,18 +80,16 @@ PyObject * MpConn_FromConn(conn_rec *c)
 {
     connobject *result;
 
-    result = PyMem_NEW(connobject, 1);
+    result = PyObject_New(connobject, &MpConn_Type);
     if (! result)
         return PyErr_NoMemory();
 
     result->conn = c;
-    result->ob_type = &MpConn_Type;
     result->server = NULL;
     result->base_server = NULL;
     result->notes = MpTable_FromTable(c->notes);
     result->hlo = NULL;
 
-    _Py_NewReference(result);
     return (PyObject *)result;
 }
 
@@ -322,7 +320,7 @@ static void conn_dealloc(connobject *self)
     Py_XDECREF(self->base_server);
     Py_XDECREF(self->notes);
     Py_XDECREF(self->hlo);
-    free(self);
+    PyObject_Del(self);
 }
 
 /**

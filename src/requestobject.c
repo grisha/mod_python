@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.54 2003/11/04 20:30:39 grisha Exp $
+ * $Id: requestobject.c,v 1.55 2003/12/11 03:41:30 grisha Exp $
  *
  */
 
@@ -75,7 +75,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
 {
     requestobject *result;
 
-    result = PyMem_NEW(requestobject, 1);
+    result = PyObject_New(requestobject, &MpRequest_Type);
     if (! result)
         return PyErr_NoMemory();
 
@@ -83,7 +83,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     if (!result->dict)
         return PyErr_NoMemory();
     result->request_rec = req;
-    result->ob_type = &MpRequest_Type;
     result->connection = NULL;
     result->server = NULL;
     result->next = NULL;
@@ -102,8 +101,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->rbuff = NULL;
     result->rbuff_pos = 0;
     result->rbuff_len = 0;
-
-    _Py_NewReference(result);
 
     return (PyObject *) result;
 }
@@ -1373,7 +1370,7 @@ static void request_dealloc(requestobject *self)
     Py_XDECREF(self->phase);
     Py_XDECREF(self->hlo);
 
-    free(self);
+    PyObject_Del(self);
 }
 
 static char request_doc[] =
