@@ -415,7 +415,10 @@ PythonInterpPerDirectory on, all python code gets executed in the
 main interpreter. This may not be exactly what you want, but
 unfortunately there is no way around this.
 
-See also Multiple Interpreters. 
+\begin{seealso}
+	\seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
+	{for more information}
+\end{seealso}
 
 \subsection{PythonInterpPerDirective\label{dir-other-ipdv}}
 \index{PythonPythonInterpPerDirective}
@@ -445,7 +448,37 @@ assuming both directories are in the same virtual server. With
 PythonInterpPerDirective, there would be two different interpreters,
 one for each directive.
 
-See also Multiple Interpreters. 
+\begin{seealso}
+	\seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
+	{for more information}
+\end{seealso}
+
+\subsection{PythonInterpreter\label{dir-other-pi}}
+\index{PythonInterpreter}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonInterpreter name \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Forces mod_python to use interpreter named \emph{name}, overriding the
+default behaviour or behaviour dictated by
+\citetitle[dir-other-ipd.html]{\code{PythonIterpPerDirectory}} or
+\citetitle[dir-other-ipdv.html]{\code{PythonInterpPerDirective}} directive.
+
+This directive can be used to force execution that would normally
+occur in different subinterpreters to run in the same one. When
+pecified in the DocumentRoot, it forces the whole server to run in one
+subinterpreter.
+
+\begin{seealso}
+	\seetitle[pyapi-interps.html]{Section \ref{pyapi-interps} Multiple Interpreters}
+	{for more information}
+\end{seealso}
 
 \subsection{PythonHandlerModule\label{dir-other-phm}}
 \index{PythonHandlerModule}

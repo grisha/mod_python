@@ -34,11 +34,15 @@ directive). This means that all scripts in the same vrtual server
 execute in the same subinterpreter, but scripts in different virtual
 servers execute in different subinterpreters with completely separate
 namespaces. 
-\citetitle[dir-other-ipd.html]{\code{PythonIterpPerDirectory}} and
+\citetitle[dir-other-ipd.html]{\code{PythonInterpPerDirectory}} and
 \citetitle[dir-other-ipdv.html]{\code{PythonInterpPerDirective}}
 directives alter the naming convention to use the absolute path of the
 directory being accessed, or the directory in which the
 \code{Python*Handler} was encountered, respectively.
+\citetitle[dir-other-pi.html]{\code{PythonInterpreter}} can be used to
+force the interpreter name to a specific string overriding any naming
+conventions.
+
 
 Once created, a subinterpreter will be reused for subsequent requests.
 It is never destroyed and exists until the Apache child process dies.
