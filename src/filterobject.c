@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.20 2003/01/18 05:41:43 grisha Exp $
+ * $Id: filterobject.c,v 1.21 2003/01/23 20:20:00 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -436,13 +436,10 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
         APR_BRIGADE_INSERT_TAIL(self->bb_out, 
                                 apr_bucket_eos_create(c->bucket_alloc));
 	
-        Py_BEGIN_ALLOW_THREADS;
-        apr_brigade_destroy(self->bb_out);
-        Py_END_ALLOW_THREADS;
-
         if (! self->is_input) {
             Py_BEGIN_ALLOW_THREADS;
             self->rc = ap_pass_brigade(self->f->next, self->bb_out);
+            apr_brigade_destroy(self->bb_out);
             Py_END_ALLOW_THREADS;
             self->bb_out = NULL;
         }

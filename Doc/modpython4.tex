@@ -1172,19 +1172,13 @@ found.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[server]{srm_confname}
-Location of the srm config file.
-\emph{(Read-Only})
-\end{memberdesc}
-
 \begin{memberdesc}[server]{server_admin}
 Value of the \code{ServerAdmin} directive. 
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{server_hostname}
-Value of the \code{ServerName} directive. Same as CGI \envvar{SERVER_NAME}.
-\emph{(Read-Only})
+Value of the \code{ServerName} directive. Same as CGI \envvar{SERVER_NAME}.\emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{port}
@@ -1222,8 +1216,8 @@ Maximum number of requests per keepalive.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[server]{send_buffer_size}
-Integer. Size of the TCP send buffer.
+\begin{memberdesc}[server]{keep_alive}
+Use persistent connections?
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -1237,13 +1231,18 @@ Integer. Path length.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[server]{server_uid}
-UID under which the server is running.
+\begin{memberdesc}[server]{limit_req_line}
+Integer. Limit on size of the HTTP request line.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[server]{server_gid}
-GID under which the server is running.
+\begin{memberdesc}[server]{limit_req_fieldsize}
+Integer. Limit on size of any request header field.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[server]{limit_req_fields}
+Integer. Limit on number of request header fields.
 \emph{(Read-Only})
 \end{memberdesc}
 
