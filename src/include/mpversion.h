@@ -3,4 +3,4 @@
 #define MPV_PATCH 2
 #define MPV_BUILD 0
 
-#define MPV_STRING "2.7.2"
+#define MPV_STRING "2.7.3"
