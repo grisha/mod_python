@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.9 2001/04/11 02:52:09 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.10 2001/05/13 01:14:53 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -90,7 +90,7 @@ def handler(req):
 
     # if any part of the path begins with "_", abort
     if func_path[0] == '_' or string.count(func_path, "._"):
-        raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
+        raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
     # process input, if any
     fs = util.FieldStorage(req, keep_blank_values=1)
