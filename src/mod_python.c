@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.43 2000/12/16 16:22:13 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.44 2000/12/18 19:50:03 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -274,12 +274,6 @@ void python_init(server_rec *s, pool *p)
     /* initialize global Python interpreter if necessary */
     if (! Py_IsInitialized()) 
     {
-
-	/* initialize types XXX break windows? */
-/* 	MpTable_Type.ob_type = &PyType_Type;  */
-/*  	MpServer_Type.ob_type = &PyType_Type; */
-/*  	MpConn_Type.ob_type = &PyType_Type;  */
-/*  	MpRequest_Type.ob_type = &PyType_Type; */
 
 	/* initialze the interpreter */
 	Py_Initialize();
@@ -516,7 +510,7 @@ static requestobject *get_request_object(request_rec *req)
 
 	    _save = PyEval_SaveThread();
 	    ap_add_cgi_vars(req);
-	    PyEval_RestoreTread(_save);
+	    PyEval_RestoreThread(_save);
 	    request_obj = (requestobject *)MpRequest_FromRequest(req);
 
 	    /* put the slash back in */
