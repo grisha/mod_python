@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.9 2003/07/24 17:44:13 grisha Exp $
+ * $Id: psp_parser.l,v 1.10 2003/07/24 17:59:34 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -75,7 +75,7 @@
 
 %}
 
-%option noyywrap
+%option noyywrap nounistd
 
 %x TEXT
 %x PYCODE
