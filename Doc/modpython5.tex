@@ -495,9 +495,23 @@ file. By default, mod_python checks the time-stamp of the file and
 reloads the module if the module's file modification date is later
 than the last import or reload.
 
-This options is useful in production environment where the modules do
+This option is useful in production environment where the modules do
 not change, it will save some processing time and give a small
 performance gain.
+
+\subsection{PythonOptimize\label{dir-other-pomz}}
+\index{PythonOptimize}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonOptimize \{On, Off\} \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+PythonOptimize Off\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Enables Python optimization. Same as the Python \programopt{-O} option.
 
 \subsection{PythonOption\label{dir-other-po}}
 \index{PythonOption}

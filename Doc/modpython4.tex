@@ -544,6 +544,15 @@ Boolean. Read chunked transfer coding.
 \emph{(Read-Only})
 \end{memberdesc}
 
+\begin{memberdesc}[Request]{content_type}
+String. The content type. Mod_python maintains an internal flag
+(\member{_content_type_set}) to keep track of whether
+\member{content_type} was set manually from within Python. The
+publisher handler uses this flag; when \member{content_type} isn't
+set, it attempts to guess the content type by examining the
+first few bytes of the output.
+\end{memberdesc}
+
 \begin{memberdesc}[Request]{headers_in}
 A table object containing headers sent by the client.
 \end{memberdesc}

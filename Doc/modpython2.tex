@@ -63,6 +63,7 @@ autoconf stuff, \program{./configure} does the following:
 
 \item
 \index{apxs}
+\indexii{./configure}{\longprogramopt{with-apxs}}
 Finds out whether a program called \program{apxs} is available. This
 program is part of the standard Apache distribution, and is necessary
 for DSO compilation. If apxs cannot be found in your \envvar{PATH} or in
@@ -77,6 +78,7 @@ $ ./configure --with-apxs=/usr/local/apache/bin/apxs
 %$ keep emacs happy
 
 \item
+\indexii{./configure}{\longprogramopt{with-apache}}
 Checks for \longprogramopt{with-apache} option. Use this option to
 tell \program{./configure} where the Apache sources are on your
 system. The Apache sources are necessary for static compilation. If
@@ -95,6 +97,7 @@ Checks your Python version and attempts to figure out where
 your Python binary. By default, it will use the \program{python}
 program found in your \envvar{PATH}.
 
+\indexii{./configure}{\longprogramopt{with-python}}
 If the Python installation on your system is not suitable for
 mod_python (which can be the case if Python is compiled with thread
 support), you can specify an alternative location with the
@@ -109,6 +112,15 @@ $ ./configure --with-python=/usr/local/src/Python-2.0
 Note that the directory needs to contain already configured and
 compiled Python. In other words, you must at least run \program{./configure} and
 \program{make}.
+
+Also note that while it is possible to point the \longprogramopt{with-python}
+to a version of Python different from the one installed in your standard
+\envvar{PATH}, you will need to have that version of Python installed as well.
+This is because the path to the Python library, which is retrieved from the
+\file{python} binary is going to point to the
+place where Python would be ultimately installed, not the source
+deirectory. Generally, it's best to try to keep the version of Python that
+you use for mod_python the same as the one you use everywhere on the system.
 
 \end{itemize}
 

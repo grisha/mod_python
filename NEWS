@@ -1,3 +1,5 @@
+Apr  5 2000 -	A couple doc fixes.
+
 Feb 10 2000 -   Fixed the dissapearing / in PATH_INFO.
 
 Jan 23 2000 -	Fixed the bug where req.server.register_cleanup was 

@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.45 2001/02/11 01:59:29 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.46 2001/04/07 02:25:35 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1624,7 +1624,7 @@ command_rec python_commands[] =
 	"PythonOptimize",
 	directive_PythonOptimize,         
 	NULL,                                
-	OR_ALL,                         
+	RSRC_CONF,                         
 	FLAG,                               
 	"Set the equivalent of the -O command-line flag on the interpreter."
     },
