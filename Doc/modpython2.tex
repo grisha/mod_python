@@ -10,9 +10,9 @@ the mod_python mailing list by sending an e-mail with the word
 
 \begin{itemize}
 \item
-Python 1.5.2, 1.6, 2.0 or 2.1
+Python 2.2. Later versions and versions as old as 1.5.2 should work as well.
 \item
-Apache 1.3 (1.3.20 or higher recommended, 2.0 is not yet supported) 
+Apache 2.0. (For Apache 1.3.x, use mod_python version 2.7.x)
 \end{itemize}
 
 You will need to have the include files for both Apache and Python, as
@@ -32,25 +32,18 @@ get the development packages.
 There are two ways that this module can be compiled and linked to
 Apache - statically, or as a DSO (Dynamic Shared Object).
 
-\dfn{Static} linking is a more "traditional" approach, and most programmers
-prefer it for its simplicity. The drawback is that it entails
-recompiling Apache, which some people cannot do for a variety of
-reasons. 
+\dfn{Static} linking is an older approach. With dynamic linking
+available on most platforms it is used less and less. The main
+drawback is that it entails recompiling Apache, which some people
+cannot do for a variety of reasons.
 
-\dfn{DSO} is a newer and still somewhat experimental
-approach. The module gets compiled as a library that is dynamically
-loaded by the server at run time. A more detailed description of the
-Apache DSO mechanism is available at
-\url{http://www.apache.org/docs/dso.html}.
+\dfn{DSO} is a more popular approach nowadays. The module gets
+compiled as a shared library that is dynamically loaded by the server
+at run time. A more detailed description of the Apache DSO mechanism
+is available at \url{http://httpd.apache.org/docs-2.0/dso.html}.
 
 The advantage of DSO is that a module can be installed without
-recompiling Apache and used as needed. DSO has its disadvantages,
-however. Compiling a module like mod_python into a DSO can be a
-complicated process because Python, depending on configuration, may
-rely on a number of other libraries, and you need to make sure that
-the DSO is statically linked against each of them. Luckily, the
-configure script below will spare you of this headache by
-automatically figuring out all the necessary parameters.
+recompiling Apache and used as needed. 
 
 \subsection{Running ./configure\label{inst-configure}}
 \index{./configure}
