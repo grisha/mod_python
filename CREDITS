@@ -5,7 +5,7 @@ development of mod_python.
 Anyone who has contributed code or otherwise made contributions that
 were constructive to the development of the project may have his name
 listed here. Note that the decision on whether a name goes on this
-list or not is initially taken by me (grisha@ispol.com) and that I can
+list or not is initially taken by me (grisha@modpython.org) and that I can
 be wrong.  So if you feel that you should be credited as well, or if
 you feel that you should not be listed, please e-mail me.
 
@@ -32,7 +32,7 @@ Greg Stein <gstein@lyra.org>
 Dr. L.A. Timochouk <L.A.Timochouk@ukc.ac.uk> 
 	[patch for .pyo and req_read]
 
-Gregory Trubetskoy <grisha@ispol.com> 
+Gregory Trubetskoy <grisha@modpython.org> 
 	[mod_python]
 
 Sean True <seant@alum.mit.edu> 

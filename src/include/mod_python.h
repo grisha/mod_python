@@ -1,6 +1,7 @@
 #ifndef Mp_MOD_PYTHON_H
 #define Mp_MOD_PYTHON_H
-/*====================================================================
+
+/* ====================================================================
  * Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -15,11 +16,11 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by Gregory Trubetskoy
- *    for use in the mod_python module for Apache HTTP server 
- *    (http://www.modpython.org/)."
+ * 3. The end-user documentation included with the redistribution, if
+ *    any, must include the following acknowledgment: "This product 
+ *    includes software developed by Gregory Trubetskoy."
+ *    Alternately, this acknowledgment may appear in the software itself, 
+ *    if and wherever such third-party acknowledgments normally appear.
  *
  * 4. The names "mod_python", "modpython" or "Gregory Trubetskoy" must not 
  *    be used to endorse or promote products derived from this software 
@@ -28,14 +29,7 @@
  *
  * 5. Products derived from this software may not be called "mod_python"
  *    or "modpython", nor may "mod_python" or "modpython" appear in their 
- *    names without prior written permission of Gregory Trubetskoy. For 
- *    written permission, please contact grisha@ispol.com..
- *
- * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by Gregory Trubetskoy
- *    for use in the mod_python module for Apache HTTP server 
- *    (http://www.modpython.org/)."
+ *    names without prior written permission of Gregory Trubetskoy.
  *
  * THIS SOFTWARE IS PROVIDED BY GREGORY TRUBETSKOY ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -51,25 +45,9 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  *
- * This software is based on the original concept
- * as published in the book "Internet Programming with Python"
- * by Aaron Watters, Guido van Rossum and James C. Ahlstrom, 
- * 1996 M&T Books, ISBN: 1-55851-484-8. The book and original
- * software is Copyright 1996 by M&T Books.
- *
- * This software consists of an extension to the Apache http server.
- * More information about Apache may be found at 
- *
- * http://www.apache.org/
- *
- * More information on Python language can be found at
- *
- * http://www.python.org/
- *
- *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.11 2000/11/18 04:21:32 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.12 2000/12/06 03:05:38 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
