@@ -1,7 +1,7 @@
 """
  (C) Gregory Trubetskoy, 1998 <grisha@ispol.com>
 
- $Id: cgihandler.py,v 1.5 2000/06/25 20:04:05 gtrubetskoy Exp $
+ $Id: cgihandler.py,v 1.6 2000/10/29 01:29:06 gtrubetskoy Exp $
 
  This file is part of mod_python. See COPYRIGHT file for details.
 
@@ -32,7 +32,18 @@ except (ImportError, AttributeError):
 # is a more sensible remedy, but this seems to work OK.
 os.environ = {}
 
+# uncomment the 5 lines beginning ### to enable experimental reload feature
+# remember all imported modules
+###import sys
+###original = sys.modules.keys()
+
 def handler(req):
+
+###    # if there are any new modules since the import of this module,
+###    # delete them
+###    for m in sys.modules.keys():
+###        if m not in original:
+###            del sys.modules[m]
 
     # get the filename of the script
     if req.subprocess_env.has_key("script_filename"):
