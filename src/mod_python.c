@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.8 2000/05/22 12:14:39 grisha Exp $
+ * $Id: mod_python.c,v 1.9 2000/05/26 19:51:19 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -111,12 +111,9 @@ static PyObject * interpreters = NULL;
  * Don't rely on its value.                      */
 static PyObject *obCallBack = NULL;
 
-/* This function is used with ap_register_cleanup() */
-void noop(void *data) {};
-void python_decref(void *object);
-
 /* some forward declarations */
-PyObject * make_obcallback(const char *module, const char *initstring);
+void python_decref(void *object);
+PyObject * make_obcallback();
 PyObject * tuple_from_array_header(const array_header *ah);
 PyObject * get_obcallback(const char *name, server_rec * req);
 
@@ -150,10 +147,9 @@ typedef struct tableobject {
     pool            *pool;
 } tableobject;
 
-static PyTypeObject tableobjecttype;
-
-#define is_tableobject(op) ((op)->ob_type == &tableobjecttype)
-
+static void table_dealloc(tableobject *self);
+static PyObject * table_getattr(PyObject *self, char *name);
+static PyObject * table_repr(tableobject *self);
 static PyObject * tablegetitem  (tableobject *self, PyObject *key );
 static PyObject * table_has_key (tableobject *self, PyObject *args );
 static PyObject * table_keys    (tableobject *self);
@@ -162,16 +158,36 @@ static int tablesetitem         (tableobject *self, PyObject *key, PyObject *val
 static int tb_setitem           (tableobject *self, const char *key, const char *val);
 static tableobject * make_tableobject(table * t);
 
-static PyMethodDef tablemethods[] = {
-  {     "keys",                 (PyCFunction)table_keys,    1},
-  {     "has_key",              (PyCFunction)table_has_key, 1},
-  { NULL, NULL } /* sentinel */
-};
-
 static PyMappingMethods table_mapping = {
     (inquiry)       tablelength,           /*mp_length*/
     (binaryfunc)    tablegetitem,          /*mp_subscript*/
     (objobjargproc) tablesetitem,          /*mp_ass_subscript*/
+};
+
+static PyTypeObject tableobjecttype = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "mptable",
+    sizeof(tableobject),
+    0,
+    (destructor) table_dealloc,     /*tp_dealloc*/
+    0,                              /*tp_print*/
+    (getattrfunc) table_getattr,    /*tp_getattr*/
+    0,                              /*tp_setattr*/
+    0,                              /*tp_compare*/
+    (reprfunc) table_repr,          /*tp_repr*/
+    0,                              /*tp_as_number*/
+    0,                              /*tp_as_sequence*/
+    &table_mapping,                 /*tp_as_mapping*/
+    0,                              /*tp_hash*/
+};
+
+#define is_tableobject(op) ((op)->ob_type == &tableobjecttype)
+
+static PyMethodDef tablemethods[] = {
+  {     "keys",                 (PyCFunction)table_keys,    1},
+  {     "has_key",              (PyCFunction)table_has_key, 1},
+  { NULL, NULL } /* sentinel */
 };
 
 /* another forward */
@@ -187,7 +203,26 @@ typedef struct serverobject {
     PyObject       *next;
 } serverobject;
 
-static PyTypeObject serverobjecttype;
+static void server_dealloc(serverobject *self);
+static PyObject * server_getattr(serverobject *self, char *name);
+
+static PyTypeObject serverobjecttype = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "server",
+    sizeof(serverobject),
+    0,
+    (destructor) server_dealloc,     /*tp_dealloc*/
+    0,                               /*tp_print*/
+    (getattrfunc) server_getattr,    /*tp_getattr*/
+    0,                               /*tp_setattr*/
+    0,                               /*tp_compare*/
+    0,                               /*tp_repr*/
+    0,                               /*tp_as_number*/
+    0,                               /*tp_as_sequence*/
+    0,                               /*tp_as_mapping*/
+    0,                               /*tp_hash*/
+};
 
 #define is_serverobject(op) ((op)->ob_type == &serverobjecttype)
 
@@ -229,7 +264,26 @@ typedef struct connobject {
   PyObject     *base_server;
 } connobject;
 
-static PyTypeObject connobjecttype;
+static void conn_dealloc(connobject *self);
+static PyObject * conn_getattr(connobject *self, char *name);
+
+static PyTypeObject connobjecttype = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "conn",
+    sizeof(connobject),
+    0,
+    (destructor) conn_dealloc,       /*tp_dealloc*/
+    0,                               /*tp_print*/
+    (getattrfunc) conn_getattr,      /*tp_getattr*/
+    0,                               /*tp_setattr*/
+    0,                               /*tp_compare*/
+    0,                               /*tp_repr*/
+    0,                               /*tp_as_number*/
+    0,                               /*tp_as_sequence*/
+    0,                               /*tp_as_mapping*/
+    0,                               /*tp_hash*/
+};
 
 #define is_connobject(op) ((op)->ob_type == &connobjecttype)
 
@@ -272,10 +326,10 @@ typedef struct requestobject {
     int              header_sent;
 } requestobject;
 
-static PyTypeObject requestobjecttype;
 
-#define is_requestobject(op) ((op)->ob_type == &requestobjecttype)
-
+static void request_dealloc(requestobject *self);
+static PyObject * request_getattr(requestobject *self, char *name);
+static int request_setattr(requestobject *self, char *name, PyObject *value);
 static PyObject * req_send_http_header     (requestobject *self, PyObject *args);
 static PyObject * req_get_basic_auth_pw    (requestobject *self, PyObject *args);
 static PyObject * req_write                (requestobject *self, PyObject *args);
@@ -284,6 +338,26 @@ static PyObject * req_get_config           (requestobject *self, PyObject *args)
 static PyObject * req_get_options          (requestobject *self, PyObject *args);
 static PyObject * req_get_dirs             (requestobject *self, PyObject *args);
 static PyObject * req_add_common_vars      (requestobject *self, PyObject *args);
+
+static PyTypeObject requestobjecttype = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "request",
+    sizeof(requestobject),
+    0,
+    (destructor) request_dealloc,    /*tp_dealloc*/
+    0,                               /*tp_print*/
+    (getattrfunc) request_getattr,   /*tp_getattr*/
+    (setattrfunc) request_setattr,   /*tp_setattr*/
+    0,                               /*tp_compare*/
+    0,                               /*tp_repr*/
+    0,                               /*tp_as_number*/
+    0,                               /*tp_as_sequence*/
+    0,                               /*tp_as_mapping*/
+    0,                               /*tp_hash*/
+};
+
+#define is_requestobject(op) ((op)->ob_type == &requestobjecttype)
 
 static PyMethodDef requestobjectmethods[] = {
     {"send_http_header",     (PyCFunction) req_send_http_header,     METH_VARARGS},
@@ -975,7 +1049,8 @@ static requestobject * make_requestobject(request_rec *req)
     result->header_sent = 0;
 
     _Py_NewReference(result);
-    ap_register_cleanup(req->pool, (PyObject *)result, python_decref, noop);
+    ap_register_cleanup(req->pool, (PyObject *)result, python_decref, 
+			ap_null_cleanup);
 
     return result;
 }
@@ -1456,87 +1531,6 @@ void python_init(server_rec *s, pool *p)
     PyThreadState *tstate = NULL;
     PyObject *x;
 
-    /* initialize serverobjecttype */
-    PyTypeObject sot = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
-	"server",
-	sizeof(serverobject),
-	0,
-	(destructor) server_dealloc,     /*tp_dealloc*/
-	0,                               /*tp_print*/
-	(getattrfunc) server_getattr,    /*tp_getattr*/
-	0,                               /*tp_setattr*/
-	0,                               /*tp_compare*/
-	0,                               /*tp_repr*/
-	0,                               /*tp_as_number*/
-	0,                               /*tp_as_sequence*/
-	0,                               /*tp_as_mapping*/
-	0,                               /*tp_hash*/
-    };
-
-    /* initialize connobjecttype */
-    PyTypeObject cot = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
-	"conn",
-	sizeof(connobject),
-	0,
-	(destructor) conn_dealloc,       /*tp_dealloc*/
-	0,                               /*tp_print*/
-	(getattrfunc) conn_getattr,      /*tp_getattr*/
-	0,                               /*tp_setattr*/
-	0,                               /*tp_compare*/
-	0,                               /*tp_repr*/
-	0,                               /*tp_as_number*/
-	0,                               /*tp_as_sequence*/
-	0,                               /*tp_as_mapping*/
-	0,                               /*tp_hash*/
-    };
-
-    /* initialize requestobjecttype */
-    PyTypeObject rot = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
-	"request",
-	sizeof(requestobject),
-	0,
-	(destructor) request_dealloc,    /*tp_dealloc*/
-	0,                               /*tp_print*/
-	(getattrfunc) request_getattr,   /*tp_getattr*/
-	(setattrfunc) request_setattr,   /*tp_setattr*/
-	0,                               /*tp_compare*/
-	0,                               /*tp_repr*/
-	0,                               /*tp_as_number*/
-	0,                               /*tp_as_sequence*/
-	0,                               /*tp_as_mapping*/
-	0,                               /*tp_hash*/
-    };
-
-    /* initialize tableobjecttype */
-    PyTypeObject tt = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
-	"mptable",
-	sizeof(tableobject),
-	0,
-	(destructor) table_dealloc,     /*tp_dealloc*/
-	0,                              /*tp_print*/
-	(getattrfunc) table_getattr,    /*tp_getattr*/
-	0,                              /*tp_setattr*/
-	0,                              /*tp_compare*/
-	(reprfunc) table_repr,          /*tp_repr*/
-	0,                              /*tp_as_number*/
-	0,                              /*tp_as_sequence*/
-	&table_mapping,                 /*tp_as_mapping*/
-	0,                              /*tp_hash*/
-    };
-
-    serverobjecttype = sot;
-    connobjecttype = cot;
-    requestobjecttype = rot;
-    tableobjecttype = tt;
-
     /* mod_python version */
     ap_add_version_component(VERSION_COMPONENT);
 
@@ -1574,7 +1568,7 @@ void python_init(server_rec *s, pool *p)
 	 */
 
 	/* make obCallBack */
-	obcallback = make_obcallback(NULL, NULL);
+	obcallback = make_obcallback();
 
 	/* get the current thread state */
 	tstate = PyThreadState_Get();
@@ -1759,21 +1753,10 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
  * - we're back in C, but now global obCallBack has a value
  */
 
-PyObject * make_obcallback(const char *module, const char *initstring)
+PyObject * make_obcallback()
 {
 
   char buff[256];
-
-  /*  In the old verion of this module these varuables were assigned by
-   *  PythonInitFunction directive, in the new version they'll be
-   *  NULL and get assigned here.
-   */
-
-  if (! module)
-    module = MODULENAME;
-
-  if (! initstring)
-    initstring = INITSTRING;
 
   /* This makes _apache appear imported, and subsequent
    * >>> import _apache 
@@ -1788,20 +1771,20 @@ PyObject * make_obcallback(const char *module, const char *initstring)
    * in the __main__ module to start up Python.
    */
 
-  sprintf(buff, "import %s\n", module);
+  sprintf(buff, "import %s\n", MODULENAME);
 
   if (PyRun_SimpleString(buff))
     {
-      fprintf(stderr, "PythonInitFunction: could not import %s.\n", module);
+      fprintf(stderr, "PythonInitFunction: could not import %s.\n", MODULENAME);
       exit(1);
     }
 
-  sprintf(buff, "%s\n", initstring);
+  sprintf(buff, "%s\n", INITSTRING);
 
   if (PyRun_SimpleString(buff))
     {
       fprintf(stderr, "PythonInitFunction: could not call %s.\n",
-	       initstring);
+	       INITSTRING);
       exit(1);
     }
 
@@ -1818,7 +1801,7 @@ PyObject * make_obcallback(const char *module, const char *initstring)
   if (! obCallBack) 
     {
       fprintf(stderr, "PythonInitFunction: after %s no callback object found.\n", 
-	       initstring);
+	       INITSTRING);
       exit(1);
     }
 
@@ -1890,10 +1873,10 @@ PyObject * get_obcallback(const char *name, server_rec * server)
       }
       
       /* create an obCallBack */
-      obcallback = make_obcallback(NULL, NULL);
+      obcallback = make_obcallback();
 
-      /* cast PyThreadState * to long and save it in obCallBack */
-      p = PyInt_FromLong((long) tstate);
+      /* cast PyThreadState and save it in obCallBack  as CObject */
+      p = PyCObject_FromVoidPtr((void *) tstate, NULL);
       PyObject_SetAttrString(obcallback, INTERP_ATTR, p);
       Py_DECREF(p);
 
@@ -2115,7 +2098,7 @@ static int python_handler(request_rec *req, char *handler)
     }
 
     /* find __interpreter__ in obCallBack */
-    tstate = (PyThreadState *) PyInt_AsLong(PyObject_GetAttrString(obcallback, INTERP_ATTR));
+    tstate = (PyThreadState *) PyCObject_AsVoidPtr(PyObject_GetAttrString(obcallback, INTERP_ATTR));
 
     /* make this thread state current */
     PyThreadState_Swap(tstate);
