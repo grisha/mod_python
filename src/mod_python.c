@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.44 2000/12/18 19:50:03 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.45 2001/02/11 01:59:29 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -516,6 +516,9 @@ static requestobject *get_request_object(request_rec *req)
 	    /* put the slash back in */
 	    req->path_info[i - 1] = SLASH; 
 	    req->path_info[i] = 0;
+
+	    /* and also make PATH_INFO == req->subprocess_env */
+	    ap_table_set(req->subprocess_env, "PATH_INFO", req->path_info);
 	} 
 	else 
 	{ 
