@@ -1,3 +1,8 @@
+May 22 2000 -   The bug that was supposedly fixed below was a bit more 
+		complicated than it seemed at first. The fix below caused
+		a circular reference, and some further fixing had to be done,
+		and now it's really fixed, thanks to Chris's dilligence.
+
 May 17 2000 -	Fixed a threading bug reported by Chris Trengove where
 		the callback object could have the reference to self.req
 		overwritten by other threads. The reference to the Request

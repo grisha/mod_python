@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.48 2001/04/11 02:29:48 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.49 2001/05/23 02:49:43 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -204,9 +204,9 @@ void python_cleanup(void *data)
 	stype = PyObject_Str(ptype);
 	svalue = PyObject_Str(pvalue);
 
-	Py_DECREF(ptype);
-	Py_DECREF(pvalue);
-	Py_DECREF(ptb);
+	Py_XDECREF(ptype);
+	Py_XDECREF(pvalue);
+	Py_XDECREF(ptb);
 
 	if (ci->request_rec) {
 	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
