@@ -1,50 +1,161 @@
-
-# $Id: setup.py.in,v 1.5 2003/07/24 17:46:09 grisha Exp $
-
-APXS = r"@APXS@"
-VER = "@MP_VERSION@"
+ # Copyright 2004 Apache Software Foundation
+ #
+ #  Licensed under the Apache License, Version 2.0 (the "License");
+ #  you may not use this file except in compliance with the License.
+ #  You may obtain a copy of the License at
+ #
+ #      http://www.apache.org/licenses/LICENSE-2.0
+ #
+ #  Unless required by applicable law or agreed to in writing, software
+ #  distributed under the License is distributed on an "AS IS" BASIS,
+ #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ #  See the License for the specific language governing permissions and
+ #  limitations under the License.
+ #
+ #
+ # $Id: setup.py.in,v 1.6 2004/04/30 19:33:59 grisha Exp $
 
 from distutils.core import setup, Extension
 
 import sys
+import re
+import os.path
 
-if len(sys.argv) > 1 and sys.argv[1] == "bdist_wininst":
-    moddir = ""
-#    mpso = "mod_python.so"
+def getmp_rootdir():
+    """gets the root directory of the mod_python source tree..."""
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-    setup(name="mod_python",
-          version=VER,
-          description="Apache/Python Integration",
-          author="Gregory Trubetskoy et al",
-          author_email="mod_python@modpython.org",
-          url="http://www.modpython.org/",
-          packages=["mod_python"],
-          package_dir = {"mod_python":"../lib/python/mod_python"},
-          scripts=["win32_postinstall.py"],
-          data_files=[(moddir, ["mod_python.so"])])
+def getmp_srcdir():
+    """gets the src subdirectory of the mod_python source tree..."""
+    return os.path.join(getmp_rootdir(), 'src')
 
+def getmp_includedir():
+    """gets the src subdirectory of the mod_python source tree..."""
+    return os.path.join(getmp_rootdir(), 'src', 'include')
+
+def getconfigure_option(option_name):
+    """gets an option from the config.status file"""
+    config_status_file = os.path.join(getmp_rootdir(), 'config.status')
+    if not os.path.exists(config_status_file):
+        raise AssertionError("config.status not found in expected location (%s)" % config_status_file)
+    header = open(config_status_file,'r')
+    r = re.compile('s,@%s@,(?P<OPTION_STRING>[^,]+),' % (option_name))
+    for line in header.readlines():
+        m = r.search(line)
+        if m is not None:
+            return m.group('OPTION_STRING')
+        raise AssertionError("unable to find @%s@ definition in %s", (option_name, config_status_file))
+
+def getmp_version():
+    """finds out the version of mod_python"""
+    # if that fails, read it from the source file ourselves...
+    mpversion_file = os.path.join(getmp_includedir(), 'mpversion.h')
+    if not os.path.exists(mpversion_file):
+        raise AssertionError("mpversion.h not found in expected location (%s)" % mpversion_file)
+    header = open(mpversion_file,'r')
+    r = re.compile('#define\s+MPV_STRING\s+"(?P<MPV_STRING>[^"]+)"')
+    for line in header.readlines():
+        m = r.search(line)
+        if m is not None:
+            return m.group('MPV_STRING')
+    raise AssertionError("unable to find MPV_STRING in %s", mpversion_file)
+
+def getapxs_location():
+    """finds the location of apxs from the config.status file"""
+    return getconfigure_option("APXS")
+
+def getapxs_option(option):
+    APXS = getapxs_location()
+    import commands
+    return commands.getoutput("%s -q %s" % (APXS, option))
+
+def getapache_srcdir():
+    """returns apache src directory"""
+    return os.getenv("APACHESRC")
+
+def getapache_includedir():
+    """returns apache include directory"""
+    apache_srcdir = getapache_srcdir()
+    if apache_srcdir is None:
+        return getapxs_option("INCLUDEDIR")
+    else:
+        return os.path.join(getapache_srcdir(), "include")
+
+def getapache_libdir():
+    """returns apache lib directory"""
+    apache_srcdir = getapache_srcdir()
+    if apache_srcdir is None:
+        return ""
+    else:
+        return os.path.join(apache_srcdir, "lib")
+
+VER = getmp_version()
+
+# TODO: improve the intelligence here...
+winbuild = (len(sys.argv) > 1 and sys.argv[1] == "bdist_wininst") or (os.name == "nt")
+
+class PSPExtension(Extension):
+    """a class that helps build the PSP extension"""
+    def __init__(self, source_dir, include_dirs):
+        Extension.__init__(self, "mod_python._psp",
+                               [os.path.join(source_dir, source_file) for source_file in
+                                    ("psp_string.c", "psp_parser.c", "_pspmodule.c")],
+                                include_dirs=include_dirs
+                           )
+
+PSPModule = PSPExtension(getmp_srcdir(), [getmp_includedir()])
+
+modpy_src_files = ("mod_python.c", "_apachemodule.c", "connobject.c", "filterobject.c",
+                   "hlist.c", "hlistobject.c", "requestobject.c", "serverobject.c", "tableobject.c",
+                   "util.c")
+
+class finallist(list):
+  """this represents a list that cannot be appended to..."""
+  def append(self, object):
+      return
+
+class ModPyExtension(Extension):
+    """a class that actually builds the mod_python.so extension for Apache (yikes)"""
+    def __init__(self, source_dir, include_dirs, library_dirs):
+        Extension.__init__(self, "mod_python_so",
+            sources = [os.path.join(source_dir, source_file) for source_file in modpy_src_files],
+                           include_dirs=include_dirs,
+            libraries = ['libhttpd','libapr','libaprutil','ws2_32'],
+            library_dirs=library_dirs
+                           )
+        if winbuild:
+            self.define_macros.extend([('WIN32',None),('NDEBUG',None),('_WINDOWS',None)])
+            self.sources.append(os.path.join(source_dir, "Version.rc"))
+        else:
+            # TODO: fix this to autodetect if required...
+            self.include_dirs.append("/usr/include/apr-0")
+        # this is a hack to prevent build_ext from trying to append "initmod_python" to the export symbols
+        self.export_symbols = finallist(self.export_symbols)
+
+ModPyModule = ModPyExtension(getmp_srcdir(), [getmp_includedir(), getapache_includedir()], [getapache_libdir()])
+
+if winbuild:
+    scripts = ["win32_postinstall.py"]
+    # put the mod_python.so file in the Python root ...
+    # win32_postinstall.py will pick it up from there...
+    # data_files = [("", [(os.path.join(getmp_srcdir(), 'Release', 'mod_python.so'))])]
+    data_files = []
 else:
-#    import commands
-#    moddir = commands.getoutput("%s -q LIBEXECDIR" % APXS)
-#    mpso = "../src/mod_python.so"
+    # mpso = "../src/mod_python.so"
+    scripts = []
+    data_files = []
 
-    setup(name="mod_python",
-          version=VER,
-          description="Apache/Python Integration",
-          author="Gregory Trubetskoy et al",
-          author_email="mod_python@modpython.org",
-          url="http://www.modpython.org/",
-          packages=["mod_python"],
-          ext_modules=[Extension("mod_python._psp",
-                                 ["src/psp_string.c",
-                                  "src/psp_parser.c",
-                                  "src/_pspmodule.c"],
-                                 include_dirs=["src/include"]
-                                 )
-                       ]
-          )
-          
-
+setup(name="mod_python",
+      version=VER,
+      description="Apache/Python Integration",
+      author="Gregory Trubetskoy et al",
+      author_email="mod_python@modpython.org",
+      url="http://www.modpython.org/",
+      packages=["mod_python"],
+      package_dir={'mod_python': os.path.join(getmp_rootdir(), 'lib', 'python', 'mod_python')},
+      scripts=scripts,
+      data_files=data_files,
+      ext_modules=[ModPyModule, PSPModule])
 
 # makes emacs go into python mode
 ### Local Variables:
