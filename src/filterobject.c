@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.25 2003/10/09 03:18:45 grisha Exp $
+ * $Id: filterobject.c,v 1.26 2003/12/11 03:41:30 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -118,12 +118,11 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
 {
     filterobject *result;
 
-    result = PyMem_NEW(filterobject, 1);
+    result = PyObject_New(filterobject, &MpFilter_Type);
     if (! result)
         return PyErr_NoMemory();
 
     result->f = f;
-    result->ob_type = &MpFilter_Type;
     result->is_input = is_input;
 
     result->rc = APR_SUCCESS;
@@ -149,7 +148,6 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
 
     result->request_obj = NULL; 
 
-    _Py_NewReference(result);
     apr_pool_cleanup_register(f->r->pool, (PyObject *)result, python_decref, 
                               apr_pool_cleanup_null);
 
@@ -547,7 +545,7 @@ static struct memberlist filter_memberlist[] = {
 static void filter_dealloc(filterobject *self)
 {  
     Py_XDECREF(self->request_obj);
-    free(self);
+    PyObject_Del(self);
 }
 
 

@@ -57,7 +57,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.20 2003/10/23 13:43:36 grisha Exp $
+ * $Id: serverobject.c,v 1.21 2003/12/11 03:41:30 grisha Exp $
  *
  */
 
@@ -76,7 +76,7 @@ PyObject * MpServer_FromServer(server_rec *s)
 {
     serverobject *result;
 
-    result = PyMem_NEW(serverobject, 1);
+    result = PyObject_New(serverobject, &MpServer_Type);
     if (! result)
         return PyErr_NoMemory();
 
@@ -85,10 +85,8 @@ PyObject * MpServer_FromServer(server_rec *s)
         return PyErr_NoMemory();
 
     result->server = s;
-    result->ob_type = &MpServer_Type;
     result->next = NULL;
 
-    _Py_NewReference(result);
     return (PyObject *)result;
 }
 
@@ -326,7 +324,7 @@ static void server_dealloc(serverobject *self)
 {  
     Py_XDECREF(self->dict);
     Py_XDECREF(self->next);
-    free(self);
+    PyObject_Del(self);
 }
 
 static char server_doc[] =

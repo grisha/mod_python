@@ -57,7 +57,7 @@
  *
  * hlist.c 
  *
- * $Id: hlistobject.c,v 1.7 2002/11/08 00:15:11 gstein Exp $
+ * $Id: hlistobject.c,v 1.8 2003/12/11 03:41:30 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -77,8 +77,7 @@ PyObject *MpHList_FromHLEntry(hl_entry *hle)
     hlistobject *result;
     apr_pool_t *p;
 
-    result = PyMem_NEW(hlistobject, 1);
-    result->ob_type = &MpHList_Type;
+    result = PyObject_New(hlistobject, &MpHList_Type);
     if (! result) 
         PyErr_NoMemory();
 
@@ -88,7 +87,6 @@ PyObject *MpHList_FromHLEntry(hl_entry *hle)
     result->pool = p;
     result->head = hlist_copy(p, hle);
 
-    _Py_NewReference(result);
     return (PyObject *) result;
 }
 
@@ -144,7 +142,7 @@ static void hlist_dealloc(hlistobject *self)
 {  
     if (self->pool)
         apr_pool_destroy(self->pool);
-    free(self);
+    PyObject_Del(self);
 }
 
 /**
@@ -205,7 +203,7 @@ PyTypeObject MpHList_Type = {
     PyObject_HEAD_INIT(NULL)
     0,
     "mp_hlist",
-    sizeof(hl_entry),
+    sizeof(hlistobject),
     0,
     (destructor) hlist_dealloc,      /*tp_dealloc*/
     0,                               /*tp_print*/
