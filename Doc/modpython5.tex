@@ -195,9 +195,8 @@ with the request (such as looking up the user in a database and
 verifying that the [encrypted] password sent matches the one in the
 database).
 
-To obtain the username, use \code{req.connection.user}. To obtain the
-password entered by the user, use the \code{req.get_basic_auth_pw()}
-function.
+To obtain the username, use \code{req.user}. To obtain the password
+entered by the user, use the \code{req.get_basic_auth_pw()} function.
 
 A return of \code{apache.OK} means the authentication succeeded. A
 return of \code{apache.HTTP_UNAUTHORIZED} with most browser will bring
@@ -213,7 +212,7 @@ An example authentication handler might look like this:
 def authenhandler(req):
 
     pw = req.get_basic_auth_pw()
-    user = req.connection.user     
+    user = req.user     
     if user == "spam" and pw == "eggs":
         return apache.OK
     else:
@@ -222,7 +221,7 @@ def authenhandler(req):
 
 \begin{notice}
   \code{req.get_basic_auth_pw()} must be called prior to using the
-  \code{req.connection.user} value. Apache makes no attempt to decode the
+  \code{req.user} value. Apache makes no attempt to decode the
   authentication information unless \code{req.get_basic_auth_pw()} is called.
 \end{notice}
 
