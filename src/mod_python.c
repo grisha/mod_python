@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.16 2000/06/11 19:36:44 grisha Exp $
+ * $Id: mod_python.c,v 1.17 2000/06/11 21:10:36 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -2221,85 +2221,88 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
     int i;
     const char *interpreter;
 
-    /* iterate throught the python_imports table and import all
-       modules specified by PythonImport */
+    if (python_imports) {
 
-    ah = ap_table_elts(python_imports);
-    elts = (table_entry *)ah->elts;
-    for (i = 0; i < ah->nelts; i++) {
+	/* iterate throught the python_imports table and import all
+	   modules specified by PythonImport */
+
+	ah = ap_table_elts(python_imports);
+	elts = (table_entry *)ah->elts;
+	for (i = 0; i < ah->nelts; i++) {
 	
-	char *module = elts[i].key;
-	char *dir = elts[i].val;
+	    char *module = elts[i].key;
+	    char *dir = elts[i].val;
 
-	// XXXXXX PythonInterpreter!!!
-	// This needs to be addressed in config_merge
-	interpreter = dir;
+	    // XXXXXX PythonInterpreter!!!
+	    // This needs to be addressed in config_merge
+	    interpreter = dir;
 
 #ifdef WITH_THREAD  
-	/* acquire lock */
-	PyEval_AcquireLock();
+	    /* acquire lock */
+	    PyEval_AcquireLock();
 #endif
     
-	idata = get_interpreter_data(interpreter, s);
+	    idata = get_interpreter_data(interpreter, s);
 
 #ifdef WITH_THREAD
-	/* release the lock */
-	PyEval_ReleaseLock();
+	    /* release the lock */
+	    PyEval_ReleaseLock();
 #endif
 
-	if (!idata) {
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
-		"ChildInitHandler: (PythonImport) get_interpreter_data returned NULL!");
-	    return;
-	}
-
-#ifdef WITH_THREAD  
-	/* create thread state and acquire lock */
-	tstate = PyThreadState_New(idata->istate);
-	PyEval_AcquireThread(tstate);
-#endif
-
-	if (!idata->obcallback) {
-	    idata->obcallback = make_obcallback();
-	    /* we must have a callback object to succeed! */
-	    if (!idata->obcallback) {
+	    if (!idata) {
 		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
-			      "python_handler: get_obcallback returned no obCallBack!");
-#ifdef WITH_THREAD
-		PyThreadState_Swap(NULL);
-		PyThreadState_Delete(tstate);
-		PyEval_ReleaseLock();
-#endif
+			     "ChildInitHandler: (PythonImport) get_interpreter_data returned NULL!");
 		return;
 	    }
-	}
-	
-	/* add dir to pythonpath if not in there already */
-	if (dir) {
-	    sys = PyImport_ImportModule("sys");
-	    path = PyObject_GetAttrString(sys, "path");
-	    dirstr = PyString_FromString(dir);
-	    if (PySequence_Index(path, dirstr) == -1)
-		PyList_SetSlice(path, 0, 0, dirstr);
-	    Py_DECREF(dirstr);
-	    Py_DECREF(path);
-	    Py_DECREF(sys);
-	}
 
-	/* now import the specified module */
-	if (! PyImport_ImportModule(module)) {
-	    if (PyErr_Occurred())
-		PyErr_Print();
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
-			 "directive_PythonImport: error importing %s", module);
-	}
-
-#ifdef WITH_THREAD
-	PyThreadState_Swap(NULL);
-	PyThreadState_Delete(tstate);
-	PyEval_ReleaseLock();
+#ifdef WITH_THREAD  
+	    /* create thread state and acquire lock */
+	    tstate = PyThreadState_New(idata->istate);
+	    PyEval_AcquireThread(tstate);
 #endif
 
+	    if (!idata->obcallback) {
+		idata->obcallback = make_obcallback();
+		/* we must have a callback object to succeed! */
+		if (!idata->obcallback) {
+		    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
+				 "python_handler: get_obcallback returned no obCallBack!");
+#ifdef WITH_THREAD
+		    PyThreadState_Swap(NULL);
+		    PyThreadState_Delete(tstate);
+		    PyEval_ReleaseLock();
+#endif
+		    return;
+		}
+	    }
+	
+	    /* add dir to pythonpath if not in there already */
+	    if (dir) {
+		sys = PyImport_ImportModule("sys");
+		path = PyObject_GetAttrString(sys, "path");
+		dirstr = PyString_FromString(dir);
+		if (PySequence_Index(path, dirstr) == -1)
+		    PyList_SetSlice(path, 0, 0, dirstr);
+		Py_DECREF(dirstr);
+		Py_DECREF(path);
+		Py_DECREF(sys);
+	    }
+
+	    /* now import the specified module */
+	    if (! PyImport_ImportModule(module)) {
+		if (PyErr_Occurred())
+		    PyErr_Print();
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
+			     "directive_PythonImport: error importing %s", module);
+	    }
+
+#ifdef WITH_THREAD
+	    PyThreadState_Swap(NULL);
+	    PyThreadState_Delete(tstate);
+	    PyEval_ReleaseLock();
+#endif
+
+	}
     }
 }
 
