@@ -23,3 +23,4 @@ rmdir /s /q build
 rmdir /s /q dist
 del ..\src\*.obj ..\src\*.lib ..\src\*.exp ..\src\*.res
 python setup.py.in bdist_wininst --install-script win32_postinstall.py
+upx.exe -9 dist\*.exe || echo UPX is not installed, skipping compression
