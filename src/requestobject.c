@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.32 2002/09/24 16:01:28 grisha Exp $
+ * $Id: requestobject.c,v 1.33 2002/09/24 16:20:42 grisha Exp $
  *
  */
 
@@ -808,20 +808,7 @@ static PyObject * req_write(requestobject *self, PyObject *args)
 
 }
 
-//XXX segfault generator
-static char* req_segfault(requestobject *self)
-{
-
-    char *x = 1;
-
-    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, self->request_rec, "about to segfault...");
-
-    *x = 'x';
-    return x;
-}
-
 static PyMethodDef request_methods[] = {
-    {"segfault",       (PyCFunction) req_segfault,       METH_NOARGS},
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
