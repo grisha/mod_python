@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.35 2001/08/18 22:43:45 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.36 2001/10/15 22:54:28 gtrubetskoy Exp $
 
 import sys
 import string
@@ -458,17 +458,24 @@ def import_module(module_name, req=None, path=None):
 
             filepath = module.__file__
 
-            if os.path.exists(filepath):
+            try:
+                # this try/except block is a workaround a Python bug in 2.0, 2.1
+                # and 2.1.1. See
+                # http://www.python.org/doc/current/lib/module-os.path.html
 
-                mod = os.stat(filepath)
-                mtime = mod[stat.ST_MTIME]
+                if os.path.exists(filepath):
 
-            # check also .py and take the newest
-            if os.path.exists(filepath[:-1]) :
+                    mod = os.stat(filepath)
+                    mtime = mod[stat.ST_MTIME]
 
-                # get the time of the .py file
-                mod = os.stat(filepath[:-1])
-                mtime = max(mtime, mod[stat.ST_MTIME])
+                # check also .py and take the newest
+                if os.path.exists(filepath[:-1]) :
+
+                    # get the time of the .py file
+                    mod = os.stat(filepath[:-1])
+                    mtime = max(mtime, mod[stat.ST_MTIME])
+
+            except OSError: pass
 
     # if module is newer - reload
     if (autoreload and (oldmtime < mtime)):
