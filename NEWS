@@ -1,3 +1,7 @@
+Jan 23 2000 -	Fixed the bug where req.server.register_cleanup was 
+		expecting a builtin _req object rather than the new real 
+		Python Request.
+
 Jan 21 2000 -	The Publisher handler __auth__ can now be a dictionary or.
 		a const. There is also new __access__, which can be a list.
 
