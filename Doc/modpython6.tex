@@ -262,6 +262,22 @@ request, one must not attept to instantiate \class{FieldStorage} when
 using the Publisher handler and should use
 \class{Request.form} instead.
 
+
+\section{PSP Handler\label{hand-psp}}
+
+\index{PSP}
+
+PSP handler is a handler that processes documents using the
+\code{mod_python.psp} module. For more details on the PSP syntax, see
+Section \ref{pyapi-psp}.
+
+To use it, simply add this to your httpd configuration: 
+
+\begin{verbatim}
+AddHandler python-program .psp
+PythonHandler mod_python.psp
+\end{verbatim}
+
 \section{CGI Handler\label{hand-cgi}}
 
 \index{CGI}
@@ -277,9 +293,14 @@ not see the environment available to the Python program, nor will they
 be able to read/write from standard input/output with the results expected
 in a "true" CGI environment.
 
-The handler is provided as a stepping stone for the migration of legacy
-code away from CGI. It is not recommended that you settle on using
-this handler as the preferred way to use mod_python for the long term.
+The handler is provided as a stepping stone for the migration of
+legacy code away from CGI. It is not recommended that you settle on
+using this handler as the preferred way to use mod_python for the long
+term. This is because the CGI environment was not intended for
+execution within threads (e.g. requires changing of current directory
+with is inherently not thread-safe) and therefore can only be
+implemented in a way that defeats many of the advantages of using
+mod_python in the first place.
 
 To use it, simply add this to your \file{.htaccess} file: 
 

@@ -1439,3 +1439,133 @@ are to be ignored and treated as if they were not included.
 
 \end{funcdesc}
 
+\section{\module{psp} -- Python Server Pages\label{pyapi-psp}}
+\declaremodule[psp]{extension}{psp}
+\modulesynopsis{Python Server Pages}
+\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+
+The \module{psp} module provides a way to convert text documents
+(including, but not limited to HTML documents) containing Python code
+embedded in special brackets into pure Python code suitable for
+execution within a mod_python handler, thereby providing a versatile
+mechanism for delivering dynamic content in a style similar to similar
+to ASP, JSP and others.
+
+The parser used by \module{psp} is written in C (genrated using flex)
+and is therefore very fast.
+
+Unlike other mod_python modules, \module{psp} is written in such a way
+that it can be imported outside of the Apache httpd process, e.g. in
+stand-alone command-line programs.
+
+\subsection{PSP Syntax\label{pyapi-psp-syntax}}
+
+Inside the document, Python \dfn{code} needs to be surrounded by "<\%"
+and "\%>". Python \dfn{expressions} are enclosed in "<\%=" and
+"\%>".
+
+Here is a primitive PSP page that demonstrated use of both code and
+expression embedded in an HTML document:
+
+\begin{verbatim}
+<html>
+<%
+import time
+%>
+Hello world, the time is: <%=time.strftime("%Y-%m-%d, %H:%M:%S")%>
+</html>
+\end{verbatim}
+
+The PSP parser would convert the above page into the following Python code:
+
+\begin{verbatim}
+req.write("""<html>
+""")
+import time
+req.write("""
+Hello world, the time is: """); req.write(str(time.strftime("%Y-%m-%d, %H:%M:%S"))); req.write("""
+</html>
+""")
+\end{verbatim}
+
+This code, when executed inside a handler would result in a page
+displaying words "Hello world, the time is: " followed by current time.
+
+Python code can be used to output parts of the page conditionally or
+in loops. Blocks are denoted from within Python code by
+indentation. The last indentation in Python code (even if it is a
+comment) will persist through the document until either end of
+document or more Python code.
+
+Here is an example:
+\begin{verbatim}
+<html>
+<%
+for n in range(3):
+    # This indent will persist
+%>
+ <p>This paragraph will be 
+repeated 3 times.</p>
+<%
+# This line will cause the block to end
+%>
+This line will only be shown once.<br>
+</html>
+\end{verbatim}
+
+The above will be converted to the following Python code:
+
+\begin{verbatim}
+req.write("""<html>
+""")
+for n in range(3):
+    # This indent will persist
+    req.write("""
+ <p>This paragraph will be
+repeated 3 times.</p>
+""")
+# This line will cause the block to end
+req.write("""
+This line will only be shown once.<br>
+</html>
+""")
+\end{verbatim}
+
+The parser is also smart enough to figure out the indent if the last
+line of Python ends with ":" (colon). Considering this, and that the
+indent is reset when a newline is encountered inside <\% \%>, the
+above page can be written as:
+
+\begin{verbatim}
+<html>
+<%
+for n in range(3):
+%>
+ <p>This paragraph will be 
+repeated 3 times.</p>
+<%
+%>
+This line will only be shown once.<br>
+</html>
+\end{verbatim}
+
+However, the above code can be confusing, thus having descriptive
+comments denoting blocks is highly recommended as a good practice.
+
+\subsection{Functions\label{pyapi-psp-funcs}}
+
+\begin{funcdesc}{parse}{filename}
+
+This function will open file named \var{filename}, read and parse its
+content and return a string of resulting Python code.
+
+\end{funcdesc}
+
+\begin{funcdesc}{parsestring}{string}
+
+This function will parse contents of \var{string} and return a string
+of resulting Python code.
+
+\end{funcdesc}
+
+
