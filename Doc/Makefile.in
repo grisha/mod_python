@@ -61,6 +61,7 @@
  # See also the README file.
  #
 
+# You might need to set this manually
 PYTHON_SRC=	@PYTHON_SRC@
 
 # This is the *documentation* release, and is used to construct the file
