@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.34.4.2 2002/04/10 21:18:22 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.34.4.3 2002/04/19 18:20:40 gtrubetskoy Exp $
 
 import sys
 import string
@@ -308,7 +308,7 @@ def import_module(module_name, req=None, path=None):
 
         # but is it in the path?
         file = module.__dict__.get("__file__")
-        if not file or (path and not file in path):
+        if not file or (path and not os.path.dirname(file) in path):
                 raise SERVER_RETURN, HTTP_NOT_FOUND
 
         if autoreload:
