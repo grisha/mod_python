@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.8 2003/05/30 15:10:46 grisha Exp $
+ * $Id: psp_parser.l,v 1.9 2003/07/24 17:44:13 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -74,6 +74,8 @@
 #define CLEAR_WHITESPACE(__wsstring) psp_string_clear((__wsstring));
 
 %}
+
+%option noyywrap
 
 %x TEXT
 %x PYCODE
