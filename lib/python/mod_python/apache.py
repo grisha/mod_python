@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.36 2001/10/15 22:54:28 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.37 2001/10/15 22:58:20 gtrubetskoy Exp $
 
 import sys
 import string
@@ -459,10 +459,9 @@ def import_module(module_name, req=None, path=None):
             filepath = module.__file__
 
             try:
-                # this try/except block is a workaround a Python bug in 2.0, 2.1
-                # and 2.1.1. See
-                # http://www.python.org/doc/current/lib/module-os.path.html
-
+                # this try/except block is a workaround for a Python bug in
+                # 2.0, 2.1 and 2.1.1. See
+                # http://sourceforge.net/tracker/?group_id=5470&atid=105470&func=detail&aid=422004
                 if os.path.exists(filepath):
 
                     mod = os.stat(filepath)
