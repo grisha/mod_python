@@ -11,7 +11,6 @@ import os
 
 # Response status codes for use with rq.protocol_status(sn, *)
 
-
 SERVER_RETURN = apache.SERVER_RETURN
 PROG_TRACEBACK = apache.PROG_TRACEBACK
 REQ_PROCEED = apache.REQ_PROCEED
@@ -76,6 +75,8 @@ def Service(req):
 
     try:
 
+        opt = req.get_options()
+
         # get filename
         filename = req.filename
 
@@ -95,9 +96,14 @@ def Service(req):
             # this file has no extension
             module_name = filename[slash + 1:]
 
-        opt = req.get_options()
+        # if we're using packages
+        if opt.has_key("rootpkg"):
+            module_name = opt["rootpkg"] + "." + module_name
+
         if opt.has_key("debug"):
             debug = opt["debug"]
+        else:
+            debug = 0
             
         if opt.has_key("handler"):
             module_name = opt["handler"]

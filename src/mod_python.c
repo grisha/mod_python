@@ -3,7 +3,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.2 2000/05/05 16:51:14 grisha Exp $
+ * $Id: mod_python.c,v 1.3 2000/05/06 22:09:23 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details. See COPYRIGHT file for Copyright. 
@@ -30,12 +30,12 @@
  ******************************************************************/
 
 #define VERSION_COMPONENT "mod_python/2.0a"
-#define MODULENAME "apache.apache"
-#define INITSTRING "apache.apache.init()"
+#define MODULENAME "mod_python.apache"
+#define INITSTRING "mod_python.apache.init()"
 #define INTERP_ATTR "__interpreter__"
 
 /* debugging? Use ./httpd -X when on */
-static int debug = 1;
+static int debug = 0;
 
 /* Are we in single interpreter mode? */
 static int single_mode = 0;
@@ -1898,106 +1898,6 @@ PyObject * get_obcallback(const char *name, server_rec * server)
 
 }
 
-/**
- ** PythonInitFunction
- **
- *      NOTE: This function and directive are obsolete!
- *
- *      When Apache sees "PythonInitFunction" in httpd.conf, it
- *      calls this function. PythonInitFunction makes everything 
- *      function in "sinlge interpreter" mode for backwards compatibility.
- *
- *      This function will destroy the obCallBack created by
- *      python_init and creates a new one with new parameters.
- */
-
-static const char *directive_PythonInitFunction(cmd_parms *cmd, void *dummy, 
-				       const char *module, const char *initstring)
-{
-
-    PyObject *obcallback;
-    PyObject *p;
-    long l_tstate;
-
-    /* this function can only be called after python_init */
-    if (! Py_IsInitialized())
-    {
-	if (debug) printf ("directive_PythonInitFunction(): postponing until Python initialized...\n" );
-
-	/* postpone */
-	return NULL;
-    }
-
-    /* make sure the directive is syntactically correct */
-        
-    if (!module) 
-    {
-	fprintf(stderr, "PythonInitFunction: no module specified");
-	exit(1);
-    }
-
-    if (!initstring) 
-    {
-	fprintf(stderr, "PythonInitFunction: no initstring specified");
-	exit(1);
-    }
-
-    if (debug) printf("directive_PythonInitFunction(): entering sinlge interpreter mode\n");
-
-    /* we are in sinlge interpreter mode now */
-    single_mode = 1;
-
-#ifdef WITH_THREAD
-    if (debug) printf("directive_PythonInitFunction(): calling PyEval_AcquireLock()\n");
-
-    /* Acquire lock */
-    PyEval_AcquireLock();
-#endif
-
-    /* get the obCallBack for global_interpreter */
-    obcallback = PyDict_GetItemString(interpreters, "global_interpreter");
-
-    if (! obcallback) 
-    {
-	fprintf(stderr, "PythonInitFunction: global_interpreter obCallBack not found! Weird, bailing!");
-	exit(1);
-    }
-
-    /* save the pointer to the tstate (__interpreter__ attribute) */
-    p = PyObject_GetAttrString(obcallback, INTERP_ATTR);
-    l_tstate = PyInt_AsLong(p);
-    Py_DECREF(p);
-
-    if (debug) printf("directive_PythonInitFunction(): keeping tstate %ld, destroying current obCallBack\n", l_tstate);
-
-    /* destroy the current obCallBack */
-    Py_XDECREF(obcallback);
-
-    /* create a new obCallBack */
-    obcallback = make_obcallback(module, initstring);
-
-    if (debug) printf("directive_PythonInitFunction(): saving tstate in new obCallBack\n");
-
-    /* set the pointer to the tstate (__interpreter__ attribute) */
-    p = PyInt_FromLong(l_tstate);    
-    PyObject_SetAttrString(obcallback, INTERP_ATTR, p);
-    Py_DECREF(p);
-
-    if (debug) printf("directive_PythonInitFunction(): saving new obCallBack in interpreters\n");
-
-    /* save the new obCallBack */
-    PyDict_SetItemString(interpreters, "global_interpreter", obcallback);
-
-#ifdef WITH_THREAD
-    if (debug) printf("directive_PythonInitFunction(): calling PyEval_ReleaseLock()\n");
-
-    /* Release lock */
-    PyEval_ReleaseLock();
-#endif
-
-    return NULL;
-}
-
 /** 
  ** log_error
  **
@@ -2172,15 +2072,26 @@ static int python_handler(request_rec *req, char *handler)
 	if (single_mode)
 	    interpreter = NULL;
 	else {
-	    /* base interpreter name on directory where the handler directive
-	     * was last found. If it was in http.conf, then we will use the global
-	     * interpreter.
-	     */
-	    s = ap_table_get(conf->dirs, handler);
-	    if (strcmp(s, "") == NULL)
-		interpreter = NULL;
-	    else
-		interpreter = s;
+	    if ((s = ap_table_get(conf->directives, "PythonInterpPerDirectory"))) {
+		/* base interpreter on directory where the file is found */
+		if (ap_is_directory(req->filename))
+		    interpreter = ap_make_dirstr_parent(req->pool, 
+				 ap_pstrcat(req->pool, req->filename, "/", NULL ));
+		else
+		    interpreter = ap_make_dirstr_parent(req->pool, req->filename);
+	    }
+	    else {
+		/* - default -
+		 * base interpreter name on directory where the handler directive
+		 * was last found. If it was in http.conf, then we will use the 
+		 * global interpreter.
+		 */
+		s = ap_table_get(conf->dirs, handler);
+		if (strcmp(s, "") == NULL)
+		    interpreter = NULL;
+		else
+		    interpreter = s;
+	    }
 	}
     }
 
@@ -2316,17 +2227,62 @@ static int python_handler(request_rec *req, char *handler)
     return result;
 
 }
+
+/**
+ ** directive_PythonPath
+ **
+ *      This function called whenever PythonPath directive
+ *      is encountered.
+ */
+static const char *directive_PythonPath(cmd_parms *cmd, void *mconfig, 
+					const char *val) {
+    return python_directive(cmd, mconfig, "PythonPath", val);
+}
+
 /**
  ** directive_PythonInterpreter
  **
  *      This function called whenever PythonInterpreter directive
  *      is encountered.
  */
-
 static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig, 
-				       const char *val)
-{
+				       const char *val) {
     return python_directive(cmd, mconfig, "PythonInterpreter", val);
+}
+
+/**
+ ** directive_PythonDebug
+ **
+ *      This function called whenever PythonDebug directive
+ *      is encountered.
+ */
+static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig) {
+    return python_directive(cmd, mconfig, "PythonDebug", "1");
+}
+
+/**
+ ** directive_PythonInterpPerDirectory
+ **
+ *      This function called whenever PythonInterpPerDirectory directive
+ *      is encountered.
+ */
+
+static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd, 
+						      void *mconfig) {
+    return python_directive(cmd, mconfig, 
+			    "PythonInterpPerDirectory", "");
+}
+
+/**
+ ** directive_PythonNoReload
+ **
+ *      This function called whenever PythonNoReload directive
+ *      is encountered.
+ */
+static const char *directive_PythonNoReload(cmd_parms *cmd, 
+						      void *mconfig) {
+    return python_directive(cmd, mconfig, 
+			    "PythonNoReload", "");
 }
 
 /**
@@ -2458,12 +2414,12 @@ static handler_rec python_handlers[] =
 command_rec python_commands[] =
 {
     {
-	"PythonInitFunction",                 /* directive name */
-	directive_PythonInitFunction,         /* config action routine */
-	NULL,                                 /* argument to include in call */
-	RSRC_CONF,                            /* where available */
-	TAKE2,                                /* arguments */
-	"A line of Python to initialize it."  /* directive description */
+	"PythonPath",
+	directive_PythonPath,
+	NULL,
+	OR_ALL,
+	TAKE1,
+	"Python path, specified in Python list syntax."
     },
     {
 	"PythonInterpreter",                 
@@ -2474,12 +2430,36 @@ command_rec python_commands[] =
 	"Forces a specific Python interpreter name to be used here."
     },
     {
+	"PythonInterpPerDirectory",                 
+	directive_PythonInterpPerDirectory,         
+	NULL,                                
+	OR_ALL,                         
+	NO_ARGS,                               
+	"Create subinterpreters per directory rather than per directive."
+    },
+    {
+	"PythonDebug",                 
+	directive_PythonDebug,         
+	NULL,                                
+	OR_ALL,                         
+	NO_ARGS,                               
+	"Send (most) Python error output to the client rather than logfile."
+    },
+    {
+	"PythonNoReload",                 
+	directive_PythonNoReload,         
+	NULL,                                
+	OR_ALL,                         
+	NO_ARGS,                               
+	"Do not reload already imported modules if they changed."
+    },
+    {
 	"PythonOption",                                   
 	directive_PythonOption,                           
 	NULL, 
 	OR_ALL,                                      
 	TAKE2,                                            
-	"Sets specific Httpdapy options."                 
+	"Useful to pass custom configuration information to scripts."
     },
     {
 	"PythonPostReadRequestHandler",

@@ -170,14 +170,6 @@ class CallBack:
     A generic callback object.
     """
 
-    def __init__(self, rootpkg=None, autoreload=None):
-	""" 
-	Constructor.
-	"""
-
-        pass
-
-
     def resolve_object(self, module_name, object_str):
         """
         This function traverses the objects separated by .
@@ -208,7 +200,7 @@ class CallBack:
                 return obj
 
         except AttributeError, attr:
-
+            _apache.log_error(object_str)
             # try to instantiate attr before attr in error
             list = string.split(object_str, '.')
 
@@ -236,18 +228,7 @@ class CallBack:
 
         # config
         self.config = req.get_config()
-
-        # process options
-        autoreload, rootpkg, debug, pythonpath = 1, None, None, None
-        self.opt = req.get_options()
-        if self.opt.has_key("autoreload"):
-            autoreload = self.opt["autoreload"]
-        if self.opt.has_key("rootpkg"):
-            rootpkg = self.opt["rootpkg"]
-        if self.opt.has_key("debug"):
-            debug = self.opt["debug"]
-        if self.opt.has_key("pythonpath"):
-            pythonpath = self.opt["pythonpath"]
+        debug = self.config.has_key("PythonDebug"):
 
         try:
             # cycle through the handlers
@@ -256,18 +237,26 @@ class CallBack:
             for handler in handlers:
 
                 # split module::handler
-                module_name, object_str = string.split(handler, '::', 1)
+                l = string.split(handler, '::', 1)
+                module_name = l[0]
+                if len(l) == 1:
+                    # no oject, provide default
+                    object_str = string.lower(htype[len("python"):])
+                else:
+                    object_str = l[1]
 
-                # import module and find the object
+                # import module
                 module = import_module(module_name, req)
+
+                # find the object
                 object = self.resolve_object(module_name, object_str)
 
                 # call the object
                 result = object(req)
 
+                # stop cycling through handlers
                 if result != OK:
                     break
-
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -324,20 +313,17 @@ class CallBack:
             if debug:
 
                 # replace magnus-internal/X-python-e with text/html
-                req.content_type = 'text/html'
+                req.content_type = 'text/plain'
 
                 #req.status = 200 # OK
                 req.send_http_header()
 
-                s = "<html><h3>mod_python: Python error:</h3>\n<pre>\n"
-                s = s + "<b>Handler: %s %s</b>\n<blockquote>\n" % (htype, hname)
+                s = '\\nERROR mod_python: "%s %s"\n\n' % (htype, hname)
                 for e in traceback.format_exception(etype, evalue, etb):
                     s = s + e + '\n'
-                s = s + "</blockquote>\n<b>End of output for %s %s</b>.\n" % (htype, hname)
-                s = s + "<em>NOTE: More output from other handlers, if any, may follow.\n"
+                s = s + "\nNOTE: More output from other handlers, if any, may follow.\n"
                 s = s + "This will NOT happen, and request processing will STOP\n"
-                s = s + "at this point when you unset PythonOption debug.</em>\n\n"
-                s = s + "</pre></html>\n"
+                s = s + "at this point when you unset PythonOption debug.\n\n"
 
                 req.write(s)
 
@@ -361,17 +347,13 @@ def import_module(module_name, req=None):
     """
 
     # get the options
-    autoreload, rootpkg, debug, pythonpath = 1, None, None, None
+    autoreload, debug, pythonpath = 1, None, None
     if req:
-        opt = req.get_options()
-        if opt.has_key("autoreload"):
-            autoreload = opt["autoreload"]
-        if opt.has_key("rootpkg"):
-            rootpkg = opt["rootpkg"]
-        if opt.has_key("debug"):
-            debug = opt["debug"]
-        if opt.has_key("pythonpath"):
-            pythonpath = opt["pythonpath"]
+        config = req.get_config()
+        autoreload = not config.has_key("PythonNoReload"):
+        debug = not config.has_key("PythonDebug"):
+        if conf.has_key("PythonPath"):
+            pythonpath = config["PythonPath"]
 
     # unless pythonpath is set explicitely
     if pythonpath:
@@ -380,10 +362,6 @@ def import_module(module_name, req=None):
         # add '.' to sys.path 
         if '.' not in sys.path:
             sys.path[:0] = ['.']
-
-    # if we're using packages
-    if rootpkg:
-        module_name = rootpkg + "." + module_name
 
     # try to import the module
     try:
@@ -394,8 +372,8 @@ def import_module(module_name, req=None):
         if  not autoreload:
 
             # import module
-            fd, path, desc = imp.find_module(module_name)
-            module = imp.load_module(module_name, fd, path, desc)
+            exec "import " + module_name
+            module = eval(module_name)
 
         else:
 
@@ -414,11 +392,8 @@ def import_module(module_name, req=None):
             # import the module for the first time
             else:
 
-                # we could use __import__ but it can't handle packages
-                # GT STOPPED HERE. READ ABOUT PACKAGES AND WHY apache.cgihandler
-                # won't work inside apache package
-                fd, path, desc = imp.find_module(module_name)
-                module = imp.load_module(module_name, fd, path, desc)
+                exec "import " + module_name
+                module = eval(module_name)
 
             # find out the last modification time
             # but only if there is a __file__ attr
@@ -500,7 +475,11 @@ class NullIO:
 
 class CGIStdin(NullIO):
 
+    def __del__(self):
+        _apache.log_error( "destroying si %d" % id(self))
+
     def __init__(self, req):
+        _apache.log_error( "creating si %d" % id(self))
         self.pos = 0
         self.req = req
         self.BLOCK = 65536 # 64K
@@ -562,7 +541,11 @@ class CGIStdout(NullIO):
     Class that allows writing to the socket directly for CGI.
     """
     
+    def __del__(self):
+        _apache.log_error( "destroying so %d" % id(self))
+
     def __init__(self, req):
+        _apache.log_error( "creating so %d" % id(self))
         self.pos = 0
         self.req = req
         self.headers_sent = 0
@@ -624,8 +607,8 @@ def setup_cgi(req):
     # because some other parts of python already hold
     # a reference to it. it must be edited "by hand"
 
-    for k in osenv.keys():
-        del osenv[k]
+    #for k in osenv.keys():
+    #    del osenv[k]
     for k in env.keys():
         osenv[k] = env[k]
 
@@ -637,18 +620,20 @@ def setup_cgi(req):
     return env, si, so
         
 def restore_nocgi(env, si, so):
-    """ see hook_stdio() """
+    """ see setup_cgi() """
 
     osenv = os.environ
 
     # restore env
-    for k in osenv.keys():
-        del osenv[k]
-    for k in env.keys():
-            osenv[k] = env[k]
+    #for k in osenv.keys():
+    #    del osenv[k]
+    #for k in env.keys():
+    #        osenv[k] = env[k]
 
     sys.stdout = si
     sys.stdin = so
+
+
 
 def init():
     """ 

@@ -72,6 +72,9 @@ import apache
 import os
 import sys
 
+# this will save memory
+os.environ = {}
+
 try:
     import ZPublisher
 except ImportError:
@@ -97,10 +100,6 @@ def publish(req):
         ZPublisher.publish_module(module_name, stdin=sys.stdin,
                                   stdout=sys.stdout, stderr=sys.stderr,
                                   environ=os.environ)
-        s = `req.headers_out`
-        f = open("/tmp/XXX", "w")
-        f.write(s)
-        f.close()
     finally:
         apache.restore_nocgi(env, si, so)
 
