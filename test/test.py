@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.32 2003/06/24 04:16:00 grisha Exp $
+ # $Id: test.py,v 1.33 2003/06/30 18:04:35 grisha Exp $
  #
 
 """
@@ -893,7 +893,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing Cookie.MarshalCookie"
 
-        mc = "eggs=648aba93b961ee717e70531417d75fddWwIAAABzAwAAAGZvb3MDAAAAYmFy"
+        mc = "eggs=d049b2b61adb6a1d895646719a3dc30bcwQAAABzcGFt"
 
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/testz.py", skip_host=1)

@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.3 2003/06/27 16:59:05 grisha Exp $
+ # $Id: Cookie.py,v 1.4 2003/06/30 18:04:35 grisha Exp $
 
 """
 
@@ -138,10 +138,6 @@ spam=a90f71893109ca246ab68860f552302ce3MEAAAAZWdnc2kYAAAAMA==; version=1
 {'eggs': 24}
 >>>
 
-NB: This module is named Cookie with a capital C so as to let people
-have a variable called cookie without accidently overwriting the
-module.
-
 """
 
 import time
@@ -150,8 +146,55 @@ import hmac
 import marshal
 import base64
 
+from mod_python import apache
+
 class CookieError(Exception):
     pass
+
+class metaCookie(type):
+
+    def __new__(cls, clsname, bases, clsdict):
+
+        _valid_attr = (
+            "version", "path", "domain", "secure",
+            "comment", "expires", "max_age",
+            # RFC 2965
+            "commentURL", "discard", "port")
+
+        # _valid_attr + property values
+        # (note __slots__ is a new Python feature, it
+        # prevents any other attribute from being set)
+        __slots__ = _valid_attr + ("name", "value", "_value",
+                                   "_expires", "__data__")
+
+        clsdict["_valid_attr"] = _valid_attr
+        clsdict["__slots__"] = __slots__
+
+        def set_expires(self, value):
+
+            if type(value) == type(""):
+                # if it's a string, it should be
+                # valid format as per Netscape spec
+                try:
+                    t = time.strptime(value, "%a, %d-%b-%Y %H:%M:%S GMT")
+                except ValueError:
+                    raise ValueError, "Invalid expires time: %s" % value
+                t = time.mktime(t)
+            else:
+                # otherwise assume it's a number
+                # representing time as from time.time()
+                t = value
+                value = time.strftime("%a, %d-%b-%Y %H:%M:%S GMT",
+                                      time.gmtime(t))
+
+            self._expires = "%s" % value
+
+        def get_expires(self):
+            return self._expires
+
+        clsdict["expires"] = property(fget=get_expires, fset=set_expires)
+
+        return type.__new__(cls, clsname, bases, clsdict)
 
 class Cookie(object):
     """
@@ -160,17 +203,7 @@ class Cookie(object):
     a single cookie (not a list of Morsels).
     """
 
-    _valid_attr = (
-        "version", "path", "domain", "secure",
-        "comment", "expires", "max_age",
-        # RFC 2965
-        "commentURL", "discard", "port")
-
-    # _valid_attr + property values
-    # (note __slots__ is a new Python feature, it
-    # prevents any other attribute from being set)
-    __slots__ = _valid_attr + ("name", "value", "_value",
-                               "_expires", "_max_age")
+    __metaclass__ = metaCookie
 
     def parse(Class, str):
         """
@@ -184,7 +217,6 @@ class Cookie(object):
 
     parse = classmethod(parse)
 
-
     def __init__(self, name, value, **kw):
 
         """
@@ -192,11 +224,13 @@ class Cookie(object):
         arguments, as well as optionally any of allowed cookie attributes
         as defined in the existing cookie standards. 
         """
-
         self.name, self.value = name, value
 
         for k in kw:
             setattr(self, k.lower(), kw[k])
+
+        # subclasses can use this for internal stuff
+        self.__data__ = {}
 
 
     def __str__(self):
@@ -225,45 +259,6 @@ class Cookie(object):
         return '<%s: %s>' % (self.__class__.__name__,
                                 str(self))
     
-    def set_expires(self, value):
-
-        if type(value) == type(""):
-            # if it's a string, it should be
-            # valid format as per Netscape spec
-            try:
-                t = time.strptime(value, "%a, %d-%b-%Y %H:%M:%S GMT")
-            except ValueError:
-                raise ValueError, "Invalid expires time: %s" % value
-            t = time.mktime(t)
-        else:
-            # otherwise assume it's a number
-            # representing time as from time.time()
-            t = value
-            value = time.strftime("%a, %d-%b-%Y %H:%M:%S GMT",
-                                  time.gmtime(t))
-
-        self._expires = "%s" % value
-
-    def get_expires(self):
-        return self._expires
-
-    def set_max_age(self, value):
-
-        self._max_age = int(value)
-
-        # if expires not already set, make it
-        # match max_age for those old browsers that
-        # only understand the Netscape spec
-        if not hasattr(self, "expires"):
-            self._expires = time.strftime("%a, %d-%b-%Y %H:%M:%S GMT",
-                                          time.gmtime(time.time() +
-                                                      self._max_age))
-
-    def get_max_age(self):
-        return self._max_age
-
-    expires = property(fget=get_expires, fset=set_expires)
-    max_age = property(fget=get_max_age, fset=set_max_age)
 
 class SignedCookie(Cookie):
     """
@@ -287,21 +282,15 @@ class SignedCookie(Cookie):
 
     parse = classmethod(parse)
 
-    __slots__ = Cookie.__slots__ + ("_secret",)
-
-    expires = property(fget=Cookie.get_expires, fset=Cookie.set_expires)
-    max_age = property(fget=Cookie.get_max_age, fset=Cookie.set_max_age)
-
     def __init__(self, name, value, secret=None, **kw):
-
-        self._secret = secret
-
         Cookie.__init__(self, name, value, **kw)
 
+        self.__data__["secret"] = secret
+
     def hexdigest(self, str):
-        if not self._secret:
+        if not self.__data__["secret"]:
             raise CookieError, "Cannot sign without a secret"
-        _hmac = hmac.new(self._secret, self.name)
+        _hmac = hmac.new(self.__data__["secret"], self.name)
         _hmac.update(str)
         return _hmac.hexdigest()
 
@@ -326,7 +315,7 @@ class SignedCookie(Cookie):
 
         if mac.hexdigest() == sig:
             self.value = val
-            self._secret = secret
+            self.__data__["secret"] = secret
         else:
             raise CookieError, "Incorrectly Signed Cookie: %s=%s" % (self.name, self.value)
 
@@ -347,10 +336,6 @@ class MarshalCookie(SignedCookie):
     Here is a link to a sugesstion that marshalling is safer than unpickling
     http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&selm=7xn0hcugmy.fsf%40ruckus.brouhaha.com
     """
-    __slots__ = SignedCookie.__slots__ 
-
-    expires = property(fget=Cookie.get_expires, fset=Cookie.set_expires)
-    max_age = property(fget=Cookie.get_max_age, fset=Cookie.set_max_age)
 
     def parse(Class, secret, str):
 
@@ -388,11 +373,11 @@ class MarshalCookie(SignedCookie):
 
 _cookiePattern = re.compile(
     r"(?x)"                       # Verbose pattern
-    r"[,\ ]*"                     # space/comma (RFC2616 4.2) before attr-val is eaten
+    r"[,\ ]*"                        # space/comma (RFC2616 4.2) before attr-val is eaten
     r"(?P<key>"                   # Start of group 'key'
     r"[^;\ =]+"                     # anything but ';', ' ' or '='
     r")"                          # End of group 'key'
-    r"\ *(=\ *)?"                 # apace, then may be "=", more space
+    r"\ *(=\ *)?"                 # a space, then may be "=", more space
     r"(?P<val>"                   # Start of group 'val'
     r'"(?:[^\\"]|\\.)*"'            # a doublequoted string
     r"|"                            # or
@@ -440,16 +425,15 @@ def _parseCookie(str, Class):
 
     return result
 
-
 def setCookie(req, cookie):
     """
     Sets a cookie in outgoing headers and adds a cache
     directive so that caches don't cache the cookie.
     """
-
+        
     if not req.headers_out.has_key("Set-Cookie"):
         req.headers_out.add("Cache-Control", 'no-cache="set-cookie"')
-        
+
     req.headers_out.add("Set-Cookie", str(cookie))
 
 def getCookie(req, Class=Cookie, data=None):
@@ -458,14 +442,14 @@ def getCookie(req, Class=Cookie, data=None):
     a Cookie class. The class must be one of the classes from
     this module.
     """
-
+    
     if not req.headers_in.has_key("cookie"):
         return None
 
     cookies = req.headers_in["cookie"]
     if type(cookies) == type([]):
         cookies = '; '.join(cookies)
-
+        
     if data:
         return Class.parse(data, cookies)
     else:
