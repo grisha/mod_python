@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.29 2003/06/24 04:16:00 grisha Exp $
+ # $Id: tests.py,v 1.30 2003/07/14 20:51:32 grisha Exp $
  #
 
 # mod_python tests
@@ -268,7 +268,7 @@ class SimpleTestCase(unittest.TestCase):
         log("    req.headers_in: %s" % `req.headers_in`) 
         if req.headers_in["Host"][:13].lower() != "test_internal":
             self.fail("The 'Host' header should begin with 'test_internal'")
-            
+
         log("    req.headers_out: %s" % `req.headers_out`)
         if ((not req.headers_out.has_key("content-length")) or
             req.headers_out["content-length"] != "15"):
@@ -434,12 +434,12 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("server.is_virtual should be 1")
         
         log("    server.timeout: %s" % `server.timeout`)
-        if not server.timeout in (5000000, 300000000):
-            self.fail("server.timeout should be 5000000 or 300000000")
+        if not server.timeout in (5.0, 300.0):
+            self.fail("server.timeout should be 5.0 or 300.0")
         
         log("    server.keep_alive_timeout: %s" % `server.keep_alive_timeout`)
-        if server.keep_alive_timeout != 15000000:
-            self.fail("server.keep_alive_timeout should be 15000000")
+        if server.keep_alive_timeout != 15.0:
+            self.fail("server.keep_alive_timeout should be 15.0")
             
         log("    server.keep_alive_max: %s" % `server.keep_alive_max`)
         if server.keep_alive_max != 100:
@@ -931,5 +931,12 @@ def _test_table():
                         str(ta), str(tb))
             if a: raise TestFailed, 'a not empty after popitems: %s' % str(a)
             if b: raise TestFailed, 'b not empty after popitems: %s' % str(b)
+
+    # iteration (just make sure we can iterate without a segfault)
+    d = apache.table({'a' : '1', 'b' : '2', 'c' : '3'})
+    log("    for k in table")
+    for k in d:
+        pass
+
     log("    _test_table test finished")
 

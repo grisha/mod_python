@@ -57,7 +57,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.27 2003/06/09 23:09:31 grisha Exp $
+ * $Id: tableobject.c,v 1.28 2003/07/14 20:51:32 grisha Exp $
  *
  */
 
@@ -1107,7 +1107,7 @@ typedef struct {
     tableobject *table;
     int ti_nelts;
     int ti_pos;
-    binaryfunc ti_select;
+    tableselectfunc ti_select;
 } tableiterobject;
 
 static PyObject *tableiter_new(tableobject *table, tableselectfunc select)
@@ -1120,7 +1120,7 @@ static PyObject *tableiter_new(tableobject *table, tableselectfunc select)
     ti->table = table;
     ti->ti_nelts = table->table->a.nelts;
     ti->ti_pos = 0;
-    ti->ti_select = (binaryfunc)select;
+    ti->ti_select = select;
     return (PyObject *)ti;
 }
 
@@ -1132,7 +1132,6 @@ static void tableiter_dealloc(tableiterobject *ti)
 
 static PyObject *tableiter_next(tableiterobject *ti, PyObject *args)
 {
-    PyObject *key, *val;
     apr_table_entry_t *elts = (apr_table_entry_t *) ti->table->table->a.elts;
 
     /* make sure the table hasn't change while being iterated */
@@ -1146,10 +1145,7 @@ static PyObject *tableiter_next(tableiterobject *ti, PyObject *args)
     /* return the next key/val */
 
     if (ti->ti_pos < ti->table->table->a.nelts) {
-        key = PyString_FromString(elts[ti->ti_pos].key);
-        val = PyString_FromString(elts[ti->ti_pos].val);
-        ti->ti_pos++;
-        return (*ti->ti_select)(key, val);
+        return (*ti->ti_select)(&elts[ti->ti_pos++]);
     }
 
     /* the end has been reached */
@@ -1172,7 +1168,6 @@ static PyMethodDef tableiter_methods[] = {
 
 static PyObject *tableiter_iternext(tableiterobject *ti)
 {
-    PyObject *key, *val;
     apr_table_entry_t *elts = (apr_table_entry_t *) ti->table->table->a.elts;
 
     /* make sure the table hasn't change while being iterated */
@@ -1186,10 +1181,7 @@ static PyObject *tableiter_iternext(tableiterobject *ti)
     /* return the next key/val */
 
     if (ti->ti_pos < ti->table->table->a.nelts) {
-        key = PyString_FromString(elts[ti->ti_pos].key);
-        val = PyString_FromString(elts[ti->ti_pos].val);
-        ti->ti_pos++;
-        return (*ti->ti_select)(key, val);
+        return (*ti->ti_select)(&elts[ti->ti_pos++]);
     }
 
     /* the end has been reached */
