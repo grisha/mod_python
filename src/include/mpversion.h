@@ -1,6 +1,6 @@
 #define MPV_MAJOR 2
 #define MPV_MINOR 7
-#define MPV_PATCH 5
+#define MPV_PATCH 8
 #define MPV_BUILD 0
 
-#define MPV_STRING "2.7.5"
+#define MPV_STRING "2.7.8"

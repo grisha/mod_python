@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.34 2001/05/25 03:27:31 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.34.4.3 2002/04/19 18:20:40 gtrubetskoy Exp $
 
 import sys
 import string
@@ -286,87 +286,86 @@ class CallBack:
             # we do not return anything
 
 def import_module(module_name, req=None, path=None):
-    """ 
+    """
     Get the module to handle the request. If
     autoreload is on, then the module will be reloaded
     if it has changed since the last import.
     """
-
-    # get the options
-    autoreload, debug = 1, None
+ 
+    # Get options
+    debug, autoreload = 0, 1
     if req:
         config = req.get_config()
+        debug = config.has_key("PythonDebug")
         if config.has_key("PythonAutoReload"):
             autoreload = int(config["PythonAutoReload"])
-        debug = config.has_key("PythonDebug")
+ 
+    # (Re)import
+    if sys.modules.has_key(module_name):
+        
+        # The module has been imported already
+        module = sys.modules[module_name]
 
-    # try to import the module
+        # but is it in the path?
+        file = module.__dict__.get("__file__")
+        if not file or (path and not os.path.dirname(file) in path):
+                raise SERVER_RETURN, HTTP_NOT_FOUND
 
-    oldmtime = None
-    mtime = None
-
-    if  not autoreload:
-
-        # import module
-        module = __import__(module_name)
-        components = string.split(module_name, '.')
-        for cmp in components[1:]:
-            module = getattr(module, cmp)
+        if autoreload:
+            oldmtime = module.__dict__.get("__mtime__", 0)
+            mtime = module_mtime(module)
+        else:
+            mtime, oldmtime = 0, 0
 
     else:
+        mtime, oldmtime = 0, -1
+ 
+    if mtime > oldmtime:
 
-        # keep track of file modification time and
-        # try to reload it if it is newer
-        if sys.modules.has_key(module_name):
+        # Import the module
+        if debug:
+            s = 'mod_python: (Re)importing %s from %s' % (module_name, path)
+            _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
 
-            # the we won't even bother importing
-            module = sys.modules[module_name]
+        parts = string.split(module_name, '.')
+        for i in range(len(parts)):
+            f, p, d = imp.find_module(parts[i], path)
+            try:
+                mname = string.join(parts[:i+1], ".")
+                module = imp.load_module(mname, f, p, d)
+            finally:
+                if f: f.close()
+            if hasattr(module, "__path__"):
+                path = module.__path__
 
-            # does it have __mtime__ ?
-            if sys.modules[module_name].__dict__.has_key("__mtime__"):
-                # remember it
-                oldmtime = sys.modules[ module_name ].__mtime__
+        if mtime == 0:
+            mtime = module_mtime(module)
 
-        # import the module for the first time
-        else:
-
-            parts = string.split(module_name, '.')
-            for i in range(len(parts)):
-                f, p, d = imp.find_module(parts[i], path)
-                try:
-                    mname = string.join(parts[:i+1], ".")
-                    module = imp.load_module(mname, f, p, d)
-                finally:
-                    if f: f.close()
-                if hasattr(module, "__path__"):
-                    path = module.__path__
-
-        # find out the last modification time
-        # but only if there is a __file__ attr
-        if module.__dict__.has_key("__file__"):
-
-            filepath = module.__file__
-
-            if os.path.exists(filepath):
-
-                mod = os.stat(filepath)
-                mtime = mod[stat.ST_MTIME]
-
-            # check also .py and take the newest
-            if os.path.exists(filepath[:-1]) :
-
-                # get the time of the .py file
-                mod = os.stat(filepath[:-1])
-                mtime = max(mtime, mod[stat.ST_MTIME])
-
-    # if module is newer - reload
-    if (autoreload and (oldmtime < mtime)):
-        module = reload(module)
-
-    # save mtime
-    module.__mtime__ = mtime
-
+        module.__mtime__ = mtime
+ 
     return module
+
+def module_mtime(module):
+    """Get modification time of module"""
+    mtime = 0
+    if module.__dict__.has_key("__file__"):
+        
+       filepath = module.__file__
+       
+       try:
+           # this try/except block is a workaround for a Python bug in
+           # 2.0, 2.1 and 2.1.1. See
+           # http://sourceforge.net/tracker/?group_id=5470&atid=105470&func=detail&aid=422004
+
+           if os.path.exists(filepath):
+               mtime = os.path.getmtime(filepath)
+
+           if os.path.exists(filepath[:-1]) :
+               mtime = max(mtime, os.path.getmtime(filepath[:-1]))
+
+       except OSError: pass
+
+    return mtime
 
 def resolve_object(req, module, object_str, silent=0):
     """
