@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.54 2002/09/07 02:43:49 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.55 2002/09/07 02:56:48 gtrubetskoy Exp $
 
 import sys
 import traceback
@@ -563,9 +563,7 @@ def build_cgi_env(req):
     """
 
     req.add_common_vars()
-    env = {}
-    for k in req.subprocess_env.keys():
-        env[k] = req.subprocess_env[k]
+    env = req.subprocess_env.copy()
         
     if len(req.path_info) > 0:
         env["SCRIPT_NAME"] = req.uri[:-len(req.path_info)]
@@ -725,32 +723,29 @@ def setup_cgi(req):
     """
 
     # save env
-    env = os.environ.copy()
+    save_env = os.environ.copy()
     
     si = sys.stdin
     so = sys.stdout
 
-    env = build_cgi_env(req)
+    os.environ.update(build_cgi_env(req))
  
-    for k in env.keys():
-        os.environ[k] = env[k]
-
     sys.stdout = CGIStdout(req)
     sys.stdin = CGIStdin(req)
 
     sys.argv = [] # keeps cgi.py happy
 
-    return env, si, so
+    return save_env, si, so
         
-def restore_nocgi(env, si, so):
+def restore_nocgi(sav_env, si, so):
     """ see setup_cgi() """
 
     osenv = os.environ
 
     # restore env
-    for k in osenv.keys():
+    for k in osenv:
         del osenv[k]
-    for k in env.keys():
+    for k in sav_env:
         osenv[k] = env[k]
 
     sys.stdout = si
