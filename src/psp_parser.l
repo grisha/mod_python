@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.15 2003/08/11 20:13:03 grisha Exp $
+ * $Id: psp_parser.l,v 1.16 2003/09/10 02:11:22 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -68,8 +68,8 @@
 #include "psp_parser.h"
 
 #define OUTPUT_WHITESPACE(__wsstring) \
-	psp_string_0((__wsstring)); \
-	psp_string_append(&PSP_PG(pycode), (__wsstring)->blob)
+        psp_string_0((__wsstring)); \
+        psp_string_append(&PSP_PG(pycode), (__wsstring)->blob)
 
 #define CLEAR_WHITESPACE(__wsstring) psp_string_clear((__wsstring));
 
@@ -136,13 +136,13 @@
 <TEXT><<EOF>> {
     yypop_buffer_state(yyscanner);
     if (!YY_CURRENT_BUFFER) {
-	/* this is really the end */
-	psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
-	yyterminate();
+        /* this is really the end */
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
+        yyterminate();
     }
     else {
-	/* we are inside include, continue scanning */
-	BEGIN DIR;
+        /* we are inside include, continue scanning */
+        BEGIN DIR;
     }
 }
 
@@ -225,28 +225,28 @@
     filename[strchr(filename, '"')-filename] = '\0';
 
     if (PSP_PG(dir)) {
-	path = malloc(strlen(filename)+strlen(PSP_PG(dir))+1);
-	if (path == NULL) {
-	    PyErr_NoMemory();
-	    yyterminate();
-	}
-	strcpy(path, PSP_PG(dir));
-	strcat(path, filename);
+        path = malloc(strlen(filename)+strlen(PSP_PG(dir))+1);
+        if (path == NULL) {
+            PyErr_NoMemory();
+            yyterminate();
+        }
+        strcpy(path, PSP_PG(dir));
+        strcat(path, filename);
     }
     else {
-	path = filename;
+        path = filename;
     }
 
     Py_BEGIN_ALLOW_THREADS
     f = fopen(path, "rb");
     Py_END_ALLOW_THREADS
     if (f == NULL) {
-	PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
     }
     else {
-	yypush_buffer_state(yy_create_buffer(f, YY_BUF_SIZE, yyscanner), 
-			    yyscanner);
-	BEGIN(TEXT);
+        yypush_buffer_state(yy_create_buffer(f, YY_BUF_SIZE, yyscanner), 
+                            yyscanner);
+        BEGIN(TEXT);
     }
 
     if (PSP_PG(dir)) free(path);

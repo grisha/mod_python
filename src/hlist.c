@@ -57,7 +57,7 @@
  *
  * hlist.c 
  *
- * $Id: hlist.c,v 1.3 2002/11/08 00:15:11 gstein Exp $
+ * $Id: hlist.c,v 1.4 2003/09/10 02:11:22 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -73,7 +73,7 @@
  */
 
 hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
-		    const int s)
+                    const int s)
 {
     hl_entry *hle;
 
@@ -96,13 +96,13 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d,
  */
 
 hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-		       const char *d, const int s)
+                       const char *d, const int s)
 {
     hl_entry *nhle;
 
     /* find tail */
     while (hle && hle->next)
-	hle = hle->next;
+        hle = hle->next;
 
     nhle = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
 
@@ -111,7 +111,7 @@ hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
     nhle->silent = s;
 
     if (hle)
-	hle->next = nhle;
+        hle->next = nhle;
 
     return nhle;
 }
@@ -134,12 +134,12 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
     hle = hle->next;
     nhle = head;
     while (hle) {
-	nhle->next = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
-	nhle = nhle->next;
-	nhle->handler = apr_pstrdup(p, hle->handler);
-	nhle->directory = apr_pstrdup(p, hle->directory);
-	nhle->silent = hle->silent;
-	hle = hle->next;
+        nhle->next = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
+        nhle = nhle->next;
+        nhle->handler = apr_pstrdup(p, hle->handler);
+        nhle->directory = apr_pstrdup(p, hle->directory);
+        nhle->silent = hle->silent;
+        hle = hle->next;
     }
 
     return head;

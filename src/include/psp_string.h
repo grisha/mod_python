@@ -52,7 +52,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_string.h,v 1.2 2003/05/29 14:15:53 grisha Exp $
+ * $Id: psp_string.h,v 1.3 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -67,9 +67,9 @@
 #endif
 
 typedef struct {
-	size_t allocated;
-	size_t length;
-	char        *blob;
+        size_t allocated;
+        size_t length;
+        char        *blob;
 } psp_string;
 
 void psp_string_0(psp_string *);

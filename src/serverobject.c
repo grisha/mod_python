@@ -57,7 +57,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.17 2003/07/12 03:44:53 grisha Exp $
+ * $Id: serverobject.c,v 1.18 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -78,7 +78,7 @@ PyObject * MpServer_FromServer(server_rec *s)
 
     result = PyMem_NEW(serverobject, 1);
     if (! result)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     result->dict = PyDict_New();
     if (!result->dict)
@@ -124,7 +124,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     requestobject *req = NULL;
 
     if (! PyArg_ParseTuple(args, "OO|O", &req, &handler, &data))
-	return NULL; 
+        return NULL; 
 
     if (! MpRequest_Check(req)) {
         PyErr_SetString(PyExc_ValueError, 
@@ -144,16 +144,16 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     ci->handler = handler;
     ci->interpreter = req->interpreter;
     if (data) {
-	Py_INCREF(data);
-	ci->data = data;
+        Py_INCREF(data);
+        ci->data = data;
     }
     else {
-	Py_INCREF(Py_None);
-	ci->data = Py_None;
+        Py_INCREF(Py_None);
+        ci->data = Py_None;
     }
     
     apr_pool_cleanup_register(child_init_pool, ci, python_cleanup, 
-			      apr_pool_cleanup_null);
+                              apr_pool_cleanup_null);
     
     Py_INCREF(Py_None);
     return Py_None;
@@ -218,7 +218,7 @@ static struct PyMemberDef server_rec_mbrs[] = {
 static PyObject *getsrv_recmbr(serverobject *self, void *name) 
 {
     return PyMember_GetOne((char*)self->server,
-			   find_memberdef(server_rec_mbrs, name));
+                           find_memberdef(server_rec_mbrs, name));
 }
 
 /* we don't need setsrv_recmbr for now */

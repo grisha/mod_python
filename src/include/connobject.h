@@ -63,7 +63,7 @@ extern "C" {
  *
  * connobject.h
  *
- * $Id: connobject.h,v 1.6 2002/11/08 00:15:11 gstein Exp $
+ * $Id: connobject.h,v 1.7 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -78,12 +78,12 @@ extern "C" {
  */
 
     typedef struct connobject {
-	PyObject_HEAD
-	conn_rec     *conn;
-	PyObject     *server;
-	PyObject     *base_server;
-	PyObject     *notes;
-	hlistobject  *hlo;
+        PyObject_HEAD
+        conn_rec     *conn;
+        PyObject     *server;
+        PyObject     *base_server;
+        PyObject     *notes;
+        hlistobject  *hlo;
     } connobject;
     
     extern DL_IMPORT(PyTypeObject) MpConn_Type;

@@ -57,7 +57,7 @@
  *
  * hlistobject.h 
  *
- * $Id: hlistobject.h,v 1.4 2002/11/08 00:15:11 gstein Exp $
+ * $Id: hlistobject.h,v 1.5 2003/09/10 02:11:22 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -71,9 +71,9 @@ extern "C" {
 #endif
 
     typedef struct hlist {
-	PyObject_HEAD
-	struct hl_entry *head;
-	apr_pool_t *pool;
+        PyObject_HEAD
+        struct hl_entry *head;
+        apr_pool_t *pool;
     } hlistobject;
 
     extern DL_IMPORT(PyTypeObject) MpHList_Type;

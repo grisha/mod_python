@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.36 2003/08/18 20:51:24 grisha Exp $
+ * $Id: mod_python.h,v 1.37 2003/09/10 02:11:22 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -187,7 +187,7 @@ typedef struct
 {
     requestobject *request_obj;
     apr_hash_t    *dynhls;     /* dynamically registered handlers
-				  for this request */
+                                  for this request */
 } py_req_config;
 
 /* filter context */

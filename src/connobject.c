@@ -57,7 +57,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.15 2003/07/17 00:51:46 grisha Exp $
+ * $Id: connobject.c,v 1.16 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -133,7 +133,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
     if (APR_BUCKET_IS_EOS(b)) { 
         apr_bucket_delete(b);
-	Py_INCREF(Py_None);
+        Py_INCREF(Py_None);
         return Py_None;
     }
 
@@ -151,34 +151,34 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
            !(b == APR_BRIGADE_SENTINEL(b) ||
              APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b))) {
 
-	const char *data;
-	apr_size_t size;
-	apr_bucket *old;
+        const char *data;
+        apr_size_t size;
+        apr_bucket *old;
 
-	if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
-	    PyErr_SetObject(PyExc_IOError, 
-			    PyString_FromString("Connection read error"));
-	    return NULL;
-	}
+        if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
+            PyErr_SetObject(PyExc_IOError, 
+                            PyString_FromString("Connection read error"));
+            return NULL;
+        }
 
-	if (bytes_read + size > bufsize) {
-	    apr_bucket_split(b, bufsize - bytes_read);
-	    size = bufsize - bytes_read;
-	    /* now the bucket is the exact size we need */
-	}
+        if (bytes_read + size > bufsize) {
+            apr_bucket_split(b, bufsize - bytes_read);
+            size = bufsize - bytes_read;
+            /* now the bucket is the exact size we need */
+        }
 
-	memcpy(buffer, data, size);
-	buffer += size;
-	bytes_read += size;
+        memcpy(buffer, data, size);
+        buffer += size;
+        bytes_read += size;
 
-	/* time to grow destination string? */
-	if (len == 0 && bytes_read == bufsize) {
+        /* time to grow destination string? */
+        if (len == 0 && bytes_read == bufsize) {
 
-	    _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
-	    buffer = PyString_AS_STRING((PyStringObject *) result);
-	    buffer += HUGE_STRING_LEN;
-	    bufsize += HUGE_STRING_LEN;
-	}
+            _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
+            buffer = PyString_AS_STRING((PyStringObject *) result);
+            buffer += HUGE_STRING_LEN;
+            bufsize += HUGE_STRING_LEN;
+        }
 
 
         if (mode == AP_MODE_GETLINE || len == 0) {
@@ -186,15 +186,15 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
             break;
         }
 
-	old = b;
-	b = APR_BUCKET_NEXT(b);
-	apr_bucket_delete(old);
+        old = b;
+        b = APR_BUCKET_NEXT(b);
+        apr_bucket_delete(old);
     }
 
     /* resize if necessary */
     if (bytes_read < len || len == 0) 
-	if(_PyString_Resize(&result, bytes_read))
-	    return NULL;
+        if(_PyString_Resize(&result, bytes_read))
+            return NULL;
 
     return result;
 }
@@ -249,22 +249,22 @@ static PyObject * conn_write(connobject *self, PyObject *args)
     conn_rec *c = self->conn;
 
     if (! PyArg_ParseTuple(args, "O", &s)) 
-	return NULL;
+        return NULL;
 
     if (! PyString_Check(s)) {
-	PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
-	return NULL;
+        PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
+        return NULL;
     }
 
     len = PyString_Size(s);
 
     if (len) {
-	buff = apr_pmemdup(c->pool, PyString_AS_STRING(s), len);
+        buff = apr_pmemdup(c->pool, PyString_AS_STRING(s), len);
 
         bb = apr_brigade_create(c->pool, c->bucket_alloc);
 
-	b = apr_bucket_pool_create(buff, len, c->pool, c->bucket_alloc);
-	APR_BRIGADE_INSERT_TAIL(bb, b);
+        b = apr_bucket_pool_create(buff, len, c->pool, c->bucket_alloc);
+        APR_BRIGADE_INSERT_TAIL(bb, b);
 
         /* Make sure the data is flushed to the client */
         b = apr_bucket_flush_create(c->bucket_alloc);
@@ -372,7 +372,7 @@ static PyObject * conn_getattr(connobject *self, char *name)
 
     res = Py_FindMethod(connobjectmethods, (PyObject *)self, name);
     if (res != NULL)
-	return res;
+        return res;
     
     PyErr_Clear();
 

@@ -57,7 +57,7 @@
  *
  * requestobject.h
  *
- * $Id: requestobject.h,v 1.14 2002/12/18 20:47:02 grisha Exp $
+ * $Id: requestobject.h,v 1.15 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -68,27 +68,27 @@ extern "C" {
 #endif
 
     typedef struct requestobject {
-	PyObject_HEAD
-	PyObject       * dict;
-	request_rec    * request_rec;
-	PyObject       * connection;
-	PyObject       * server;
-	PyObject       * next;
-	PyObject       * prev;
-	PyObject       * main;
-	PyObject       * headers_in;
-	PyObject       * headers_out;
-	PyObject       * err_headers_out;
-	PyObject       * subprocess_env;
-	PyObject       * notes;
-	PyObject       * phase;
+        PyObject_HEAD
+        PyObject       * dict;
+        request_rec    * request_rec;
+        PyObject       * connection;
+        PyObject       * server;
+        PyObject       * next;
+        PyObject       * prev;
+        PyObject       * main;
+        PyObject       * headers_in;
+        PyObject       * headers_out;
+        PyObject       * err_headers_out;
+        PyObject       * subprocess_env;
+        PyObject       * notes;
+        PyObject       * phase;
         char           * extension;   /* for | .ext syntax */
-	char           * interpreter; 
-	int              content_type_set;
-	hlistobject    * hlo;
-	char           * rbuff;       /* read bufer */
-	int              rbuff_len;   /* read buffer size */
-	int              rbuff_pos;   /* position into the buffer */
+        char           * interpreter; 
+        int              content_type_set;
+        hlistobject    * hlo;
+        char           * rbuff;       /* read bufer */
+        int              rbuff_len;   /* read buffer size */
+        int              rbuff_pos;   /* position into the buffer */
     } requestobject;
 
     extern DL_IMPORT(PyTypeObject) MpRequest_Type;

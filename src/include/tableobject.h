@@ -63,7 +63,7 @@ extern "C" {
  *
  * tableobject.h
  *
- * $Id: tableobject.h,v 1.7 2003/07/17 00:51:46 grisha Exp $
+ * $Id: tableobject.h,v 1.8 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -73,9 +73,9 @@ extern "C" {
  */
 
     typedef struct tableobject {
-	PyObject_VAR_HEAD
-	apr_table_t     *table;
-	apr_pool_t      *pool;
+        PyObject_VAR_HEAD
+        apr_table_t     *table;
+        apr_pool_t      *pool;
     } tableobject;
     
     extern DL_IMPORT(PyTypeObject) MpTable_Type;

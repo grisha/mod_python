@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.26 2003/08/22 02:22:44 grisha Exp $
+ * $Id: _apachemodule.c,v 1.27 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -85,23 +85,23 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
     server_rec *serv_rec;
 
     if (! PyArg_ParseTuple(args, "z|iO", &message, &level, &server)) 
-	return NULL; /* error */
+        return NULL; /* error */
 
     if (message) {
 
-	if (! level) 
-	    level = APLOG_NOERRNO|APLOG_ERR;
+        if (! level) 
+            level = APLOG_NOERRNO|APLOG_ERR;
       
-	if (!server || (PyObject *)server == Py_None)
-	    serv_rec = NULL;
-	else {
-	    if (! MpServer_Check(server)) {
-		PyErr_BadArgument();
-		return NULL;
-	    }
-	    serv_rec = server->server;
-	}
-	ap_log_error(APLOG_MARK, level, 0, serv_rec, "%s", message);
+        if (!server || (PyObject *)server == Py_None)
+            serv_rec = NULL;
+        else {
+            if (! MpServer_Check(server)) {
+                PyErr_BadArgument();
+                return NULL;
+            }
+            serv_rec = server->server;
+        }
+        ap_log_error(APLOG_MARK, level, 0, serv_rec, "%s", message);
     }
 
     Py_INCREF(Py_None);
@@ -124,41 +124,41 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     int strict_parsing = 0; /* XXX not implemented */
 
     if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values, 
-			   &strict_parsing)) 
-	return NULL; /* error */
+                           &strict_parsing)) 
+        return NULL; /* error */
 
     /* split query string by '&' and ';' into a list of pairs */
     pairs = PyList_New(0);
     if (pairs == NULL)
-	return NULL;
+        return NULL;
 
     i = 0;
     len = strlen(qs);
 
     while (i < len) {
 
-	PyObject *pair;
-	char *cpair;
-	int j = 0;
+        PyObject *pair;
+        char *cpair;
+        int j = 0;
 
-	pair = PyString_FromStringAndSize(NULL, len);
-	if (pair == NULL)
-	    return NULL;
+        pair = PyString_FromStringAndSize(NULL, len);
+        if (pair == NULL)
+            return NULL;
 
-	/* split by '&' or ';' */
-	cpair = PyString_AS_STRING(pair);
-	while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
-	    /* replace '+' with ' ' */
-	    cpair[j] = (qs[i] == '+') ? ' ' : qs[i];
-	    i++;
-	    j++;
-	}
-	_PyString_Resize(&pair, j);
-	cpair = PyString_AS_STRING(pair);
+        /* split by '&' or ';' */
+        cpair = PyString_AS_STRING(pair);
+        while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
+            /* replace '+' with ' ' */
+            cpair[j] = (qs[i] == '+') ? ' ' : qs[i];
+            i++;
+            j++;
+        }
+        _PyString_Resize(&pair, j);
+        cpair = PyString_AS_STRING(pair);
 
-	PyList_Append(pairs, pair);
-	Py_DECREF(pair);
-	i++;
+        PyList_Append(pairs, pair);
+        Py_DECREF(pair);
+        i++;
     }
 
     /*
@@ -168,81 +168,81 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     
     dict = PyDict_New();
     if (dict == NULL)
-	return NULL;
+        return NULL;
 
     lsize = PyList_Size(pairs);
     n = 0;
 
     while (n < lsize) {
 
-	PyObject *pair, *key, *val;
-	char *cpair, *ckey, *cval;
-	int k, v;
+        PyObject *pair, *key, *val;
+        char *cpair, *ckey, *cval;
+        int k, v;
 
-	pair = PyList_GET_ITEM(pairs, n);
-	cpair = PyString_AS_STRING(pair);
+        pair = PyList_GET_ITEM(pairs, n);
+        cpair = PyString_AS_STRING(pair);
 
-	len = strlen(cpair);
-	key = PyString_FromStringAndSize(NULL, len);
-	if (key == NULL) 
-	    return NULL;
-	val = PyString_FromStringAndSize(NULL, len);
-	if (val == NULL) 
-	    return NULL;
+        len = strlen(cpair);
+        key = PyString_FromStringAndSize(NULL, len);
+        if (key == NULL) 
+            return NULL;
+        val = PyString_FromStringAndSize(NULL, len);
+        if (val == NULL) 
+            return NULL;
 
-	ckey = PyString_AS_STRING(key);
-	cval = PyString_AS_STRING(val);
+        ckey = PyString_AS_STRING(key);
+        cval = PyString_AS_STRING(val);
 
-	i = 0;
-	k = 0;
-	v = 0;
-	while (i < len) {
-	    if (cpair[i] != '=') {
-		ckey[k] = cpair[i];
-		k++;
-		i++;
-	    }
-	    else {
-		i++;      /* skip '=' */
-		while (i < len) {
-		    cval[v] = cpair[i];
-		    v++;
-		    i++;
-		}
-	    }
-	}
+        i = 0;
+        k = 0;
+        v = 0;
+        while (i < len) {
+            if (cpair[i] != '=') {
+                ckey[k] = cpair[i];
+                k++;
+                i++;
+            }
+            else {
+                i++;      /* skip '=' */
+                while (i < len) {
+                    cval[v] = cpair[i];
+                    v++;
+                    i++;
+                }
+            }
+        }
 
-	ckey[k] = '\0';
-	cval[v] = '\0';
+        ckey[k] = '\0';
+        cval[v] = '\0';
 
-	if (keep_blank_values || (v > 0)) {
+        if (keep_blank_values || (v > 0)) {
 
-	    ap_unescape_url(ckey);
-	    ap_unescape_url(cval);
+            ap_unescape_url(ckey);
+            ap_unescape_url(cval);
 
-	    _PyString_Resize(&key, strlen(ckey));
-	    ckey = PyString_AS_STRING(key);
-	    _PyString_Resize(&val, strlen(cval));
-	    cval = PyString_AS_STRING(val);
-	
-	    if (PyMapping_HasKeyString(dict, ckey)) {
-		PyObject *list;
-		list = PyDict_GetItem(dict, key);
-		PyList_Append(list, val);
-		/* PyDict_GetItem is a borrowed ref, no decref */
-	    }
-	    else {
-		PyObject *list;
-		list = Py_BuildValue("[O]", val);
-		PyDict_SetItem(dict, key, list);
-		Py_DECREF(list);
-	    }
-	}
+            _PyString_Resize(&key, strlen(ckey));
+            ckey = PyString_AS_STRING(key);
+            _PyString_Resize(&val, strlen(cval));
+            cval = PyString_AS_STRING(val);
+        
+            if (PyMapping_HasKeyString(dict, ckey)) {
+                PyObject *list;
+                list = PyDict_GetItem(dict, key);
+                PyList_Append(list, val);
+                /* PyDict_GetItem is a borrowed ref, no decref */
+            }
+            else {
+                PyObject *list;
+                list = Py_BuildValue("[O]", val);
+                PyDict_SetItem(dict, key, list);
+                Py_DECREF(list);
+            }
+        }
 
-	Py_DECREF(key);
-	Py_DECREF(val);
+        Py_DECREF(key);
+        Py_DECREF(val);
 
-	n++;
+        n++;
     }
 
     Py_DECREF(pairs);
@@ -265,88 +265,88 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
     int strict_parsing = 0; /* XXX not implemented */
 
     if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values, 
-			   &strict_parsing)) 
-	return NULL; /* error */
+                           &strict_parsing)) 
+        return NULL; /* error */
 
     /* split query string by '&' and ';' into a list of pairs */
     pairs = PyList_New(0);
     if (pairs == NULL)
-	return NULL;
+        return NULL;
 
     i = 0;
     len = strlen(qs);
 
     while (i < len) {
 
-	PyObject *pair, *key, *val;
-	char *cpair, *ckey, *cval;
-	int plen, j, p, k, v;
+        PyObject *pair, *key, *val;
+        char *cpair, *ckey, *cval;
+        int plen, j, p, k, v;
 
-	pair = PyString_FromStringAndSize(NULL, len);
-	if (pair == NULL)
-	    return NULL;
+        pair = PyString_FromStringAndSize(NULL, len);
+        if (pair == NULL)
+            return NULL;
 
-	/* split by '&' or ';' */
-	cpair = PyString_AS_STRING(pair);
-	j = 0;
-	while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
-	    /* replace '+' with ' ' */
-	    cpair[j] = (qs[i] == '+') ? ' ' : qs[i];
-	    i++;
-	    j++;
-	}
-	cpair[j] = '\0';
-	_PyString_Resize(&pair, j);
-	cpair = PyString_AS_STRING(pair);
+        /* split by '&' or ';' */
+        cpair = PyString_AS_STRING(pair);
+        j = 0;
+        while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
+            /* replace '+' with ' ' */
+            cpair[j] = (qs[i] == '+') ? ' ' : qs[i];
+            i++;
+            j++;
+        }
+        cpair[j] = '\0';
+        _PyString_Resize(&pair, j);
+        cpair = PyString_AS_STRING(pair);
 
-	/* split the "abc=def" pair */
-	plen = strlen(cpair);
-	key = PyString_FromStringAndSize(NULL, plen);
-	if (key == NULL) 
-	    return NULL;
-	val = PyString_FromStringAndSize(NULL, plen);
-	if (val == NULL) 
-	    return NULL;
+        /* split the "abc=def" pair */
+        plen = strlen(cpair);
+        key = PyString_FromStringAndSize(NULL, plen);
+        if (key == NULL) 
+            return NULL;
+        val = PyString_FromStringAndSize(NULL, plen);
+        if (val == NULL) 
+            return NULL;
 
-	ckey = PyString_AS_STRING(key);
-	cval = PyString_AS_STRING(val);
+        ckey = PyString_AS_STRING(key);
+        cval = PyString_AS_STRING(val);
 
-	p = 0;
-	k = 0;
-	v = 0;
-	while (p < plen) {
-	    if (cpair[p] != '=') {
-		ckey[k] = cpair[p];
-		k++;
-		p++;
-	    }
-	    else {
-		p++;      /* skip '=' */
-		while (p < plen) {
-		    cval[v] = cpair[p];
-		    v++;
-		    p++;
-		}
-	    }
-	}
-	ckey[k] = '\0';
-	cval[v] = '\0';
+        p = 0;
+        k = 0;
+        v = 0;
+        while (p < plen) {
+            if (cpair[p] != '=') {
+                ckey[k] = cpair[p];
+                k++;
+                p++;
+            }
+            else {
+                p++;      /* skip '=' */
+                while (p < plen) {
+                    cval[v] = cpair[p];
+                    v++;
+                    p++;
+                }
+            }
+        }
+        ckey[k] = '\0';
+        cval[v] = '\0';
 
-	if (keep_blank_values || (v > 0)) {
+        if (keep_blank_values || (v > 0)) {
 
-	    ap_unescape_url(ckey);
-	    ap_unescape_url(cval);
+            ap_unescape_url(ckey);
+            ap_unescape_url(cval);
 
-	    _PyString_Resize(&key, strlen(ckey));
-	    _PyString_Resize(&val, strlen(cval));
+            _PyString_Resize(&key, strlen(ckey));
+            _PyString_Resize(&val, strlen(cval));
 
-	    PyList_Append(pairs, Py_BuildValue("(O,O)", key, val));
+            PyList_Append(pairs, Py_BuildValue("(O,O)", key, val));
 
-	}
-	Py_DECREF(pair);
-	Py_DECREF(key);
-	Py_DECREF(val);
-	i++;
+        }
+        Py_DECREF(pair);
+        Py_DECREF(key);
+        Py_DECREF(val);
+        i++;
     }
 
     return pairs;
@@ -402,7 +402,7 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
     s = ((serverobject *)server)->server;
 
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
-			  s->process->pool);
+                          s->process->pool);
     
     if (index == -1) {
 
@@ -419,24 +419,24 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
          * locking (see Session.py)
          */
         
-	index = (hash % (glb->nlocks-1)+1);
+        index = (hash % (glb->nlocks-1)+1);
     }
 
 /*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
-/* 		 "_global_lock at index %d from pid %d", index, getpid()); */
+/*               "_global_lock at index %d from pid %d", index, getpid()); */
     Py_BEGIN_ALLOW_THREADS
     rv = apr_global_mutex_lock(glb->g_locks[index]);        
     Py_END_ALLOW_THREADS                               
     if (rv != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
                      "Failed to acquire global mutex lock at index %d", index);
-	PyErr_SetString(PyExc_ValueError,
-			"Failed to acquire global mutex lock");
+        PyErr_SetString(PyExc_ValueError,
+                        "Failed to acquire global mutex lock");
         return NULL;
     }
 /*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
-/* 		 "_global_lock DONE at index %d from pid %d", index, getpid()); */
-	
+/*               "_global_lock DONE at index %d from pid %d", index, getpid()); */
+        
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -469,7 +469,7 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
     s = ((serverobject *)server)->server;
 
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
-			  s->process->pool);
+                          s->process->pool);
     
     if (index == -1) {
 
@@ -486,7 +486,7 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
          * locking (see Session.py)
          */
         
-	index = (hash % (glb->nlocks-1)+1);
+        index = (hash % (glb->nlocks-1)+1);
     }
     
 /*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
@@ -494,11 +494,11 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
     if ((rv = apr_global_mutex_unlock(glb->g_locks[index])) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
                      "Failed to release global mutex lock at index %d", index);
-	PyErr_SetString(PyExc_ValueError,
-			"Failed to release global mutex lock");
+        PyErr_SetString(PyExc_ValueError,
+                        "Failed to release global mutex lock");
         return NULL;
     }
-	
+        
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -556,7 +556,7 @@ DL_EXPORT(void) init_apache()
     d = PyModule_GetDict(m);
     Mp_ServerReturn = PyErr_NewException("_apache.SERVER_RETURN", NULL, NULL);
     if (Mp_ServerReturn == NULL)
-	return;
+        return;
     PyDict_SetItemString(d, "SERVER_RETURN", Mp_ServerReturn);
 
     PyDict_SetItemString(d, "table", (PyObject *)&MpTable_Type);
