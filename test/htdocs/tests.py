@@ -841,6 +841,9 @@ class OldStyleClassTest:
         return "test traversable old-style instance ok"
 old_instance = OldStyleClassTest()
 
+test_dict = {1:1,2:2,3:3}
+test_dict_keys = test_dict.keys
+
 class InstanceTest(object):
     def __call__(self,req):
         return "test callable instance ok"
