@@ -1,3 +1,10 @@
+Dec 16 2000 -	Releasing 2.7....
+
+Dec 16 2000 -   Found another bug related to ALLOW_THREADS macros which are
+		noops without threads, but that is actually wrong, because
+		what they is needed wvwn without threads. Also, some days
+		ago 2.6.4 was released.
+
 Dec 13 2000 -	The initial documentation for the util module and for the
 		publisher handler is done. Perhaps the tutorial should have
 		a bit on the publisher handler.
