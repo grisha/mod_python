@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.64 2002/12/28 03:43:40 grisha Exp $
+ # $Id: apache.py,v 1.65 2003/01/09 19:14:31 grisha Exp $
 
 import sys
 import traceback
@@ -723,6 +723,8 @@ class CGIStdout(NullIO):
                         self.req.headers_out[h] = v
                     else:
                         self.req.headers_out.add(h, v)
+
+                self.headers_sent = 1
 
                 # write the body if any at this point
                 self.req.write(ss[1])
