@@ -12,10 +12,10 @@ All \strong{Python*Handler} directives have the following syntax:
 Where \emph{handler} is a callable object (e.g. a function) that accepts a
 single argument - request object.
 
-Multiple handlers can be specified on a sinlge line, in which case
+Multiple handlers can be specified on a single line, in which case
 they will be called sequentially, from left to right. Same handler
 directives can be specified multiple times as well, with the same
-result - all hanlders listed will be executed sequentially, from first
+result - all handlers listed will be executed sequentially, from first
 to last. If any handler in the sequence returns a value other than
 \code{apache.OK}, then execution of all subsequent handlers is aborted.
 
@@ -29,7 +29,7 @@ module.
 
 Object can also contain dots, in which case it will be resolved from
 left to right. During resolution, if mod_python encounters an object
-of type <class>, it will try instantiate it passing it a single
+of type \code{<class>}, it will try instantiate it passing it a single
 argument, a request object.
 
 If no object is specified, then it will default to the directive of
@@ -76,7 +76,7 @@ directive will never be executed by Apache if specified within
 \code{<Directory>}, \code{<Location>}, \code{<File>} directives or in
 an \file{.htaccess} file. The only place this can be specified is the
 main configuration file, and the code for it will execute in the
-global interpreter.
+main interpreter.
 
 
 \subsection{PythonTransHandler\label{dir-handlers-th}}
@@ -101,7 +101,7 @@ directive will never be executed by Apache if specified within
 \code{<Directory>}, \code{<Location>}, \code{<File>} directives or in
 an \file{.htaccess} file. The only place this can be specified is the
 main configuration file, and the code for it will execute in the
-global interpreter.
+main interpreter.
 
 \subsection{PythonHeaderParserHandler\label{dir-handlers-hph}}
 \index{PythonHeaderParserHandler}
@@ -248,9 +248,9 @@ directory.
 
 This handler is actually an alias to two different handlers. When
 specified in the main config file outside any directory tags, it is an
-alias to PostReadRequestHandler. When specified inside directory
-(where PostReadRequestHandler is not allowed), it aliases to
-HeaderParserHandler.
+alias to \code{PostReadRequestHandler}. When specified inside directory
+(where \code{PostReadRequestHandler} is not allowed), it aliases to
+\code{PythonHeaderParserHandler}.
 
 \emph{(This idea was borrowed from mod_perl)}
 
@@ -293,7 +293,7 @@ function. For dynamic clean up registration, use
 \code{req.register_cleanup()}.
 
 Once cleanups have started, it is not possible to register more of
-them. Terefore, \code{req.register_cleanup()} has no effect within this
+them. Therefore, \code{req.register_cleanup()} has no effect within this
 handler.
 
 Cleanups registered with this directive will execute \emph{after} cleanups
@@ -366,7 +366,7 @@ will actually be imported once for every child process spawned.
 
 Note that at the time when the import takes place, the configuration
 is not completely read yet, so all other directives, including
-PythonInterpreter have no effect on the behaviour of modules imported
+PythonInterpreter have no effect on the behavior of modules imported
 by this directive. Because of this limitation, the use of this
 directive should be limited to situations where it is absolutely
 necessary, and the recommended approach to one-time initializations
@@ -412,7 +412,7 @@ one for each directory.
 (PostReadRequestHandler and TransHandler) the path is not yet known
 because the URI has not been translated. During those phases and with
 PythonInterpPerDirectory on, all python code gets executed in the
-global intepreter. This may not be exactly what you want, but
+main interpreter. This may not be exactly what you want, but
 unfortunately there is no way around this.
 
 See also Multiple Interpreters. 
@@ -461,7 +461,7 @@ mod_python.c
 
 PythonHandlerModule can be used an alternative to Python*Handler
 directives. The module specified in this handler will be searched for
-existance of functions matching the default handler function names,
+existence of functions matching the default handler function names,
 and if a function is found, it will be executed.
 
 For example, instead of:

@@ -6,44 +6,51 @@ When working with mod_python, it is important to be aware of a feature
 of Python that is normally not used when using the language for
 writing scripts to be run from command line. This feature is not
 available from within Python itself and can only be accessed through
-the C language API.
+the \citetitle[http://www.python.org/doc/current/api/api.html]{C
+language API}.
 
-Python C API provides the ability to create subinterpreters. A more
-detailed description of a subinterpreter is given in the documentation
-for the
-\citetitle[http://www.python.org/doc/current/api/initialization.html]{Py_NewInterpreter}
+Python C API provides the ability to create \dfn{subinterpreters}. A
+more detailed description of a subinterpreter is given in the
+documentation for the
+\citetitle[http://www.python.org/doc/current/api/initialization.html]{\cfunction{Py_NewInterpreter()}}
 function. For this discussion, it will suffice to say that each
 subinterpreter has its own separate namespace, not accessible from
 other subinterpreters. Subinterpreters are very useful to make sure
 that separate programs running under the same Apache server do not
-"step" on each other.
+interfere with one another..
 
 At server start-up or mod_python initialization time, mod_python
-initializes an interpreter called \emph{global interpreter}.  The
-global interpreter contains a dictionary of
-subinterpreters. Initially, this dictionary is empty. With every hit,
-as needed, subinterpreters are created, and references to them are
-stored in this dictionary. The dictionary is keyed on a string, also
-known as \emph{interpreter name}. This name can be any string.  The
-\emph{global interpreter} is named \samp{global_interpreter}.
-The way all other interpreters are named can be controlled by
+initializes an interpreter called \dfn{main} interpreter.  The main
+interpreter contains a dictionary of subinterpreters. Initially, this
+dictionary is empty. With every hit, as needed, subinterpreters are
+created, and references to them are stored in this dictionary. The
+dictionary is keyed on a string, also known as \emph{interpreter
+name}. This name can be any string.  The main interpreter is named
+\samp{main_interpreter}.  The way all other interpreters are named can
+be controlled by
 \code{PythonInterp*} directives. Default behaviour is to name interpreters
 using the Apache virtual server name (\code{ServerName}
 directive). This means that all scripts in the same vrtual server
 execute in the same subinterpreter, but scripts in different virtual
 servers execute in different subinterpreters with completely separate
-namespaces. \code{PythonIterpPerDirectory} and
-\code{PythonInterpPerDirective} directives alter the naming convention
-to use the absolute path of the directory being accessed, or the
-directory in which the \code{Python*Handler} was encountered,
-respectively.
+namespaces. 
+\citetitle[dir-other-ipd.html]{\code{PythonIterpPerDirectory}} and
+\citetitle[dir-other-ipdv.html]{\code{PythonInterpPerDirective}}
+directives alter the naming convention to use the absolute path of the
+directory being accessed, or the directory in which the
+\code{Python*Handler} was encountered, respectively.
 
 Once created, a subinterpreter will be reused for subsequent requests.
 It is never destroyed and exists until the Apache child process dies.
 
+\begin{seealso}
+  \seetitle[http://www.python.org/doc/current/api/api.html]
+	{Python C Language API}{Python C Language API}
+\end{seealso}
+
 \section{Overview of a Handler\label{pyapi-handler}}
 
-A \emph{handler} is a function that processes a particular phase of a
+A \dfn{handler} is a function that processes a particular phase of a
 request. Apache processes requests in phases - read the request,
 process headers, provide content, etc. For every phase, it will call
 handlers, provided by either the Apache core or one of its modules,
@@ -51,22 +58,27 @@ such as mod_python, which passes control to functions provided b the
 user and written in Python. A handler written in Python is not any
 different than a handler written in C, and follows these rules:
 
-A handler function will always be passed a reference to a \code{request} object. 
+\index{req}
+\indexii{Request}{object}
+A handler function will always be passed a reference to a
+\class{Request} object. (Throughout this manual, the \class{Request}
+object is often referred to by the \code{req} variable.)
 
 Every handler can return:
 
 \begin{itemize}
 
 \item
-\code{apache.OK}, meaning this phase of the request was handled by this 
+\constant{apache.OK}, meaning this phase of the request was handled by this 
 handler and no errors occurred. 
 
 \item
-\code{apache.DECLINED}, meaning this handler refused to handle this phase of 
+\constant{apache.DECLINED}, meaning this handler refused to handle this phase of 
 the requestand Apache needs to look for another handler.
  
 \item
-\code{apache.HTTP_ERROR}, meaning an HTTP error occurred. HTTP_ERROR can be:
+\constant{apache.\emph{HTTP_ERROR}}, meaning an HTTP error occurred. 
+\var{HTTP_ERROR} can be:
 
 \begin{verbatim}
 HTTP_CONTINUE                     = 100
@@ -121,25 +133,26 @@ HTTP_NOT_EXTENDED                 = 510
 
 \end{itemize}
 
-As an alternative to returning an HTTP error code, handlers can signal
-an error by raising the \code{apache.SERVER_RETURN} exception, and providing
-an HTTP error code as the exception value, e.g.
+As an alternative to \emph{returning} an HTTP error code, handlers can
+signal an error by \emph{raising} the \constant{apache.SERVER_RETURN}
+exception, and providing an HTTP error code as the exception value,
+e.g.
 
 \begin{verbatim}
 raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 \end{verbatim}
               
-Handlers can send content to the client using the \code{request.write()}
-function. Before sending the body of the response, headers must be
-sent using the \code{request.send_http_header()} function.
+Handlers can send content to the client using the \method{Request.write()}
+method. Before sending the body of the response, headers must be
+sent using the \method{Request.send_http_header()} method.
 
 Client data, such as POST requests, can be read by using the
-\code{req.read()} function.
+\method{Request.read()} function.
 
 \strong{NOTE:} The directory of the Apache \code{Python*Handler} 
-in effect is prepended to the pythonpath. If the directive was
-specified in a server config file outside any \code{<Directory>}, then
-the directory is unknown and not prepended.
+directive in effect is prepended to the \code{sys.path}. If the
+directive was specified in a server config file outside any
+\code{<Directory>}, then the directory is unknown and not prepended.
 
 An example of a minimalistic handler might be: 
 
@@ -153,13 +166,10 @@ def requesthandler(req):
     return apache.OK
 \end{verbatim}
 
-
-
-\section{\module{apache} -- Access to Apache internals.}
-\declaremodule[modpython.apache]{extension}{mod_python.apache}
+\section{\module{apache} -- Access to Apache Internals.}
+\declaremodule[apache]{extension}{apache}
 \modulesynopsis{Access to Apache Internals}
 \moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
-\refmodindex[modpython.apache]{mod_python.apache}
 
 The Python Application Programmer interface to Apache internals is
 contained in a module appropriately named \module{apache}, located inside the
@@ -167,6 +177,7 @@ contained in a module appropriately named \module{apache}, located inside the
 map to Apache internal structures, as well as some useful functions,
 all documented below.
 
+\indexii{_apache}{module}
 The \module{apache} module can only be imported by a script running under
 mod_python. This is because it depends on a built-in module
 \module{_apache} provided by mod_python. It is best imported like this:
@@ -197,29 +208,29 @@ APLOG_DEBUG
 APLOG_NOERRNO
 \end{verbatim}            
       
-\var{server} is a reference to a \code{server object} which is 
-passed as a member of the \code{request}, \code{request.server}. If
+\var{server} is a reference to a \member{Request.server} object. If
 \var{server} is not specified, then the error will be logged to the default
 error log, otherwise it will be written to the error log for the
 appropriate virtual server.
 \end{funcdesc}
 
 \begin{funcdesc}{make_table}{}
-Returns a new empty table object. 
+Returns a new empty object of type \code{mp_table}. See Section \ref{pyapi-mptable}
+for a description of a table object. 
 \end{funcdesc}
 
 \subsection{Table Object (mp_table)\obindex{table}\label{pyapi-mptable}}
 
-The table object is a Python mapping to the Apache table . The table
+The table object is a Python mapping to the Apache table. The table
 object performs just like a dictionary, with the only difference that
 key lookups are case insensitive.
 
 Much of the information that Apache uses is stored in tables. For
-example, \code{request.header_in} and \code{request.headers_out}.
+example, \member{Request.header_in} and \member{Request.headers_out}.
 
-All the tables that mod_python provides inside the request object are
-actual mappings to the Apache structures, so changing the Python table
-also changes the underlying Apache table.
+All the tables that mod_python provides inside the \class{Request}
+object are actual mappings to the Apache structures, so changing the
+Python table also changes the underlying Apache table.
 
 In addition to normal dictionary-like behavior, the table object also
 has the following method:
@@ -229,7 +240,7 @@ has the following method:
 when multiple headers, such as \code{Set-Cookie:} are required.
 \end{methoddesc}
 
-\subsection{Request Object\obindex{request}\label{pyapi-mprequest}}
+\subsection{Request Object\index{Request}\label{pyapi-mprequest}}
 
 The request object is a Python mapping to the Apache
 \code{request_rec} structure. 
@@ -238,11 +249,11 @@ The request object is a real Python object. You can dynamically
 assign attributes to it as a way to communicate between handlers.
 
 When a handler is invoked, it is always passed a single argument - the
-\code{request} object.
+\class{Request} object.
 
 \subsubsection{Request Methods\label{pyapi-mprequest-meth}}
 
-\begin{methoddesc}[request]{add_handler}{htype, handler\optional{, dir}}
+\begin{methoddesc}[Request]{add_handler}{htype, handler\optional{, dir}}
 
 Allows dynamic handler registration. \var{htype} is a string
 containing the name of any of the apache \code{Python*Handler}
@@ -276,40 +287,40 @@ name. If you pass this function an invalid handler it will simply be
 ignored.
 \end{methoddesc}
 
-\begin{methoddesc}[request]{add_common_vars}{}
-Calls the Apache \function{ap_add_common_vars()} function. After a
-call to this function, request.subprocess_env will contain a lot of
-CGI information.
+\begin{methoddesc}[Request]{add_common_vars}{}
+Calls the Apache \cfunction{ap_add_common_vars()} function. After a
+call to this method, \member{Request.subprocess_env} will contain a
+lot of CGI information.
 \end{methoddesc}
 
-\begin{methoddesc}[request]{child_terminate}{}
+\begin{methoddesc}[Request]{child_terminate}{}
 Terminate a child process. This should terminate the current child
 process in a nice fashion.
                   
-This function does nothing in multithreaded environments (e.g. Windows). 
+This method does nothing in multithreaded environments (e.g. Windows). 
 \end{methoddesc}
 
-\begin{methoddesc}[request]{get_basic_auth_pw}{}
-Returns a string containing the password when basic authentication is
+\begin{methoddesc}[Request]{get_basic_auth_pw}{}
+Returns a string containing the password when Basic authentication is
 used.
 \end{methoddesc}
 
-\begin{methoddesc}[request]{get_config}{}
+\begin{methoddesc}[Request]{get_config}{}
 Returns a reference to the table object containing the configuration
 in effect for this request. The table has directives as keys, and
 their values, if any, as values.
 \end{methoddesc}
 
-\begin{methoddesc}[request]{get_dirs}{}
+\begin{methoddesc}[Request]{get_dirs}{}
 Returns a reference to the table object keyed by directives currently
 in effect and having directory names of where the particular directive
 was last encountered as values. For every key in the table returned by
-\function{get_config()}, there will be a key in this table. If the directive was
+\method{get_config()}, there will be a key in this table. If the directive was
 in one of the server config files outside of any \code{<Directory>},
 then the value will be an empty string.
 \end{methoddesc}
 
-\begin{methoddesc}[request]{get_remote_host}{type}
+\begin{methoddesc}[Request]{get_remote_host}{type}
 
 Returns the a string with the remote client's DNS name or IP or
 \code{None} on failure. The first call to this function may entail a
@@ -343,13 +354,13 @@ failure, return None.
 
 \end{methoddesc}
 
-\begin{methoddesc}[request]{get_options}{}
+\begin{methoddesc}[Request]{get_options}{}
 Returns a reference to the table object containing the options set by
 the \code{PythonOption} directives.
 \end{methoddesc}
 
 
-\begin{methoddesc}[request]{read}{\optional{len}}
+\begin{methoddesc}[Request]{read}{\optional{len}}
 
 Reads at most \var{len} bytes directly from the client, returning a
 string with the data read. If the \var{len} argument is negative or
@@ -369,7 +380,7 @@ more data than available, which will make the function block until a
 
 \end{methoddesc}
 
-\begin{methoddesc}[request]{readline}{\optional{len}}
+\begin{methoddesc}[Request]{readline}{\optional{len}}
 Like \function{read()} but reads until end of line. 
                   
 Note that in accordance with the HTTP specification, most clients will
@@ -378,7 +389,7 @@ than simply "\textbackslash n".
 
 \end{methoddesc}
 
-\begin{methoddesc}[request]{register_cleanup}{callable\optional{, data}}
+\begin{methoddesc}[Request]{register_cleanup}{callable\optional{, data}}
 
 Registers a cleanup. Argument \var{callable} can be any callable
 object, the optional argument \var{data} can be any object (default is
@@ -388,214 +399,214 @@ with one argument, \var{data}.
 
 \end{methoddesc}
 
-\begin{methoddesc}[request]{send_http_header}{}
+\begin{methoddesc}[Request]{send_http_header}{}
 Starts the output from the request by sending the HTTP headers. This
 function has no effect when called more than once within the same
-request. Any manipulation of \code{request.headers_out} after this
+request. Any manipulation of \member{Request.headers_out} after this
 function has been called is pointless since the headers have already
 been sent to the client.
 \end{methoddesc}
 
-\begin{methoddesc}[request]{write}{string}
+\begin{methoddesc}[Request]{write}{string}
 Writes \var{string} directly to the client, then flushes the buffer. 
 \end{methoddesc}
 
 \subsubsection{Request Members\label{pyapi-mprequest-mem}}
 
-\begin{memberdesc}[request]{connection}
+\begin{memberdesc}[Request]{connection}
 A \code{connection} object associated with this request. See
 Connection Object below for details.
 \emph{(Read-Only)}
 \end{memberdesc}
 
-\begin{memberdesc}[request]{server}
+\begin{memberdesc}[Request]{server}
 A server object associate with this request. See Server Object below
 for details.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{next}
+\begin{memberdesc}[Request]{next}
 If this is an internal redirect, the \code{request} object we redirect to. 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{prev}
+\begin{memberdesc}[Request]{prev}
 If this is an internal redirect, the \code{request} object we redirect from.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{main}
+\begin{memberdesc}[Request]{main}
 If this is a sub-request, pointer to the main request. 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{the_request}
+\begin{memberdesc}[Request]{the_request}
 String containing the first line of the request.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{assbackwards}
+\begin{memberdesc}[Request]{assbackwards}
 Is this an HTTP/0.9 "simple" request? 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{header_only}
+\begin{memberdesc}[Request]{header_only}
 A boolean value indicating HEAD request, as opposed to GET. 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{protocol}
+\begin{memberdesc}[Request]{protocol}
 Protocol, as given by the client, or "HTTP/0.9"
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{proto_num}
+\begin{memberdesc}[Request]{proto_num}
 Integer. Number version of protocol; 1.1 = 1001 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{request_time}
+\begin{memberdesc}[Request]{request_time}
 A long integer. When request started.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{status_line}
+\begin{memberdesc}[Request]{status_line}
 Status line. E.g. "200 OK". 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{method}
+\begin{memberdesc}[Request]{method}
 A string containing the method - 'GET', 'HEAD', 'POST', etc.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{method_number}
+\begin{memberdesc}[Request]{method_number}
 Integer containg the method number.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{allowed}
+\begin{memberdesc}[Request]{allowed}
 Integer. A bitvector of the allowed methods. Used in relation with
 METHOD_NOT_ALLOWED.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{sent_body}
+\begin{memberdesc}[Request]{sent_body}
 Integer. Byte count in stream is for body. (?)
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{bytes_sent}
+\begin{memberdesc}[Request]{bytes_sent}
 Long integer. Number of bytes sent.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{mtime}
+\begin{memberdesc}[Request]{mtime}
 Long integer. Time the resource was last modified.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{boundary}
+\begin{memberdesc}[Request]{boundary}
 String. Multipart/byteranges boundary.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{range}
+\begin{memberdesc}[Request]{range}
 String. The \code{Range:} header.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{clength}
+\begin{memberdesc}[Request]{clength}
 Long integer. The "real" content length. (I.e. can only be used after
 the content's been read?)
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{remaining}
+\begin{memberdesc}[Request]{remaining}
 Long integer. Bytes left to read. (Only makes sense inside a read
 operation.)
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{read_length}
+\begin{memberdesc}[Request]{read_length}
 Long integer. Number of bytes read.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{read_body}
+\begin{memberdesc}[Request]{read_body}
 Integer. How the request body should be read. (?)
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{read_chunked}
+\begin{memberdesc}[Request]{read_chunked}
 Boolean. Read chunked transfer coding.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{headers_in}
+\begin{memberdesc}[Request]{headers_in}
 A table object containing headers sent by the client.
 \end{memberdesc}
 
-\begin{memberdesc}[request]{headers_out}
+\begin{memberdesc}[Request]{headers_out}
 A \code{table} object representing the headers to be sent to the
 client. Note that manipulating this table after the
-\code{request.send_http_headers()} has been called is meaningless, since the
+\method{Request.send_http_headers()} has been called is meaningless, since the
 headers have already gone out to the client.
 \end{memberdesc}
 
-\begin{memberdesc}[request]{err_headers_out}
+\begin{memberdesc}[Request]{err_headers_out}
 These headers get send with the error response, instead of
 headers_out.
 \end{memberdesc}
 
-\begin{memberdesc}[request]{handler}
+\begin{memberdesc}[Request]{handler}
 The hame of the handler currently being processed. In all cases with
 mod_python, this should be "python-program".
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{content_encoding}
+\begin{memberdesc}[Request]{content_encoding}
 String. Content encoding.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{vlist_validator}
+\begin{memberdesc}[Request]{vlist_validator}
 Integer. Variant list validator (if negotiated).
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{no_cache}
+\begin{memberdesc}[Request]{no_cache}
 Boolean. No cache if true.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{no_local_copy}
+\begin{memberdesc}[Request]{no_local_copy}
 Boolean. No local copy exists.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{unparsed_uri}
+\begin{memberdesc}[Request]{unparsed_uri}
 The URL without any parsing performed.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{uri}
+\begin{memberdesc}[Request]{uri}
 The path portion of the URI.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{filename}
+\begin{memberdesc}[Request]{filename}
 String. File name being requested.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{path_into}
+\begin{memberdesc}[Request]{path_into}
 String. What follows after the file name, but is before query args, if
 anything.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[request]{args}
+\begin{memberdesc}[Request]{args}
 String. Same as CGI QUERY_ARGS.
 \emph{(Read-Only})
 \end{memberdesc}
@@ -784,11 +795,11 @@ GID under which the server is running.
 Mod_python supports the ability to execute handlers within the Python
 debugger (pdb) via the \code{PythonEnablePdb} Apache directive. Since
 the debugger is an interactive tool, httpd must be invoked with the -X
-option. (NB: When pdb starts, you will not see the usual ">>>"
+option. (NB: When pdb starts, you will not see the usual \code{>>>}
 prompt. Just type in the pdb commands like you would if there was
 one.)
 
-\subsection{Internal Callback Object\label{pyapi-callback}}
+\subsection{Internal Callback Object\label{pyapi-callback}\index{obCallBack}}
 
 The Apache server interfaces with the Python interpreter via a
 callback object obCallBack. When a subinterpreter is created, an

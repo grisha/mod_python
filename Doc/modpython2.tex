@@ -1,5 +1,6 @@
 \chapter{Installation\label{installation}}
 
+\indexii{mod_python}{mailing list}
 NOTE: By far the best place to get help with installation and other
 issues is the mod_python mailing list. Please take a moment to join
 the mod_python mailing list by sending an e-mail with the word
@@ -16,8 +17,8 @@ Apache 1.3 (1.3.12 or higher recommended, 2.0 is not yet supported)
 
 You will need to have the include files for both Apache and Python, as
 well as the Python library installed on your system.  If you installed
-Python and Apache from source, then you have nothing to worry
-about. However, if you are using prepackaged software (e.g. Linux Red
+Python and Apache from source, then you already have everything that's
+needed. However, if you are using prepackaged software (e.g. Linux Red
 Hat RPM, Debian, or Solaris packages from sunsite, etc) then chances
 are, you just have the binaries and not the sources on your
 system. Often, the include files and the libraries are part of
@@ -29,45 +30,46 @@ get the development packages.
 \section{Compiling\label{inst-compiling}}
 
 There are two ways that this module can be compiled and linked to
-Apache - \emph{statically}, or as a \emph{DSO} (Dynamic Shared Object).
+Apache - statically, or as a DSO (Dynamic Shared Object).
 
-\emph{Static} linking is a more "traditional" approach, and most programmers
+\dfn{Static} linking is a more "traditional" approach, and most programmers
 prefer it for its simplicity. The drawback is that it entails
 recompiling Apache, which some people cannot do for a variety of
-reasons. For example in a shared web hosting environment the Apache
-binary might not be writable by the user.
+reasons. 
 
-\emph{DSO} is a newer and still somewhat experimental
+\dfn{DSO} is a newer and still somewhat experimental
 approach. The module gets compiled as a library that is dynamically
 loaded by the server at run time. A more detailed description of the
 Apache DSO mechanism is available at
 \url{http://www.apache.org/docs/dso.html}.
 
-The advantage is that a module can be installed without recompiling
-Apache and used as needed. DSO has its disadvantages,
+The advantage of DSO is that a module can be installed without
+recompiling Apache and used as needed. DSO has its disadvantages,
 however. Compiling a module like mod_python into a DSO can be a
 complicated process because Python, depending on configuration, may
 rely on a number of other libraries, and you need to make sure that
-the DSO is statically linked against each of them. Luckely, the
-configure script below will solve this headache for you by
+the DSO is statically linked against each of them. Luckily, the
+configure script below will spare you of this headache by
 automatically figuring out all the necessary parameters.
 
 \subsection{Running ./configure\label{inst-configure}}
+\index{./configure}
 
-The \code{./configure} script will analyze your environment and create custom
+The \program{./configure} script will analyze your environment and create custom
 Makefiles particular to your system. Aside from all the standard
-autoconf stuff, \code{./configure} does the following:
+autoconf stuff, \program{./configure} does the following:
 
 \begin{itemize}
 
 \item
-Finds out whether a program called \emph{apxs} is available. This
+\index{apxs}
+Finds out whether a program called \program{apxs} is available. This
 program is part of the standard Apache distribution, and is necessary
-for DSO compilation. If apxs cannot be found in your PATH or in
-/usr/local/apache/bin, DSO compilation will not be availale.
+for DSO compilation. If apxs cannot be found in your \envvar{PATH} or in
+\filenq{/usr/local/apache/bin}, DSO compilation will not be available.
 
 You can manually specify the location of apxs by using the
-\code{--with-apxs} option, e.g.:
+\longprogramopt{with-apxs} option, e.g.:
 
 \begin{verbatim}
 $ ./configure --with-apxs=/usr/local/apache/bin/apxs 	
@@ -75,10 +77,11 @@ $ ./configure --with-apxs=/usr/local/apache/bin/apxs
 %$ keep emacs happy
 
 \item
-Checks for \code{--with-apache} option. Use this option to tell where the
-Apache sources are on your system. The Apache sources are necessary
-for static compilation. If you do not specify this options, static
-compilation will not be available. Here is an example:
+Checks for \longprogramopt{with-apache} option. Use this option to
+tell \program{./configure} where the Apache sources are on your
+system. The Apache sources are necessary for static compilation. If
+you do not specify this option, static compilation will not be
+available. Here is an example:
 
 \begin{verbatim}
 $ ./configure --with-apache=../src/apache_1.3.12 --with-apxs=/usr/local/apache/bin/apxs
@@ -86,24 +89,26 @@ $ ./configure --with-apache=../src/apache_1.3.12 --with-apxs=/usr/local/apache/b
 %$ keep emacs happy
 
 \item
-Checks your Python version and attempt to figure out where libpython
-is by looking at various parameters compiled into your Python
-binary. By default, it will use the python program found in your PATH.
+\index{libpython.a}
+Checks your Python version and attempts to figure out where
+\program{libpython} is by looking at various parameters compiled into
+your Python binary. By default, it will use the \program{python}
+program found in your \envvar{PATH}.
 
 If the Python installation on your system is not suitable for
 mod_python (which can be the case if Python is compiled with thread
 support), you can specify an alternative location with the
-\code{--with-python} options. This options needs to point to the root
-directory of the Python source, e.g.:
+\longprogramopt{with-python} options. This option needs to point to
+the root directory of the Python source, e.g.:
 
 \begin{verbatim}
-$ ./configure --with-python=/usr/local/src/Python-1.5.2
+$ ./configure --with-python=/usr/local/src/Python-2.0
 \end{verbatim}                      
 %$ keep emacs happy
 
 Note that the directory needs to contain already configured and
-compiled Python. In other words, you must at least run \code{./configure} and
-make.
+compiled Python. In other words, you must at least run \program{./configure} and
+\program{make}.
 
 \end{itemize}
 
@@ -112,15 +117,19 @@ make.
 \begin{itemize}
 
 \item
-If possible, the \code{./configure} script will default to dso
+If possible, the \program{./configure} script will default to DSO
 compilation, otherwise, it will default to static. To stay with
-whatever \code{./configure} decided, simply run
+whatever \program{./configure} decided, simply run
 \begin{verbatim}
 $ make
 \end{verbatim}
 %$ emacs happy
 
-Or, if you would like to be specific, give make a dso or static target: 
+\indexii{make targets}{static}
+\indexii{make targets}{dso}
+
+Or, if you would like to be specific, give \program{make} a
+\programopt{dso} or \programopt{static} target:
 \begin{verbatim}
 $ make dso
 \end{verbatim}
@@ -150,23 +159,26 @@ $ su
 \begin{itemize}
 
 \item
-For DSO, this will simply copy the library into your Apache libexec
-directory, where all the other modules are.  
+For DSO, this will simply copy the library into your Apache \filenq{libexec}
+directory, where all the other modules are.
 
 \item
 For static, it will copy some files into your Apache source tree.
 
 \item
-Lastly, it will install the Python libraries in site-packages and
+Lastly, it will install the Python libraries in \filenq{site-packages} and
 compile them. 
 
- \end{itemize} 
+\end{itemize} 
 
+\indexii{make targets}{install_py_lib}
+\indexii{make targets}{install_static}
+\indexii{make targets}{install_dso}
 \strong{NB:} If you wish to selectively install just the Python libraries,
-the static library or the dso (which may not always require superuser
-privilidges), you can use the following make targets:
-\code{install\_py\_lib},
-\code{install\_static} and \code{install\_dso}
+the static library or the DSO (which may not always require superuser
+privileges), you can use the following \program{make} targets:
+\programopt{install_py_lib},
+\programopt{install_static} and \programopt{install_dso}
 
 \end{itemize}
 
@@ -177,19 +189,21 @@ privilidges), you can use the following make targets:
 \item
 If you compiled mod_python as a DSO, you will need to tell Apache to
 load the module by adding the following line in the Apache
-configuration file, usually called httpd.conf or apache.conf:
+configuration file, usually called \filenq{httpd.conf} or
+\filenq{apache.conf}:
 
 \begin{verbatim}
 LoadModule python_module libexec/mod_python.so
 \end{verbatim}
 
-The actual path to mod_python.so may vary, but make install should
-report at the very end exactly where mod_python.so was placed and how
-the LoadModule directive should appear.
+\index{mod_python.so}
+The actual path to \program{mod_python.so} may vary, but make install
+should report at the very end exactly where \program{mod_python.so}
+was placed and how the \code{LoadModule} directive should appear.
 
-If your Apache configuration uses ClearModuleList directive, you will
-need to add mod_python to the module list in the Apache configuration
-file:
+If your Apache configuration uses \code{ClearModuleList} directive,
+you will need to add mod_python to the module list in the Apache
+configuration file:
 
 \begin{verbatim}
 AddModule mod_python.c
@@ -209,7 +223,8 @@ $ make
 \end{verbatim}
 %$ emacs happy
                             
-Or, if you prefer the old "Configure" style, edit src/Configuration to have 
+Or, if you prefer the old "Configure" style, edit
+\filenq{src/Configuration} to have
 
 \begin{verbatim}
 AddModule modules/python/libpython.a
@@ -229,34 +244,37 @@ $ Make
 \begin{enumerate}
 
 \item
-Make some directory that would be visible on your website, for
+Make some directory that would be visible on your web site, for
 example, htdocs/test.
 
 \item
 Add the following Apache directives, which can appear in either the
-main server configuration file, or \code{.htaccess}.  If you are going
-to be using the \code{.htaccess} file, you will not need the
+main server configuration file, or \filenq{.htaccess}.  If you are going
+to be using the \filenq{.htaccess} file, you will not need the
 \code{<Directory>} tag below, and you will need to make sure the
 \code{AllowOverride} directive applicable to this directory has at least
-\code{FileInfo} specified. The default is \code{None}, which will not work.
+\code{FileInfo} specified. (The default is \code{None}, which will not work.)
 
 \begin{verbatim}
-<Directory /some/directory/htdocs/test> AddHandler python-program .py
-PythonHandler mptest PythonDebug On </Directory>
+<Directory /some/directory/htdocs/test> 
+  AddHandler python-program .py
+  PythonHandler mptest 
+  PythonDebug On 
+</Directory>
 \end{verbatim}
 
-(Substitute \code{/some/directory} above for something applicable to
-your system, usually your Apache server root)
+(Substitute \filenq{/some/directory} above for something applicable to
+your system, usually your Apache ServerRoot)
 
 \item
 At this time, if you made changes to the main configuration file, you
 will need to restart Apache in order for the changes to take effect.
 
 \item
-Edit \code{mptest.py} file in the \code{htdocs/test} directory so that
-is has the following lines (Be careful when cutting and pasting from
-your browser, you may end up with incorrect indentation and a syntax
-error):
+Edit \filenq{mptest.py} file in the \filenq{htdocs/test} directory so
+that is has the following lines (be careful when cutting and pasting
+from your browser, you may end up with incorrect indentation and a
+syntax error):
 
 \begin{verbatim}
 from mod_python import apache
@@ -268,12 +286,13 @@ def handler(req):
 \end{verbatim}
 
 \item
-Point your browser to the URL referring to the mptest.py, you should
-see \code{"Hellow World!"}. If you didn't - refer to the
-troubleshooting step next.
+Point your browser to the URL referring to the \filenq{mptest.py}; you
+should see \code{"Hello World!"}. If you didn't - refer to the
+troubleshooting section next.
 
 \item
-If everything worked well, move on to the tutorial. 
+If everything worked well, move on to Chapter \ref{tutorial}, 
+\citetitle[tutorial.html]{Tutorial}. 
 
 \end{enumerate}
 
@@ -285,7 +304,7 @@ There are a couple things you can try to identify the problem:
 
 \item Carefully study the error output, if any. 
 
-\item Check the error_log file, it may contain useful clues. 
+\item Check the server error log file, it may contain useful clues. 
 
 \item Try running Apache from the command line with an -X argument: 
 \begin{verbatim}
