@@ -1,3 +1,9 @@
+Feb 12 2003 -   Added a test for req.headers_out
+
+                Fixed a bug where None was added to sys.path
+
+                Tests for connection and server added
+
 Jan 18 2003 -   Between now and the last entry the following things took
                 place:
 

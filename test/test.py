@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.27 2003/01/23 22:34:18 grisha Exp $
+ # $Id: test.py,v 1.28 2003/02/12 16:10:13 grisha Exp $
  #
 
 """
@@ -567,6 +567,36 @@ class PerRequestTestCase(unittest.TestCase):
         if log.find("test ok") == -1:
             self.fail("Could not find test message in error_log")
 
+    def test_req_headers_out_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_headers_out"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("tests::req_headers_out"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_headers_out(self):
+
+        print "\n  * Testing req.headers_out"
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "test_req_headers_out:%s" % PORT)
+        conn.endheaders()
+        response = conn.getresponse()
+        h = response.getheader("x-test-header", None)
+        response.read()
+        conn.close()
+
+        if h is None:
+            self.fail("Could not find x-test-header")
+
+        if h != "test ok":
+            self.fail("x-test-header is there, but does not contain 'test ok'")
+
     def test_util_fieldstorage_conf(self):
 
         c = VirtualHost("*",
@@ -807,6 +837,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_headers_out"))
         perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
         perRequestSuite.addTest(PerRequestTestCase("test_trans"))
