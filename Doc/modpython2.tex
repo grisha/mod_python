@@ -267,6 +267,7 @@ to be using the \filenq{.htaccess} file, you will not need the
 \code{<Directory>} tag below, and you will need to make sure the
 \code{AllowOverride} directive applicable to this directory has at least
 \code{FileInfo} specified. (The default is \code{None}, which will not work.)
+% the above has  been verified to be still true for Apache 2.0
 
 \begin{verbatim}
 <Directory /some/directory/htdocs/test> 
@@ -310,7 +311,7 @@ If everything worked well, move on to Chapter \ref{tutorial},
 
 \section{Troubleshooting\label{inst-trouble}}
 
-There are a couple things you can try to identify the problem: 
+There are a few things you can try to identify the problem: 
 
 \begin{itemize}
 
@@ -318,17 +319,19 @@ There are a couple things you can try to identify the problem:
 
 \item Check the server error log file, it may contain useful clues. 
 
-\item Try running Apache from the command line with an -X argument: 
+\item Try running Apache from the command line in single process mode:
 \begin{verbatim}
-                  ./httpd -X
+                  ./httpd -DONE_PROCESS
 \end{verbatim}
-This prevents it from backgrounding itself and may provide some useful information. 
+This prevents it from backgrounding itself and may provide some useful
+information.
 
 \item
 Ask on the mod_python list. Make sure to provide specifics such as:
 
 \begin{itemize}
 
+\item Mod_python version.
 \item Your operating system type, name and version.
 \item Your Python version, and any unusual compilation options.
 \item Your Apache version.
