@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.46 2001/04/07 02:25:35 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.47 2001/04/10 23:24:40 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1397,8 +1397,13 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
 		sys = PyImport_ImportModule("sys");
 		path = PyObject_GetAttrString(sys, "path");
 		dirstr = PyString_FromString(dir);
-		if (PySequence_Index(path, dirstr) == -1)
-		    PyList_SetSlice(path, 0, 0, dirstr);
+		if (PySequence_Index(path, dirstr) == -1) {
+		    PyObject *list;
+		    PyErr_Clear();
+		    list = Py_BuildValue("[O]", dirstr);
+		    PyList_SetSlice(path, 0, 0, list);
+		    Py_DECREF(list);
+		}
 		Py_DECREF(dirstr);
 		Py_DECREF(path);
 		Py_DECREF(sys);
