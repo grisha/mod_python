@@ -1,0 +1,294 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+      <title>Mod_Python Tutorial</title>
+  </head>
+
+  <body bgcolor=white>
+    <center>
+      <h1>Mod_Python Tutorial</h1>
+    </center>
+
+    <p align=right>
+    <em>OK, so how can I make this work?</em>
+    <hr>
+
+    <p>
+      <em>This is a quick guide to getting started with mod_python programming
+	once you have it installed. This is <b>not</b> an installation manual! 
+      </em>
+
+    <h3>Quick overview of how Apache handles requests</h3>
+    
+    <p>
+      It may seem like a little too much for starters, but you
+      need to understand what a <code>handler</code> is in order to
+      use mod_python. And it's really rather simple.
+    <p>
+      Apache processes requests in steps. For example, the first step
+      may be to authenticate the user, the next step to verify whether
+      that user is allowed to see a particular file, then (next step)
+      read the file and send it to the client. Most requests consist
+      of one step: read the file and send it to the client. Exactly
+      which steps are taken, depends on the configuration.
+    <p>
+      A <em>handler</em> is a function that processes one step. There
+      may be more than one handler available to process a particular
+      step, in which case they are called in sequence. For each of the
+      steps, there is a default Apache handler (most of
+      which perform only very basic functions or do nothing), and then 
+      there are additional handlers provided by Apache modules, such as
+      mod_python.
+    <p>
+      Mod_python provides nearly every possible handler to
+      Apache. Mod_python handlers by default do not perform any
+      function, unless specifically told so by a configuration
+      directive. These directives begin with <code>Python</code> and
+      end with <code>Handler</code> (e.g.
+      <code>PythonAuthenHandler</code>) and associate a handler with a
+      Python function. So the main function of mod_python is to act as
+      a dispatcher between Apache handlers and python functions
+      written by a developer like you.
+    <p>
+      The most commonly used one is <code>PythonHandler</code>. It's
+      for a handler that has no specialized purpose, such as
+      authentication. For lack of a better term, I will refer to
+      this handler from here on as <em>generic</em> handler. The
+      default Apache action for this handler would be to read the file
+      and send it to the client. Most applications you will write will
+      use this one handler.  If you insist on seeing ALL the possible
+      handlers, click <a href="directives.html#Handlers">here</a>.
+
+      <h3> So what exactly does mod_python do?</h3>
+      
+    Let's pretend we have the following configuration:
+    <pre>
+    &lt;Directory /mywebdir&gt;
+      AddHandler python-program .py
+      PythonHandler myscript
+    &lt;/Directory&gt;
+    </pre>
+
+    And let's say that we have a python program (windows users: substitute forward 
+    slashes for backslashes) <code>/mywedir/myscript.py</code> 
+    that looks like this:
+    <pre>
+
+    from mod_python import apache
+
+    def handler(req):
+
+        req.conent_type = &quot;text/plain&quot;
+        req.send_http_header()
+        req.write("Hello World!")
+
+        return apache.OK
+    </pre>
+
+    Here is what's going to happen:
+
+    The AddHandler directive tells Apache that any request for any file
+    ending with .py in the <code>/mywebdir</code> directory or a subdirectory
+    thereof needs to be processed by mod_python.
+    <p>
+      When such a request comes in, Apache starts going through it's
+      regular steps calling handlers in mod_python. The mod_python
+      handlers check if a directive for that handler was specified in
+      the configuration. In this particular example, no action will be
+      taken by mod_python for all handlers except for the generic
+      handler. When we get to the generic handler, mod_python will
+      notice that <code>PythonHandler myscript</code> directive was
+      specified and do the following:
+
+    <ol>
+      <li>If not already done, prepend the directory in which the 
+	<code>PythonHandler</code>
+	directive was found to <code>sys.path</code>.
+      <li>Attempt to import a module by name <code>myscript</code>. (Note that
+	if <code>myscript</code> was in a <em>subdirectory</em> of the directory where
+	<code>PythonHandler</code> was specified, then the import
+	would not work. The way around this is to use packages, so the directive
+	would look like <code>PythonHandler subdir.myscript</code>.)
+      <li>Look for a function called <code>handler</code> in <code>myscript</code>
+      <li>Call the function, passing it a <em>request object</em>. (More on
+	what a request object is later)
+      <li>At this point we're inside the script:
+	<dl>
+	  <dt><br><code>from mod_python import apache</code> 
+
+	  <dd>This imports the <code>apache</code> module which
+	    provides us the interface to Apache. With a few rare exceptions,
+	    every mod_python program will have this line.
+	  
+	  <dt><br><code>def handler(req):</code>
+	    
+	  <dd>This is our handler function declaration. It is called
+	    &quot;handler&quot; because mod_python takes the name of the
+	    directive, converts it to lower case and removes the word
+	    &quot;python&quot;. Thus &quot;PythonHandler&quot; becomes
+	  &quot;handler&quot; You could name it something else, and
+	    specify it explicitly in the directive using the special
+	    &quot;::&quot; notation. For example, if the function was
+	    called &quot;spam&quot;, then the directive would be
+	    &quot;PythonHandler myscript::spam&quot;.
+	    <br>
+	    Note that a handler must take one argument - that mysterious
+	    request object. There is really no mystery about it though.
+	    The request object is an object that provides a whole bunch
+	    of information about this particular request - such as the IP
+	    of client, the headers, the URI, etc. The communication back to
+	    the client is also done via the request object, i.e. there is no
+	    &quot;response&quot; object.
+
+	    <blockquote>
+	    
+	  <dt><code>req.content_type = &quot;text/plain&quot;</code>
+
+	  <dd>This sets the content type to &quot;text/plain&quot;. The default is
+	    usually &quot;text/html&quot;, but since our handler doesn't
+	    produce any html, &quot;text/plain&quot; is more appropriate.
+
+	  <dt><br><code>req.send_http_header()</code>
+
+	  <dd>This function sends the HTTP headers to the client. You can't
+	    really start writing to the client without sending the headers
+	    first. Note that one of the headers is &quot;content-type&quot;.
+	    So if you want to set custom content-types, you better do it
+	    before you call <code>req.send_http_header()</code>.
+
+	  <dt><br><code>req.write(&quot;Hello Wordl!&quot;)</code>
+
+	  <dd>This writes the &quot;Hello World!&quot; string to the client.
+	    (Did I really have to explain this one?)
+
+	  <dt><br><code>return apache.OK</code>
+
+	  <dd>This tells mod_python (who is calling this function)
+	    that everything went OK and that the request has been
+	    processed. If things did not go OK, that line could be
+	    <code>return apache.HTTP_INTERNAL_SERVER_ERROR</code> or
+	    <code>return apache.HTTP_FORBIDDEN</code>. When things do
+	    not go OK, Apache will log the error and generate an error
+	    message for the client.
+      
+	  </blockquote>
+	    
+	</dl>
+
+	<b>Some food for thought:</b> If you were paying attention,
+	you noticed that nowhere did it say that in order for all of
+	the above to happen, the URL needs to refer to
+	<code>myscript.py</code>. The only requirement was that it
+	refers to a <code>.py</code> file. In fact the name of the
+	file doesn't matter, and the file referred to in the URL
+	doesn't have to exist. So, given the above configuration,
+	http://myserver/mywebdir/myscript.py and
+	http://myserver/mywebdir/montypython.py would give the exact
+	same result.
+	<p>
+	  <em>At this point, if you didn't understand the above paragraph,
+	  go back and read it again, until you do.</em>
+
+	<h4>Now something more complicated</h4>
+
+    Now that you know how to write a primitive handler, let's try something
+    more complicated.
+    <p>
+      Let's say we want to password-protect this directory. We want the
+      login to be &quot;spam&quot;, and the password to be &quot;eggs&quot;.
+    <p>
+      First, we need to tell Apache to call our authentication handler
+      when authentication is needed.  We do this by adding the
+      <code>PythonAuthenHandler</code>. So now our config looks like
+      this:
+    <pre>
+    &lt;Directory /mywebdir&gt;
+      AddHandler python-program .py
+      PythonHandler myscript
+      PythonAuthenHandler myscript
+    &lt;/Directory&gt;
+    </pre>
+    Notice that the same script is specified for two different handlers. This is fine,
+    because if you remember, mod_python will look for different functions within
+    that script for the different handlers.
+    <p>
+    Next, we need to tell Apache that we are using basic HTTP authentication,
+    and only valid users are allowed (this is pretty basic Apache stuff, so 
+    I'm not going to go into details here). Our config looks like this now:
+    <pre>
+    &lt;Directory /mywebdir&gt;
+      AddHandler python-program .py
+      PythonHandler myscript
+      PythonAuthenHandler myscript
+      AuthType Basic
+      AuthName "Restricted Area"
+      require valid-user
+    &lt;/Directory&gt;
+    </pre>
+    Now we need to write an authentication handler function in myscript.py.
+    A basic authentication handler would look like this:
+    <pre>
+    def authenhandler(req):
+
+        user = req.connection.user     
+        pw = req.get_basic_auth_pw()
+        if user == "spam" and pw == "eggs":
+            return apache.OK
+        else:
+            return apache.HTTP_UNAUTHORIZED
+    </pre>
+    Let's look at this line by line:
+    <dl>
+      <dt><code>def authenhandler(req)</code>
+
+      <dd>This is the handler function declaration. This one is called
+	<code>authenhandler</code> because, as we already described above,
+	mod_python takes the name of the directive 
+	(<code>PythonAuthenHandler</code>), drops the word &quot;Python&quot; 
+	and converts it lower case.
+	
+	<blockquote>
+
+      <dt><br><code>user = req.connection.user</code>
+
+      <dd>This is how you obtain the username that the user
+      entered. In case you're wondering, the <code>connection</code>
+      object is an object that contains information specific to a
+      connection. With HTTP Keep-Alive, a single connection can serve
+      multiple requests.
+
+      <dt><br><code>pw = req.get_basic_auth_pw()</code>
+
+      <dd>This is how we obtain the password. The basic HTTP authentication
+	transmits the password in base64 encoded form to make it a
+	little bit less obvious. This function decodes the password and
+	returns it as a string.
+
+      <dt><br><code>if user == "spam" and pw == "eggs":<br>
+	  &nbsp;&nbsp;&nbsp;&nbsp;return apache.OK</code>
+	 
+      <dd>We compare the values provided by the user, and if they are what
+	we were expecting, we tell Apache to go ahead and proceed by returning
+	<code>apache.OK</code>. Apache will then proceed to the next handler.
+	(which in this case would be <code>handler()</code> if it's a 
+	<code>.py</code> file).
+
+      <dt><br><code>else:<br>
+	  &nbsp;&nbsp;&nbsp;&nbsp;return apache.HTTP_UNAUTHORIZED</code>
+
+      <dd>Else, we tell Apache to return <code>HTTP_UNAUTHORIZED</code> to
+	the client.
+
+	</blockquote>
+
+	</dl>
+
+    <h3>XXX To be continued....</h3>
+
+    <hr>
+<!-- Created: Wed Jun 14 15:51:49 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Sun Jun 18 20:13:41 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>
