@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.21 2000/07/28 18:47:36 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.22 2000/08/10 13:26:35 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -157,8 +157,9 @@ typedef struct tableobject {
 static void table_dealloc(tableobject *self);
 static PyObject * table_getattr(PyObject *self, char *name);
 static PyObject * table_repr(tableobject *self);
-static PyObject * tablegetitem(tableobject *self, PyObject *key );
-static PyObject * table_has_key(tableobject *self, PyObject *args );
+static PyObject * tablegetitem(tableobject *self, PyObject *key);
+static PyObject * table_has_key(tableobject *self, PyObject *args);
+static PyObject * table_add(tableobject *self, PyObject *args);
 static PyObject * table_keys(tableobject *self);
 static int tablelength(tableobject *self);
 static int tablesetitem(tableobject *self, PyObject *key, PyObject *val);
@@ -194,6 +195,7 @@ static PyTypeObject tableobjecttype = {
 static PyMethodDef tablemethods[] = {
     {"keys",                 (PyCFunction)table_keys,    METH_VARARGS},
     {"has_key",              (PyCFunction)table_has_key, METH_VARARGS},
+    {"add",                  (PyCFunction)table_add,     METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -950,6 +952,27 @@ static PyObject * table_has_key(tableobject *self, PyObject *args)
 }
 
 /**
+ ** table_add
+ **
+ *     this function is equivalent of ap_table_add - 
+ *     it can create duplicate entries. 
+ */
+
+static PyObject * table_add(tableobject *self, PyObject *args)
+{
+
+    const char *val, *key;
+
+    if (! PyArg_ParseTuple(args, "ss", &key, &val))
+	return NULL;
+
+    ap_table_add(self->table, key, val);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
  ** tablelength
  **
  *      Number of elements in a table. Called
@@ -971,8 +994,8 @@ static int tablelength(tableobject *self)
  *      string passed in.
  */
 
-static int tablesetitem(tableobject *self,  PyObject *key, PyObject
-			*val) 
+static int tablesetitem(tableobject *self, PyObject *key, 
+			PyObject *val)
 { 
 
     char *k;

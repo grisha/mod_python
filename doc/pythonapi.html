@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.4 2000/07/28 18:47:36 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.5 2000/08/10 13:26:34 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -222,6 +222,11 @@
 	All the tables that mod_python provides inside the <code>request</code>
 	object are actual mappings to the Apache structures, so changing the Python
 	table also changes the underlying Apache table.
+      <p>
+	In addition to normal dictionary-like behavior, the table object also has
+	an <b>add(string key, string val)</b> method. <em>Add()</em> allows for 
+	creating duplicate keys, which is useful when multiple headers, such as 
+	Set-Cookie are required.
 
       <a name="request"><h4>Request Object</h4></a>
 
@@ -571,7 +576,9 @@
 
 	  <dt><br><b>user</b> <em>string, RO</em>
 	  <dd>
-	    If an authentication check is made, this will hold the user name.
+	    If an authentication check is made, this will hold the user name. 
+	    <em>NOTE:</em> You must call <code>get_basic_auth_pw()</code> before
+	    using this value.
 
 	  <dt><br><b>ap_auth_type</b> <em>string, RO</em>
 	  <dd>
@@ -711,7 +718,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Sat Jul 22 20:25:01 EDT 2000
+Last modified: Thu Aug 10 09:02:27 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

@@ -1,4 +1,11 @@
 
+Aug 10 2000 -	Documentation change - get_basic_auth_pw must be called before
+		using connection.user.
+
+Aug 06 2000 -   Table oject now has a new method "add" which allows creation
+		of multiple keys. This is useful with things like "Set-Cookie"
+		headers.
+
 Jul 22 2000 -   Added req.add_handler (dynamic handler registration)
 
 Jul 18 2000 -   Added PythonEnablePdb
