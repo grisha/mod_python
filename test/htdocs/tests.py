@@ -93,6 +93,20 @@ def req_get_remote_host(req):
 
     return apache.OK
 
+def req_internal_redirect(req):
+
+    req.internal_redirect("/test.int")
+
+    return apache.OK
+
+def req_internal_redirect_int(req):
+    # used by req_internal_redirect
+
+    req.prev.write("test ")
+    req.write("ok")
+
+    return apache.OK
+
 def req_read(req):
 
     s = req.read()

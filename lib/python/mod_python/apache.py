@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.51 2002/08/20 19:05:06 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.52 2002/08/28 15:45:38 gtrubetskoy Exp $
 
 import sys
 import string
@@ -395,7 +395,7 @@ def import_module(module_name, req=None, path=None):
 
         # Import the module
         if debug:
-            s = 'mod_python: (Re)importing %s from %s' % (module_name, path)
+            s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
             _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
 
         parts = module_name.split('.')

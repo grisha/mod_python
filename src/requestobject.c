@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.25 2002/08/22 21:09:08 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.26 2002/08/28 15:45:39 gtrubetskoy Exp $
  *
  */
 
@@ -104,7 +104,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
  *
  */
 
-static PyObject * req_add_common_vars(requestobject *self, PyObject *args)
+static PyObject * req_add_common_vars(requestobject *self)
 {
 
     ap_add_common_vars(self->request_rec);
@@ -289,21 +289,6 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
 }
 
 /**
- ** request.get_config(request self)
- **
- *     Returns the config directives set through Python* apache directives.
- *     except for Python*Handler and PythonOption (which you get via get_options).
- */
-
-static PyObject * req_get_config(requestobject *self, PyObject *args)
-{
-    py_dir_config *conf =
-        (py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-                                               &python_module);
-    return MpTable_FromTable(conf->directives);
-}
-
-/**
  ** request.get_addhandler_exts(request self)
  **
  *     Returns file extentions that were given as argument to AddHandler mod_mime
@@ -324,6 +309,21 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
         Py_INCREF(Py_None);
         return Py_None;
     }
+}
+
+/**
+ ** request.get_config(request self)
+ **
+ *     Returns the config directives set through Python* apache directives.
+ *     except for Python*Handler and PythonOption (which you get via get_options).
+ */
+
+static PyObject * req_get_config(requestobject *self)
+{
+    py_dir_config *conf =
+        (py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+                                               &python_module);
+    return MpTable_FromTable(conf->directives);
 }
 
 /**
@@ -377,6 +377,27 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
         (py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
                                                &python_module);
     return MpTable_FromTable(conf->options);
+}
+
+/**
+ ** request.internal_redirect(request self, string newuri)
+ **
+ */
+
+static PyObject * req_internal_redirect(requestobject *self, PyObject *args)
+{
+    char *new_uri;
+    PyThreadState *_save;
+
+    if (! PyArg_ParseTuple(args, "z", &new_uri))
+        return NULL; /* error */
+
+    _save = PyEval_SaveThread();
+    ap_internal_redirect(new_uri, self->request_rec);
+    PyEval_RestoreThread(_save);
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 /**
@@ -630,7 +651,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 }
 
 /**
- ** request.readlines
+ ** request.readlines([long maxsize])
  **
  *    just like file.readlines()
  */
@@ -721,7 +742,7 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
  *      this is a noop, just so we don't break old scripts
  */
 
-static PyObject * req_send_http_header(requestobject *self, PyObject *args)
+static PyObject * req_send_http_header(requestobject *self)
 {
     return Py_None;
 }
@@ -756,21 +777,22 @@ static PyObject * req_write(requestobject *self, PyObject *args)
 }
 
 static PyMethodDef request_methods[] = {
-    {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_VARARGS},
+    {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
-    {"document_root",         (PyCFunction) req_document_root,         METH_VARARGS},
-    {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_VARARGS},
-    {"get_addhandler_exts",   (PyCFunction) req_get_addhandler_exts,   METH_VARARGS},
-    {"get_config",            (PyCFunction) req_get_config,            METH_VARARGS},
+    {"document_root",         (PyCFunction) req_document_root,         METH_NOARGS},
+    {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_NOARGS},
+    {"get_addhandler_exts",   (PyCFunction) req_get_addhandler_exts,   METH_NOARGS},
+    {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"get_remote_host",       (PyCFunction) req_get_remote_host,       METH_VARARGS},
-    {"get_options",           (PyCFunction) req_get_options,           METH_VARARGS},
+    {"get_options",           (PyCFunction) req_get_options,           METH_NOARGS},
+    {"internal_redirect",     (PyCFunction) req_internal_redirect,     METH_VARARGS},
     {"log_error",             (PyCFunction) req_log_error,             METH_VARARGS},
     {"read",                  (PyCFunction) req_read,                  METH_VARARGS},
     {"readline",              (PyCFunction) req_readline,              METH_VARARGS},
     {"readlines",             (PyCFunction) req_readlines,             METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
-    {"send_http_header",      (PyCFunction) req_send_http_header,      METH_VARARGS},
+    {"send_http_header",      (PyCFunction) req_send_http_header,      METH_NOARGS},
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
@@ -787,27 +809,27 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
     PyObject *result = NULL;
 
     if (strcmp(name, "connection") == 0) {
-        if (!self->connection && !self->request_rec->connection)
+        if (!self->connection && self->request_rec->connection)
             self->connection = MpConn_FromConn(self->request_rec->connection);
         result = self->connection;
     }
     else if (strcmp(name, "server") == 0) {
-        if (!self->server && !self->request_rec->server) 
+        if (!self->server && self->request_rec->server) 
             self->server = MpServer_FromServer(self->request_rec->server);
         result = self->server;
     }
     else if (strcmp(name, "next") == 0) {
-        if (!self->next && !self->request_rec->next)
+        if (!self->next && self->request_rec->next)
             self->next = MpRequest_FromRequest(self->request_rec->next);
         result = self->next;
     }
     else if (strcmp(name, "prev") == 0) {
-        if (!self->prev && !self->request_rec->prev)
+        if (!self->prev && self->request_rec->prev)
             self->prev = MpRequest_FromRequest(self->request_rec->prev);
         result = self->prev;
     }
     else if (strcmp(name, "main") == 0) {
-        if (!self->main && !self->request_rec->main)
+        if (!self->main && self->request_rec->main)
             self->main = MpRequest_FromRequest(self->request_rec->main);
         result = self->main;
     }

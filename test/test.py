@@ -291,6 +291,31 @@ class ModPythonTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail("test failed")
 
+    def test_req_internal_redirect(self):
+
+        print "\n* Testing req.internal_redirect()"
+
+        cfg = "<Directory %s/htdocs>\n" % PARAMS["server_root"]+ \
+              "  SetHandler python-program\n" + \
+              "  PythonHandler tests::req_internal_redirect | .py\n" + \
+              "  PythonHandler tests::req_internal_redirect_int | .int\n" + \
+              "  PythonDebug On\n" + \
+              "</Directory>\n"
+
+        self.makeConfig(cfg)
+        self.startApache()
+
+        url = "http://127.0.0.1:%s/tests.py" % PARAMS["port"]
+        print "    url: "+url
+        
+        f = urllib.urlopen(url)
+        rsp = f.read()
+        f.close()
+        print "response: ", rsp
+        
+        if rsp != "test ok":
+            self.fail("internal_redirect")
+
     def test_req_read(self):
 
         print "\n* Testing req.read()"
@@ -541,6 +566,7 @@ def suite():
     mpTestSuite.addTest(ModPythonTestCase("test_req_get_basic_auth_pw"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_get_config"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_get_remote_host"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_internal_redirect"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_read"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))
     mpTestSuite.addTest(ModPythonTestCase("test_req_readlines"))
