@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.12 2001/07/09 12:54:40 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.12.2.1 2002/04/10 21:18:22 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -290,7 +290,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
 
         # object cannot be a module
         if type(obj) == type(apache):
-            raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
+            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
         realm, user, passwd = process_auth(req, obj, realm,
                                            user, passwd)
