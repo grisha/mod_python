@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: util.py,v 1.4 2000/12/06 03:05:37 gtrubetskoy Exp $
+ # $Id: util.py,v 1.5 2000/12/13 05:24:08 gtrubetskoy Exp $
 
 import apache
 import string
@@ -99,7 +99,6 @@ class Field:
 
 class FieldStorage:
 
-
     def __init__(self, req, keep_blank_values=0, strict_parsing=0):
 
         self._req =_req = req._req
@@ -129,9 +128,11 @@ class FieldStorage:
 
             if ctype == "application/x-www-form-urlencoded":
                 
-                pairs = parse_qsl(req.read(clen))
+                pairs = parse_qsl(req.read(clen), keep_blank_values)
                 for pair in pairs:
-                    self.list.append(Field(pair[0], pair[1]))
+                    file = StringIO.StringIO(pair[1])
+                    self.list.append(Field(pair[0], file, "text/plain",
+                                     {}, None, {}))
 
             elif ctype[:10] == "multipart/":
 
@@ -238,7 +239,11 @@ class FieldStorage:
             raise TypeError, "not indexable"
         found = []
         for item in self.list:
-            if item.name == key: found.append(item)
+            if item.name == key:
+                if isinstance(item.file, StringIO.StringIO):
+                    found.append(item.value)
+                else:
+                    found.append(item)
         if not found:
             raise KeyError, key
         if len(found) == 1:

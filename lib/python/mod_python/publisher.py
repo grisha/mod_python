@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.3 2000/12/05 23:47:01 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.4 2000/12/13 05:24:08 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -79,7 +79,22 @@ def handler(req):
 
     args = {}
 
-    fs = util.FieldStorage(req)
+    # get the path PATH_INFO (everthing after script)
+    if not _req.subprocess_env.has_key("PATH_INFO"):
+        raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+    
+    func_path = _req.subprocess_env["PATH_INFO"][1:] # skip fist /
+    func_path = string.replace(func_path, "/", ".")
+    if func_path[-1] == ".":
+        func_path = func_path[:-1] 
+
+    # if any part of the path begins with "_", abort
+    if func_path[0] == '_' or string.count(func_path, "._"):
+        raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+
+    # process input, if any
+    fs = util.FieldStorage(req, keep_blank_values=1)
+    req.form = fs
 
     # step through fields
     for field in fs.list:
@@ -115,34 +130,62 @@ def handler(req):
     # does it have an __auth__?
     auth_realm = process_auth(req, module)
 
-    # now get the path PATH_INFO (everthing after script)
-    # and begin traversal
-    if not _req.subprocess_env.has_key("PATH_INFO"):
-        raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
-    
-    func_path = _req.subprocess_env["PATH_INFO"][1:] # skip fist /
-    func_path = string.replace(func_path, "/", ".")
-
-    # if any part of the path begins with "_", abort
-    if func_path[0] == '_' or string.count(func_path, "._"):
-        raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
-
     # resolve the object ('traverse')
-    object = resolve_object(req, module, func_path, auth_realm)
+    try:
+        object = resolve_object(req, module, func_path, auth_realm)
+    except AttributeError:
+        raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
     # does it have an __auth__?
     process_auth(req, object)
 
-    # callable?
-    if callable(object):
-        result = apply(object, (), args)
+    # not callable, a class or an aunbound method
+    if not callable(object) or \
+       str(type(object)) == "<type 'class'>" \
+       or (hasattr(object, 'im_self') and not object.im_self):
+
+        result = str(object)
+        
     else:
-        result = object
-    
-    req.send_http_header()
+        # callable, (but not a class or unbound method)
+
+        # we need to weed out unexpected keyword arguments
+        # and for that we need to get a list of them. There
+        # are a few options for callable objects here:
+
+        if str(type(object)) == "<type 'instance'>":
+            # instances are callable when they have __call__()
+            object = object.__call__
+
+        if hasattr(object, "func_code"):
+            # function
+            fc = object.func_code
+            expected = fc.co_varnames[0:fc.co_argcount]
+        elif hasattr(object, 'im_func'):
+            # method
+            fc = object.im_func.func_code
+            expected = fc.co_varnames[1:fc.co_argcount]
+
+        # remove unexpected args
+        for name in args.keys():
+            if name not in expected:
+                del args[name]
+
+        result = apply(object, (), args)
 
     if result:
-        req.write(str(result))
+        result = str(result)
+
+        if not req.content_type:
+            # make an attempt to guess content-type
+            if string.lower(string.strip(result[:100])[:6]) == '<html>' \
+               or string.find(result,'</') > 0:
+                req.content_type = 'text/html'
+            else:
+                req.content_type = 'text/plain'
+
+        req.send_http_header()
+        req.write(result)
         return apache.OK
     else:
         return apache.HTTP_INTERNAL_SERVER_ERROR
@@ -196,20 +239,11 @@ def process_auth(req, object, realm=None):
 def resolve_object(req, obj, object_str, auth_realm=None):
     """
     This function traverses the objects separated by .
-    (period) to find the last one we're looking for:
-
-       From left to right, find objects, if it is
-       an unbound method of a class, instantiate the
-       class passing the request as single argument
+    (period) to find the last one we're looking for.
     """
 
     for obj_str in  string.split(object_str, '.'):
-
         obj = getattr(obj, obj_str)
-
-        if str(type(obj)) == "<type 'class'>":
-            raise TypeError, "uninstantiated classes cannot be published"
-
         auth_realm = process_auth(req, obj, auth_realm)
 
     return obj

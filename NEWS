@@ -1,4 +1,14 @@
-Dec 12 2000 -	The COPYRIGHT no longer has the advertizing clause.
+Dec 12 2000 - 	publisher handler appears to be working pretty well. Now need
+		to document it.
+
+Dec 11 2000 -	It appears I found a big booboo with mispalced #ifdef
+		WITH_THREADS... The "Dispatch returned nothing" should be
+		gone now. This means 2.6.3 has major problems with multiple
+		interpreters.
+
+Dec  8 2000 -   connection.user now writable. More Doc improvements.
+
+Dec  6 2000 -	The COPYRIGHT no longer has the advertizing clause.
 
 Dec  4 2000 -	Initial (not proof-read) LaTeX source for documentation is 
 		checked in.

@@ -456,7 +456,7 @@ A boolean value indicating HEAD request, as opposed to GET.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{protocol}
-Protocol, as given by the client, or "HTTP/0.9"
+Protocol, as given by the client, or "HTTP/0.9". Same as CGI \envvar{SERVER_PROTOCOL}.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -477,6 +477,7 @@ Status line. E.g. "200 OK".
 
 \begin{memberdesc}[Request]{method}
 A string containing the method - 'GET', 'HEAD', 'POST', etc.
+Same as CGI \envvar{REQUEST_METHOD}.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -600,14 +601,14 @@ String. File name being requested.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{path_into}
+\begin{memberdesc}[Request]{path_info}
 String. What follows after the file name, but is before query args, if
-anything.
+anything. Same as CGI \envvar{PATH_INFO}.
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{args}
-String. Same as CGI QUERY_ARGS.
+String. Same as CGI \envvar{QUERY_ARGS}.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -645,30 +646,30 @@ The (address, port) tuple for the client.
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{remote_ip}
-String with the IP of the client.
+String with the IP of the client. Same as CGI \envvar{REMOTE_ADDR}.
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{remote_host}
 String. The DNS name of the remote client. None if DNS has not been
-checked, "" (empty string) if no name found.
+checked, "" (empty string) if no name found. Same as CGI \envvar{REMOTE_HOST}.
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{remote_logname}
-Remote name if using RFC1413 (ident).
+Remote name if using RFC1413 (ident). Same as CGI \envvar{REMOTE_IDENT}.
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{user}
 If an authentication check is made, this will hold the user
 name. \strong{NOTE:} You must call \code{get_basic_auth_pw()} before
-using this value.
+using this value. Same as CGI \envvar{REMOTE_USER}.
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{ap_auth_type}
-Authentication type. (None == basic?)
+Authentication type. (None == basic?). Same as CGI \envvar{AUTH_TYPE}.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -726,12 +727,12 @@ Value of the \code{ServerAdmin} directive.
 \end{memberdesc}
 
 \begin{memberdesc}[server]{server_hostname}
-Value of the \code{ServerName} directive.
+Value of the \code{ServerName} directive. Same as CGI \envvar{SERVER_NAME}.
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{port}
-Integer. TCP/IP port number.
+Integer. TCP/IP port number. Same as CGI \envvar{SERVER_PORT}.
 \emph{(Read-Only})
 \end{memberdesc}
 
