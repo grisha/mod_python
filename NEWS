@@ -1,3 +1,4 @@
+Aug 18 2000 -   Added req.get_remote_host()
 
 Aug 16 2000 -   Added Dr. Timochouk's PythonOptimize directive patch.
 

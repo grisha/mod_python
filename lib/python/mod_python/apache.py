@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.16 2000/08/16 18:49:33 gtrubetskoy Exp $
+  $Id: apache.py,v 1.17 2000/08/21 17:16:37 gtrubetskoy Exp $
 
 """
 
@@ -590,6 +590,12 @@ APLOG_NOERRNO = 8
 OK = REQ_PROCEED = 0
 DONE = -2
 DECLINED = REQ_NOACTION = -1
+
+# constants for get_remote_host
+REMOTE_HOST = 0
+REMOTE_NAME = 1
+REMOTE_NOLOOKUP = 2
+REMOTE_DOUBLE_REV = 3
 
 REQ_ABORTED = HTTP_INTERNAL_SERVER_ERROR
 REQ_EXIT = "REQ_EXIT"         
