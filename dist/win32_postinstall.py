@@ -54,49 +54,74 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: win32_postinstall.py,v 1.1 2002/12/28 03:42:32 grisha Exp $
+ # $Id: win32_postinstall.py,v 1.2 2003/01/09 16:57:06 grisha Exp $
  #
  # this script runs at the end of windows install
 
-### ask for Apache directory
-
-from tkFileDialog import askdirectory
-from Tkinter import Tk
-
-root = Tk()
-root.withdraw()
-apachedir = askdirectory(title="Where is Apache installed?",
-                         initialdir="C:/Program Files/Apache Group/Apache2",
-                         mustexist=1, master=root)
-root.quit()
-root.destroy()
-
-### put mod_python.so there
 
 import sys, os, shutil
 
-mp = os.path.join(sys.prefix, "mod_python.so")
 
-shutil.copy2(mp, os.path.join(apachedir, "modules"))
-os.remove(mp)
+def askForApacheDir():
+    # try to ask for Apache directory
+    try:
+        from tkFileDialog import askdirectory
+        from Tkinter import Tk
+        root = Tk()
+        root.withdraw()
+        return askdirectory(title="Where is Apache installed?",
+                            initialdir="C:/Program Files/Apache Group/Apache2",
+                            mustexist=1, master=root)
+        root.quit()
+        root.destroy()
+    except ImportError:
+        return ""
 
-print """Important Note for Windows users, PLEASE READ!!!
+# if we're called during removal, just exit
+if len(sys.argv) == 0 or sys.argv[1] != "-remove":
 
-1. This script does not attempt to modify Apache configuration,
-   you must do it manually:
+    mp = os.path.join(sys.prefix, "mod_python.so")
 
-   Edit %s,
-   find where other LoadModule lines and add this:
-        LoadModule python_module modules/mod_python.so
+    apachedir = askForApacheDir()
 
-2. You need msvcr70.dll to run mod_python. This file comes with
-   Microsoft Studio .NET, if you don't have it, you can download
-   it from
-   http://www.dll-files.com/dllindex/dll-files.shtml?msvcr70
- 
-3. Now test your installation using the instructions at this link:
-   http://www.modpython.org/live/current/doc-html/inst-testing.html
-   
-""" % os.path.join(apachedir, "conf", "httpd.conf")
+    if apachedir:
 
+        # put mod_python.so there
+        shutil.copy2(mp, os.path.join(apachedir, "modules"))
+        os.remove(mp)
 
+        print """Important Note for Windows users, PLEASE READ!!!
+
+        1. This script does not attempt to modify Apache configuration,
+           you must do it manually:
+
+           Edit %s,
+           find where other LoadModule lines and add this:
+                LoadModule python_module modules/mod_python.so
+
+        2. Now test your installation using the instructions at this link:
+           http://www.modpython.org/live/current/doc-html/inst-testing.html
+
+        """ % os.path.join(apachedir, "conf", "httpd.conf")
+
+    else:
+
+        print """Important Note for Windows users, PLEASE READ!!!
+
+        1. It appears that you do not have Tkinter installed,
+           which is required for a part of this installation.
+           Therefore you must manually take
+           "%s"
+           and copy it to your Apache modules directory.
+
+        2. This script does not attempt to modify Apache configuration,
+           you must do it manually:
+
+           Edit %s,
+           find where other LoadModule lines and add this:
+                LoadModule python_module modules/mod_python.so
+
+        3. Now test your installation using the instructions at this link:
+           http://www.modpython.org/live/current/doc-html/inst-testing.html
+
+        """ % (mp, os.path.join(apachedir, "conf", "httpd.conf"))
