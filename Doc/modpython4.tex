@@ -1069,6 +1069,10 @@ information to adjacent filters in the filter stack.
 
 \subsubsection{Filter Methods\label{pyapi-mpfilt-meth}}
 
+\begin{methoddesc}[filter]{pass_on}{}
+
+Passes all data throught the filter without any processing.
+
 \begin{methoddesc}[filter]{read}{\optional{length}}
 
 Reads at most \var{len} bytes from the next filter, returning a string
