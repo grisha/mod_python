@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.9 2001/05/28 20:00:41 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.9.2.1 2003/12/08 04:36:10 grisha Exp $
  *
  */
 
@@ -150,11 +150,14 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
 	    i++;
 	    j++;
 	}
-	_PyString_Resize(&pair, j);
-	cpair = PyString_AS_STRING(pair);
 
-	PyList_Append(pairs, pair);
-	Py_DECREF(pair);
+        if (j) {
+            _PyString_Resize(&pair, j);
+            if (pair)
+                PyList_Append(pairs, pair);
+        }
+
+	Py_XDECREF(pair);
 	i++;
     }
 
@@ -218,26 +221,30 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
 	    ap_unescape_url(cval);
 
 	    _PyString_Resize(&key, strlen(ckey));
-	    ckey = PyString_AS_STRING(key);
 	    _PyString_Resize(&val, strlen(cval));
-	    cval = PyString_AS_STRING(val);
+            
+            if (key && val) {
+
+                ckey = PyString_AS_STRING(key);
+                cval = PyString_AS_STRING(val);
 	
-	    if (PyMapping_HasKeyString(dict, ckey)) {
-		PyObject *list;
-		list = PyDict_GetItem(dict, key);
-		PyList_Append(list, val);
-		/* PyDict_GetItem is a borrowed ref, no decref */
-	    }
-	    else {
-		PyObject *list;
-		list = Py_BuildValue("[O]", val);
-		PyDict_SetItem(dict, key, list);
-		Py_DECREF(list);
-	    }
+                if (PyMapping_HasKeyString(dict, ckey)) {
+                    PyObject *list;
+                    list = PyDict_GetItem(dict, key);
+                    PyList_Append(list, val);
+                    /* PyDict_GetItem is a borrowed ref, no decref */
+                }
+                else {
+                    PyObject *list;
+                    list = Py_BuildValue("[O]", val);
+                    PyDict_SetItem(dict, key, list);
+                    Py_DECREF(list);
+                }
+            }
 	}
 
-	Py_DECREF(key);
-	Py_DECREF(val);
+	Py_XDECREF(key);
+	Py_XDECREF(val);
 
 	n++;
     }
@@ -292,6 +299,13 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
 	    i++;
 	    j++;
 	}
+
+        if (j == 0) {
+            Py_XDECREF(pair);
+            i++;
+            continue;
+        }
+
 	cpair[j] = '\0';
 	_PyString_Resize(&pair, j);
 	cpair = PyString_AS_STRING(pair);
@@ -337,12 +351,13 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
 	    _PyString_Resize(&key, strlen(ckey));
 	    _PyString_Resize(&val, strlen(cval));
 
-	    PyList_Append(pairs, Py_BuildValue("(O,O)", key, val));
+            if (key && val)
+                PyList_Append(pairs, Py_BuildValue("(O,O)", key, val));
 
 	}
-	Py_DECREF(pair);
-	Py_DECREF(key);
-	Py_DECREF(val);
+	Py_XDECREF(pair);
+	Py_XDECREF(key);
+	Py_XDECREF(val);
 	i++;
     }
 
