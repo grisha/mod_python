@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.9 2001/09/06 20:27:31 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.10 2001/09/06 20:39:24 gtrubetskoy Exp $
 
 CC=@CC@
 RANLIB=@RANLIB@
@@ -63,7 +63,7 @@ OBJS=		mod_python.o \
 		util.o \
 		serverobject.o \
 		connobject.o \
-		filterobject.o @EPRINTF_HACK@
+		filterobject.o @EPRINTF_HACK@ @FLOATDIDF_HACK@
 
 SRCS=		mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
 		serverobject.c connobject.c filterobject.c
@@ -112,6 +112,8 @@ clean:
 # python uses assert() which needs _eprintf()
 _eprintf.o:
 	ar -x `gcc -print-libgcc-file-name` _eprintf.o
+_floatdidf.o:
+	ar -x `gcc -print-libgcc-file-name` _floatdidf.o
 
 mod_python.o: mod_python.c
 _apachemodule.o: _apachemodule.c
