@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.30 2000/09/13 13:29:04 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.31 2000/10/03 02:07:39 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -3728,14 +3728,6 @@ command_rec python_commands[] =
 	OR_ALL,
 	RAW_ARGS,
 	"Python clean up handlers."
-    },
-    {
-	"PythonChildExitHandler",
-	directive_PythonChildExitHandler,
-	NULL,
-	OR_ALL,
-	RAW_ARGS,
-	"Python child exit handlers."
     },
     {
 	"PythonDebug",                 
