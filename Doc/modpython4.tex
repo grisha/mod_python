@@ -478,6 +478,16 @@ Returns a reference to the table object containing the options set by
 the \code{PythonOption} directives.
 \end{methoddesc}
 
+\begin{methoddesc}[Request]{internal_redirect}{new_uri}
+Internally redirects the request to the \var{new_uri}. \var{new_uri}
+must be a string.
+
+The httpd server handles internal redirection by creating a new
+request object and processing all request phases. Within an internal
+redirect, \code{req.prev} will contain a reference to a request object
+from which it was redirected.
+
+\end{methoddesc}
 
 \begin{methoddesc}[Request]{read}{\optional{len}}
 
@@ -554,12 +564,12 @@ for details.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{next}
-If this is an internal redirect, the \code{request} object we redirect to. 
+If this is an internal redirect, the request object we redirect to. 
 \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{prev}
-If this is an internal redirect, the \code{request} object we redirect from.
+If this is an internal redirect, the request object we redirect from.
 \emph{(Read-Only})
 \end{memberdesc}
 
