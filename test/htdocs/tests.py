@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.27 2003/05/22 20:25:07 grisha Exp $
+ # $Id: tests.py,v 1.28 2003/06/19 21:00:37 grisha Exp $
  #
 
 # mod_python tests
@@ -482,12 +482,12 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("conn.base_server should be same type as req.server")
         
         log("    connection.local_addr: %s" % `conn.local_addr`)
-        if conn.local_addr[0] != "127.0.0.1":
-            self.fail("conn.local_addr[0] should be '127.0.0.1'")
+        if not conn.local_addr[0] in ("127.0.0.1", "0.0.0.0"):
+            self.fail("conn.local_addr[0] should be '127.0.0.1' or '0.0.0.0'")
         
         log("    connection.remote_addr: %s" % `conn.remote_addr`)
-        if conn.remote_addr[0] != "127.0.0.1":
-            self.fail("conn.remote_addr[0] should be '127.0.0.1'")
+        if not conn.remote_addr[0] in ("127.0.0.1", "0.0.0.0"):
+            self.fail("conn.remote_addr[0] should be '127.0.0.1' or '0.0.0.0'")
 
         log("    connection.remote_ip: %s" % `conn.remote_ip`)
         if conn.remote_ip != "127.0.0.1":
