@@ -200,9 +200,9 @@ autoconf stuff, \program{./configure} does the following:
 
   \begin{verbatim}
     <Directory /some/directory/htdocs/test> 
-    AddHandler python-program .py
-    PythonHandler mptest 
-    PythonDebug On 
+        AddHandler python-program .py
+	PythonHandler mptest 
+	PythonDebug On 
     </Directory>
   \end{verbatim}
 
@@ -223,8 +223,8 @@ autoconf stuff, \program{./configure} does the following:
     from mod_python import apache
 
     def handler(req):
-    req.write("Hello World!")
-    return apache.OK 
+        req.write("Hello World!")
+	return apache.OK 
   \end{verbatim}
 
 \item
@@ -250,7 +250,7 @@ There are a few things you can try to identify the problem:
 
 \item Try running Apache from the command line in single process mode:
   \begin{verbatim}
-    ./httpd -DONE_PROCESS
+    ./httpd -X
   \end{verbatim}
   This prevents it from backgrounding itself and may provide some useful
   information.

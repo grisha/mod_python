@@ -210,14 +210,14 @@ succeeded, but the user is not permitted to access a particular URL.
 An example authentication handler might look like this: 
 
 \begin{verbatim}
-  def authenhandler(req):
+def authenhandler(req):
 
-  pw = req.get_basic_auth_pw()
-  user = req.connection.user     
-  if user == "spam" and pw == "eggs":
-  return apache.OK
-  else:
-  return apache.HTTP_UNAUTHORIZED
+    pw = req.get_basic_auth_pw()
+    user = req.connection.user     
+    if user == "spam" and pw == "eggs":
+        return apache.OK
+    else:
+        return apache.HTTP_UNAUTHORIZED
 \end{verbatim}    
 
 \begin{notice}
