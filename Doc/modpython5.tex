@@ -509,13 +509,13 @@ one can simply say
 PythonHandlerModule mymodule
 \end{verbatim}    
 
-\subsection{PythonNoReload\label{dir-other-pnr}}
-\index{PythonNoReload}
+\subsection{PythonAutoReload\label{dir-other-par}}
+\index{PythonAutoReload}
 
 \strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
-PythonNoReload \{On, Off\} \\
+PythonAutoReload \{On, Off\} \\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
-PythonNoReload Off\\
+PythonAutoReload On\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
@@ -523,14 +523,18 @@ not None\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
-Instructs mod_python not to check the modification date of the module
-file. By default, mod_python checks the time-stamp of the file and
-reloads the module if the module's file modification date is later
-than the last import or reload.
+If set to Off, instructs mod_python not to check the modification date
+of the module file. 
 
-This option is useful in production environment where the modules do
-not change, it will save some processing time and give a small
-performance gain.
+By default, mod_python checks the time-stamp of the file and reloads
+the module if the module's file modification date is later than the
+last import or reload. This way changed modules get automatically
+reimported, elimitaing the need to restart the server for every
+change.
+
+Disaling autoreload is useful in production environment where the
+modules do not change; it will save some processing time and give a
+small performance gain.
 
 \subsection{PythonOptimize\label{dir-other-pomz}}
 \index{PythonOptimize}

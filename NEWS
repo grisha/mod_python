@@ -1,3 +1,5 @@
+May 24 2000 -	PythonNoReload obsoleted in favor of PythonAutoReload.
+
 May 23 2000 -	The "fix" re import on Apr 10 turned out to be a bug and
 		I put it back. But in the process found that the FLAG directives
 		were not read correctly - e.g. mere presence sometimes indicated
