@@ -1616,16 +1616,28 @@ if type(spam) is not Cookie.SignedCookie:
 
 \subsection{Functions\label{pyapi-cookie-func}}
 
-\begin{funcdesc}{setCookie}{req, cookie}
+\begin{funcdesc}{addCookie}{req, cookie\optional{, value, attributes}}
   This is a convenience function for setting a cookie in request
-  headers. \var{req} is a mod_python \class{Request} object,
-  \var{cookie} is an object whose string representation is a valid
-  cookie. (Most often it is an instance of mod_python \class{Cookie}
-  or any of its subclasses).
+  headers. \var{req} is a mod_python \class{Request} object.  If
+  \var{cookie} is an instance of \class{Cookie} (or subclass thereof),
+  then the cookie is set, otherwise, \var{cookie} must be a string, in
+  which case a \class{Cookie} is constructed using \var{cookie} as
+  name, \var{value} as the value, along with any valid \class{Cookie}
+  attributes specified as keyword arguments.
 
   This function will also set \samp{Cache-Control:
   no-cache="set-cookie"} header to inform caches that the cookie value
   should not be cached.
+
+  Here is one way to use this function:
+  \begin{verbatim}
+c = Cookie.Cookie('spam', 'eggs', expires=time.time()+300)
+Cookie.addCookie(req, c)
+  \end{verbatim}
+  Here is another:
+  \begin{verbatim}
+Cookie.addCookie(req, 'spam', 'eggs', expires=time.time()+300)
+  \end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{getCookies}{req \optional{, Class, data}}
@@ -1651,7 +1663,7 @@ def handler(req):
 
     cookie = Cookie.Cookie('eggs', 'spam')
     cookie.expires = time.time() + 300
-    Cookie.setCookie(req, cookie)
+    Cookie.addCookie(req, cookie)
 
     req.write('This response contains a cookie!\n')
     return apache.OK
@@ -1685,7 +1697,7 @@ def handler(req):
 
         # MarshaCookie allows value to be any marshallable object
         value = {'egg_count': 32, 'color': 'white'}
-        Cookie.setCookie(req, Cookie.MarshalCookie('spam', value, \
+        Cookie.addCookie(req, Cookie.MarshalCookie('spam', value, \
                          'secret007'))
         req.write('Spam cookie not found, but we just set one!\n')
 

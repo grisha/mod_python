@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.7 2003/07/24 20:51:08 grisha Exp $
+ # $Id: Cookie.py,v 1.8 2003/07/26 19:25:18 grisha Exp $
 
 """
 
@@ -374,11 +374,17 @@ def _parseCookie(str, Class):
 
     return result
 
-def setCookie(req, cookie):
+def addCookie(req, cookie, value="", **kw):
     """
     Sets a cookie in outgoing headers and adds a cache
     directive so that caches don't cache the cookie.
     """
+
+    # is this a cookie?
+    if not isinstance(cookie, Cookie):
+
+        # make a cookie
+        cookie = Cookie(cookie, value, **kw)
         
     if not req.headers_out.has_key("Set-Cookie"):
         req.headers_out.add("Cache-Control", 'no-cache="set-cookie"')
