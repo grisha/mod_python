@@ -57,7 +57,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.25 2002/11/08 00:15:11 gstein Exp $
+ * $Id: tableobject.c,v 1.26 2002/12/19 15:55:02 grisha Exp $
  *
  */
 
@@ -703,7 +703,7 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
     PyObject *val = NULL;
     const char *sval;
 
-    if (!PyArg_ParseTuple(args, "S|S:get", &key, &failobj))
+    if (!PyArg_ParseTuple(args, "S|O:get", &key, &failobj))
         return NULL;
 
     sval = apr_table_get(self->table, PyString_AsString(key));
