@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.84 2002/11/08 00:15:11 gstein Exp $
+ * $Id: mod_python.c,v 1.85 2002/11/15 15:25:07 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -165,6 +165,9 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 #ifdef WITH_THREAD
     PyEval_AcquireLock();
 #endif
+
+    if (!interpreters)
+        return NULL;
 
     p = PyDict_GetItemString(interpreters, (char *)name);
     if (!p)
@@ -328,6 +331,15 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
 {
 
     char buff[255];
+    void *data;
+    const char *userdata_key = "python_init";
+
+    apr_pool_userdata_get(&data, userdata_key, s->process->pool);
+    if (!data) {
+        apr_pool_userdata_set((const void *)1, userdata_key,
+                              apr_pool_cleanup_null, s->process->pool);
+        return OK;
+    }
 
     /* mod_python version */
     ap_add_version_component(p, VERSION_COMPONENT);
