@@ -77,7 +77,7 @@ dso:	mod_python.so
 
 mod_python.so: $(SRCS) @SOLARIS_HACKS@ 
 	@echo
-	@echo 'Compiling for DSO. For static, do "make static"'
+	@echo 'Compiling for DSO.'
 	@echo
 	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS) @SOLARIS_HACKS@
 	@rm -f mod_python.so
