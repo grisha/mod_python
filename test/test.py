@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.38 2003/10/08 03:48:17 grisha Exp $
+ # $Id: test.py,v 1.39 2003/10/15 03:00:31 grisha Exp $
  #
 
 """
@@ -264,7 +264,10 @@ class HttpdCtrl:
             ServerName("127.0.0.1"),
             Listen(PORT),
             DocumentRoot(DOCUMENT_ROOT),
-            LoadModule("python_module %s" % MOD_PYTHON_SO))
+            LoadModule("python_module %s" % MOD_PYTHON_SO),
+            IfModule("!mod_auth.c",
+                     LoadModule("auth_module %s" %
+                                quoteIfSpace(os.path.join(modpath, "mod_auth.so")))))
 
         f = open(CONFIG, "w")
         f.write(str(s))

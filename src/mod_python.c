@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.103 2003/10/10 14:16:18 grisha Exp $
+ * $Id: mod_python.c,v 1.104 2003/10/15 03:00:31 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -342,8 +342,8 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     if (is_forked != AP_MPMQ_NOT_SUPPORTED) {
         ap_mpm_query(AP_MPMQ_MAX_DAEMON_USED, &max_procs);
     }
-    max_clients = (((!max_threads) ? 1 : max_threads) *
-                   ((!max_procs) ? 1 : max_procs));
+    max_clients = (((max_threads <= 0) ? 1 : max_threads) *
+                   ((max_procs <= 0) ? 1 : max_procs));
     locks = max_clients; /* XXX this is completely out of the blue */
 
     ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
