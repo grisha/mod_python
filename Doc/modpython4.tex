@@ -51,7 +51,7 @@ running by peeking at \member{req.interpreter}.
 
 \begin{seealso}
   \seetitle[http://www.python.org/doc/current/api/api.html]
-	   {Python C Language API}{Python C Language API}
+           {Python C Language API}{Python C Language API}
 \end{seealso}
 
 \section{Overview of a Request Handler\label{pyapi-handler}}
@@ -220,7 +220,7 @@ def outputfilter(filter):
     s = filter.read()
     while s:
         filter.write(s.upper())
-	s = filter.read()
+        s = filter.read()
 
     if s is None:
         filter.close()
@@ -1367,8 +1367,8 @@ from mod_python import util
 
 \begin{seealso}
   \seetitle[http://CGI-Spec.Golux.Com/]
-	   {Common Gateway Interface RFC Project Page}
-	   {for detailed information on the CGI specification}
+           {Common Gateway Interface RFC Project Page}
+           {for detailed information on the CGI specification}
 \end{seealso}
 
 \subsection{FieldStorage class\label{pyapi-util-fstor}}
@@ -1597,14 +1597,14 @@ specification published by Netscape.
 
 \begin{seealso}
   \seetitle[http://wp.netscape.com/newsref/std/cookie_spec.html]
-	   {Persistent Client State - HTTP Cookies}{for the original Netscape specification.}
-	   \seerfc{2109}{HTTP State Management Mechanism}{for the first RFC on Cookies.}
-	   \seerfc{2964}{Use of HTTP State Management}{for guidelines on using Cookies.}
-	   \seerfc{2965}{HTTP State Management Mechanism}{for the latest IETF standard.}
-	   \seetitle[http://arxiv.org/abs/cs.SE/0105018]
-		    {HTTP Cookies: Standards, Privacy, and Politics}{by David M. Kristol for an 
-		      excellent overview
-		      of the issues surrounding standardization of Cookies.}
+           {Persistent Client State - HTTP Cookies}{for the original Netscape specification.}
+           \seerfc{2109}{HTTP State Management Mechanism}{for the first RFC on Cookies.}
+           \seerfc{2964}{Use of HTTP State Management}{for guidelines on using Cookies.}
+           \seerfc{2965}{HTTP State Management Mechanism}{for the latest IETF standard.}
+           \seetitle[http://arxiv.org/abs/cs.SE/0105018]
+                    {HTTP Cookies: Standards, Privacy, and Politics}{by David M. Kristol for an 
+                      excellent overview
+                      of the issues surrounding standardization of Cookies.}
 \end{seealso}
 
 \subsection{Classes\label{pyapi-cookie-classes}}
@@ -1788,7 +1788,7 @@ def handler(req):
         if type(spamcookie) is Cookie.MarshalCookie:
             req.write('Here is what it looks like decoded: %s=%s\n'
                       % (spamcookie.name, spamcookie.value))
-	else:
+        else:
             req.write('WARNING: The cookie found is not a \
                        MarshalCookie, it may have been tapered with!')
 
