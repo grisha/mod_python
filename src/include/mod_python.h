@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.13 2000/12/13 05:24:08 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.13.2.1 2003/12/08 04:36:10 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -116,6 +116,12 @@ extern module MODULE_VAR_EXPORT python_module;
 #define SLASH '/'
 #define SLASH_S "/"
 #endif
+
+/* python 2.3 no longer defines LONG_LONG, it defines PY_LONG_LONG */
+#ifndef LONG_LONG
+#define LONG_LONG PY_LONG_LONG
+#endif
+
 
 PyObject *Mp_ServerReturn;
 
