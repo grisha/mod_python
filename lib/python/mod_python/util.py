@@ -336,10 +336,11 @@ def apply_fs_data(object, fs, **args):
     # and for that we need to get a list of them. There
     # are a few options for callable objects here:
 
-    if type(object) is InstanceType:
+    if isinstance(object,InstanceType):
         # instances are callable when they have __call__()
         object = object.__call__
 
+    fc = None
     expected = []
     if hasattr(object, "func_code"):
         # function
@@ -353,13 +354,15 @@ def apply_fs_data(object, fs, **args):
         # class
         fc = object.__init__.im_func.func_code
         expected = fc.co_varnames[1:fc.co_argcount]
-
+    
     # remove unexpected args unless co_flags & 0x08,
     # meaning function accepts **kw syntax
-    if not (fc.co_flags & 0x08):
+    if not fc:
+        args = {}
+    elif not (fc.co_flags & 0x08):
         for name in args.keys():
             if name not in expected:
-                del args[name]
+                del args[name] 
 
     return object(**args)
 
