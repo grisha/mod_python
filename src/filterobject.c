@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.3 2001/11/28 05:31:47 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.4 2002/03/04 21:19:17 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -140,7 +140,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
 	Py_BEGIN_ALLOW_THREADS;
 	self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
-				  self->readbytes);
+				  APR_BLOCK_READ, *self->readbytes);
 	Py_END_ALLOW_THREADS;
 
 	if (! APR_STATUS_IS_SUCCESS(self->rc)) {
@@ -237,7 +237,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
 		Py_BEGIN_ALLOW_THREADS;
 		self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
-					  self->readbytes);
+					  APR_BLOCK_READ, *self->readbytes);
 		Py_END_ALLOW_THREADS;
 
 		if (! APR_STATUS_IS_SUCCESS(self->rc)) {
