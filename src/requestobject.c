@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.48 2003/07/03 14:13:36 grisha Exp $
+ * $Id: requestobject.c,v 1.49 2003/07/12 03:44:53 grisha Exp $
  *
  */
 
@@ -881,50 +881,6 @@ static PyMethodDef request_methods[] = {
     { NULL, NULL } /* sentinel */
 };
 
-/**
- ** getmakeobj
- **
- *    A getter func that creates an object as needed.
- */
-
-static PyObject *getmakeobj(requestobject* self, void *objname) 
-{
-    char *name = (char *)objname;
-    PyObject *result = NULL;
-
-    if (strcmp(name, "connection") == 0) {
-        if (!self->connection && self->request_rec->connection)
-            self->connection = MpConn_FromConn(self->request_rec->connection);
-        result = self->connection;
-    }
-    else if (strcmp(name, "server") == 0) {
-        if (!self->server && self->request_rec->server) 
-            self->server = MpServer_FromServer(self->request_rec->server);
-        result = self->server;
-    }
-    else if (strcmp(name, "next") == 0) {
-        if (!self->next && self->request_rec->next)
-            self->next = MpRequest_FromRequest(self->request_rec->next);
-        result = self->next;
-    }
-    else if (strcmp(name, "prev") == 0) {
-        if (!self->prev && self->request_rec->prev)
-            self->prev = MpRequest_FromRequest(self->request_rec->prev);
-        result = self->prev;
-    }
-    else if (strcmp(name, "main") == 0) {
-        if (!self->main && self->request_rec->main)
-            self->main = MpRequest_FromRequest(self->request_rec->main);
-        result = self->main;
-    }
-
-    if (!result)
-        result = Py_None;
-
-    Py_INCREF(result);
-    return result;
-
-}
 
 /* 
    These are offsets into the Apache request_rec structure.
@@ -1172,6 +1128,51 @@ static PyObject *getreq_rec_uri(requestobject *self, void *name)
     apr_uri_t *uri = (apr_uri_t *)((char *)self->request_rec + md->offset);
 
     return tuple_from_apr_uri(uri);
+}
+
+/**
+ ** getmakeobj
+ **
+ *    A getter func that creates an object as needed.
+ */
+
+static PyObject *getmakeobj(requestobject* self, void *objname) 
+{
+    char *name = (char *)objname;
+    PyObject *result = NULL;
+
+    if (strcmp(name, "connection") == 0) {
+        if (!self->connection && self->request_rec->connection)
+            self->connection = MpConn_FromConn(self->request_rec->connection);
+        result = self->connection;
+    }
+    else if (strcmp(name, "server") == 0) {
+        if (!self->server && self->request_rec->server) 
+            self->server = MpServer_FromServer(self->request_rec->server);
+        result = self->server;
+    }
+    else if (strcmp(name, "next") == 0) {
+        if (!self->next && self->request_rec->next)
+            self->next = MpRequest_FromRequest(self->request_rec->next);
+        result = self->next;
+    }
+    else if (strcmp(name, "prev") == 0) {
+        if (!self->prev && self->request_rec->prev)
+            self->prev = MpRequest_FromRequest(self->request_rec->prev);
+        result = self->prev;
+    }
+    else if (strcmp(name, "main") == 0) {
+        if (!self->main && self->request_rec->main)
+            self->main = MpRequest_FromRequest(self->request_rec->main);
+        result = self->main;
+    }
+
+    if (!result)
+        result = Py_None;
+
+    Py_INCREF(result);
+    return result;
+
 }
 
 static PyGetSetDef request_getsets[] = {
