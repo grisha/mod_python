@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.42 2002/07/16 18:58:43 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.43 2002/07/18 19:55:20 gtrubetskoy Exp $
 
 import sys
 import string
@@ -382,7 +382,7 @@ def import_module(module_name, req=None, path=None):
     autoreload is on, then the module will be reloaded
     if it has changed since the last import.
     """
- 
+
     # Get options
     debug, autoreload = 0, 1
     if req:
@@ -390,17 +390,20 @@ def import_module(module_name, req=None, path=None):
         debug = config.has_key("PythonDebug")
         if config.has_key("PythonAutoReload"):
             autoreload = int(config["PythonAutoReload"])
- 
+
     # (Re)import
     if sys.modules.has_key(module_name):
-        
+
         # The module has been imported already
         module = sys.modules[module_name]
 
         # but is it in the path?
         file = module.__dict__.get("__file__")
-        if not file or (path and not file in path):
-                raise SERVER_RETURN, HTTP_NOT_FOUND
+
+        # the "and not" part of this condition is to prevent execution
+        # of arbitrary already imported modules, such as os
+        if not file or (path and not os.path.dirname(file) in path):
+            raise SERVER_RETURN, HTTP_NOT_FOUND
 
         if autoreload:
             oldmtime = module.__dict__.get("__mtime__", 0)
@@ -410,7 +413,7 @@ def import_module(module_name, req=None, path=None):
 
     else:
         mtime, oldmtime = 0, -1
- 
+
     if mtime > oldmtime:
 
         # Import the module
@@ -433,7 +436,7 @@ def import_module(module_name, req=None, path=None):
             mtime = module_mtime(module)
 
         module.__mtime__ = mtime
- 
+
     return module
 
 def module_mtime(module):
