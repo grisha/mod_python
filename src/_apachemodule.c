@@ -51,7 +51,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.2 2000/10/30 23:16:10 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.3 2000/11/09 00:09:18 gtrubetskoy Exp $
  *
  */
 
@@ -124,8 +124,11 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     PyObject *pairs, *dict;
     int i, n, len, lsize;
     char *qs;
+    int keep_blank_values = 0;
+    int strict_parsing = 0; /* XXX not implemented */
 
-    if (! PyArg_ParseTuple(args, "s", &qs)) 
+    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values, 
+			   &strict_parsing)) 
 	return NULL; /* error */
 
     /* split query string by '&' and ';' into a list of pairs */
@@ -184,7 +187,11 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
 
 	len = strlen(cpair);
 	key = PyString_FromStringAndSize(NULL, len);
+	if (key == NULL) 
+	    return NULL;
 	val = PyString_FromStringAndSize(NULL, len);
+	if (val == NULL) 
+	    return NULL;
 
 	ckey = PyString_AS_STRING(key);
 	cval = PyString_AS_STRING(val);
@@ -211,24 +218,29 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
 	ckey[k] = '\0';
 	cval[v] = '\0';
 
-	ap_unescape_url(ckey);
-	ap_unescape_url(cval);
+	if (keep_blank_values || (v > 0)) {
 
-	_PyString_Resize(&key, strlen(ckey));
-	_PyString_Resize(&val, strlen(cval));
+	    ap_unescape_url(ckey);
+	    ap_unescape_url(cval);
+
+	    _PyString_Resize(&key, strlen(ckey));
+	    _PyString_Resize(&val, strlen(cval));
+
 	
- 	if (PyMapping_HasKeyString(dict, ckey)) {
-	    PyObject *list;
-	    list = PyDict_GetItem(dict, key);
-	    PyList_Append(list, val);
-	    /* PyDict_GetItem is a borrowed ref, no decref */
+	    if (PyMapping_HasKeyString(dict, ckey)) {
+		PyObject *list;
+		list = PyDict_GetItem(dict, key);
+		PyList_Append(list, val);
+		/* PyDict_GetItem is a borrowed ref, no decref */
+	    }
+	    else {
+		PyObject *list;
+		list = Py_BuildValue("[O]", val);
+		PyDict_SetItem(dict, key, list);
+		Py_DECREF(list);
+	    }
 	}
-	else {
-	    PyObject *list;
-	    list = Py_BuildValue("[O]", val);
-	    PyDict_SetItem(dict, key, list);
-	    Py_DECREF(list);
-	}
+
 	Py_DECREF(key);
 	Py_DECREF(val);
 
@@ -239,11 +251,116 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     return dict;
 }
 
+/**
+ ** parse_qsl
+ **
+ *   This is a C version of cgi.parse_qsl
+ */
+
+static PyObject *parse_qsl(PyObject *self, PyObject *args)
+{
+
+    PyObject *pairs;
+    int i, len;
+    char *qs;
+    int keep_blank_values = 0;
+    int strict_parsing = 0; /* XXX not implemented */
+
+    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values, 
+			   &strict_parsing)) 
+	return NULL; /* error */
+
+    /* split query string by '&' and ';' into a list of pairs */
+    pairs = PyList_New(0);
+    if (pairs == NULL)
+	return NULL;
+
+    i = 0;
+    len = strlen(qs);
+
+    while (i < len) {
+
+	PyObject *pair, *key, *val;
+	char *cpair, *ckey, *cval;
+	int plen, j, p, k, v;
+
+	pair = PyString_FromStringAndSize(NULL, len);
+	if (pair == NULL)
+	    return NULL;
+
+	/* split by '&' or ';' */
+	cpair = PyString_AS_STRING(pair);
+	j = 0;
+	while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
+	    /* replace '+' with ' ' */
+	    cpair[j] = (qs[i] == '+') ? ' ' : qs[i];
+	    i++;
+	    j++;
+	}
+	cpair[j] = '\0';
+	_PyString_Resize(&pair, j);
+
+	/* split the "abc=def" pair */
+
+	plen = strlen(cpair);
+	key = PyString_FromStringAndSize(NULL, plen);
+	if (key == NULL) 
+	    return NULL;
+	val = PyString_FromStringAndSize(NULL, plen);
+	if (val == NULL) 
+	    return NULL;
+
+	ckey = PyString_AS_STRING(key);
+	cval = PyString_AS_STRING(val);
+
+	p = 0;
+	k = 0;
+	v = 0;
+	while (p < plen) {
+	    if (cpair[p] != '=') {
+		ckey[k] = cpair[p];
+		k++;
+		p++;
+	    }
+	    else {
+		p++;      /* skip '=' */
+		while (p < plen) {
+		    cval[v] = cpair[p];
+		    v++;
+		    p++;
+		}
+	    }
+	}
+	ckey[k] = '\0';
+	cval[v] = '\0';
+
+	if (keep_blank_values || (v > 0)) {
+
+	    ap_unescape_url(ckey);
+	    ap_unescape_url(cval);
+
+	    _PyString_Resize(&key, strlen(ckey));
+	    _PyString_Resize(&val, strlen(cval));
+
+	    PyList_Append(pairs, Py_BuildValue("(O,O)", key, val));
+
+	}
+	Py_DECREF(pair);
+	Py_DECREF(key);
+	Py_DECREF(val);
+	i++;
+    }
+
+    return pairs;
+}
+
+
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
   {"log_error",                 (PyCFunction)log_error,        METH_VARARGS},
   {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
   {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
+  {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
   {NULL, NULL} /* sentinel */
 };
 
@@ -251,5 +368,12 @@ struct PyMethodDef _apache_module_methods[] = {
 
 DL_EXPORT(void) init_apache()
 {
-    Py_InitModule("_apache", _apache_module_methods);
+    PyObject *m, *d;
+
+    m = Py_InitModule("_apache", _apache_module_methods);
+    d = PyModule_GetDict(m);
+    Mp_ServerReturn = PyErr_NewException("_apache.SERVER_RETURN", NULL, NULL);
+    if (Mp_ServerReturn == NULL)
+	return NULL;
+    PyDict_SetItemString(d, "SERVER_RETURN", Mp_ServerReturn);
 }

@@ -57,7 +57,7 @@ extern "C" {
  *
  * requestobject.h
  *
- * $Id: requestobject.h,v 1.1 2000/10/16 20:58:57 gtrubetskoy Exp $
+ * $Id: requestobject.h,v 1.2 2000/11/09 00:09:18 gtrubetskoy Exp $
  *
  */
 
@@ -76,6 +76,9 @@ extern "C" {
 	PyObject       * notes;
 	int              header_sent;
 	char           * hstack;
+	char           * rbuff;      /* read bufer */
+	int              rbuff_len;   /* read buffer size */
+	int              rbuff_pos;   /* position into the buffer */
     } requestobject;
 
     extern DL_IMPORT(PyTypeObject) MpRequest_Type;

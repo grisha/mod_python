@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.16 2000/10/18 20:01:29 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.17 2000/11/09 00:09:18 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -37,6 +37,7 @@
       <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
       <li><a href="#PythonInterpPerServer">PythonInterpPerDirective</a>
       <li><a href="#PythonInterpreter">PythonInterpreter</a>
+      <li><a href="#PythonHandlerModule">PythonHandlerModule</a>
       <li><a href="#PythonNoReload">PythonNoReload</a>
       <li><a href="#PythonOptimize">PythonOptimize</a>
       <li><a href="#PythonOption">PythonOption</a>
@@ -102,8 +103,6 @@
 <h2><a name="PythonPostReadRequestHandler">PythonPostReadRequestHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -127,8 +126,6 @@
 <h2><a name="PythonTransHandler">PythonTransHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -152,8 +149,6 @@
 <h2><a name="PythonHeaderParserHandler">PythonHeaderParserHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-    <a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -169,8 +164,6 @@
 <h2><a name="PythonAccessHandler">PythonAccessHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -189,8 +182,6 @@
 <h2><a name="PythonAuthenHandler">PythonAuthenHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -234,8 +225,6 @@
 <h2><a name="PythonAuthzHandler">PythonAuthzHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -250,8 +239,6 @@
 <h2><a name="PythonTypeHandler">PythonTypeHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -267,8 +254,6 @@
 <h2><a name="PythonFixupHandler">PythonFixupHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -283,8 +268,6 @@
 <h2><a name="PythonHandler">PythonHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -300,8 +283,6 @@
 <h2><a name="PythonInitHandler">PythonInitHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -324,8 +305,6 @@
 <h2><a name="PythonLogHandler">PythonLogHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -341,8 +320,6 @@
 <h2><a name="PythonCleanupHandler">PythonCleanupHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
 <strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
@@ -554,6 +531,33 @@ one for each <em>directive</em>.
 See also <a href="pythonapi.html#subinterpreters">Multiple Interpreters</a>.
 <hr>
 
+<h2><a name="PythonHandlerModule">PythonHandlerModule</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonHandlerModule module<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      PythonHandlerModule can be used an alternative to Python*Handler directives. The
+      module specified in this handler will be searched for existance of
+      functions matching the default handler function names, and if a function
+      is found, it will be executed.
+    <p>
+      For example, instead of:<pre>
+      PythonAutenHandler mymodule
+      PythonHandler mymodule
+      PythonLogHandler mymodule
+    </pre>
+    one can simply say<pre>
+      PythonHandlerModule mymodule
+    </pre>
+      
+<hr>
+
 <h2><a name="PythonNoReload">PythonNoReload</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> PythonNoReload {On, Off}<br>
@@ -650,7 +654,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Wed Oct 18 11:47:44 EDT 2000
+Last modified: Thu Nov  2 17:54:53 EST 2000
 <!-- hhmts end -->
   </body>
 </html>

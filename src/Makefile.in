@@ -48,9 +48,9 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.3 2000/10/18 20:01:29 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.4 2000/11/09 00:09:18 gtrubetskoy Exp $
 
-CC=gcc
+CC=@CC@
 RANLIB=@RANLIB@
 AR=@AR@
 APXS=@APXS@
