@@ -97,32 +97,15 @@ Checks your Python version and attempts to figure out where
 your Python binary. By default, it will use the \program{python}
 program found in your \envvar{PATH}.
 
-\indexii{./configure}{\longprogramopt{with-python}} If the Python
-installation on your system is not suitable or not the one desired for
+\indexii{./configure}{\longprogramopt{with-python}} If the fist Python
+binary in the path is not suitable or not the one desired for
 mod_python, you can specify an alternative location with the
-\longprogramopt{with-python} options. This option needs to point to
-the root directory of the Python source, e.g.:
+\longprogramopt{with-python} options, e.g:
 
 \begin{verbatim}
-$ ./configure --with-python=/usr/local/src/Python-2.2.1
+$ ./configure --with-python=/usr/local/bin/python2.2
 \end{verbatim}                      
 %$ keep emacs happy
-
-Note that the directory specified needs to contain already configured and
-compiled Python. In other words, you must at least run \program{./configure} and
-\program{make} in this directory.
-
-Also note that while it is possible to point the
-\longprogramopt{with-python} to a version of Python different from the
-one installed in your standard \envvar{PATH}, you will need to have
-that version of Python installed as well.  This is because the path to
-the Python library, which is retrieved from the \file{python} binary
-is going to point to the place where Python would be ultimately
-installed, not the source deirectory. (Consider that until Python is
-installed, the location for third party libraries,
-\filenq{site-packages}, does not exist). Generally, it's best to try
-to keep the version of Python that you use for mod_python same as the
-one you use everywhere on the system.
 
 \end{itemize}
 

@@ -212,25 +212,19 @@ if test "$STATIC" = "no_static" -a "$DSO" = "no_dso"; then
 fi
 
 AC_MSG_CHECKING(for --with-python)
-AC_ARG_WITH(python, [--with-python=DIR	Path to Python sources],
+AC_ARG_WITH(python, [--with-python=DIR	Path to specific Python binary],
 [
-  AC_SUBST(PYTHON_SRC)
-  PYTHON_SRC=`cd $withval; pwd`
-  AC_MSG_RESULT($PYTHON_SRC)
+  AC_SUBST(PYTHON_BIN)
+  PYTHON_BIN="$withval"
+  AC_MSG_RESULT($PYTHON_BIN)
 ],
 AC_MSG_RESULT(no))
 
 # check for Python executable
-if test -z "$PYTHON_SRC"; then
+if test -z "$PYTHON_BIN"; then
   AC_PATH_PROG(PYTHON_BIN, python)
   if test -z "$PYTHON_BIN"; then
-    AC_MSG_ERROR(python binary not found)
-  fi
-else
-  AC_PATH_PROG(PYTHON_BIN, python, "", $PYTHON_SRC)
-  if test -z "$PYTHON_BIN"; then
-    AC_MSG_ERROR([python executable not found in ${withval}, 
-perhaps you need to build Python first.])
+    AC_MSG_ERROR(python binary not found in path)
   fi
 fi
 
@@ -239,6 +233,11 @@ AC_MSG_CHECKING(Python version)
 PyVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:3]'`]
 PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:1]'`]
 AC_MSG_RESULT($PyVERSION)
+
+# make sure Python is version 2
+if test "$PyMAJVERSION" != "2"; then
+  AC_MSG_ERROR([This version of mod_python only works with Python major version 2. The one you have seems to be $PyVERSION.])
+fi
 
 # find out compiled in install prefix
 AC_MSG_CHECKING(Python install prefix)
@@ -252,24 +251,13 @@ PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 # set python std library variable
 AC_MSG_CHECKING(what libraries Python was linked with)
 AC_SUBST(LIBS)
-if test -z "$PYTHON_SRC"; then
-  PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
-  PyLIBPL=${PyLIBP}/config
-  PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
-else
-  PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  if test ${PyMAJVERSION} = "2"; then
-    PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  else
-    PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  fi
-  PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
-fi
+
+PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
+PyLIBPL=${PyLIBP}/config
+PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
  
 ## XXX this is a small work around for a weird RedHat problem
 ## erase -lieee from library list
@@ -282,25 +270,15 @@ AC_MSG_RESULT($PY_LIBS)
 
 AC_MSG_CHECKING(linker flags used to link Python)
 AC_SUBST(LDFLAGS)
-if test -z "$PYTHON_SRC"; then
-  PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
-else
-  PyLFS=`grep "^LINKFORSHARED=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyLDFLAGS=`grep "^LDFLAGS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PY_LDFLAGS="${PyLFS} ${PyLDFLAGS}"
-fi
+PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
 LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 AC_MSG_RESULT($PY_LDFLAGS)
 
 AC_MSG_CHECKING(where Python include files are)
 AC_SUBST(INCLUDES)
-if test -z "$PYTHON_SRC"; then
-  PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
-else
-  PY_INCLUDES="-I${PYTHON_SRC} -I${PYTHON_SRC}/Include"
-fi
+PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
 AC_MSG_RESULT($PY_INCLUDES)
 
