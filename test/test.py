@@ -1062,7 +1062,28 @@ class PerRequestTestCase(unittest.TestCase):
 
         if rsp != "test ok" or setcookie != mc:
             print `rsp`
-            self.fail("cookie parsing failed")
+            self.fail("marshalled cookie parsing failed")
+
+        # and now a long MarshalledCookie test !
+
+        mc = ('test=859690207856ec75fc641a7566894e40c1QAAAB0'
+             'aGlzIGlzIGEgdmVyeSBsb25nIHZhbHVlLCBsb25nIGxvb'
+             'mcgbG9uZyBsb25nIGxvbmcgc28gbG9uZyBidXQgd2UnbG'
+             'wgZmluaXNoIGl0IHNvb24=')
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/testz.py", skip_host=1)
+        conn.putheader("Host", "test_Cookie_MarshalCookie:%s" % PORT)
+        conn.putheader("Cookie", mc)
+        conn.endheaders()
+        response = conn.getresponse()
+        setcookie = response.getheader("set-cookie", None)
+        rsp = response.read()
+        conn.close()
+
+        if rsp != "test ok" or setcookie != mc:
+            print `rsp`
+            self.fail("long marshalled cookie parsing failed")
 
     def test_Session_Session_conf(self):
 
@@ -1187,7 +1208,7 @@ class PerRequestTestCase(unittest.TestCase):
         if status != 403:
             self.fail('Vulnerability : new-style method traversal (%i)\n%s' % (status, response))
 
-        status, response = get_status("/tests.py/test_dict/clear")
+        status, response = get_status("/tests.py/test_dict/keys")
         if status != 403:
             self.fail('Vulnerability : built-in type traversal (%i)\n%s' % (status, response))
 

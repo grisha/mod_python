@@ -46,7 +46,7 @@ import hmac
 import marshal
 import base64
 
-import apache
+# import apache
 
 class CookieError(Exception):
     pass
@@ -260,7 +260,10 @@ class MarshalCookie(SignedCookie):
 
     def __str__(self):
         
-        m = base64.encodestring(marshal.dumps(self.value))[:-1]
+        m = base64.encodestring(marshal.dumps(self.value))
+        # on long cookies, the base64 encoding can contain multiple lines
+        # separated by \n or \r\n
+        m = ''.join(m.split())
 
         result = ["%s=%s%s" % (self.name, self.hexdigest(m), m)]
         for name in self._valid_attr:
