@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.38 2002/11/26 19:33:11 grisha Exp $
+ * $Id: requestobject.c,v 1.39 2002/11/26 20:48:20 grisha Exp $
  *
  */
 
@@ -880,7 +880,7 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
    They are accessed via getset functions. Note that the types
    specified here are irrelevant if a function other than
    getreq_recmbr() is used. E.g. bytes_sent is a long long,
-   and is retrieved via getreq_recmbr_ll() which ignores what's
+   and is retrieved via getreq_recmbr_off() which ignores what's
    here.
 */
 
@@ -1005,17 +1005,24 @@ static PyObject *getreq_recmbr_time(requestobject *self, void *name)
 }
 
 /**
- ** getreq_recmbr_ll
+ ** getreq_recmbr_off
  **
- *    Retrieves long long request_rec members
+ *    Retrieves apr_off_t request_rec members
  */
 
-static PyObject *getreq_recmbr_ll(requestobject *self, void *name) 
+static PyObject *getreq_recmbr_off(requestobject *self, void *name) 
 {
     PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
     char *addr = (char *)self->request_rec + md->offset;
-    long long l = *(long long*)addr;
-    return PyLong_FromLongLong(l);
+    if (sizeof(apr_off_t) == sizeof(long long)) {
+	long long l = *(long long*)addr;
+	return PyLong_FromLongLong(l);
+    }
+    else {
+	/* assume it's long */
+	long l = *(long*)addr;
+	return PyLong_FromLong(l);
+    }
 }
 
 /**
@@ -1098,15 +1105,15 @@ static PyGetSetDef request_getsets[] = {
     {"allowed",      (getter)getreq_recmbr, NULL, "Status", "allowed"},
     {"allowed_xmethods", (getter)getreq_rec_ah, NULL, "Allowed extension methods", "allowed_xmethods"},
     {"allowed_methods", (getter)getreq_rec_ml, NULL, "Allowed methods", "allowed_methods"},
-    {"sent_bodyct",  (getter)getreq_recmbr_ll, NULL, "Byte count in stream for body", "sent_bodyct"},
-    {"bytes_sent",   (getter)getreq_recmbr_ll, NULL, "Bytes sent", "bytes_sent"},
+    {"sent_bodyct",  (getter)getreq_recmbr_off, NULL, "Byte count in stream for body", "sent_bodyct"},
+    {"bytes_sent",   (getter)getreq_recmbr_off, NULL, "Bytes sent", "bytes_sent"},
     {"mtime",        (getter)getreq_recmbr_time, NULL, "Time resource was last modified", "mtime"},
     {"chunked",      (getter)getreq_recmbr, NULL, "Sending chunked transfer-coding", "chunked"},
     {"boundary",     (getter)getreq_recmbr, NULL, "Multipart/byteranges boundary", "boundary"},
     {"range",        (getter)getreq_recmbr, NULL, "The Range: header", "range"},
-    {"clength",      (getter)getreq_recmbr_ll, NULL, "The \"real\" contenct length", "clength"},
-    {"remaining",    (getter)getreq_recmbr_ll, NULL, "Bytes left to read", "remaining"},
-    {"read_length",  (getter)getreq_recmbr_ll, NULL, "Bytes that have been read", "read_length"},
+    {"clength",      (getter)getreq_recmbr_off, NULL, "The \"real\" contenct length", "clength"},
+    {"remaining",    (getter)getreq_recmbr_off, NULL, "Bytes left to read", "remaining"},
+    {"read_length",  (getter)getreq_recmbr_off, NULL, "Bytes that have been read", "read_length"},
     {"read_body",    (getter)getreq_recmbr, NULL, "How the request body should be read", "read_body"},
     {"read_chunked", (getter)getreq_recmbr, NULL, "Reading chunked transfer-coding", "read_chunked"},
     {"expecting_100", (getter)getreq_recmbr, NULL, "Is client waitin for a 100 response?", "expecting_100"},
