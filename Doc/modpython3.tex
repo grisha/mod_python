@@ -31,9 +31,11 @@ PythonDebug On
 \end{verbatim}
 
 The following example will demonstrate a simple feedback form. The
-form will ask for the name, e-mail address and a comment and the will
-construct an e-mail to the webmaster using the information submitted
-by the user.
+form will ask for the name, e-mail address and a comment and construct
+an e-mail to the webmaster using the information submitted by the
+user. This simple application consists of two files: \filenq{form.html},
+the form to collect the data, and \filenq{form.py}, the target of the
+form's action.
 
 Here is the html for the form:
 
@@ -83,7 +85,8 @@ Thank You,
 
 %s                                                                                                                                                 
 
-""" % (email, WEBMASTER, comment, name)                                                                                                                       
+""" % (email, WEBMASTER, comment, name)
+
     # send it out
     conn = smtplib.SMTP(SMTP_SERVER)
     conn.sendmail(email, [WEBMASTER], msg)
@@ -98,7 +101,8 @@ Dear %s,<br>
 Thank You for your kind comments, we
 will get back to you shortly.
 
-</html>""" % name                                                                                                                                  
+</html>""" % name
+
     return s
 \end{verbatim}
 
@@ -107,11 +111,11 @@ load the \function{email} function in the \module{form} module,
 passing it the form fields as keyword arguments. It will also pass the
 \class{Request} object as \code{req}.  
 
-Note also that you do not have to have \code{req} as one of the
-arguments if you do not need it. The publisher handler is smart enough
-to pass your function only those arguments that it will accept.
+Note that you do not have to have \code{req} as one of the arguments
+if you do not need it. The publisher handler is smart enough to pass
+your function only those arguments that it will accept.
 
-The data is sentback to the customer via the return value of the
+The data is sent back to the browser via the return value of the
 function.
 
 Even though the Publisher handler simplifies mod_python programming a
@@ -128,9 +132,9 @@ for more information on the publisher handler.
 
 \section{Quick Overview of how Apache Handles Requests\label{tut-overview}}
 
-It may seem like a little too much for starters, but you need to
-understand what a handler is in order to use mod_python. And it's
-really rather simple.
+If you would like delve in deeper into the functionaloty of
+mod_python, you need to understand what a handler is. And it's really
+rather simple.
 
 Apache processes requests in \dfn{phases}. For example, the first
 phase may be to authenticate the user, the next phase to verify
@@ -173,6 +177,7 @@ Let's pretend we have the following configuration:
 <Directory /mywebdir>
     AddHandler python-program .py
     PythonHandler myscript
+    PythonDebug On
 </Directory>
 \end{verbatim}
 
@@ -198,9 +203,11 @@ Apache that any request for any file ending with \file{.py} in the
 \file{/mywebdir} directory or a subdirectory thereof needs to be
 processed by mod_python. The \samp{PythonHandler myscript} directive
 tells mod_python to process the generic handler using the
-\code{myscript} script.
+\code{myscript} script. The \samp{PythonDebug On} directive instructs
+mod_python in case of an Python error to send error output to the
+client (in addition to the logs), very useful during development.
 
-When such a request comes in, Apache starts stepping through its
+When a request comes in, Apache starts stepping through its
 request processing phases calling handlers in mod_python. The
 mod_python handlers check whether a directive for that handler was
 specified in the configuration. (Remember, it acts as a dispatcher.)
@@ -295,17 +302,20 @@ will log the error and generate an error message for the client.
 \end{itemize}
 \end{enumerate}
 
-\strong{Some food for thought:} If you were paying attention, you noticed that
-nowhere did it say that in order for all of the above to happen, the
-URL needs to refer to \filenq{myscript.py}. The only requirement was
-that it refers to a \filenq{.py} file. In fact the name of the file doesn't
-matter, and the file referred to in the URL doesn't have to exist. So,
-given the above configuration,
-\samp{http://myserver/mywebdir/myscript.py} and
-\samp{http://myserver/mywebdir/montypython.py} would give the exact same
-result.
+\strong{Some food for thought:} If you were paying attention, you
+noticed that the text above didn't specify that in order for the
+handler code to be executed, the URL needs to refer to
+\filenq{myscript.py}. The only requirement was that it refers to a
+\filenq{.py} file. In fact the name of the file doesn't matter, and
+the file referred to in the URL doesn't have to exist. So, given the
+above configuration, \samp{http://myserver/mywebdir/myscript.py} and
+\samp{http://myserver/mywebdir/montypython.py} would give the exact
+same result. The important thing to understand here is that a handler
+augments the server behaviour when processing a specific type of file,
+not an individual file.
 
- \emph{At this point, if you didn't understand the above paragraph, go back and read it again, until you do.}
+\emph{At this point, if you didn't understand the above paragraph, go
+back and read it again, until you do.}
 
 \section{Now something More Complicated - Authentication\label{tut-more-complicated}}
 
@@ -324,6 +334,7 @@ authentication is needed. We do this by adding the
     AddHandler python-program .py
     PythonHandler myscript
     PythonAuthenHandler myscript
+    PythonDebug On
 </Directory>
 \end{verbatim}
 
@@ -341,6 +352,7 @@ looks like this now:
     AddHandler python-program .py
     PythonHandler myscript
     PythonAuthenHandler myscript
+    PythonDebug On
     AuthType Basic
     AuthName "Restricted Area"
     require valid-user
@@ -351,10 +363,14 @@ Now we need to write an authentication handler function in
 \file{myscript.py}. A basic authentication handler would look like this:
 
 \begin{verbatim}
+
+from mod_python import apache
+
 def authenhandler(req):
 
+    user = req.user
     pw = req.get_basic_auth_pw()
-    user = req.connection.user     
+
     if user == "spam" and pw == "eggs":
         return apache.OK
     else:
@@ -377,6 +393,13 @@ the name of the directive (\code{PythonAuthenHandler}), drops the word
 
 \item
 \begin{verbatim}
+    user = req.user
+\end{verbatim}
+                  
+This is how you obtain the username that the user entered. 
+
+\item
+\begin{verbatim}
     pw = req.get_basic_auth_pw()
 \end{verbatim}
                   
@@ -387,30 +410,15 @@ string.
 
 \item
 \begin{verbatim}
-    user = req.connection.user
-\end{verbatim}
-                  
-This is how you obtain the username that the user entered. In case
-you're wondering, the \member{connection} member of the \class{Request}
-object is an object that contains information specific to a
-\dfn{connection}. With HTTP Keep-Alive, a single connection
-can serve multiple requests.
-
-\strong{NOTE:} The two lines above MUST be in that order. The reason is that
-\code{connection.user} is assigned a value by the \method{get_basic_auth_pw()}
-function. If you try to use the \code{connection.user} value without calling
-\method{get_basic_auth_pw()} first, it will be \constant{None}.
-
-\item
-\begin{verbatim}
     if user == "spam" and pw == "eggs":
         return apache.OK
 \end{verbatim}
 
 We compare the values provided by the user, and if they are what we
 were expecting, we tell Apache to go ahead and proceed by returning
-\constant{apache.OK}. Apache will then proceed to the next handler. (which in
-this case would be \function{handler()} if it's a \code{.py} file).
+\constant{apache.OK}. Apache will then proceed to the next
+handler. (which in this case would be \function{handler()} if it's a
+\code{.py} file).
 
 \item
 \begin{verbatim}
@@ -418,7 +426,9 @@ this case would be \function{handler()} if it's a \code{.py} file).
         return apache.HTTP_UNAUTHORIZED 
 \end{verbatim}
 
-Else, we tell Apache to return \constant{HTTP_UNAUTHORIZED} to the client. 
+Else, we tell Apache to return \constant{HTTP_UNAUTHORIZED} to the
+client, which usually causes the browser to pop a dialog box asking
+for username and password.
 
 \end{itemize}
 

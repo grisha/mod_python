@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.14 2002/06/19 23:35:27 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.15 2002/07/26 13:10:30 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -85,7 +85,7 @@ def handler(req):
     if not _req.subprocess_env.has_key("PATH_INFO"):
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
     
-    func_path = _req.subprocess_env["PATH_INFO"][1:] # skip fist /
+    func_path = _req.subprocess_env["PATH_INFO"][1:] # skip first /
     func_path = string.replace(func_path, "/", ".")
     if func_path[-1] == ".":
         func_path = func_path[:-1] 
@@ -102,17 +102,17 @@ def handler(req):
 
     # step through fields
     for field in fs.list:
+        
+        # if it is a file, make File()
+        if field.filename:
+            val = File(field)
+        else:
+            val = field.value
 
-       # if it is a file, make File()
-       if field.filename:
-           val = File(field)
-       else:
-           val = field.value
-
-       if args.has_key(field.name):
-           args[field.name].append(val)
-       else:
-           args[field.name] = [val]
+        if args.has_key(field.name):
+            args[field.name].append(val)
+        else:
+            args[field.name] = [val]
 
     # at the end, we replace lists with single values
     for arg in args.keys():
@@ -139,7 +139,7 @@ def handler(req):
         object = resolve_object(req, module, func_path, realm, user, passwd)
     except AttributeError:
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
-
+    
     # not callable, a class or an aunbound method
     if not callable(object) or \
        str(type(object)) == "<type 'class'>" \
