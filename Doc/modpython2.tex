@@ -201,14 +201,6 @@ The actual path to \program{mod_python.so} may vary, but make install
 should report at the very end exactly where \program{mod_python.so}
 was placed and how the \code{LoadModule} directive should appear.
 
-If your Apache configuration uses \code{ClearModuleList} directive,
-you will need to add mod_python to the module list in the Apache
-configuration file:
-
-\begin{verbatim}
-AddModule mod_python.c
-\end{verbatim}
-
 %\item
 %If you used the static installation, you now need to recompile Apache: 
 
