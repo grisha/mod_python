@@ -42,5 +42,5 @@
  # ====================================================================
  #
 
-__all__ = ["apache", "httpdapi", "zhandler", "cgihandler",
+__all__ = ["apache", "cgihandler",
            "publisher", "util"]
