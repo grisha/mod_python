@@ -1,4 +1,8 @@
 
+Jun 20 2000 -   2.4 Released.
+
+Jun 17 2000 -   Started the tutorial.html.
+
 Jun 11 2000 -   Stephane Bidoul's thread-safe win32 changes put in. As part
 		of this, all chdir()'s are gone and now instead of '.', the
 		file path is prepended to pythonpath.
