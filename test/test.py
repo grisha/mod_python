@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.19 2002/10/15 15:47:32 grisha Exp $
+ # $Id: test.py,v 1.20 2002/10/29 21:52:18 grisha Exp $
  #
 
 """
@@ -226,7 +226,7 @@ class HttpdCtrl:
                      MinSpareThreads("1"),
                      MaxSpareThreads("1"),
                      ThreadsPerChild("1"),
-                     MaxRequestsPerChild("1")),
+                     MaxRequestsPerChild("0")),
             IfModule("perchild.c",
                      NumServers("1"),
                      StartThreads("1"),
@@ -718,8 +718,8 @@ class PerRequestTestCase(unittest.TestCase):
     def test_internal(self):
 
         print "\n  * Testing internally"
-        rsp = self.vhost_get("test_internal")
 
+        rsp = self.vhost_get("test_internal")
         if (rsp[-7:] != "test ok"):
             self.fail("Some tests failed, see error_log")
 

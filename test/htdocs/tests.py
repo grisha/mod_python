@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.18 2002/10/24 21:44:22 grisha Exp $
+ # $Id: tests.py,v 1.19 2002/10/29 21:52:18 grisha Exp $
  #
 
 # mod_python tests
@@ -96,22 +96,28 @@ class SimpleTestCase(unittest.TestCase):
 
     def test_apache_table(self):
 
-        self.req.log_error("Testing table object.")
+        log = self.req.log_error
 
-        # tests borrowed from Python test quite for dict
+        log("Testing table object.")
+
+        # tests borrowed from Python test suite for dict
         _test_table()
 
         # inheritance
+        log("  inheritance")
         class mytable(apache.table):
             def __str__(self):
                 return "str() from mytable"
         mt = mytable({'a':'b'})
 
         # add()
+        log("  table.add()")
         a = apache.table({'a':'b'})
         a.add('a', 'c')
         if a['a'] != ['b', 'c']:
             self.fail('table.add() broken: a["a"] is %s' % `a["a"]`)
+
+        log("Table test DONE.")
 
     def test_req_add_common_vars(self):
 
@@ -402,6 +408,7 @@ def make_suite(req):
 def handler(req):
 
     out = cStringIO.StringIO()
+
     tr = unittest.TextTestRunner(out)
     result = tr.run(make_suite(req))
 
@@ -564,6 +571,7 @@ def _test_table():
 
     log = apache.log_error
 
+    log("    starting _test_table")
     d = apache.table()
     if d.keys() != []: raise TestFailed, '{}.keys()'
     if d.has_key('a') != 0: raise TestFailed, '{}.has_key(\'a\')'
@@ -585,14 +593,18 @@ def _test_table():
     if d['c'] != 3 or d['a'] != 4: raise TestFailed, 'dict item assignment'
     del d['b']
     if d != {'a': 4, 'c': 3}: raise TestFailed, 'dict item deletion'
+    
     # dict.clear()
+    log("    table.clear()")
     d = apache.table()
     d['1'] = '1'
     d['2'] = '2'
     d['3'] = '3'
     d.clear()
     if d != apache.table(): raise TestFailed, 'dict clear'
+    
     # dict.update()
+    log("    table.update()")
     d.update({'1':'100'})
     d.update({'2':'20'})
     d.update({'1':'1', '2':'2', '3':'3'})
@@ -664,10 +676,12 @@ def _test_table():
     except ValueError: pass
     else: raise TestFailed, 'dict.update(), __getitem__ expected ValueError'
     # dict.copy()
+    log("    table.copy()")
     d = {1:1, 2:2, 3:3}
     if d.copy() != {1:1, 2:2, 3:3}: raise TestFailed, 'dict copy'
     if apache.table().copy() != apache.table(): raise TestFailed, 'empty dict copy'
     # dict.get()
+    log("    table.get()")
     d = apache.table()
     if d.get('c') is not None: raise TestFailed, 'missing {} get, no 2nd arg'
     if d.get('c', '3') != '3': raise TestFailed, 'missing {} get, w/ 2nd arg'
@@ -677,6 +691,7 @@ def _test_table():
     if d.get('a') != '1': raise TestFailed, 'present dict get, no 2nd arg'
     if d.get('a', '3') != '1': raise TestFailed, 'present dict get, w/ 2nd arg'
     # dict.setdefault()
+    log("    table.setdefault()")
     d = apache.table()
     d.setdefault('key0')
     if d.setdefault('key0') is not "":
@@ -684,6 +699,7 @@ def _test_table():
     if d.setdefault('key0') is not "":
         raise TestFailed, 'present {} setdefault, no 2nd arg'
     # dict.popitem()
+    log("    table.popitem()")
     for copymode in -1, +1:
         # -1: b has same structure as a
         # +1: b is a.copy()
@@ -707,4 +723,5 @@ def _test_table():
                         str(ta), str(tb))
             if a: raise TestFailed, 'a not empty after popitems: %s' % str(a)
             if b: raise TestFailed, 'b not empty after popitems: %s' % str(b)
+    log("    _test_table test finished")
 
