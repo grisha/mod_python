@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.11 2001/05/14 22:17:21 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.12 2001/07/09 12:54:40 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -305,9 +305,8 @@ class File:
     def __init__(self, field):
 
         # steal all the file-like methods
-        methods = field.file.__methods__
-        for m in methods:
-            self.__dict__[m] = methods[m]
+        for m in field.file.__methods__:
+            self.__dict__[m] = getattr(field.file, m)
 
         self.headers = field.headers
         self.filename = field.filename
