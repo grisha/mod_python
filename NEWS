@@ -2,6 +2,9 @@ Aug 16 2001 -   Mod_python is compiling and running with Apache 2.0 and the
 		filter functionality seems to work. There is still a lot of 
 		work to be done though.
 
+Aug  4 2001 -   2.7.6 released. Sometime prior a publisher upload bug was 
+                fixed.
+
 Jun 11 2001 -	2.7.5 released for those who want Python 2.1
 
 Jun 11 2001 -	Changed configure.in to accomodate Python 2.1. It looks like
