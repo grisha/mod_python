@@ -1479,7 +1479,7 @@ specification published by Netscape.
 		      of the issues surrounding standardization of Cookies.}
 \end{seealso}
 
-\subsection{Cookie classes\label{pyapi-cookie-classes}}
+\subsection{Classes\label{pyapi-cookie-classes}}
 
 \begin{classdesc}{Cookie}{name, value\optional{, attributes}}
 
@@ -1488,13 +1488,169 @@ specification published by Netscape.
   attributes defined in the Netscape specification and RFC2109 can by
   supplied as keyword arguments.
 
+  The attributes of the class represent cookie attributes, and their
+  string representations become part of the string representation of
+  the cookie. The \class{Cookie} class restricts attribute names to
+  only valid values, specifically, only the following attributes are
+  allowed: \code{name, value, version, path, domain, secure, comment,
+  expires, max_age, commentURL, discard, port, __data__}.
+
+  The \code{__data__} attribute is a general-purpose dictionary that
+  can be used for storing arbitrary values, when necessary (This is
+  useful when subclassing \class{Cookie}).
+
+  The \member{expires} attribute is a property whose value is checked
+  upon setting to be in format \samp{Wdy, DD-Mon-YYYY HH:MM:SS GMT}
+  (as dictated per Netscape cookie specification), or a numeric value
+  representing time in seconds since Epoch (which will be
+  automatically correctly converted to GMT time string). An invalid
+  \code{expires} value will raise \exception{ValieError}.
+
+  When converted to a string, a \class{Cookie} will be in correct
+  format usable as value in a \samp{Cookie} or \samp{Set-Cookie}
+  header.
+
   \begin{notice}
     Unlike the Python Standard Library Cookie classes, this
     class represents a single cookie (referred to as \dfn{Morsel} in
     Python Standard Library).
   \end{notice}
 
+  \begin{methoddesc}[Cookie]{parse}{string}
+    This is a class method that can be used to create a \class{Cookie}
+    instance from a cookie string \var{string} as passed in a header
+    value. During parsing, attribute names are converted to lower
+    case.
+
+    Because this is a class method, it must be called explicitely
+    specifying the class.
+
+    This method returns a dictionary of \class{Cookie} instances, not
+    a single \class{Cookie} instance.
+
+    Here is an example of getting a single \class{Cookie} instance:
+    \begin{verbatim}
+      mycookies = Cookie.parse("spam=eggs; expires=Sat, 14-Jun-2003 02:42:36 GMT")
+      spamcookie = mycookies["spam"]
+    \end{verbatim}
+
+    \begin{notice}
+      Because this method uses a dictionary, it is not possible to
+      have duplicate cookies. If you would like to have more than one
+      value in a single cookie, consider using a \class{MarshalCookie}.
+    \end{notice}
+
+  \end{methoddesc}
+
 \end{classdesc}
+
+\begin{classdesc}{SignedCookie}{name, value, secret\optional{, attributes}}
+
+  This is a subclass of \class{Cookie}.
+
+  This class creates cookies whose name and value are automatically
+  signed using HMAC (md5) with a provided secret \var{secret}, which must be
+  a non-empty string.
+
+  \begin{methoddesc}[Cookie]{parse}{string}{secret}
+    This method acts the same way as \class{Cookie.parse()}, but also
+    verifies that the cookie is correctly signed. If the signature
+    cannot be verified, a \exception{CookieError} is raised.
+  \end{methoddesc}
+
+\end{classdesc}
+
+\begin{classdesc}{MarshalCookie}{name, value, secret\optional{, attributes}}
+
+  This is a subclass of \class{SignedCookie}. It allows for
+  \var{value} to be any marshallable objects. Core Python types such as
+  string, integer, list, etc. are all marshallable object. For a
+  complete list see
+  \citetitle[http://www.python.org/doc/current/lib/module-marshal.html]{marshal}
+  module documentation.
+
+  When parsing, the signature is checked first, so incorrectly signed cookies
+  will not be unmarshalled.
+
+\end{classdesc}
+
+\subsection{Functions\label{pyapi-cookie-func}}
+
+\begin{funcdesc}{setCookie}{req, cookie}
+  This is a convenience function for setting a cookie in request
+  headers. \var{req} is a mod_python \class{Request} object,
+  \var{cookie} is an object whose string representation is a valid
+  cookie. (Most often it is an instance of mod_python \class{Cookie}
+  or any of its subclasses).
+
+  This function will also set \samp{Cache-Control:
+  no-cache="set-cookie"} header to inform caches that the cookie value
+  should not be cached.
+\end{funcdesc}
+
+\begin{funcdesc}{getCookie}{req \optional{, Class, data}}
+  This is a convenience function for retrieving a cookie from incoming
+  headers. \var{req} is a mod_python \class{Request}
+  object. \var{Class} is a class whose \method{parse} method will be
+  used to parse the cookies, it defaults to \code{Cookie}. \var{Data}
+  is an optional argument which, if not \code{None}, will be passed as
+  the first argument to \method{parse} (This is useful for
+  \class{signedCookie} and \class{MarshalCookie} which require
+  \code{secret} as an additional argument to \method{parse}.
+\end{funcdesc}
+
+\subsection{Examples\label{pyapi-cookie-example}}
+
+This example sets a simple cookie which expires in 300 seconds:
+
+\begin{verbatim}
+from mod_python import Cookie, apache
+import time
+
+def handler(req):
+
+    cookie = Cookie.Cookie('eggs', 'spam')
+    cookie.expires = time.time() + 300
+    Cookie.setCookie(req, cookie)
+
+    req.write('This response contains a cookie!\n')
+    return apache.OK
+
+\end{verbatim}
+
+This example checks for incoming marshal cookie and displays it the
+client. If no incoming cookie is present a new marshal cookie is set.
+This example uses \samp{secret007} as the secret for HMAC signature.
+
+\begin{verbatim}
+from mod_python import apache, Cookie
+
+def handler(req):
+    
+    try:
+        cookies = Cookie.getCookie(req, Cookie.MarshalCookie, \
+                                   'secret007')
+    except Cookie.CookieError:
+        req.write('Cookie parsing error!\n')
+	return apache.OK
+
+    if cookies.has_key('spam'):
+        spamcookie = cookies['spam']
+        req.write('Great, a spam cookie was found: %s\n' \
+                                      % str(spamcookie))
+        req.write('Here is what it looks like decoded: %s=%s\n'
+                  % (spamcookie.name, spamcookie.value))
+
+    else:
+
+        # MarshaCookie allows value to be any marshallable object
+        value = {'egg_count': 32, 'color': 'white'}
+        Cookie.setCookie(req, Cookie.MarshalCookie('spam', value, \
+                         'secret007'))
+        req.write('Spam cookie not found, but we just set one!\n')
+
+    return apache.OK
+\end{verbatim}
 
 \section{\module{psp} -- Python Server Pages\label{pyapi-psp}}
 \declaremodule[psp]{extension}{psp}
