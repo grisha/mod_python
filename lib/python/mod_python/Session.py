@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.9 2004/01/14 02:18:36 grisha Exp $
+ # $Id: Session.py,v 1.10 2004/01/14 03:20:02 grisha Exp $
 
 import apache, Cookie
 import _apache
@@ -240,6 +240,7 @@ class BaseSession(dict):
         if self._lock:
             _apache._global_lock(self._req.server, self._sid)
             self._locked = 1
+            self._req.register_cleanup(unlock_session_cleanup, self)
 
     def unlock(self):
         if self._lock and self._locked:
@@ -269,6 +270,9 @@ class BaseSession(dict):
 
     def __del__(self):
         self.unlock()
+
+def unlock_session_cleanup(sess):
+    sess.unlock()
 
 def dbm_cleanup(data):
     dbm, server = data
