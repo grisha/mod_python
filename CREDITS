@@ -12,60 +12,45 @@ if you feel that you should not be listed, please e-mail me.
 The names are listed alphabetically by last name.
 
 Richard Barrett <R.Barrett@ftel.co.uk> 
-	[patch for conn_rec.*adds]
 
 Gary Benson <gbenson@redhat.com>
-	[help with apache 2.0 port] 
 
 Stéphane Bidoul <sbi@acse.be> 
-	[win32 port and threading]
 
 Justin Erenkrantz <jerenkrantz@apache.org>
-        [bugfixes/patches]
+
+Damjan Georgievski <gdamjan@mail.net.mk>
 
 James Gessling <jgessling@etrade.com>
-	[doc/README.VMS]
 
 Mads Kiilerich <mads@kiilerich.com> 
-	[RH rpm]
 
 Jørgen Frøjk Kjærsgaard <jfk@metation.com>
-	[rewrite of apache.import_module]
 
 Bob Ippolito <bob@redivi.com>
-	[Mac OS X]
 
 Miguel Marques <miguel@yorku.ca>
-	[use of req->request_config instead of atol hack]
 
 Robin Munn <rmunn@pobox.com>
-        [patches]
 
 Sean Reifschneider <jafo-rpms@tummy.com> 
-	[RH rpm]
 
 Chris Trengove <trengove@econdata.com.au>
-	[difficult to find thread bug on win32]
 
 Jarkko Torppa <torppa@cute.fi>
-	[bugfixes/patches]
 
 Greg Stein <gstein@lyra.org> 
-	[Python and Apache expert advice]
 
 Dr. L.A. Timochouk <L.A.Timochouk@ukc.ac.uk> 
-	[patch for .pyo and req_read]
 
 Gregory Trubetskoy <grisha@modpython.org> 
-	[mod_python]
 
 Sean True <seant@alum.mit.edu> 
-	[ap_note_basic_auth_failure fix]
+
+Sebastian Tusk <sebastian.tusk@gmx.net>
 
 Enrique Vaamonde <evaamo@loquesea.com>
-	[windows docs]
 
 Dave Wallace <dwallace@delanet.com>
-	[PythonPath "sys.path+" hack invention]
 
 
