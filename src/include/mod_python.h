@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.14 2001/08/18 22:43:46 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.15 2001/09/09 00:25:37 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -70,6 +70,7 @@
 #include "util_filter.h"
 #include "http_log.h"
 #include "apr_strings.h"
+#include "scoreboard.h"
 
 /* Python headers */
 /* this gets rid of some comile warnings */

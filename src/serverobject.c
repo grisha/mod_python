@@ -44,7 +44,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.7 2001/09/06 20:27:31 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.8 2001/09/09 00:25:37 gtrubetskoy Exp $
  *
  */
 
@@ -228,14 +228,20 @@ static PyObject * server_getattr(serverobject *self, char *name)
 	    return self->next;
 	}
 
-    else if (strcmp(name, "error_log") == 0)
+    else if (strcmp(name, "error_log") == 0) {
 	return PyInt_FromLong((long)fileno((FILE *)self->server->error_log));
-  
+    }
     else if (strcmp(name, "names") == 0) {
 	return tuple_from_array_header(self->server->names);
     }
     else if (strcmp(name, "wild_names") == 0) {
 	return tuple_from_array_header(self->server->wild_names);
+    }
+    else if (strcmp(name, "my_generation") == 0) {
+	return PyInt_FromLong((long)ap_my_generation);
+    }
+    else if (strcmp(name, "restart_time") == 0) {
+	return PyInt_FromLong((long)ap_restart_time);
     }
     else
 	return PyMember_Get((char *)self->server, server_memberlist, name);
