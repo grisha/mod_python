@@ -141,7 +141,7 @@ else
   ver=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}'`
   AC_MSG_RESULT($ver)
 
-  # make version begins with 2
+  # make sure version begins with 2
   if test -z "`echo $ver | egrep \^2`"; then
     AC_MSG_ERROR([This version of mod_python only works with Apache 2. The one you have seems to be $ver.])
   fi
@@ -311,7 +311,12 @@ TEST_SERVER_ROOT="`pwd`/test"
 AC_SUBST(MOD_PYTHON_SO)
 MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 
-AC_OUTPUT(Makefile src/Makefile Doc/Makefile test/testconf.py)
+# get the mod_python version
+AC_SUBST(MP_VERSION)
+MP_VERSION=`awk '/MPV_STRING/ {print $3}' src/include/mpversion.h`
+MP_VERSION=`echo $MP_VERSION | sed s/\\"//g`                                      
+
+AC_OUTPUT(Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py)
 
 
 

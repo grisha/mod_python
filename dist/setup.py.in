@@ -1,10 +1,22 @@
 
-# $Id: setup.py.in,v 1.1 2002/12/28 03:42:32 grisha Exp $
+# $Id: setup.py.in,v 1.2 2002/12/28 05:32:04 grisha Exp $
+
+APXS = r"@APXS@"
 
 from distutils.core import setup
 
+import sys
+
+if len(sys.argv) > 0 and sys.argv[0] == "bdist_wininst":
+    moddir = ""
+    mpso = "mod_python.so"
+else:
+    import commands
+    moddir = commands.getoutput("%s -q LIBEXECDIR" % APXS)
+    mpso = "../src/mod_python.so"
+
 setup(name="Mod_python",
-      version="@@VERSION@@",
+      version="@MP_VERSION@",
       description="Apache/Python Integration",
       author="Gregory Trubetskoy et al",
       author_email="mod_python@modpython.org",
@@ -12,8 +24,7 @@ setup(name="Mod_python",
       packages=["mod_python"],
       package_dir = {"mod_python":"../lib/python/mod_python"},
       scripts=["win32_postinstall.py"],
-      data_files=[('', ['mod_python.so'])])
-
+      data_files=[(moddir, ["mod_python.so"])])
 
 # makes emacs go into python mode
 ### Local Variables:
