@@ -14,6 +14,9 @@ The names are listed alphabetically by last name.
 Richard Barrett <R.Barrett@ftel.co.uk> 
 	[patch for conn_rec.*adds]
 
+Gary Benson <gbenson@redhat.com>
+	[help with apache 2.0 port] 
+
 Stéphane Bidoul <sbi@acse.be> 
 	[win32 port and threading]
 
@@ -25,6 +28,9 @@ Mads Kiilerich <mads@kiilerich.com>
 
 Jørgen Frøjk Kjærsgaard <jfk@metation.com>
 	[rewrite of apache.import_module]
+
+Bob Ippolito <bob@redivi.com>
+	[Mac OS X]
 
 Miguel Marques <miguel@yorku.ca>
 	[use of req->request_config instead of atol hack]
