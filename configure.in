@@ -1,5 +1,5 @@
 dnl Copyright 2000 Gregory Trubetskoy <grisha@ispol.com>
-dnl $Id: configure.in,v 1.5 2000/10/22 03:32:44 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.6 2000/10/29 01:29:06 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -72,8 +72,8 @@ fi
 # if apxs was still not found, then no DSO
 AC_SUBST(LIBEXECDIR)
 if test -z "$APXS"; then
-  AC_MSG_WARN([apxs was not found, DSO compilation will not be available.])
-  AC_MSG_WARN([You can use --with-apxs to specify where your apxs is.])
+  AC_MSG_WARN([**** apxs was not found, DSO compilation will not be available.])
+  AC_MSG_WARN([**** You can use --with-apxs to specify where your apxs is.])
   DSO="no_dso"
   ALL="static"
 else
@@ -98,14 +98,15 @@ AC_SUBST(AP_SRC_GRP)
 AC_MSG_CHECKING(for --with-apache)
 AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
 [
-  AC_MSG_RESULT($withval)
+  AP_SRC=`cd $withval; pwd`
 
   dnl  For Apache 2.0 apxs in src/support may be usable
-  if test ! -f $withval/src/Makefile; then
-    AC_MSG_WARN([The sources in $withval have not been confgured, or wrong path specified.])
+  if test ! -f "$AP_SRC/src/include/httpd.h"; then
+    AC_MSG_ERROR([$withval does not look like an Apache source directory.])
   fi
-  AP_SRC=$withval
-  AP_INCLUDES="-I${withval}/src/include -I${withval}/src/os/unix"
+
+  AC_MSG_RESULT($AP_SRC)
+  AP_INCLUDES="-I${AP_SRC}/src/include -I${AP_SRC}/src/os/unix"
 
   # note who owns the apache source directory
   AP_SRC_OWN="`ls -ld $AP_SRC | awk '{print $3}'`"
@@ -115,8 +116,8 @@ AC_MSG_RESULT(no))
 
 AC_SUBST(STATIC)
 if test -z "$AP_SRC"; then
-  AC_MSG_WARN([No apache sources specified, static compilation will not be available.])
-  AC_MSG_WARN([You can use --with-apache to specify where your Apache sources are.])
+  AC_MSG_WARN([**** No apache sources specified, static compilation will not be available.])
+  AC_MSG_WARN([**** You can use --with-apache to specify where your Apache sources are.])
   STATIC="no_static"
 else
   STATIC="do_static"
@@ -129,8 +130,8 @@ fi
 AC_MSG_CHECKING(for --with-python)
 AC_ARG_WITH(python, [--with-python=DIR	Path to Python sources],
 [
-  AC_MSG_RESULT($withval)
-  PYTHON_SRC=$withval
+  PYTHON_SRC=`cd $withval; pwd`
+  AC_MSG_RESULT($PYTHON_SRC)
 ],
 AC_MSG_RESULT(no))
 
@@ -232,11 +233,11 @@ AC_MSG_RESULT($PY_INCLUDES)
 
 AC_SUBST(MKDEP)
 
-AC_MSG_CHECKING(for mkdep)
+# see if we have mkdep
 AC_PATH_PROG(MKDEP, "mkdep")
 
 if test -z "${MKDEP}"; then
-  AC_MSG_CHECKING(for makedepend)
+  # or makedepend
   AC_PATH_PROG(MKDEP, "makedepend")
 fi
 
@@ -244,9 +245,9 @@ AC_OUTPUT(Makefile src/Makefile src/libpython.module)
 
 if test -n "$MKDEP"; then
   # make dependencies
-  echo "analyzing dependencies"
+  echo "analyzing dependencies" 
   cd src
-  make depend
+  make depend > /dev/null 2>&1
 fi
 
 

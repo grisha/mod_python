@@ -51,7 +51,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.35 2000/10/22 03:32:45 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.36 2000/10/29 01:29:06 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1268,7 +1268,7 @@ static const char *directive_PythonLogHandler(cmd_parms *cmd, void * mconfig,
  */
 
 
-void python_finalize()
+void python_finalize(void *data)
 {
     interpreterdata *idata;
 #ifdef WITH_THREAD
