@@ -68,7 +68,9 @@ MPFILES=	modpython.tex \
 		modpython2.tex \
 		modpython3.tex \
 		modpython5.tex \
-		modpython6.tex
+		modpython6.tex \
+		appendixa.tex \
+		appendixb.tex
 
 # Main target
 all:	pdf

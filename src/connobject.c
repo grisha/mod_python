@@ -44,7 +44,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.4 2000/12/06 03:05:37 gtrubetskoy Exp $
+ * $Id: connobject.c,v 1.5 2000/12/13 05:24:08 gtrubetskoy Exp $
  *
  */
 
@@ -95,7 +95,7 @@ static struct memberlist conn_memberlist[] = {
     {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
     {"remote_host",        T_STRING,    OFF(remote_host),        RO},
     {"remote_logname",     T_STRING,    OFF(remote_logname),     RO},
-    {"user",               T_STRING,    OFF(user),               RO},
+    {"user",               T_STRING,    OFF(user),                 },
     {"ap_auth_type",       T_STRING,    OFF(ap_auth_type),       RO},
     /* XXX aborted, keepalive, keptalive, double_reverse ? */
     {"local_ip",           T_STRING,    OFF(remote_ip),          RO},
@@ -208,6 +208,30 @@ static PyObject * conn_getattr(connobject *self, char *name)
 
 }
 
+/**
+ ** conn_setattr
+ **
+ *  Set connection object attribute
+ */
+
+static int conn_setattr(connobject *self, char* name, PyObject* value)
+{
+
+    if (value == NULL) {
+	PyErr_SetString(PyExc_AttributeError,
+			"can't delete connection attributes");
+	return -1;
+    }
+    else if (strcmp(name, "user") == 0) {
+	self->conn->user = 
+	    ap_pstrdup(self->conn->pool, PyString_AsString(value));
+	return 0;
+    }
+    else
+	return PyMember_Set((char *)self->conn, conn_memberlist, name, value);
+
+}
+
 PyTypeObject MpConn_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,
@@ -217,7 +241,7 @@ PyTypeObject MpConn_Type = {
     (destructor) conn_dealloc,       /*tp_dealloc*/
     0,                               /*tp_print*/
     (getattrfunc) conn_getattr,      /*tp_getattr*/
-    0,                               /*tp_setattr*/
+    (setattrfunc) conn_setattr,      /*tp_setattr*/
     0,                               /*tp_compare*/
     0,                               /*tp_repr*/
     0,                               /*tp_as_number*/

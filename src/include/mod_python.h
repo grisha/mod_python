@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.12 2000/12/06 03:05:38 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.13 2000/12/13 05:24:08 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -108,7 +108,7 @@ extern module MODULE_VAR_EXPORT python_module;
 #define VERSION_COMPONENT "mod_python/" MPV_STRING
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
-#define GLOBAL_INTERPRETER "global_interpreter"
+#define MAIN_INTERPRETER "main_interpreter"
 #ifdef WIN32
 #define SLASH '\\'
 #define SLASH_S "\\"
