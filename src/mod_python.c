@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.68 2002/08/21 16:08:57 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.69 2002/08/21 16:12:22 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -76,12 +76,12 @@ static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
     tstate = Py_NewInterpreter();
 
     if (! tstate) {
-	if (srv) {
+        if (srv) {
 
-	    /* couldn't create an interpreter, this is bad */
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
+            /* couldn't create an interpreter, this is bad */
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
                          "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
-	}
+        }
         return NULL;
     }
     else {
@@ -90,10 +90,10 @@ static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
         PyThreadState_Swap(NULL); 
 
         /* Strictly speaking we don't need that tstate created
-	 * by Py_NewInterpreter but is preferable to waste it than re-write
-	 * a cousin to Py_NewInterpreter 
-	 * XXX (maybe we can destroy it?)
-	 */
+         * by Py_NewInterpreter but is preferable to waste it than re-write
+         * a cousin to Py_NewInterpreter 
+         * XXX (maybe we can destroy it?)
+         */
         return tstate->interp;
     }
     
@@ -112,23 +112,23 @@ static interpreterdata *get_interpreter_data(const char *name, server_rec *srv)
     interpreterdata *idata = NULL;
     
     if (! name)
-	name = MAIN_INTERPRETER;
+        name = MAIN_INTERPRETER;
 
     p = PyDict_GetItemString(interpreters, (char *)name);
     if (!p)
     {
         PyInterpreterState *istate = make_interpreter(name, srv);
-	if (istate) {
-	    idata = (interpreterdata *)malloc(sizeof(interpreterdata));
-	    idata->istate = istate;
-	    /* obcallback will be created on first use */
-	    idata->obcallback = NULL; 
-	    p = PyCObject_FromVoidPtr((void *) idata, NULL);
-	    PyDict_SetItemString(interpreters, (char *)name, p);
-	}
+        if (istate) {
+            idata = (interpreterdata *)malloc(sizeof(interpreterdata));
+            idata->istate = istate;
+            /* obcallback will be created on first use */
+            idata->obcallback = NULL; 
+            p = PyCObject_FromVoidPtr((void *) idata, NULL);
+            PyDict_SetItemString(interpreters, (char *)name, p);
+        }
     }
     else {
-	idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
+        idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
     }
 
     return idata;
@@ -158,9 +158,9 @@ apr_status_t python_cleanup(void *data)
 
     /* get/create interpreter */
     if (ci->request_rec)
-	idata = get_interpreter_data(ci->interpreter, ci->request_rec->server);
+        idata = get_interpreter_data(ci->interpreter, ci->request_rec->server);
     else
-	idata = get_interpreter_data(ci->interpreter, ci->server_rec);
+        idata = get_interpreter_data(ci->interpreter, ci->server_rec);
 
 #ifdef WITH_THREAD
     /* release the lock */
@@ -168,17 +168,17 @@ apr_status_t python_cleanup(void *data)
 #endif
 
     if (!idata) {
-	if (ci->request_rec)
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, 
-			  ci->request_rec,
-			  "python_cleanup: get_interpreter_data returned NULL!");
-	else
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, 
-			 ci->server_rec,
-			 "python_cleanup: get_interpreter_data returned NULL!");
-	Py_DECREF(ci->handler);
-	Py_XDECREF(ci->data);
-	free(ci);
+        if (ci->request_rec)
+            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, 
+                          ci->request_rec,
+                          "python_cleanup: get_interpreter_data returned NULL!");
+        else
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, 
+                         ci->server_rec,
+                         "python_cleanup: get_interpreter_data returned NULL!");
+        Py_DECREF(ci->handler);
+        Py_XDECREF(ci->data);
+        free(ci);
         return APR_SUCCESS;
     }
     
@@ -194,46 +194,46 @@ apr_status_t python_cleanup(void *data)
      * Call the cleanup function.
      */
     if (! PyObject_CallFunction(ci->handler, "O", ci->data)) {
-	PyObject *ptype;
-	PyObject *pvalue;
-	PyObject *ptb;
-	PyObject *handler;
-	PyObject *stype;
-	PyObject *svalue;
+        PyObject *ptype;
+        PyObject *pvalue;
+        PyObject *ptb;
+        PyObject *handler;
+        PyObject *stype;
+        PyObject *svalue;
 
-	PyErr_Fetch(&ptype, &pvalue, &ptb);
-	handler = PyObject_Str(ci->handler);
-	stype = PyObject_Str(ptype);
-	svalue = PyObject_Str(pvalue);
+        PyErr_Fetch(&ptype, &pvalue, &ptb);
+        handler = PyObject_Str(ci->handler);
+        stype = PyObject_Str(ptype);
+        svalue = PyObject_Str(pvalue);
 
-	Py_XDECREF(ptype);
-	Py_XDECREF(pvalue);
-	Py_XDECREF(ptb);
+        Py_XDECREF(ptype);
+        Py_XDECREF(pvalue);
+        Py_XDECREF(ptb);
 
-	if (ci->request_rec) {
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, 
-			  ci->request_rec,
-			  "python_cleanup: Error calling cleanup object %s", 
-			  PyString_AsString(handler));
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
-			  ci->request_rec,
-			  "    %s: %s", PyString_AsString(stype), 
-			  PyString_AsString(svalue));
-	}
-	else {
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
-			 ci->server_rec,
-			 "python_cleanup: Error calling cleanup object %s", 
-			 PyString_AsString(handler));
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
-			 ci->server_rec,
+        if (ci->request_rec) {
+            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, 
+                          ci->request_rec,
+                          "python_cleanup: Error calling cleanup object %s", 
+                          PyString_AsString(handler));
+            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
+                          ci->request_rec,
+                          "    %s: %s", PyString_AsString(stype), 
+                          PyString_AsString(svalue));
+        }
+        else {
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
+                         ci->server_rec,
+                         "python_cleanup: Error calling cleanup object %s", 
+                         PyString_AsString(handler));
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
+                         ci->server_rec,
                          "    %s: %s", PyString_AsString(stype), 
                          PyString_AsString(svalue));
-	}
+        }
 
-	Py_DECREF(handler);
-	Py_DECREF(stype);
-	Py_DECREF(svalue);
+        Py_DECREF(handler);
+        Py_DECREF(stype);
+        Py_DECREF(svalue);
     }
      
     /* release the lock and destroy tstate*/
@@ -278,28 +278,28 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     if (! Py_IsInitialized()) 
     {
 
-	/* initialze the interpreter */
-	Py_Initialize();
+        /* initialze the interpreter */
+        Py_Initialize();
 
 #ifdef WITH_THREAD
-	/* create and acquire the interpreter lock */
-	PyEval_InitThreads();
+        /* create and acquire the interpreter lock */
+        PyEval_InitThreads();
 #endif
-	/* Release the thread state because we will never use 
-	 * the main interpreter, only sub interpreters created later. */
+        /* Release the thread state because we will never use 
+         * the main interpreter, only sub interpreters created later. */
         PyThreadState_Swap(NULL); 
 
-	/* create the obCallBack dictionary */
-	interpreters = PyDict_New();
-	if (! interpreters) {
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-			 "python_init: PyDict_New() failed! No more memory?");
-	    exit(1);
-	}
-	
+        /* create the obCallBack dictionary */
+        interpreters = PyDict_New();
+        if (! interpreters) {
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                         "python_init: PyDict_New() failed! No more memory?");
+            exit(1);
+        }
+        
 #ifdef WITH_THREAD
-	/* release the lock; now other threads can run */
-	PyEval_ReleaseLock();
+        /* release the lock; now other threads can run */
+        PyEval_ReleaseLock();
 #endif
     }
     return OK;
@@ -318,15 +318,15 @@ static void *python_create_dir_config(apr_pool_t *p, char *dir)
 {
 
     py_dir_config *conf = 
-	(py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
+        (py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
 
     conf->authoritative = 1;
 
     /* make sure directory ends with a slash */
     if (dir && (dir[strlen(dir) - 1] != SLASH))
-	conf->config_dir = apr_pstrcat(p, dir, SLASH_S, NULL);
+        conf->config_dir = apr_pstrcat(p, dir, SLASH_S, NULL);
     else
-	conf->config_dir = apr_pstrdup(p, dir);
+        conf->config_dir = apr_pstrdup(p, dir);
 
     conf->options = apr_table_make(p, 4);
     conf->directives = apr_table_make(p, 4);
@@ -343,11 +343,11 @@ static void *python_create_dir_config(apr_pool_t *p, char *dir)
  */
 
 static void *python_merge_dir_config(apr_pool_t *p, void *current_conf, 
-				     void *new_conf)
+                                     void *new_conf)
 {
 
     py_dir_config *merged_conf = 
-	(py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
+        (py_dir_config *) apr_pcalloc(p, sizeof(py_dir_config));
     py_dir_config *cc = (py_dir_config *) current_conf;
     py_dir_config *nc = (py_dir_config *) new_conf;
 
@@ -372,50 +372,50 @@ static void *python_merge_dir_config(apr_pool_t *p, void *current_conf,
     merged_conf->authoritative = cc->authoritative;
     merged_conf->config_dir = apr_pstrdup(p, cc->config_dir);
     apr_table_overlap(merged_conf->directives, cc->directives,
-		      APR_OVERLAP_TABLES_SET);
+                      APR_OVERLAP_TABLES_SET);
     apr_table_overlap(merged_conf->options, cc->options,
-		      APR_OVERLAP_TABLES_SET);
+                      APR_OVERLAP_TABLES_SET);
 
     for (hi = apr_hash_first(p, cc->hlists); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
-	apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
+        apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
     }
 
     for (hi = apr_hash_first(p, cc->in_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
-	apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
+        apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
     }
 
     for (hi = apr_hash_first(p, cc->out_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
-	apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
+        apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
     }
 
     /** copy new **/
 
     if (nc->authoritative != merged_conf->authoritative)
-	merged_conf->authoritative = nc->authoritative;
+        merged_conf->authoritative = nc->authoritative;
     if (nc->config_dir)
-	merged_conf->config_dir = apr_pstrdup(p, nc->config_dir);
+        merged_conf->config_dir = apr_pstrdup(p, nc->config_dir);
 
     apr_table_overlap(merged_conf->directives, nc->directives,
-		      APR_OVERLAP_TABLES_SET);
+                      APR_OVERLAP_TABLES_SET);
     apr_table_overlap(merged_conf->options, nc->options,
-		      APR_OVERLAP_TABLES_SET);
+                      APR_OVERLAP_TABLES_SET);
 
     for (hi = apr_hash_first(p, nc->hlists); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
-	apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
+        apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
     }
 
     for (hi = apr_hash_first(p, nc->in_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
-	apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
+        apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
     }
 
     for (hi = apr_hash_first(p, nc->out_filters); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
-	apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
+        apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
     }
 
     return (void *) merged_conf;
@@ -429,7 +429,7 @@ static void *python_merge_dir_config(apr_pool_t *p, void *current_conf,
  */
 
 static const char *python_directive(cmd_parms *cmd, void * mconfig, 
-				    char *key, const char *val)
+                                    char *key, const char *val)
 {
     py_dir_config *conf;
    
@@ -440,9 +440,9 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
 }
 
 static void python_directive_hl_add(apr_pool_t *p,
-				    apr_hash_t *hlists, 
-				    const char *phase, const char *handler, 
-				    const char *directory, const int silent)
+                                    apr_hash_t *hlists, 
+                                    const char *phase, const char *handler, 
+                                    const char *directory, const int silent)
 {
     hl_entry *head;
     char *h;
@@ -453,13 +453,13 @@ static void python_directive_hl_add(apr_pool_t *p,
        by white space */
 
     while (*(h = ap_getword_white(p, &handler)) != '\0') {
-	if (!head) {
-	    head = hlist_new(p, h, directory, silent);
-	    apr_hash_set(hlists, phase, APR_HASH_KEY_STRING, head);
-	}
-	else {
-	    hlist_append(p, head, h, directory, silent);
-	}
+        if (!head) {
+            head = hlist_new(p, h, directory, silent);
+            apr_hash_set(hlists, phase, APR_HASH_KEY_STRING, head);
+        }
+        else {
+            hlist_append(p, head, h, directory, silent);
+        }
     }
 }
 
@@ -494,26 +494,26 @@ static const char *python_directive_handler(cmd_parms *cmd, void * mconfig,
     conf = (py_dir_config *) mconfig;
 
     if (*exts == '\0') {
-	python_directive_hl_add(cmd->pool, conf->hlists, key, val,
-				conf->config_dir, silent);
+        python_directive_hl_add(cmd->pool, conf->hlists, key, val,
+                                conf->config_dir, silent);
     }
     else {
 
-	char *ext;
+        char *ext;
 
-	/* skip blanks */
-	while (apr_isspace(*exts)) exts++;
-	
-	/* repeat for every extension */
-	while (*(ext = ap_getword_white(cmd->pool, &exts)) != '\0') {
-	    char *s;
+        /* skip blanks */
+        while (apr_isspace(*exts)) exts++;
+        
+        /* repeat for every extension */
+        while (*(ext = ap_getword_white(cmd->pool, &exts)) != '\0') {
+            char *s;
 
-	    /* append extention to the directive name */
-	    s = apr_pstrcat(cmd->pool, key, ext, NULL);
+            /* append extention to the directive name */
+            s = apr_pstrcat(cmd->pool, key, ext, NULL);
 
-	    python_directive_hl_add(cmd->pool, conf->hlists, s, val,
-				    conf->config_dir, silent);
-	}
+            python_directive_hl_add(cmd->pool, conf->hlists, s, val,
+                                    conf->config_dir, silent);
+        }
     }
 
     return NULL;
@@ -527,17 +527,17 @@ static const char *python_directive_handler(cmd_parms *cmd, void * mconfig,
  */
 
 static const char *python_directive_flag(void * mconfig, 
-					 char *key, int val)
+                                         char *key, int val)
 {
     py_dir_config *conf;
 
     conf = (py_dir_config *) mconfig;
 
     if (val) {
-	apr_table_set(conf->directives, key, "1");
+        apr_table_set(conf->directives, key, "1");
     }
     else {
-	apr_table_unset(conf->directives, key);
+        apr_table_unset(conf->directives, key);
     }
 
     return NULL;
@@ -572,14 +572,14 @@ static PyObject * make_obcallback()
      */
 
     if (! ((m = PyImport_ImportModule(MODULENAME)))) {
-	fprintf(stderr, "make_obcallback(): could not import %s.\n", MODULENAME);
-	PyErr_Print();
+        fprintf(stderr, "make_obcallback(): could not import %s.\n", MODULENAME);
+        PyErr_Print();
     }
     
     if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
-	fprintf(stderr, "make_obcallback(): could not call %s.\n",
-		INITFUNC);
-	PyErr_Print();
+        fprintf(stderr, "make_obcallback(): could not call %s.\n",
+                INITFUNC);
+        PyErr_Print();
     }
     
     return obCallBack;
@@ -604,50 +604,50 @@ static requestobject *get_request_object(request_rec *req)
                                                         &python_module);
 
     if (req_config) {
-	return req_config->request_obj;
+        return req_config->request_obj;
     }
     else {
-	if ((req->path_info) && 
-	    (req->path_info[strlen(req->path_info) - 1] == SLASH))
-	{
-	    int i;
-	    i = strlen(req->path_info);
-	    /* take out the slash */
-	    req->path_info[i - 1] = 0;
+        if ((req->path_info) && 
+            (req->path_info[strlen(req->path_info) - 1] == SLASH))
+        {
+            int i;
+            i = strlen(req->path_info);
+            /* take out the slash */
+            req->path_info[i - 1] = 0;
 
-	    _save = PyEval_SaveThread();
-	    ap_add_cgi_vars(req);
-	    PyEval_RestoreThread(_save);
-	    request_obj = (requestobject *)MpRequest_FromRequest(req);
+            _save = PyEval_SaveThread();
+            ap_add_cgi_vars(req);
+            PyEval_RestoreThread(_save);
+            request_obj = (requestobject *)MpRequest_FromRequest(req);
 
-	    /* put the slash back in */
-	    req->path_info[i - 1] = SLASH; 
-	    req->path_info[i] = 0;
+            /* put the slash back in */
+            req->path_info[i - 1] = SLASH; 
+            req->path_info[i] = 0;
 
-	    /* and also make PATH_INFO == req->subprocess_env */
-	    apr_table_set(req->subprocess_env, "PATH_INFO", req->path_info);
-	} 
-	else 
-	{ 
-	    _save = PyEval_SaveThread();
-	    ap_add_cgi_vars(req);
-	    PyEval_RestoreThread(_save);
-	    request_obj = (requestobject *)MpRequest_FromRequest(req);
-	}
+            /* and also make PATH_INFO == req->subprocess_env */
+            apr_table_set(req->subprocess_env, "PATH_INFO", req->path_info);
+        } 
+        else 
+        { 
+            _save = PyEval_SaveThread();
+            ap_add_cgi_vars(req);
+            PyEval_RestoreThread(_save);
+            request_obj = (requestobject *)MpRequest_FromRequest(req);
+        }
 
-	/* store the pointer to this object in request_config */
-	req_config = apr_pcalloc(req->pool, sizeof(py_req_config));
-	req_config->request_obj = request_obj;
-	req_config->dynhls = apr_hash_make(req->pool);
-	ap_set_module_config(req->request_config, &python_module, req_config);
+        /* store the pointer to this object in request_config */
+        req_config = apr_pcalloc(req->pool, sizeof(py_req_config));
+        req_config->request_obj = request_obj;
+        req_config->dynhls = apr_hash_make(req->pool);
+        ap_set_module_config(req->request_config, &python_module, req_config);
 
-	/* register the clean up directive handler */
-	apr_pool_cleanup_register(req->pool, (void *)req, 
+        /* register the clean up directive handler */
+        apr_pool_cleanup_register(req->pool, (void *)req, 
                                   python_cleanup_handler, 
                                   apr_pool_cleanup_null);
 
-	/* XXX why no incref here? */
-	return request_obj;
+        /* XXX why no incref here? */
+        return request_obj;
     }
 }
 
@@ -661,67 +661,67 @@ static requestobject *get_request_object(request_rec *req)
  */
 
 static const char *select_interp_name(request_rec *req, py_dir_config *conf, 
-				      hl_entry *hle, const char *fname, int is_input)
+                                      hl_entry *hle, const char *fname, int is_input)
 {
     const char *s;
 
     if ((s = apr_table_get(conf->directives, "PythonInterpreter"))) {
-	/* forced by configuration */
-	return s;
+        /* forced by configuration */
+        return s;
     }
     else {
-	if ((s = apr_table_get(conf->directives, "PythonInterpPerDirectory"))) {
-	    
-	    /* base interpreter on directory where the file is found */
-	    if (ap_is_directory(req->pool, req->filename))
-		return ap_make_dirstr_parent(req->pool, 
-					     apr_pstrcat(req->pool, req->filename, 
-							 SLASH_S, NULL ));
-	    else {
-		if (req->filename)
-		    return ap_make_dirstr_parent(req->pool, req->filename);
-		else
-		    /* 
-		     * In early phases of the request, req->filename is not known,
-		     * so this would have to run in the global interpreter.
-		     */
-		    return NULL;
-	    }
-	}
-	else if (apr_table_get(conf->directives, "PythonInterpPerDirective")) {
+        if ((s = apr_table_get(conf->directives, "PythonInterpPerDirectory"))) {
+            
+            /* base interpreter on directory where the file is found */
+            if (ap_is_directory(req->pool, req->filename))
+                return ap_make_dirstr_parent(req->pool, 
+                                             apr_pstrcat(req->pool, req->filename, 
+                                                         SLASH_S, NULL ));
+            else {
+                if (req->filename)
+                    return ap_make_dirstr_parent(req->pool, req->filename);
+                else
+                    /* 
+                     * In early phases of the request, req->filename is not known,
+                     * so this would have to run in the global interpreter.
+                     */
+                    return NULL;
+            }
+        }
+        else if (apr_table_get(conf->directives, "PythonInterpPerDirective")) {
 
-	    /* 
-	     * base interpreter name on directory where the handler directive
-	     * was last found. If it was in http.conf, then we will use the 
-	     * global interpreter.
-	     */
-	    
-	    py_filter_handler *fh;
+            /* 
+             * base interpreter name on directory where the handler directive
+             * was last found. If it was in http.conf, then we will use the 
+             * global interpreter.
+             */
+            
+            py_filter_handler *fh;
 
-	    if (fname) {
-		if (is_input) {
-		    fh = (py_filter_handler *)apr_hash_get(conf->in_filters, fname,
-							   APR_HASH_KEY_STRING);
-		}
-		else {
-		    fh = (py_filter_handler *)apr_hash_get(conf->out_filters, fname,
-							   APR_HASH_KEY_STRING);
-		}
-		s = fh->dir;
-	    }
-	    else {
-		s = hle->directory;
-	    }
+            if (fname) {
+                if (is_input) {
+                    fh = (py_filter_handler *)apr_hash_get(conf->in_filters, fname,
+                                                           APR_HASH_KEY_STRING);
+                }
+                else {
+                    fh = (py_filter_handler *)apr_hash_get(conf->out_filters, fname,
+                                                           APR_HASH_KEY_STRING);
+                }
+                s = fh->dir;
+            }
+            else {
+                s = hle->directory;
+            }
 
-	    if (s && (s[0] == '\0'))
-		return NULL;
-	    else
-		return s;
-	}
-	else {
-	    /* - default: per server - */
-	    return req->server->server_hostname;
-	}
+            if (s && (s[0] == '\0'))
+                return NULL;
+            else
+                return s;
+        }
+        else {
+            /* - default: per server - */
+            return req->server->server_hostname;
+        }
     }
 }
 
@@ -750,7 +750,7 @@ static int python_handler(request_rec *req, char *phase)
 
     /* get configuration */
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, 
-						  &python_module);
+                                                  &python_module);
     /* get file extension */
     if (req->filename) {
         ext = req->filename;
@@ -762,23 +762,23 @@ static int python_handler(request_rec *req, char *phase)
     /* is there an hlist entry, i.e. a handler? */
     /* try with extension */
     hle = (hl_entry *)apr_hash_get(conf->hlists, 
-				   apr_pstrcat(req->pool, phase, ext, NULL),
-				   APR_HASH_KEY_STRING);
+                                   apr_pstrcat(req->pool, phase, ext, NULL),
+                                   APR_HASH_KEY_STRING);
     if (!hle) {
-	/* try without extension */
-	hle = (hl_entry *)apr_hash_get(conf->hlists, phase, APR_HASH_KEY_STRING);
+        /* try without extension */
+        hle = (hl_entry *)apr_hash_get(conf->hlists, phase, APR_HASH_KEY_STRING);
     }
     
     req_conf = (py_req_config *) ap_get_module_config(req->request_config,
-						      &python_module);
+                                                      &python_module);
     if (req_conf) {
-	dynhle = (hl_entry *)apr_hash_get(req_conf->dynhls, phase, 
-					  APR_HASH_KEY_STRING);
+        dynhle = (hl_entry *)apr_hash_get(req_conf->dynhls, phase, 
+                                          APR_HASH_KEY_STRING);
     }
 
     if (! (hle || dynhle)) {
-	/* nothing to do here */
-	return DECLINED;
+        /* nothing to do here */
+        return DECLINED;
     }
     
     /* determine interpreter to use */
@@ -799,7 +799,7 @@ static int python_handler(request_rec *req, char *phase)
 
     if (!idata) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-		      "python_handler: get_interpreter_data returned NULL!");
+                      "python_handler: get_interpreter_data returned NULL!");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
     
@@ -817,15 +817,15 @@ static int python_handler(request_rec *req, char *phase)
         /* we must have a callback object to succeed! */
         if (!idata->obcallback) 
         {
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-			  "python_handler: make_obcallback returned no obCallBack!");
+            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                          "python_handler: make_obcallback returned no obCallBack!");
 
-	    PyThreadState_Swap(NULL);
-	    PyThreadState_Delete(tstate);
+            PyThreadState_Swap(NULL);
+            PyThreadState_Delete(tstate);
 #ifdef WITH_THREAD
-	    PyEval_ReleaseLock();
+            PyEval_ReleaseLock();
 #endif
-	    return HTTP_INTERNAL_SERVER_ERROR;
+            return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
 
@@ -838,9 +838,9 @@ static int python_handler(request_rec *req, char *phase)
      */
     
     if (interpreter)
-	request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
+        request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
     else
-	request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
+        request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
 
     /* make a note of which phase we are in right now */
     Py_XDECREF(request_obj->phase);
@@ -851,7 +851,7 @@ static int python_handler(request_rec *req, char *phase)
 
     /* add dynamically registered handlers, if any */
     if (dynhle) {
-	MpHList_Append(request_obj->hlo, dynhle);
+        MpHList_Append(request_obj->hlo, dynhle);
     }
 
     /* 
@@ -860,7 +860,7 @@ static int python_handler(request_rec *req, char *phase)
      * >>> resultobject = obCallBack.Dispatch(request_object, phase)
      */
     resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch", "O", 
-				       request_obj);
+                                       request_obj);
      
     /* release the lock and destroy tstate*/
     /* XXX Do not use 
@@ -876,43 +876,43 @@ static int python_handler(request_rec *req, char *phase)
 #endif
 
     if (! resultobject) {
-	ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
-		      "python_handler: Dispatch() returned nothing.");
-	return HTTP_INTERNAL_SERVER_ERROR;
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
+                      "python_handler: Dispatch() returned nothing.");
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
     else {
-	/* Attempt to analyze the result as a string indicating which
-	   result to return */
-	if (! PyInt_Check(resultobject)) {
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
-			  "python_handler: Dispatch() returned non-integer.");
-	    return HTTP_INTERNAL_SERVER_ERROR;
-	}
-	else {
-	    result = PyInt_AsLong(resultobject);
+        /* Attempt to analyze the result as a string indicating which
+           result to return */
+        if (! PyInt_Check(resultobject)) {
+            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
+                          "python_handler: Dispatch() returned non-integer.");
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
+        else {
+            result = PyInt_AsLong(resultobject);
 
-	    /* authen handlers need one more thing
-	     * if authentication failed and this handler is not
-	     * authoritative, let the others handle it
-	     */
-	    if (strcmp(phase, "PythonAuthenHandler") == 0) {
-		if (result == HTTP_UNAUTHORIZED)
-		{
-		    if   (! conf->authoritative)
-			result = DECLINED;
-		    else {
-			/*
-			 * This will insert a WWW-Authenticate header
-			 * to let the browser know that we are using
-			 * Basic authentication. This function does check
-			 * to make sure that auth is indeed Basic, no
-			 * need to do that here.
-			 */
-			ap_note_basic_auth_failure(req);
-		    }
-		}
-	    }
-	}
+            /* authen handlers need one more thing
+             * if authentication failed and this handler is not
+             * authoritative, let the others handle it
+             */
+            if (strcmp(phase, "PythonAuthenHandler") == 0) {
+                if (result == HTTP_UNAUTHORIZED)
+                {
+                    if   (! conf->authoritative)
+                        result = DECLINED;
+                    else {
+                        /*
+                         * This will insert a WWW-Authenticate header
+                         * to let the browser know that we are using
+                         * Basic authentication. This function does check
+                         * to make sure that auth is indeed Basic, no
+                         * need to do that here.
+                         */
+                        ap_note_basic_auth_failure(req);
+                    }
+                }
+            }
+        }
     } 
 
     /* When the script sets an error status by using req.status,
@@ -962,36 +962,36 @@ static apr_status_t python_cleanup_handler(void *data)
     rc = python_handler((request_rec *)data, "PythonCleanupHandler");
 
     req_config = (py_req_config *) ap_get_module_config(req->request_config,
-							&python_module);
+                                                        &python_module);
 
     if (req_config && req_config->request_obj) {
 
-	interpreterdata *idata;
-	PyThreadState *tstate;
-	requestobject *request_obj = req_config->request_obj;
+        interpreterdata *idata;
+        PyThreadState *tstate;
+        requestobject *request_obj = req_config->request_obj;
 
 #ifdef WITH_THREAD  
-	PyEval_AcquireLock();
+        PyEval_AcquireLock();
 #endif
-	idata = get_interpreter_data(NULL, req->server);
+        idata = get_interpreter_data(NULL, req->server);
 #ifdef WITH_THREAD
-	PyEval_ReleaseLock();
+        PyEval_ReleaseLock();
 #endif
-	tstate = PyThreadState_New(idata->istate);
+        tstate = PyThreadState_New(idata->istate);
 #ifdef WITH_THREAD  
-	PyEval_AcquireThread(tstate);
+        PyEval_AcquireThread(tstate);
 #else
-	PyThreadState_Swap(tstate);
+        PyThreadState_Swap(tstate);
 #endif
 
-	Py_XDECREF(request_obj);
+        Py_XDECREF(request_obj);
 
-	/* release the lock and destroy tstate*/
-	/* XXX Do not use blah blah...  */
-	PyThreadState_Swap(NULL);
-	PyThreadState_Delete(tstate);
+        /* release the lock and destroy tstate*/
+        /* XXX Do not use blah blah...  */
+        PyThreadState_Swap(NULL);
+        PyThreadState_Delete(tstate);
 #ifdef WITH_THREAD
-	PyEval_ReleaseLock();
+        PyEval_ReleaseLock();
 #endif
 
     }
@@ -1007,10 +1007,10 @@ static apr_status_t python_cleanup_handler(void *data)
  */
 
 static apr_status_t python_filter(int is_input, ap_filter_t *f, 
-				  apr_bucket_brigade *bb,
-				  ap_input_mode_t mode,
-				  apr_read_type_e block,
-				  apr_size_t readbytes) {
+                                  apr_bucket_brigade *bb,
+                                  ap_input_mode_t mode,
+                                  apr_read_type_e block,
+                                  apr_size_t readbytes) {
 
     PyObject *resultobject = NULL;
     interpreterdata *idata;
@@ -1030,25 +1030,25 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 
     /* create ctx if not there yet */
     if (!f->ctx) {
-	ctx = (python_filter_ctx *) apr_pcalloc(req->pool, sizeof(python_filter_ctx));
-	f->ctx = (void *)ctx;
+        ctx = (python_filter_ctx *) apr_pcalloc(req->pool, sizeof(python_filter_ctx));
+        f->ctx = (void *)ctx;
     }
     else {
-	ctx = (python_filter_ctx *) f->ctx;
+        ctx = (python_filter_ctx *) f->ctx;
     }
-	
+        
     /* are we in transparent mode? transparent mode is on after an error,
        so a fitler can spit out an error without causing infinite loop */
     if (ctx->transparent) {
-	if (is_input) 
-	    return ap_get_brigade(f->next, bb, mode, block, readbytes);
-	else
-	    return ap_pass_brigade(f->next, bb);
+        if (is_input) 
+            return ap_get_brigade(f->next, bb, mode, block, readbytes);
+        else
+            return ap_pass_brigade(f->next, bb);
     }
-	
+        
     /* get configuration */
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, 
-						  &python_module);
+                                                  &python_module);
 
     /* determine interpreter to use */
     interpreter = select_interp_name(req, conf, NULL, f->frec->name, is_input);
@@ -1068,7 +1068,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 
     if (!idata) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-		      "python_filter: get_interpreter_data returned NULL!");
+                      "python_filter: get_interpreter_data returned NULL!");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
     
@@ -1086,15 +1086,15 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
         /* we must have a callback object to succeed! */
         if (!idata->obcallback) 
         {
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-			  "python_filter: make_obcallback returned no obCallBack!");
+            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                          "python_filter: make_obcallback returned no obCallBack!");
 
-	    PyThreadState_Swap(NULL);
-	    PyThreadState_Delete(tstate);
+            PyThreadState_Swap(NULL);
+            PyThreadState_Delete(tstate);
 #ifdef WITH_THREAD
-	    PyEval_ReleaseLock();
+            PyEval_ReleaseLock();
 #endif
-	    return HTTP_INTERNAL_SERVER_ERROR;
+            return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
 
@@ -1107,19 +1107,19 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
      */
     
     if (interpreter)
-	request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
+        request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
     else
-	request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
+        request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
 
     /* the name of python function to call */
     if (is_input)
-	fh = apr_hash_get(conf->in_filters, f->frec->name, APR_HASH_KEY_STRING);
+        fh = apr_hash_get(conf->in_filters, f->frec->name, APR_HASH_KEY_STRING);
     else
-	fh = apr_hash_get(conf->out_filters, f->frec->name, APR_HASH_KEY_STRING);
+        fh = apr_hash_get(conf->out_filters, f->frec->name, APR_HASH_KEY_STRING);
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
-						 fh->handler, fh->dir);
+                                                 fh->handler, fh->dir);
     Py_INCREF(request_obj);
     filter->request_obj = request_obj;
 
@@ -1129,7 +1129,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
      * >>> resultobject = obCallBack.FilterDispatch(filter_object)
      */
     resultobject = PyObject_CallMethod(idata->obcallback, "FilterDispatch", "O", 
-				       filter);
+                                       filter);
      
     /* release the lock and destroy tstate*/
     /* XXX Do not use 
@@ -1145,29 +1145,29 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 #endif
     
     if (! resultobject) {
-	ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
-		      "python_filter: FilterDispatch() returned NULL");
-	if (APR_STATUS_IS_SUCCESS(filter->rc))
-	    /* this means it's a Python error not caused by Apache */
-	    return APR_EGENERAL;
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
+                      "python_filter: FilterDispatch() returned NULL");
+        if (APR_STATUS_IS_SUCCESS(filter->rc))
+            /* this means it's a Python error not caused by Apache */
+            return APR_EGENERAL;
     }
     else {
-	/* clean up */
-	Py_XDECREF(resultobject);
+        /* clean up */
+        Py_XDECREF(resultobject);
 
-	/* if this is a PEEK */
-	/*
+        /* if this is a PEEK */
+        /*
           if (mode == AP_MODE_PEEK) {
           if (APR_STATUS_IS_SUCCESS(filter->rc) && 
           filter->bytes_written == 0) {
-	*/
+        */
         /* if the filter wrote no data, 
            there must not be any left */
-	/*
+        /*
           return APR_EOF;
           }
           }
-	*/
+        */
     }
     return filter->rc;
 
@@ -1182,10 +1182,10 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 
 
 static apr_status_t python_input_filter(ap_filter_t *f, 
-					apr_bucket_brigade *bb,
-					ap_input_mode_t mode,
-					apr_read_type_e block,
-					apr_off_t readbytes)
+                                        apr_bucket_brigade *bb,
+                                        ap_input_mode_t mode,
+                                        apr_read_type_e block,
+                                        apr_off_t readbytes)
 {
     return python_filter(1, f, bb, mode, block, readbytes);
 }
@@ -1198,7 +1198,7 @@ static apr_status_t python_input_filter(ap_filter_t *f,
  */
 
 static apr_status_t python_output_filter(ap_filter_t *f, 
-					 apr_bucket_brigade *bb)
+                                         apr_bucket_brigade *bb)
 {
     return python_filter(0, f, bb, 0, 0, 0);
 }
@@ -1219,7 +1219,7 @@ static apr_status_t python_output_filter(ap_filter_t *f,
  *      be available within the ChildInit handler.
  */
 static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig, 
-					  const char *module) 
+                                          const char *module) 
 {
     py_dir_config *conf;
 
@@ -1232,7 +1232,7 @@ static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig,
 
     /* make the table if not yet */
     if (! python_imports)
-	python_imports = apr_table_make(cmd->pool, 4);
+        python_imports = apr_table_make(cmd->pool, 4);
     
     /* remember the module name and the directory in which to
        import it (this is for ChildInit) */
@@ -1252,7 +1252,7 @@ static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig,
  *      is encountered.
  */
 static const char *directive_PythonPath(cmd_parms *cmd, void *mconfig, 
-					const char *val) {
+                                        const char *val) {
     return python_directive(cmd, mconfig, "PythonPath", val);
 }
 
@@ -1274,7 +1274,7 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
  *      is encountered.
  */
 static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
-					 int val) {
+                                         int val) {
     return python_directive_flag(mconfig, "PythonDebug", val);
 }
 
@@ -1286,7 +1286,7 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
  */
 
 static const char *directive_PythonInterpPerDirective(cmd_parms *cmd, 
-						      void *mconfig, int val) {
+                                                      void *mconfig, int val) {
     return python_directive_flag(mconfig, "PythonInterpPerDirective", val);
 }
 
@@ -1298,7 +1298,7 @@ static const char *directive_PythonInterpPerDirective(cmd_parms *cmd,
  */
 
 static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd, 
-						      void *mconfig, int val) {
+                                                      void *mconfig, int val) {
     return python_directive_flag(mconfig, "PythonInterpPerDirectory", val);
 }
 
@@ -1343,9 +1343,9 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
  */
 
 static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
-					    int val) {
+                                            int val) {
     if ((val) && (Py_OptimizeFlag != 2))
-	Py_OptimizeFlag = 2;
+        Py_OptimizeFlag = 2;
     return NULL;
 }
 
@@ -1355,35 +1355,35 @@ static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
  */
 
 static const char *directive_PythonAccessHandler(cmd_parms *cmd, void *mconfig, 
-						 const char *val) {
+                                                 const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, 0);
 }
 static const char *directive_PythonAuthenHandler(cmd_parms *cmd, void *mconfig, 
-						 const char *val) {
+                                                 const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonAuthenHandler", val, 0);
 }
 static const char *directive_PythonAuthzHandler(cmd_parms *cmd, void *mconfig, 
-						const char *val) {
+                                                const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, 0);
 }
 static const char *directive_PythonCleanupHandler(cmd_parms *cmd, void *mconfig, 
-						  const char *val) {
+                                                  const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, 0);
 }
 static const char *directive_PythonFixupHandler(cmd_parms *cmd, void *mconfig, 
-						const char *val) {
+                                                const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonFixupHandler", val, 0);
 }
 static const char *directive_PythonHandler(cmd_parms *cmd, void *mconfig, 
-					   const char *val) {
+                                           const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonHandler", val, 0);
 }
 static const char *directive_PythonHeaderParserHandler(cmd_parms *cmd, void *mconfig, 
-						       const char *val) {
+                                                       const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, 0);
 }
 static const char *directive_PythonInitHandler(cmd_parms *cmd, void *mconfig,
-					       const char *val) {
+                                               const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonInitHandler", val, 0);
 }
 static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
@@ -1403,31 +1403,31 @@ static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
     return NULL;
 }
 static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd, 
-							  void * mconfig, 
-							  const char *val) {
+                                                          void * mconfig, 
+                                                          const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val,0);
 }
 
 static const char *directive_PythonTransHandler(cmd_parms *cmd, void *mconfig, 
-						const char *val) {
+                                                const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonTransHandler", val, 0);
 }
 static const char *directive_PythonTypeHandler(cmd_parms *cmd, void *mconfig, 
-					       const char *val) {
+                                               const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, 0);
 }
 static const char *directive_PythonLogHandler(cmd_parms *cmd, void *mconfig, 
-					      const char *val) {
+                                              const char *val) {
     return python_directive_handler(cmd, mconfig, "PythonLogHandler", val, 0);
 }
 static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig, 
-					       const char *handler, const char *name) {
+                                               const char *handler, const char *name) {
 
     py_dir_config *conf;
     py_filter_handler *fh;
     
     if (!name)
-	name = apr_pstrdup(cmd->pool, handler);
+        name = apr_pstrdup(cmd->pool, handler);
 
     conf = (py_dir_config *) mconfig;
 
@@ -1446,12 +1446,12 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
 }
 
 static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig, 
-						const char *handler, const char *name) {
+                                                const char *handler, const char *name) {
     py_dir_config *conf;
     py_filter_handler *fh;
  
     if (!name)
-	name = apr_pstrdup(cmd->pool, handler);
+        name = apr_pstrdup(cmd->pool, handler);
 
     conf = (py_dir_config *) mconfig;
     
@@ -1541,91 +1541,91 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
     if (python_imports) {
 
-	/* iterate throught the python_imports table and import all
-	   modules specified by PythonImport */
+        /* iterate throught the python_imports table and import all
+           modules specified by PythonImport */
 
-	ah = apr_table_elts(python_imports);
-	elts = (apr_table_entry_t *)ah->elts;
-	for (i = 0; i < ah->nelts; i++) {
-	
-	    char *module = elts[i].key;
-	    char *dir = elts[i].val;
+        ah = apr_table_elts(python_imports);
+        elts = (apr_table_entry_t *)ah->elts;
+        for (i = 0; i < ah->nelts; i++) {
+        
+            char *module = elts[i].key;
+            char *dir = elts[i].val;
 
-	    /* Note: PythonInterpreter has no effect */
-	    interpreter = dir;
+            /* Note: PythonInterpreter has no effect */
+            interpreter = dir;
 
 #ifdef WITH_THREAD  
-	    PyEval_AcquireLock();
+            PyEval_AcquireLock();
 #endif
     
-	    idata = get_interpreter_data(interpreter, s);
+            idata = get_interpreter_data(interpreter, s);
 
 #ifdef WITH_THREAD
-	    PyEval_ReleaseLock();
+            PyEval_ReleaseLock();
 #endif
 
-	    if (!idata) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-			     "ChildInitHandler: (PythonImport) get_interpreter_data returned NULL!");
-		return;
-	    }
+            if (!idata) {
+                ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                             "ChildInitHandler: (PythonImport) get_interpreter_data returned NULL!");
+                return;
+            }
 
-	    /* create thread state and acquire lock */
-	    tstate = PyThreadState_New(idata->istate);
+            /* create thread state and acquire lock */
+            tstate = PyThreadState_New(idata->istate);
 #ifdef WITH_THREAD  
-	    PyEval_AcquireThread(tstate);
+            PyEval_AcquireThread(tstate);
 #else
-	    PyThreadState_Swap(tstate);
+            PyThreadState_Swap(tstate);
 #endif
 
-	    if (!idata->obcallback) {
-		idata->obcallback = make_obcallback();
-		/* we must have a callback object to succeed! */
-		if (!idata->obcallback) {
-		    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-				 "python_handler: get_obcallback returned no obCallBack!");
+            if (!idata->obcallback) {
+                idata->obcallback = make_obcallback();
+                /* we must have a callback object to succeed! */
+                if (!idata->obcallback) {
+                    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                                 "python_handler: get_obcallback returned no obCallBack!");
 
-		    PyThreadState_Swap(NULL);
-		    PyThreadState_Delete(tstate);
+                    PyThreadState_Swap(NULL);
+                    PyThreadState_Delete(tstate);
 #ifdef WITH_THREAD
-		    PyEval_ReleaseLock();
+                    PyEval_ReleaseLock();
 #endif
-		    return;
-		}
-	    }
-	
-	    /* add dir to pythonpath if not in there already */
-	    if (dir) {
-		sys = PyImport_ImportModule("sys");
-		path = PyObject_GetAttrString(sys, "path");
-		dirstr = PyString_FromString(dir);
-		if (PySequence_Index(path, dirstr) == -1) {
-		    PyObject *list;
-		    PyErr_Clear();
-		    list = Py_BuildValue("[O]", dirstr);
-		    PyList_SetSlice(path, 0, 0, list);
-		    Py_DECREF(list);
-		}
-		Py_DECREF(dirstr);
-		Py_DECREF(path);
-		Py_DECREF(sys);
-	    }
+                    return;
+                }
+            }
+        
+            /* add dir to pythonpath if not in there already */
+            if (dir) {
+                sys = PyImport_ImportModule("sys");
+                path = PyObject_GetAttrString(sys, "path");
+                dirstr = PyString_FromString(dir);
+                if (PySequence_Index(path, dirstr) == -1) {
+                    PyObject *list;
+                    PyErr_Clear();
+                    list = Py_BuildValue("[O]", dirstr);
+                    PyList_SetSlice(path, 0, 0, list);
+                    Py_DECREF(list);
+                }
+                Py_DECREF(dirstr);
+                Py_DECREF(path);
+                Py_DECREF(sys);
+            }
 
-	    /* now import the specified module */
-	    if (! PyImport_ImportModule(module)) {
-		if (PyErr_Occurred())
-		    PyErr_Print();
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-			     "directive_PythonImport: error importing %s", module);
-	    }
+            /* now import the specified module */
+            if (! PyImport_ImportModule(module)) {
+                if (PyErr_Occurred())
+                    PyErr_Print();
+                ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                             "directive_PythonImport: error importing %s", module);
+            }
 
-	    PyThreadState_Swap(NULL);
-	    PyThreadState_Delete(tstate);
+            PyThreadState_Swap(NULL);
+            PyThreadState_Delete(tstate);
 #ifdef WITH_THREAD
-	    PyEval_ReleaseLock();
+            PyEval_ReleaseLock();
 #endif
 
-	}
+        }
     }
 }
 
@@ -1658,9 +1658,9 @@ static int PythonHeaderParserHandler(request_rec *req) {
     
     /* run PythonInitHandler, if not already */
     if (! apr_table_get(req->notes, "python_init_ran")) {
-	rc = python_handler(req, "PythonInitHandler");
-	if ((rc != OK) && (rc != DECLINED))
-	    return rc;
+        rc = python_handler(req, "PythonInitHandler");
+        if ((rc != OK) && (rc != DECLINED))
+            return rc;
     }
     return python_handler(req, "PythonHeaderParserHandler");
 }
@@ -1674,7 +1674,7 @@ static int PythonPostReadRequestHandler(request_rec *req) {
     rc = python_handler(req, "PythonInitHandler");
     apr_table_set(req->notes, "python_init_ran", "1");
     if ((rc != OK) && (rc != DECLINED))
-	return rc;
+        return rc;
 
     return python_handler(req, "PythonPostReadRequestHandler");
 }
@@ -1694,35 +1694,35 @@ static void python_register_hooks(apr_pool_t *p)
 
     /* [1] post read_request handling */ 
     ap_hook_post_read_request(PythonPostReadRequestHandler, 
- 			      NULL, NULL, APR_HOOK_MIDDLE);
+                              NULL, NULL, APR_HOOK_MIDDLE);
 
     /* [2] filename-to-URI translation */ 
     ap_hook_translate_name(PythonTransHandler,
-			   NULL, NULL, APR_HOOK_MIDDLE);
+                           NULL, NULL, APR_HOOK_MIDDLE);
 
     /* [3] header parser */ 
     ap_hook_header_parser(PythonHeaderParserHandler,
- 			  NULL, NULL, APR_HOOK_MIDDLE); 
+                          NULL, NULL, APR_HOOK_MIDDLE); 
 
     /* [4] check access by host address */ 
     ap_hook_access_checker(PythonAccessHandler,
- 			   NULL, NULL, APR_HOOK_MIDDLE);
+                           NULL, NULL, APR_HOOK_MIDDLE);
 
     /* [5] check/validate user_id */ 
     ap_hook_check_user_id(PythonAuthenHandler,
- 			  NULL, NULL, APR_HOOK_MIDDLE);
+                          NULL, NULL, APR_HOOK_MIDDLE);
 
     /* [6] check user_id is valid *here* */ 
     ap_hook_auth_checker(PythonAuthzHandler,
- 			 NULL, NULL, APR_HOOK_MIDDLE); 
+                         NULL, NULL, APR_HOOK_MIDDLE); 
 
     /* [7] MIME type checker/setter */ 
     ap_hook_type_checker(PythonTypeHandler,
- 			 NULL, NULL, APR_HOOK_MIDDLE);
+                         NULL, NULL, APR_HOOK_MIDDLE);
 
     /* [8] fixups */ 
     ap_hook_fixups(PythonFixupHandler,
- 		   NULL, NULL, APR_HOOK_MIDDLE);
+                   NULL, NULL, APR_HOOK_MIDDLE);
 
     /* [9] filter insert opportunity */
     /* ap_hook_insert_filter(PythonInsertFilter,
@@ -1733,11 +1733,11 @@ static void python_register_hooks(apr_pool_t *p)
 
     /* [11] logger */ 
     ap_hook_log_transaction(PythonLogHandler,
- 			    NULL, NULL, APR_HOOK_MIDDLE);
+                            NULL, NULL, APR_HOOK_MIDDLE);
 
     /* process initializer */ 
     ap_hook_child_init(PythonChildInitHandler,
- 		       NULL, NULL, APR_HOOK_MIDDLE);
+                       NULL, NULL, APR_HOOK_MIDDLE);
 
 }
 
@@ -1745,78 +1745,78 @@ static void python_register_hooks(apr_pool_t *p)
 command_rec python_commands[] =
 {
     AP_INIT_RAW_ARGS(
-	"PythonAccessHandler", directive_PythonAccessHandler, NULL, OR_ALL,
-	"Python access by host address handlers."),
+        "PythonAccessHandler", directive_PythonAccessHandler, NULL, OR_ALL,
+        "Python access by host address handlers."),
     AP_INIT_RAW_ARGS(
-	"PythonAuthenHandler", directive_PythonAuthenHandler, NULL, OR_ALL,
-	"Python authentication handlers."),
+        "PythonAuthenHandler", directive_PythonAuthenHandler, NULL, OR_ALL,
+        "Python authentication handlers."),
     AP_INIT_FLAG(
-	"PythonAutoReload", directive_PythonAutoReload, NULL, OR_ALL,
-	"Set to Off if you don't want changed modules to reload."),
+        "PythonAutoReload", directive_PythonAutoReload, NULL, OR_ALL,
+        "Set to Off if you don't want changed modules to reload."),
     AP_INIT_RAW_ARGS(
-	"PythonAuthzHandler", directive_PythonAuthzHandler, NULL, OR_ALL,
-	"Python authorization handlers."),
+        "PythonAuthzHandler", directive_PythonAuthzHandler, NULL, OR_ALL,
+        "Python authorization handlers."),
     AP_INIT_RAW_ARGS(
-	"PythonCleanupHandler", directive_PythonCleanupHandler, NULL, OR_ALL,
-	"Python clean up handlers."),
+        "PythonCleanupHandler", directive_PythonCleanupHandler, NULL, OR_ALL,
+        "Python clean up handlers."),
     AP_INIT_FLAG(
-	"PythonDebug", directive_PythonDebug, NULL, OR_ALL,
-	"Send (most) Python error output to the client rather than logfile."),
+        "PythonDebug", directive_PythonDebug, NULL, OR_ALL,
+        "Send (most) Python error output to the client rather than logfile."),
     AP_INIT_RAW_ARGS(
-	"PythonFixupHandler", directive_PythonFixupHandler, NULL, OR_ALL,
-	"Python fixups handlers."),
+        "PythonFixupHandler", directive_PythonFixupHandler, NULL, OR_ALL,
+        "Python fixups handlers."),
     AP_INIT_RAW_ARGS(
-	"PythonHandler", directive_PythonHandler, NULL, OR_ALL,
-	"Python request handlers."),
+        "PythonHandler", directive_PythonHandler, NULL, OR_ALL,
+        "Python request handlers."),
     AP_INIT_RAW_ARGS(
-	"PythonHeaderParserHandler", directive_PythonHeaderParserHandler, NULL, OR_ALL,
-	"Python header parser handlers."),
+        "PythonHeaderParserHandler", directive_PythonHeaderParserHandler, NULL, OR_ALL,
+        "Python header parser handlers."),
     AP_INIT_ITERATE(
-	"PythonImport", directive_PythonImport, NULL, ACCESS_CONF,
-	"Modules to be imported when this directive is processed."),
+        "PythonImport", directive_PythonImport, NULL, ACCESS_CONF,
+        "Modules to be imported when this directive is processed."),
     AP_INIT_RAW_ARGS(
-	"PythonInitHandler", directive_PythonInitHandler, NULL, OR_ALL,
-	"Python request initialization handler."),
+        "PythonInitHandler", directive_PythonInitHandler, NULL, OR_ALL,
+        "Python request initialization handler."),
     AP_INIT_FLAG(
-	"PythonInterpPerDirective", directive_PythonInterpPerDirective, NULL, OR_ALL,
-	"Create subinterpreters per directive."),
+        "PythonInterpPerDirective", directive_PythonInterpPerDirective, NULL, OR_ALL,
+        "Create subinterpreters per directive."),
     AP_INIT_FLAG(
-	"PythonInterpPerDirectory", directive_PythonInterpPerDirectory, NULL, OR_ALL,
-	"Create subinterpreters per directory."),
+        "PythonInterpPerDirectory", directive_PythonInterpPerDirectory, NULL, OR_ALL,
+        "Create subinterpreters per directory."),
     AP_INIT_TAKE1(
-	"PythonInterpreter", directive_PythonInterpreter, NULL, OR_ALL,
-	"Forces a specific Python interpreter name to be used here."),
+        "PythonInterpreter", directive_PythonInterpreter, NULL, OR_ALL,
+        "Forces a specific Python interpreter name to be used here."),
     AP_INIT_RAW_ARGS(
-	"PythonLogHandler", directive_PythonLogHandler, NULL, OR_ALL,
-	"Python logger handlers."),
+        "PythonLogHandler", directive_PythonLogHandler, NULL, OR_ALL,
+        "Python logger handlers."),
     AP_INIT_RAW_ARGS(
-	"PythonHandlerModule", directive_PythonHandlerModule, NULL, OR_ALL,
-	"A Python module containing handlers to be executed."),
+        "PythonHandlerModule", directive_PythonHandlerModule, NULL, OR_ALL,
+        "A Python module containing handlers to be executed."),
     AP_INIT_FLAG(
-	"PythonOptimize", directive_PythonOptimize, NULL, RSRC_CONF,
-	"Set the equivalent of the -O command-line flag on the interpreter."),
+        "PythonOptimize", directive_PythonOptimize, NULL, RSRC_CONF,
+        "Set the equivalent of the -O command-line flag on the interpreter."),
     AP_INIT_TAKE2(
-	"PythonOption", directive_PythonOption, NULL, OR_ALL,
-	"Useful to pass custom configuration information to scripts."),
+        "PythonOption", directive_PythonOption, NULL, OR_ALL,
+        "Useful to pass custom configuration information to scripts."),
     AP_INIT_TAKE1(
-	"PythonPath", directive_PythonPath, NULL, OR_ALL,
-	"Python path, specified in Python list syntax."),
+        "PythonPath", directive_PythonPath, NULL, OR_ALL,
+        "Python path, specified in Python list syntax."),
     AP_INIT_RAW_ARGS(
-	"PythonPostReadRequestHandler", directive_PythonPostReadRequestHandler, 
-	NULL, RSRC_CONF,
-	"Python post read-request handlers."),
+        "PythonPostReadRequestHandler", directive_PythonPostReadRequestHandler, 
+        NULL, RSRC_CONF,
+        "Python post read-request handlers."),
     AP_INIT_RAW_ARGS(
-	"PythonTransHandler", directive_PythonTransHandler, NULL, RSRC_CONF,
-	"Python filename to URI translation handlers."),
+        "PythonTransHandler", directive_PythonTransHandler, NULL, RSRC_CONF,
+        "Python filename to URI translation handlers."),
     AP_INIT_RAW_ARGS(
-	"PythonTypeHandler", directive_PythonTypeHandler, NULL,	OR_ALL,
-	"Python MIME type checker/setter handlers."),
+        "PythonTypeHandler", directive_PythonTypeHandler, NULL, OR_ALL,
+        "Python MIME type checker/setter handlers."),
     AP_INIT_TAKE12(
-	"PythonInputFilter", directive_PythonInputFilter, NULL, RSRC_CONF|ACCESS_CONF,
-	"Python input filter."),
+        "PythonInputFilter", directive_PythonInputFilter, NULL, RSRC_CONF|ACCESS_CONF,
+        "Python input filter."),
     AP_INIT_TAKE12(
-	"PythonOutputFilter", directive_PythonOutputFilter, NULL, RSRC_CONF|ACCESS_CONF,
-	"Python output filter."),
+        "PythonOutputFilter", directive_PythonOutputFilter, NULL, RSRC_CONF|ACCESS_CONF,
+        "Python output filter."),
     {NULL}
 };
 
