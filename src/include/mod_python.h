@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.20 2002/08/15 21:46:35 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.21 2002/08/30 18:25:56 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -60,6 +60,7 @@
 #include "http_config.h"
 #include "http_core.h"
 #include "http_main.h"
+#include "http_connection.h"
 #include "http_protocol.h"
 #include "http_request.h"
 #include "util_script.h"
@@ -128,8 +129,7 @@ typedef struct {
 } interpreterdata;
 
 /* structure describing per directory configuration parameters */
-typedef struct 
-{
+typedef struct {
     int           authoritative;
     char         *config_dir;
     apr_table_t  *directives;

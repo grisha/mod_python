@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.26 2002/08/28 15:45:39 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.27 2002/08/30 18:25:52 gtrubetskoy Exp $
  *
  */
 
@@ -387,14 +387,13 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
 static PyObject * req_internal_redirect(requestobject *self, PyObject *args)
 {
     char *new_uri;
-    PyThreadState *_save;
 
     if (! PyArg_ParseTuple(args, "z", &new_uri))
         return NULL; /* error */
 
-    _save = PyEval_SaveThread();
+    Py_BEGIN_ALLOW_THREADS
     ap_internal_redirect(new_uri, self->request_rec);
-    PyEval_RestoreThread(_save);
+    Py_END_ALLOW_THREADS
 
     Py_INCREF(Py_None);
     return Py_None;
