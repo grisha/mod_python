@@ -57,7 +57,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.23 2002/10/15 15:47:31 grisha Exp $
+ * $Id: tableobject.c,v 1.24 2002/10/29 21:52:18 grisha Exp $
  *
  */
 
@@ -140,10 +140,15 @@ PyObject * MpTable_New()
 
 static void table_dealloc(register tableobject *self)
 {  
-    if (self->pool) 
-        apr_pool_destroy(self->pool);
-    
-    free(self);
+
+    if (MpTable_Check(self)) {
+        if (self->pool) 
+            apr_pool_destroy(self->pool);
+        free(self);
+    }
+    else
+        self->ob_type->tp_free((PyObject *)self);
+
 }
 
 /**
