@@ -22,7 +22,7 @@
  * 4. The names "mod_python", "modpython" or "Gregory Trubetskoy" must not 
  *    be used to endorse or promote products derived from this software 
  *    without prior written permission. For written permission, please 
- *    contact grisha@ispol.com.
+ *    contact grisha@modpython.org.
  *
  * 5. Products derived from this software may not be called "mod_python"
  *    or "modpython", nor may "mod_python" or "modpython" appear in their 
@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.5 2000/12/05 23:47:01 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.6 2000/12/06 03:05:37 gtrubetskoy Exp $
  *
  */
 
