@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.23 2003/09/10 02:11:22 grisha Exp $
+ * $Id: filterobject.c,v 1.24 2003/09/22 19:36:37 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -75,7 +75,7 @@
  * An output filter is invoked as a result of ap_pass_brigade()
  * call. It is given a populated brigade, which it then gives in the
  * same fashion to the next filter via ap_pass_brigade(). (The filter
- * may chose to create a new brigade pass that instead).
+ * may chose to create a new brigade and pass it instead).
  *
  * An input filter is invoked as a result of ap_get_brigade() call. It
  * is given an empty brigade, which it is expected to populate, which
@@ -90,8 +90,8 @@
  * filter.write() - copies data from a Python string into a *new*
  * bucket brigade (saved in self->bb_out).
  *
- * filter.close() - passes the self->bb_out brigade to the next filter
- * via ap_pass_brigade()
+ * filter.close() - appends an EOS and passes the self->bb_out brigade
+ * to the next filter via ap_pass_brigade()
  *
  * In mod_python Input filters:
  *
@@ -101,7 +101,7 @@
  * filter.write() - copies data from a Python string into a *given*
  * brigade (saved as self->bb_out).
  *
- * filter.close() - is a noop.
+ * filter.close() - appends an EOS to *given* brigade.
  *
  */
  
@@ -314,25 +314,25 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
         b = APR_BUCKET_NEXT(b);
         apr_bucket_delete(old);
         
-        if (self->is_input) {
+/*         if (self->is_input) { */
 
-            if (b == APR_BRIGADE_SENTINEL(self->bb_in)) {
-                /* brigade ended, but no EOS - get another
-                   brigade */
+/*             if (b == APR_BRIGADE_SENTINEL(self->bb_in)) { */
+/*                 /\* brigade ended, but no EOS - get another */
+/*                    brigade *\/ */
 
-                Py_BEGIN_ALLOW_THREADS;
-                self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
-                                          APR_BLOCK_READ, self->readbytes);
-                Py_END_ALLOW_THREADS;
+/*                 Py_BEGIN_ALLOW_THREADS; */
+/*                 self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode,  */
+/*                                           APR_BLOCK_READ, self->readbytes); */
+/*                 Py_END_ALLOW_THREADS; */
 
-                if (! APR_STATUS_IS_SUCCESS(self->rc)) {
-                    PyErr_SetObject(PyExc_IOError, 
-                                    PyString_FromString("Input filter read error"));
-                    return NULL;
-                }
-                b = APR_BRIGADE_FIRST(self->bb_in);
-            }
-        }
+/*                 if (! APR_STATUS_IS_SUCCESS(self->rc)) { */
+/*                     PyErr_SetObject(PyExc_IOError,  */
+/*                                     PyString_FromString("Input filter read error")); */
+/*                     return NULL; */
+/*                 } */
+/*                 b = APR_BRIGADE_FIRST(self->bb_in); */
+/*             } */
+/*         }  */
     }
 
     /* resize if necessary */
@@ -411,7 +411,6 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
                                    c->bucket_alloc);
 
         APR_BRIGADE_INSERT_TAIL(self->bb_out, b);
-
     }
 
     Py_INCREF(Py_None);
@@ -438,14 +437,17 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
     APR_BRIGADE_INSERT_TAIL(self->bb_out, 
                             apr_bucket_flush_create(c->bucket_alloc));
 
-    Py_BEGIN_ALLOW_THREADS;
-    self->rc = ap_pass_brigade(self->f->next, self->bb_out);
-    apr_brigade_destroy(self->bb_out);
-    Py_END_ALLOW_THREADS;
+    if (!self->is_input) {
 
-    if(self->rc != APR_SUCCESS) { 
-        PyErr_SetString(PyExc_IOError, "Flush failed.");
-        return NULL;
+        Py_BEGIN_ALLOW_THREADS;
+        self->rc = ap_pass_brigade(self->f->next, self->bb_out);
+        apr_brigade_destroy(self->bb_out);
+        Py_END_ALLOW_THREADS;
+
+        if(self->rc != APR_SUCCESS) { 
+            PyErr_SetString(PyExc_IOError, "Flush failed.");
+            return NULL;
+        }
     }
 
     Py_INCREF(Py_None);
@@ -474,7 +476,7 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
 
         APR_BRIGADE_INSERT_TAIL(self->bb_out, 
                                 apr_bucket_eos_create(c->bucket_alloc));
-        
+
         if (! self->is_input) {
             Py_BEGIN_ALLOW_THREADS;
             self->rc = ap_pass_brigade(self->f->next, self->bb_out);
