@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.78 2003/09/08 19:31:50 grisha Exp $
+ # $Id: apache.py,v 1.79 2003/10/08 21:04:11 grisha Exp $
 
 import sys
 import traceback
@@ -876,15 +876,15 @@ PROG_TRACEBACK = "PROG_TRACEBACK"
 FINFO_MODE = 0
 FINFO_INO = 1
 FINFO_DEV = 2
-FINFO_NLINK = 4
-FINFO_UID = 5
-FINFO_GID = 6
-FINFO_SIZE = 7
-FINFO_ATIME = 8
-FINFO_MTIME = 9
-FINFO_CTIME = 10
-FINFO_FNAME = 11
-FINFO_NAME = 12
+FINFO_NLINK = 3
+FINFO_UID = 4
+FINFO_GID = 5
+FINFO_SIZE = 6
+FINFO_ATIME = 7
+FINFO_MTIME = 8
+FINFO_CTIME = 9
+FINFO_FNAME = 10
+FINFO_NAME = 11
 #FINFO_FILEHAND = 14
 
 # the req.parsed_uri
