@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.10 2001/05/13 01:14:53 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.11 2001/05/14 22:17:21 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -204,7 +204,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         try:
             s = req.headers_in["Authorization"][6:]
             s = base64.decodestring(s)
-            user, passwd = string.split(s, ":")
+            user, passwd = string.split(s, ":", 1)
         except:
             raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
 
