@@ -1,9 +1,82 @@
+ # ====================================================================
+ # The Apache Software License, Version 1.1
+ #
+ # Copyright (c) 2000-2003 The Apache Software Foundation.  All rights
+ # reserved.
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+ # are met:
+ #
+ # 1. Redistributions of source code must retain the above copyright
+ #    notice, this list of conditions and the following disclaimer.
+ #
+ # 2. Redistributions in binary form must reproduce the above copyright
+ #    notice, this list of conditions and the following disclaimer in
+ #    the documentation and/or other materials provided with the
+ #    distribution.
+ #
+ # 3. The end-user documentation included with the redistribution,
+ #    if any, must include the following acknowledgment:
+ #       "This product includes software developed by the
+ #        Apache Software Foundation (http://www.apache.org/)."
+ #    Alternately, this acknowledgment may appear in the software itself,
+ #    if and wherever such third-party acknowledgments normally appear.
+ #
+ # 4. The names "Apache" and "Apache Software Foundation" must
+ #    not be used to endorse or promote products derived from this
+ #    software without prior written permission. For written
+ #    permission, please contact apache@apache.org.
+ #
+ # 5. Products derived from this software may not be called "Apache",
+ #    "mod_python", or "modpython", nor may these terms appear in their
+ #    name, without prior written permission of the Apache Software
+ #    Foundation.
+ #
+ # THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+ # WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ # OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ # DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
+ # ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ # USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ # SUCH DAMAGE.
+ # ====================================================================
+ #
+ # This software consists of voluntary contributions made by many
+ # individuals on behalf of the Apache Software Foundation.  For more
+ # information on the Apache Software Foundation, please see
+ # <http://www.apache.org/>.
+ #
+ # Originally developed by Gregory Trubetskoy.
+ #
+ # $Id: Cookie.py,v 1.2 2003/06/17 02:35:15 grisha Exp $
 
 """
 
-(C) 2003 Apache Software Foundation
+This module contains classes to support HTTP State Management
+Mechanism, also known as Cookies. The classes provide simple
+ways for creating, parsing and digitally signing cookies, as
+well as the ability to store simple Python objects in Cookies
+(using marshalling).
 
-$Id: Cookie.py,v 1.1 2003/06/14 03:03:37 grisha Exp $
+The behaviour of the classes is designed to be most useful
+within mod_python applications.
+
+The current state of HTTP State Management standardization is
+rather unclear. It appears that the de-facto standard is the
+original Netscape specification, even though already two RFC's
+have been put out (RFC2109 (1997) and RFC2965 (2000)). The
+RFC's add a couple of useful features (e.g. using Max-Age instead
+of Expires, but my limited tests show that Max-Age is ignored
+by the two browsers tested (IE and Safari). As a result of this,
+perhaps trying to be RFC-compliant (by automatically providing
+Max-Age and Version) could be a waste of cookie space...
+
 
 Sample usage:
 
@@ -26,7 +99,7 @@ Traceback (most recent call last):
   File "<stdin>", line 1, in ?
   AttributeError: 'Cookie' object has no attribute 'eggs'
 
-parsing (note the result is a dict of cookies)
+* parsing (note the result is a dict of cookies)
 
 >>> Cookie.parse(str(c))
 {'spam': <Cookie: spam=eggs; version=1; expires=Sat, 14-Jun-2003 02:42:36 GMT; max_age=3>}
@@ -73,20 +146,16 @@ import hmac
 import marshal
 import base64
 
+from mod_python import apache
+
 class CookieError(Exception):
     pass
 
 class Cookie(object):
     """
-    This class reflects the sorry state that standardizaion of
-    HTTP State Management is currently in. Even though RFC2109
-    has been out since 1997, and was even upgraded by RFC2165 in
-    2000, most browsers out there still support the buggy Netscape
-    specification...
-    Here we try to be RFC2109 compliant while making all necessary
-    adjustments for those clients that only understand the NS spec.
-
-
+    This class implements the basic Cookie functionality. Note that
+    unlike the Python Standard Library Cookie class, this class represents
+    a single cookie (not a list of Morsels).
     """
 
     _valid_attr = (
@@ -102,27 +171,48 @@ class Cookie(object):
                                "_expires", "_max_age")
 
     def parse(Class, str):
+        """
+        Parse a Cookie or Set-Cookie header value, and return
+        a dict of Cookies. Note: the string should NOT include the
+        header name, only the value.
+        """
 
         dict = _parseCookie(str, Class)
-
         return dict
 
     parse = classmethod(parse)
 
+
     def __init__(self, name, value, **kw):
+
+        """
+        This constructor takes at least a name and value as the
+        arguments, as well as optionally any of allowed cookie attributes
+        as defined in the existing cookie standards. 
+        """
 
         self.name, self.value = name, value
 
         for k in kw:
-            setattr(self, k, kw[k])
+            setattr(self, k.lower(), kw[k])
 
         if not hasattr(self, "version"):
             self.version = "1"
 
+
     def __str__(self):
 
-        # NOTE: quoting the value is up to the user!
+        """
+        Provides the string representation of the Cookie suitable for
+        sending to the browser. Note that the actual header name will
+        not be part of the string.
 
+        This method makes no attempt to automatically double-quote
+        strings that contain special characters, even though the RFC's
+        dictate this. This is because doing so seems to confuse most
+        browsers out there.
+        """
+        
         result = ["%s=%s" % (self.name, self.value)]
         for name in self._valid_attr:
             if hasattr(self, name):
@@ -182,6 +272,15 @@ class Cookie(object):
     max_age = property(fget=get_max_age, fset=set_max_age)
 
 class SignedCookie(Cookie):
+    """
+    This is a variation of Cookie that provides automatic
+    cryptographic signing of cookies and verification. It uses
+    the HMAC support in the Python standard library. This ensures
+    that the cookie has not been tamprered with on the client side.
+
+    Note that this class does not encrypt cookie data, thus it
+    is still plainly visible as part of the cookie.
+    """
 
     def parse(Class, secret, str):
 
@@ -240,13 +339,20 @@ class SignedCookie(Cookie):
 
 class MarshalCookie(SignedCookie):
 
-    # It is wrong to assume that unmarshalling data is safe, though
-    # here is a link to a sugesstion that it is at least safer than unpickling
-    # http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&selm=7xn0hcugmy.fsf%40ruckus.brouhaha.com
-    #
-    # This class unmarshals only signed cookies, so we're pretty safe
-    #
+    """
+    This is a variation of SignedCookie that can store more than
+    just strings. It will automatically marshal the cookie value,
+    therefore any marshallable object can be used as value.
 
+    The standard library Cookie module provides the ability to pickle
+    data, which is a major security problem. It is believed that unmarshalling
+    (as opposed to unpickling) is safe, yet we still err on the side of caution
+    which is why this class is a subclass of SignedCooke making sure what
+    we are about to unmarshal passes the digital signature test.
+
+    Here is a link to a sugesstion that marshalling is safer than unpickling
+    http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&selm=7xn0hcugmy.fsf%40ruckus.brouhaha.com
+    """
     __slots__ = SignedCookie.__slots__ 
 
     expires = property(fget=Cookie.get_expires, fset=Cookie.set_expires)
@@ -303,6 +409,8 @@ _cookiePattern = re.compile(
 
 def _parseCookie(str, Class):
 
+    # XXX problem is we should allow duplicate
+    # strings
     result = {}
 
     # max-age is a problem because of the '-'
