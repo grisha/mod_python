@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.32 2000/10/03 03:24:40 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.33 2000/10/09 16:17:23 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -3885,39 +3885,6 @@ command_rec python_commands[] =
     },
     {NULL}
 };
-
-/* module definition */
-
-/* This is read by Configure script to provide "magical"
- * linking with the Python libraries....
- * Credit goes to Lele Gaifax and his amazing PyApache module!
- *
- * MODULE-DEFINITION-START
- * Name: python_module
- * ConfigStart
- PyVERSION=`python -c "import sys; print sys.version[:3]"`
- PyEXEC_INSTALLDIR=`python -c "import sys; print sys.exec_prefix"`
- PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
- PyLIBPL=${PyLIBP}/config
- PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
- PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
- PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
- PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
- PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
- LIBS="${LIBS} ${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
- LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
- INCLUDES="${INCLUDES} -I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
- * ConfigEnd
- * MODULE-DEFINITION-END
- */
-
-
-/* XXX
- * PythonChildInitHandler and PythonChildExitHandler
- * NOTE - it's not clear which interpreter would those run in
- * since the interprters exist per-path, and at those stages
- * there is no request to get the path from....
- */
 
 module python_module =
 {

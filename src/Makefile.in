@@ -1,0 +1,46 @@
+CC=gcc
+RANLIB=@RANLIB@
+AR=@AR@
+APXS=@APXS@
+
+INCLUDES=@INCLUDES@
+LIBS=@LIBS@
+LDFLAGS=@LDFLAGS@
+CFLAGS=
+
+all:	
+	@echo Please run make in top level directory.
+
+dso:	mod_python.so
+	@echo dso > .install
+
+mod_python.so: mod_python.c
+	@echo
+	@echo 'Compiling for DSO. For static, do "make static"'
+	@echo
+	$(APXS) $(INCLUDES) -c mod_python.c $(LIBS)
+	@echo
+	@echo 'Now su and make install'
+	@echo
+
+mod_python.o:	mod_python.c
+	$(CC) $(INCLUDES) -c mod_python.c
+
+libpython.a:  mod_python.o
+	@echo 
+	@echo 'Making static version of mod_python. For DSO, do "make dso"'.
+	@echo
+	rm -f libpython.a
+	$(AR) cr libpython.a mod_python.o
+	$(RANLIB) libpython.a
+	@echo
+	@echo 'Now su and make install'
+	@echo
+
+static:	libpython.a
+	@echo static > .install
+
+clean:
+	rm -f mod_python.o mod_python.so libpython.a
+
+

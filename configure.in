@@ -1,0 +1,197 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(src/mod_python.c)
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_RANLIB
+AC_SUBST(AR)
+AC_CHECK_PROGS(AR, ar aal, ar)
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+dnl Replace `main' with a function in -lm:
+AC_CHECK_LIB(m, main)
+
+dnl Checks for header files.
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+
+### humor lowers blood pressure
+AC_MSG_CHECKING(your blood pressure)
+AC_MSG_RESULT([a bit high, but we can proceed])
+
+## The goal is to find apxs
+AC_CHECKING(whether apxs is available)
+AC_SUBST(APXS)
+AC_SUBST(DSO)
+AC_SUBST(ALL)
+
+# check for --with-apxs
+AC_MSG_CHECKING(for --with-apxs)
+AC_ARG_WITH(apxs, [--with-apxs=PATH 	Path to apxs],
+[
+  if test -x "$withval"
+  then
+    AC_MSG_RESULT([$withval executable, good])
+    APXS=$withval
+  else
+    echo
+    AC_MSG_ERROR([$withval not found or not executable])
+  fi
+],
+AC_MSG_RESULT(no))
+
+# if no apxs found yet, check /usr/local/apache/sbin
+# since it's the default Apache location
+if test -z "$APXS"; then
+  AC_MSG_CHECKING(for apxs in /usr/local/apache/sbin)
+  if test -x /usr/local/apache/sbin/apxs; then
+    APXS=/usr/local/apache/sbin/apxs
+    AC_MSG_RESULT([found, we'll use this. Use --with-apxs to specify another.])
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi
+
+# last resort
+if test -z "$APXS"; then
+  AC_MSG_CHECKING(for apxs in your PATH)
+  AC_PATH_PROG(APXS, apxs)
+  if test -z "$APXS"; then
+    AC_MSG_RESULT([found $APXS, we'll use this. Use --with-apxs to specify another.])
+  fi
+fi  
+
+# if apxs was still not found, then no DSO
+AC_SUBST(LIBEXECDIR)
+if test -z "$APXS"; then
+  AC_MSG_WARN([apxs was not found, DSO compilation will not be available.])
+  AC_MSG_WARN([You can use --with-apxs to specify where your apxs is.])
+  DSO="no_dso"
+  ALL="static"
+else
+  DSO="do_dso"
+  ALL="dso"
+  
+  # determine LIBEXEC
+  AC_MSG_CHECKING(for Apache libexec directory)
+  LIBEXECDIR=`${APXS} -q LIBEXECDIR`
+  AC_MSG_RESULT($LIBEXECDIR)
+fi
+
+# check for --with-apache
+AC_SUBST(AP_SRC)
+AC_MSG_CHECKING(for --with-apache)
+AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
+[
+  AC_MSG_RESULT($withval)
+
+  dnl  For Apache 2.0 apxs in src/support may be usable
+  if test ! -f $withval/src/Makefile; then
+    AC_MSG_WARN([The sources in $withval have not been confgured, or wrong path specified.])
+  fi
+  AP_SRC=$withval
+  AP_INCLUDES="-I${withval}/src/include -I${withval}/src/os/unix"
+],
+AC_MSG_RESULT(no))
+
+AC_SUBST(STATIC)
+if test -z "$AP_SRC"; then
+  AC_MSG_WARN([No apache sources specified, static compilation will not be available.])
+  AC_MSG_WARN([You can use --with-apache to specify where your Apache sources are.])
+  STATIC="no_static"
+else
+  STATIC="do_static"
+fi
+
+if test "$STATIC" = "no_static" -a "$DSO" = "no_dso"; then
+  AC_MSG_ERROR([Neither static nor DSO option available, there is no point in continuing.])
+fi
+
+AC_MSG_CHECKING(for --with-python)
+AC_ARG_WITH(python, [--with-python=DIR	Path to Python sources],
+[
+  AC_MSG_RESULT($withval)
+  PYTHON_SRC=$withval
+],
+AC_MSG_RESULT(no))
+
+# check for Python executable
+if test -z "$PYTHON_SRC"; then
+  AC_PATH_PROG(PYTHON_BIN, python)
+  if test -z "$PYTHON_BIN"; then
+    AC_MSG_ERROR(python binary not found)
+  fi
+else
+  AC_PATH_PROG(PYTHON_BIN, python, "", $PYTHON_BASE)
+  if test -z "$PYTHON_BIN"; then
+    AC_MSG_ERROR([python executable not found in ${withval}, 
+perhaps you need to build Python first.])
+  fi
+fi
+
+# find out python version
+AC_MSG_CHECKING(Python version)
+PyVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:3]'`]
+AC_MSG_RESULT($PyVERSION)
+
+if test -z "$PYTHON_SRC"; then
+  # find out where Python is installed
+  AC_MSG_CHECKING(Python install prefix)
+  PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
+  AC_MSG_RESULT($PyEXEC_INSTALLDIR)
+fi
+
+# set python std library variable
+AC_SUBST(PY_STD_LIB)
+PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
+
+AC_MSG_CHECKING(what libraries Python was linked with)
+AC_SUBST(LIBS)
+if test -z "$PYTHON_SRC"; then
+  PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
+  PyLIBPL=${PyLIBP}/config
+  PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+  PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
+else
+  PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
+  PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
+fi
+LIBS="${LIBS} ${PY_LIBS}"
+AC_MSG_RESULT($PY_LIBS)
+
+AC_MSG_CHECKING(linker flags used to link Python)
+AC_SUBST(LDFLAGS)
+if test -z "$PYTHON_SRC"; then
+  PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
+else
+  PyLFS=`grep "^LINKFORSHARED=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyLDFLAGS=`grep "^LDFLAGS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PY_LDFLAGS="${PyLFS} ${PyLDFLAGS}"
+fi
+LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
+AC_MSG_RESULT($PY_LDFLAGS)
+
+AC_MSG_CHECKING(where Python include files are)
+AC_SUBST(INCLUDES)
+if test -z "$PYTHON_SRC"; then
+  PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
+else
+  PY_INCLUDES="-I${PYTHON_SRC} -I${PYTHON_SRC}/Include"
+fi
+INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
+AC_MSG_RESULT($PY_INCLUDES)
+
+# GT STOPPED HERE - 
+# MAKE NEEDS TO INSTALL WHAT WAS COMPILED - DSO OR STATIC, REGARDLESS OF DEFAULT
+# CHECK FOR THREADS?
+
+AC_OUTPUT(Makefile src/Makefile src/libpython.module)
+
