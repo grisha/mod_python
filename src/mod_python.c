@@ -3,7 +3,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.5 2000/05/11 22:54:39 grisha Exp $
+ * $Id: mod_python.c,v 1.6 2000/05/13 02:22:37 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details. See COPYRIGHT file for Copyright. 
@@ -35,7 +35,7 @@
 #define INTERP_ATTR "__interpreter__"
 
 /* debugging? Use ./httpd -X when on */
-static int debug = 1;
+static int debug = 0;
 
 /* Are we in single interpreter mode? */
 static int single_mode = 0;
@@ -1354,13 +1354,10 @@ void python_dict_merge(PyObject *d1, PyObject *d2)
 	keyval = PyList_GetItem(items, i);
 	x = PyTuple_GetItem(keyval, 0);
 	y = PyTuple_GetItem(keyval, 1);
-	printf("X Y: %d %d\n", x->ob_refcnt, y->ob_refcnt);
 	PyDict_SetItem(d1, PyTuple_GetItem(keyval, 0),
 		       PyTuple_GetItem(keyval, 1));
-	printf("X Y: %d %d\n", x->ob_refcnt, y->ob_refcnt);
     }
     Py_DECREF(items);
-    printf("X Y: %d %d\n", x->ob_refcnt, y->ob_refcnt);
 }
 
 /******************************************************************
