@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.12 2000/05/29 16:55:11 grisha Exp $
+ * $Id: mod_python.c,v 1.13 2000/06/04 18:42:45 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -93,7 +93,7 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.1"
+#define VERSION_COMPONENT "mod_python/2.2"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define INTERP_ATTR "__interpreter__"
@@ -157,9 +157,9 @@ static PyMappingMethods table_mapping = {
 };
 
 static PyTypeObject tableobjecttype = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
-    "mptable",
+    "mp_table",
     sizeof(tableobject),
     0,
     (destructor) table_dealloc,     /*tp_dealloc*/
@@ -199,9 +199,9 @@ static void server_dealloc(serverobject *self);
 static PyObject * server_getattr(serverobject *self, char *name);
 
 static PyTypeObject serverobjecttype = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
-    "server",
+    "mp_server",
     sizeof(serverobject),
     0,
     (destructor) server_dealloc,     /*tp_dealloc*/
@@ -260,9 +260,9 @@ static void conn_dealloc(connobject *self);
 static PyObject * conn_getattr(connobject *self, char *name);
 
 static PyTypeObject connobjecttype = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
-    "conn",
+    "mp_conn",
     sizeof(connobject),
     0,
     (destructor) conn_dealloc,       /*tp_dealloc*/
@@ -332,9 +332,9 @@ static PyObject * req_get_dirs             (requestobject *self, PyObject *args)
 static PyObject * req_add_common_vars      (requestobject *self, PyObject *args);
 
 static PyTypeObject requestobjecttype = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
-    "request",
+    "mp_request",
     sizeof(requestobject),
     0,
     (destructor) request_dealloc,    /*tp_dealloc*/
@@ -1172,7 +1172,8 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
 	return -1;
     }
     else if (strcmp(name, "content_type") == 0) {
-	self->request_rec->content_type = PyString_AS_STRING(value);
+	self->request_rec->content_type = 
+	    ap_pstrdup(self->request_rec->pool, PyString_AS_STRING(value));
 	return 0;
     }
     return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);
@@ -1405,8 +1406,12 @@ void python_init(server_rec *s, pool *p)
 
     char buff[255];
     PyObject *obcallback = NULL;
-    PyThreadState *tstate = NULL;
-    PyObject *x;
+
+    /* initialize types */
+    tableobjecttype.ob_type = &PyType_Type;
+    serverobjecttype.ob_type = &PyType_Type;
+    connobjecttype.ob_type = &PyType_Type;
+    requestobjecttype.ob_type = &PyType_Type;
 
     /* mod_python version */
     ap_add_version_component(VERSION_COMPONENT);
@@ -1585,8 +1590,7 @@ PyObject * make_obcallback()
 {
 
     PyObject *m;
-    PyObject *obCallBack;
-    char buff[256];
+    PyObject *obCallBack = NULL;
 
     /* This makes _apache appear imported, and subsequent
      * >>> import _apache 
@@ -1602,13 +1606,11 @@ PyObject * make_obcallback()
 
     if (! ((m = PyImport_ImportModule(MODULENAME)))) {
 	fprintf(stderr, "make_obcallback(): could not import %s.\n", MODULENAME);
-	exit(1);
     }
     
     if (! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
 	fprintf(stderr, "make_obcallback(): could not call %s.\n",
 		INITFUNC);
-	exit(1);
     }
     
     return obCallBack;
@@ -1636,60 +1638,62 @@ PyObject * make_obcallback()
 PyObject * get_obcallback(const char *name, request_rec * req)
 {
 
-  PyObject * obcallback = NULL;
-  PyThreadState * tstate = NULL;
-  PyObject *p;
+    PyObject * obcallback = NULL;
+    PyThreadState * tstate = NULL;
+    PyObject *p;
 
-  if (! name)
-    name = "global_interpreter";
+    if (! name)
+	name = "global_interpreter";
 
-  /* 
-   * Note that this is somewhat of a hack because to store 
-   * PyThreadState pointers in a Python object we are
-   * casting PyThreadState * to an integer and back.
-   *
-   * The bad news is that one cannot cast a * to int on systems
-   * where sizeof(void *) != sizeof(int). 
-   *
-   * The good news is that I don't know of any systems where
-   * sizeof(void *) != sizeof(int) except for 16 bit DOS.
-   *
-   * The proper way to do this would be to write a separate
-   * hashable Python type that contains a PyThreadState. At this
-   * point it doesn't seem worth the trouble.
-   */
+    /* 
+     * Note that this is somewhat of a hack because to store 
+     * PyThreadState pointers in a Python object we are
+     * casting PyThreadState * to an integer and back.
+     *
+     * The bad news is that one cannot cast a * to int on systems
+     * where sizeof(void *) != sizeof(int). 
+     *
+     * The good news is that I don't know of any systems where
+     * sizeof(void *) != sizeof(int) except for 16 bit DOS.
+     *
+     * The proper way to do this would be to write a separate
+     * hashable Python type that contains a PyThreadState. At this
+     * point it doesn't seem worth the trouble.
+     */
 
-  /* see if one exists by that name */
-  obcallback = PyDict_GetItemString(interpreters, (char *) name);
+    /* see if one exists by that name */
+    obcallback = PyDict_GetItemString(interpreters, (char *) name);
 
-  /* if obcallback is NULL at this point, no such interpeter exists */
-  if (! obcallback) {
+    /* if obcallback is NULL at this point, no such interpeter exists */
+    if (! obcallback) {
 
-      /* create a new interpeter */
-      tstate = Py_NewInterpreter();
+	/* create a new interpeter */
+	tstate = Py_NewInterpreter();
 
-      if (! tstate) {
+	if (! tstate) {
 
-	  /* couldn't create an interpreter, this is bad */
-	  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
-		       "get_obcallback: Py_NewInterpreter() returned NULL. No more memory?");
-	  return NULL;
-      }
+	    /* couldn't create an interpreter, this is bad */
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
+			  "get_obcallback: Py_NewInterpreter() returned NULL. No more memory?");
+	    return NULL;
+	}
       
-      /* create an obCallBack */
-      obcallback = make_obcallback();
+	/* create an obCallBack */
+	obcallback = make_obcallback();
 
-      /* cast PyThreadState and save it in obCallBack  as CObject */
-      p = PyCObject_FromVoidPtr((void *) tstate, NULL);
-      PyObject_SetAttrString(obcallback, INTERP_ATTR, p);
-      Py_DECREF(p);
+	if (obcallback) {
 
-      /* save the obCallBack */
-      PyDict_SetItemString(interpreters, (char *)name, obcallback);
+	    /* cast PyThreadState and save it in obCallBack  as CObject */
+	    p = PyCObject_FromVoidPtr((void *) tstate, NULL);
+	    PyObject_SetAttrString(obcallback, INTERP_ATTR, p);
+	    Py_DECREF(p);
+	  
+	    /* save the obCallBack */
+	    PyDict_SetItemString(interpreters, (char *)name, obcallback);
+	}
     }
 
-  return  obcallback;
-
+    return  obcallback;
 }
 
 /** 
@@ -2023,11 +2027,11 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
 				       const char * key, const char * val)
 {
 
-    int offset = XtOffsetOf(py_dir_config, options);
+    py_dir_config *conf;
     table * options;
 
-    options = * (table **) (mconfig + offset);
-    ap_table_set(options, key, val);
+    conf = (py_dir_config *) mconfig;
+    ap_table_set(conf->options, key, val);
 
     return NULL;
 
@@ -2277,8 +2281,8 @@ command_rec python_commands[] =
  * MODULE-DEFINITION-START
  * Name: python_module
  * ConfigStart
- PyVERSION=`python1.5 -c "import sys; print sys.version[:3]"`
- PyEXEC_INSTALLDIR=`python1.5 -c "import sys; print sys.exec_prefix"`
+ PyVERSION=`python -c "import sys; print sys.version[:3]"`
+ PyEXEC_INSTALLDIR=`python -c "import sys; print sys.exec_prefix"`
  PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
  PyLIBPL=${PyLIBP}/config
  PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
