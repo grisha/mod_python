@@ -13,7 +13,7 @@
  # implied.  See the License for the specific language governing
  # permissions and limitations under the License.
  #
- # $Id: test.py,v 1.41 2004/02/16 19:49:15 grisha Exp $
+ # $Id: test.py,v 1.42 2004/02/23 17:37:16 grisha Exp $
  #
 
 """
@@ -125,6 +125,7 @@ import shutil
 import time
 import socket
 import tempfile
+import base64
 
 HTTPD = testconf.HTTPD
 TESTHOME = testconf.TESTHOME
@@ -372,7 +373,6 @@ class PerRequestTestCase(unittest.TestCase):
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
-        import base64
         auth = base64.encodestring("spam:eggs").strip()
         conn.putheader("Authorization", "Basic %s" % auth)
         conn.endheaders()
@@ -402,6 +402,16 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.requires()"
 
         rsp = self.vhost_get("test_req_requires")
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_req_requires", PORT))
+        auth = base64.encodestring("spam:eggs").strip()
+        conn.putheader("Authorization", "Basic %s" % auth)
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
 
         if (rsp != "test ok"):
             self.fail(`rsp`)
