@@ -1,4 +1,7 @@
-Apr 10 2000 - 	Fixed a PythonImport bug reported by Chris Hagner.
+Apr 10 2000 - 	Fixed a PythonImport bug reported by Chris Hagner. Removed
+		the atol hack as per Miguel Marques patch. Fixed apache.py
+		to use a messier looking but for some obscure reason that
+		now escapes me necessary way of importing modules via imp.
 
 Apr  7 2000 -   "Dissapearing args" on Solaris fixed. It was a problem
 		in parse_qsl.
@@ -7,6 +10,8 @@ Apr  6 2000 -   Missing _eprintf() on Solaris/gcc workaround added. I
 		wonder if this applies to other OS's?
 
 Apr  5 2000 -	A couple doc fixes.
+
+Feb 10 2000 -	2.7.2 released
 
 Feb 10 2000 -   Fixed the dissapearing / in PATH_INFO.
 
