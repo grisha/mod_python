@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.75 2002/09/14 02:11:35 grisha Exp $
+ * $Id: mod_python.c,v 1.76 2002/09/14 02:19:58 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -806,7 +806,7 @@ static int python_handler(request_rec *req, char *phase)
     py_config * conf;
     int result;
     const char *interp_name = NULL;
-    const char *ext = NULL;
+    char *ext = NULL;
     hl_entry *hle = NULL;
     hl_entry *dynhle = NULL;
 
@@ -1492,23 +1492,24 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
 
     py_config *conf;
     py_handler *fh;
-    
+    ap_filter_rec_t *frec;
+
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
-
-    conf = (py_config *) mconfig;
-
-    fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
-    fh->handler = (char *)handler;
-    fh->dir = conf->config_dir;
-
-    apr_hash_set(conf->in_filters, name, APR_HASH_KEY_STRING, fh);
 
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
     ap_register_input_filter(name, python_input_filter, NULL, AP_FTYPE_CONNECTION);
  
+    conf = (py_config *) mconfig;
+
+    fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
+    fh->handler = (char *)handler;
+    fh->dir = conf->config_dir;
+
+    apr_hash_set(conf->in_filters, frec->name, APR_HASH_KEY_STRING, fh);
+
     return NULL;
 }
 
