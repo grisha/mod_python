@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.21 2003/05/29 14:15:47 grisha Exp $
+ * $Id: _apachemodule.c,v 1.22 2003/08/01 01:53:13 grisha Exp $
  *
  */
 
@@ -374,6 +374,114 @@ static PyObject *server_root(void)
     return PyString_FromString(ap_server_root);
 }
 
+/**
+ ** _global_lock
+ **
+ *   Lock one of our global_mutexes
+ */
+
+static PyObject *_global_lock(PyObject *self, PyObject *args)
+{
+
+    PyObject *server;
+    PyObject *key;
+    server_rec *s;
+    py_global_config *glb;
+    int hash;
+    int index;
+    apr_status_t rv;
+
+    if (! PyArg_ParseTuple(args, "OO", &server, &key)) 
+        return NULL;
+
+    if (!  MpServer_Check(server)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "First argument must be a server object");
+        return NULL;
+    }
+
+    s = ((serverobject *)server)->server;
+
+    apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
+			  s->process->pool);
+    
+    hash = PyObject_Hash(key);
+    if (hash == -1) {
+	return NULL;
+    }
+    else {
+	hash = abs(hash);
+    }
+    
+    index = hash % (glb->nlocks);
+    
+    if ((rv = apr_global_mutex_lock(glb->g_locks[index])) != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
+                     "Failed to acquire global mutex lock at index %d", index);
+	PyErr_SetString(PyExc_ValueError,
+			"Failed to acquire global mutex lock");
+        return NULL;
+    }
+	
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** _global_unlock
+ **
+ *   Unlock one of our global_mutexes
+ */
+
+static PyObject *_global_unlock(PyObject *self, PyObject *args)
+{
+
+    PyObject *server;
+    PyObject *key;
+    server_rec *s;
+    py_global_config *glb;
+    int hash;
+    int index;
+    apr_status_t rv;
+
+    if (! PyArg_ParseTuple(args, "OO", &server, &key)) 
+        return NULL;
+
+    if (!  MpServer_Check(server)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "First argument must be a server object");
+        return NULL;
+    }
+
+    s = ((serverobject *)server)->server;
+
+    apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
+			  s->process->pool);
+    
+    hash = PyObject_Hash(key);
+    if (hash == -1) {
+	return NULL;
+    }
+    else {
+	hash = abs(hash);
+    }
+    
+    index = hash % (glb->nlocks);
+    
+    if ((rv = apr_global_mutex_unlock(glb->g_locks[index])) != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
+                     "Failed to release global mutex lock at index %d", index);
+	PyErr_SetString(PyExc_ValueError,
+			"Failed to release global mutex lock");
+        return NULL;
+    }
+	
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
     {"log_error",                 (PyCFunction)mp_log_error,     METH_VARARGS},
@@ -381,6 +489,8 @@ struct PyMethodDef _apache_module_methods[] = {
     {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
     {"config_tree",               (PyCFunction)config_tree,      METH_NOARGS},
     {"server_root",               (PyCFunction)server_root,      METH_NOARGS},
+    {"_global_lock",              (PyCFunction)_global_lock,     METH_VARARGS},
+    {"_global_unlock",            (PyCFunction)_global_unlock,   METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.32 2003/07/22 20:13:12 grisha Exp $
+ * $Id: mod_python.h,v 1.33 2003/08/01 01:53:13 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -83,6 +83,7 @@
 #include "apr_lib.h"
 #include "apr_hash.h"
 #include "scoreboard.h"
+#include "ap_mpm.h"
 
 /* Python headers */
 /* this gets rid of some comile warnings */
@@ -121,6 +122,7 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 
 /** Things specific to mod_python, as an Apache module **/
 
+#define MP_CONFIG_KEY "mod_python_config"
 #define VERSION_COMPONENT "mod_python/" MPV_STRING
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
@@ -141,6 +143,13 @@ typedef struct {
     PyInterpreterState *istate;
     PyObject *obcallback;
 } interpreterdata;
+
+/* global configuration parameters */
+typedef struct
+{
+    apr_global_mutex_t **g_locks;
+    int                  nlocks;
+} py_global_config;
 
 /* structure describing per directory configuration parameters */
 typedef struct {

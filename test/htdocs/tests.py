@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.31 2003/07/24 19:00:47 grisha Exp $
+ # $Id: tests.py,v 1.32 2003/08/01 01:53:13 grisha Exp $
  #
 
 # mod_python tests
@@ -752,10 +752,10 @@ def Cookie_Cookie(req):
 
     from mod_python import Cookie
 
-    cookies = Cookie.getCookies(req)
+    cookies = Cookie.get_cookies(req)
 
     for k in cookies:
-        Cookie.setCookie(req, cookies[k])
+        Cookie.add_cookie(req, cookies[k])
 
     req.write("test ok")
     
@@ -765,15 +765,47 @@ def Cookie_MarshalCookie(req):
 
     from mod_python import Cookie
 
-    cookies = Cookie.getCookies(req, Cookie.MarshalCookie, "secret")
+    cookies = Cookie.get_cookies(req, Cookie.MarshalCookie,
+                                secret="secret")
 
     for k in cookies:
-        Cookie.setCookies(req, cookies[k])
+        Cookie.add_cookie(req, cookies[k])
 
     req.write("test ok")
     
     return apache.OK
     
+
+def global_lock(req):
+
+    import _apache
+
+    _apache._global_lock(req.server, 1)
+    time.sleep(1)
+    _apache._global_unlock(req.server, 1)
+
+    req.write("test ok")
+    
+    return apache.OK
+
+def Session_Session(req):
+
+    from mod_python import Session, Cookie
+
+    tmp = req.args
+
+    s = Session.Session(req, tmp)
+    if s.is_new():
+        s.save()
+        
+    cookies = Cookie.get_cookies(req)
+    if cookies.has_key(Session.COOKIE_NAME) and s.is_new():
+        req.write(str(cookies[Session.COOKIE_NAME])+" "+tmp)
+    else:
+        req.write("test ok")
+
+    return apache.OK
+        
 
 def _test_table():
 

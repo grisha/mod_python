@@ -1,7 +1,7 @@
  # ====================================================================
  # The Apache Software License, Version 1.1
  #
- # Copyright (c) 2000-2002 The Apache Software Foundation.  All rights
+ # Copyright (c) 2000-2003 The Apache Software Foundation.  All rights
  # reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.71 2003/07/16 20:23:24 grisha Exp $
+ # $Id: apache.py,v 1.72 2003/08/01 01:53:13 grisha Exp $
 
 import sys
 import traceback
