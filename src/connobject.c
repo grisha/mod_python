@@ -44,7 +44,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.7 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: connobject.c,v 1.8 2002/09/02 21:25:59 gtrubetskoy Exp $
  *
  */
 
@@ -76,6 +76,7 @@ PyObject * MpConn_FromConn(conn_rec *c)
     result->server = NULL;
     result->base_server = NULL;
     result->notes = MpTable_FromTable(c->notes);
+    result->hlo = NULL;
 
     _Py_NewReference(result);
     return (PyObject *)result;
@@ -119,6 +120,7 @@ static void conn_dealloc(connobject *self)
     Py_XDECREF(self->server);
     Py_XDECREF(self->base_server);
     Py_XDECREF(self->notes);
+    Py_XDECREF(self->hlo);
     free(self);
 }
 

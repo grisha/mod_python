@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.27 2002/08/30 18:25:52 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.28 2002/09/02 21:25:59 gtrubetskoy Exp $
  *
  */
 
@@ -320,9 +320,9 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
 
 static PyObject * req_get_config(requestobject *self)
 {
-    py_dir_config *conf =
-        (py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-                                               &python_module);
+    py_config *conf =
+        (py_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+                                           &python_module);
     return MpTable_FromTable(conf->directives);
 }
 
@@ -373,9 +373,9 @@ static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
 
 static PyObject * req_get_options(requestobject *self, PyObject *args)
 {
-    py_dir_config *conf =
-        (py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-                                               &python_module);
+    py_config *conf =
+        (py_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+                                           &python_module);
     return MpTable_FromTable(conf->options);
 }
 
