@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.4 2000/12/13 05:24:08 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.5 2000/12/14 19:19:58 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -176,7 +176,9 @@ def handler(req):
     if result:
         result = str(result)
 
-        if not req.content_type:
+        # mod_negotiation will default to application/x-httpd-cgi
+        # for POST requests, but we know that always to be false.....
+        if not req.content_type or req.content_type == "application/x-httpd-cgi":
             # make an attempt to guess content-type
             if string.lower(string.strip(result[:100])[:6]) == '<html>' \
                or string.find(result,'</') > 0:
