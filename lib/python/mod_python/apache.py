@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.79 2003/10/08 21:04:11 grisha Exp $
+ # $Id: apache.py,v 1.80 2004/01/16 04:50:15 grisha Exp $
 
 import sys
 import traceback
@@ -468,7 +468,7 @@ def import_module(module_name, autoreload=1, log=0, path=None):
         if not file or (path and not filter(file.startswith, path)):
             # there is a script by this name already imported, but it's in
             # a different directory, therefore it's a different script
-            mtime, oldtime = 0, -1
+            mtime, oldmtime = 0, -1
         elif autoreload: 
             oldmtime = module.__dict__.get("__mtime__", 0)
             mtime = module_mtime(module)
