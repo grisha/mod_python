@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.52 2002/08/28 15:45:38 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.53 2002/09/06 22:06:28 gtrubetskoy Exp $
 
 import sys
 import string
@@ -82,6 +82,83 @@ class CallBack:
                 self.req.hstack = string.join(handlers[1:], " ")
                 return handlers[0]
 
+    def ConnectionDispatch(self, conn):
+
+        # config
+        config = conn.base_server.get_config()
+        debug = config.has_key("PythonDebug")
+
+        try:
+
+            handler = conn.hlist.handler
+            
+            # split module::handler
+            l = string.split(handler, '::', 1)
+            module_name = l[0]
+            if len(l) == 1:
+                # no oject, provide default
+                object_str = "connectionhandler"
+            else:
+                object_str = l[1]
+
+            # add the directory to pythonpath if
+            # not there yet, or pythonpath specified
+            
+            if config.has_key("PythonPath"):
+                # we want to do as little evaling as possible,
+                # so we remember the path in un-evaled form and
+                # compare it
+                global _path
+                pathstring = config["PythonPath"]
+                if pathstring != _path:
+                    _path = pathstring
+                    newpath = eval(pathstring)
+                    if sys.path != newpath:
+                        sys.path[:] = newpath
+            else:
+                if filter.dir not in sys.path:
+                    sys.path[:0] = [filter.dir]
+
+            # import module
+            module = import_module(module_name, config)
+
+            # find the object
+            object = resolve_object(module, object_str,
+                                    arg=conn, silent=0)
+
+            if object:
+
+                # call the object
+                if config.has_key("PythonEnablePdb"):
+                    result = pdb.runcall(object, conn)
+                else:
+                    result = object(conn)
+
+                assert (type(result) == type(int())), \
+                       "ConnectionHandler '%s' returned invalid return code." % handler
+
+        except PROG_TRACEBACK, traceblock:
+            # Program run-time error
+            try:
+                (etype, value, traceback) = traceblock
+                result = self.ReportError(etype, value, traceback, srv=conn.base_server,
+                                          phase="ConnectionHandler",
+                                          hname=handler, debug=debug)
+            finally:
+                traceback = None
+
+        except:
+            # Any other rerror (usually parsing)
+            try:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                filter.disable()
+                result = self.ReportError(exc_type, exc_value, exc_traceback, srv=conn.base_server,
+                                          phase=filter.name, hname=handler, debug=debug)
+            finally:
+                exc_traceback = None
+
+	return result
+
     def FilterDispatch(self, filter):
 
         req = filter.req
@@ -104,7 +181,7 @@ class CallBack:
             else:
                 object_str = l[1]
 
-            # add the direcotry to pythonpath if
+            # add the directory to pythonpath if
             # not there yet, or pythonpath specified
             
             if config.has_key("PythonPath"):
@@ -123,10 +200,10 @@ class CallBack:
                     sys.path[:0] = [filter.dir]
 
             # import module
-            module = import_module(module_name, req)
+            module = import_module(module_name, config)
 
             # find the object
-            object = resolve_object(req, module, object_str, 0)
+            object = resolve_object(module, object_str, arg=filter, silent=0)
 
             if object:
 
@@ -140,7 +217,7 @@ class CallBack:
                 filter.close()
 
                 assert (type(result) == type(int())), \
-                       "Filter '%s' returned invalid return code." % hlist.handler
+                       "Filter '%s' returned invalid return code." % filter.handler
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -168,7 +245,7 @@ class CallBack:
             try:
                 (etype, value, traceback) = traceblock
                 filter.disable()
-                result = self.ReportError(req, etype, value, traceback,
+                result = self.ReportError(etype, value, traceback, req=req,
                                           phase="Filter: " + filter.name,
                                           hname=filter.handler, debug=debug)
             finally:
@@ -179,13 +256,13 @@ class CallBack:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 filter.disable()
-                result = self.ReportError(req, exc_type, exc_value, exc_traceback,
+                result = self.ReportError(exc_type, exc_value, exc_traceback, req=req,
                                           phase=filter.name, hname=filter.handler,
                                           debug=debug)
             finally:
                 exc_traceback = None
 
-	return
+	return result
 
     def HandlerDispatch(self, req):
         """
@@ -214,7 +291,7 @@ class CallBack:
                 else:
                     object_str = l[1]
 
-                # add the direcotry to pythonpath if
+                # add the directory to pythonpath if
                 # not there yet, or pythonpath specified
                 if config.has_key("PythonPath"):
                     # we want to do as little evaling as possible,
@@ -233,10 +310,11 @@ class CallBack:
                         sys.path[:0] = [dir]
 
                 # import module
-                module = import_module(module_name, req)
+                module = import_module(module_name, config)
 
                 # find the object
-                object = resolve_object(req, module, object_str, hlist.silent)
+                object = resolve_object(module, object_str,
+                                        arg=req, silent=hlist.silent)
 
                 if object:
 
@@ -282,7 +360,7 @@ class CallBack:
             # Program run-time error
             try:
                 (etype, value, traceback) = traceblock
-                result = self.ReportError(req, etype, value, traceback,
+                result = self.ReportError(etype, value, traceback, req=req,
                                           phase=req.phase, hname=hlist.handler,
                                           debug=debug)
             finally:
@@ -292,7 +370,7 @@ class CallBack:
             # Any other rerror (usually parsing)
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                result = self.ReportError(req, exc_type, exc_value, exc_traceback,
+                result = self.ReportError(exc_type, exc_value, exc_traceback, req=req,
                                           phase=req.phase, hname=hlist.handler, debug=debug)
             finally:
                 exc_traceback = None
@@ -300,16 +378,16 @@ class CallBack:
 	return result
 
 
-    def ReportError(self, req, etype, evalue, etb, phase="N/A", hname="N/A", debug=0):
+    def ReportError(self, etype, evalue, etb, req=None, srv=None,
+                    phase="N/A", hname="N/A", debug=0):
 	""" 
 	This function is only used when debugging is on.
 	It sends the output similar to what you'd see
 	when using Python interactively to the browser
 	"""
 
-        try:
-
-            try:
+        try:       # try/finally
+            try:        # try/except
 
                 if str(etype) == "exceptions.IOError" \
                    and str(evalue)[:5] == "Write":
@@ -321,10 +399,12 @@ class CallBack:
                 # write to log
                 for e in traceback.format_exception(etype, evalue, etb):
                     s = "%s %s: %s" % (phase, hname, e[:-1])
-                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR)
-                    #_apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
+                    if req:
+                        req.log_error(s, APLOG_NOERRNO|APLOG_ERR)
+                    else:
+                        _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, srv)
 
-                if not debug:
+                if not debug or not req:
                     return HTTP_INTERNAL_SERVER_ERROR
                 else:
                     # write to client
@@ -346,7 +426,7 @@ class CallBack:
             etb = None
             # we do not return anything
 
-def import_module(module_name, req=None, path=None):
+def import_module(module_name, config=None, path=None):
     """
     Get the module to handle the request. If
     autoreload is on, then the module will be reloaded
@@ -355,8 +435,7 @@ def import_module(module_name, req=None, path=None):
 
     # Get options
     debug, autoreload = 0, 1
-    if req:
-        config = req.get_config()
+    if config:
         debug = config.has_key("PythonDebug")
         if config.has_key("PythonAutoReload"):
             autoreload = int(config["PythonAutoReload"])
@@ -438,7 +517,7 @@ def module_mtime(module):
 
     return mtime
 
-def resolve_object(req, module, object_str, silent=0):
+def resolve_object(module, object_str, arg=None, silent=0):
     """
     This function traverses the objects separated by .
     (period) to find the last one we're looking for:
@@ -446,6 +525,9 @@ def resolve_object(req, module, object_str, silent=0):
        From left to right, find objects, if it is
        an unbound method of a class, instantiate the
        class passing the request as single argument
+
+    'arg' is sometimes req, sometimes filter,
+    sometimes connection
     """
 
     obj = module
@@ -469,7 +551,7 @@ def resolve_object(req, module, object_str, silent=0):
         if hasattr(obj, "im_self") and not obj.im_self:
             # this is an unbound method, its class
             # needs to be instantiated
-            instance = parent(req)
+            instance = parent(arg)
             obj = getattr(instance, obj_str)
 
     return obj

@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.28 2002/09/02 21:25:59 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.29 2002/09/06 22:06:28 gtrubetskoy Exp $
  *
  */
 
@@ -660,7 +660,7 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
 
     PyObject *result = PyList_New(0);
     PyObject *line, *rlargs;
-    long sizehint = 0;
+    long sizehint = -1;
     long size = 0;
 
     if (! PyArg_ParseTuple(args, "|l", &sizehint)) 
@@ -677,7 +677,7 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
     while (line && !(strcmp(PyString_AsString(line), "") == 0)) {
         PyList_Append(result, line);
         size += PyString_Size(line);
-        if (sizehint && (size >= size))
+        if ((sizehint != -1) && (size >= size))
             break;
         line = req_readline(self, args);
     }

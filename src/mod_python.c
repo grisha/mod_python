@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.72 2002/09/02 21:25:59 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.73 2002/09/06 22:06:28 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -745,15 +745,15 @@ static const char *select_interp_name(request_rec *req, conn_rec *con, py_config
              * global interpreter.
              */
             
-            py_filter_handler *fh;
+            py_handler *fh;
 
             if (fname) {
                 if (is_input) {
-                    fh = (py_filter_handler *)apr_hash_get(conf->in_filters, fname,
+                    fh = (py_handler *)apr_hash_get(conf->in_filters, fname,
                                                            APR_HASH_KEY_STRING);
                 }
                 else {
-                    fh = (py_filter_handler *)apr_hash_get(conf->out_filters, fname,
+                    fh = (py_handler *)apr_hash_get(conf->out_filters, fname,
                                                            APR_HASH_KEY_STRING);
                 }
                 s = fh->dir;
@@ -1072,7 +1072,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     request_rec *req;
     filterobject *filter;
     python_filter_ctx *ctx;
-    py_filter_handler *fh;
+    py_handler *fh;
 
     /* we only allow request level filters so far */
     req = f->r;
@@ -1155,7 +1155,6 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
  **
  *    input filter
  */
-
 
 static apr_status_t python_input_filter(ap_filter_t *f, 
                                         apr_bucket_brigade *bb,
@@ -1272,6 +1271,24 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
         return python_directive_flag(conf, "PythonDebug", val);
+    }
+    return rc;
+}
+
+/**
+ ** directive_PythonEnablePdb
+ **
+ *      This function called whenever PythonEnablePdb directive
+ *      is encountered.
+ */
+static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
+                                             int val) {
+    const char *rc = python_directive_flag(mconfig, "PythonEnablePdb", val);
+
+    if (!rc) {
+        py_config *conf = ap_get_module_config(cmd->server->module_config,
+                                               &python_module);
+        return python_directive_flag(conf, "PythonEnablePdb", val);
     }
     return rc;
 }
@@ -1461,14 +1478,14 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
                                                const char *handler, const char *name) {
 
     py_config *conf;
-    py_filter_handler *fh;
+    py_handler *fh;
     
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
 
     conf = (py_config *) mconfig;
 
-    fh = (py_filter_handler *) apr_pcalloc(cmd->pool, sizeof(py_filter_handler));
+    fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
     fh->handler = (char *)handler;
     fh->dir = conf->config_dir;
 
@@ -1485,14 +1502,14 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
 static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig, 
                                                 const char *handler, const char *name) {
     py_config *conf;
-    py_filter_handler *fh;
+    py_handler *fh;
  
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
 
     conf = (py_config *) mconfig;
     
-    fh = (py_filter_handler *) apr_pcalloc(cmd->pool, sizeof(py_filter_handler));
+    fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
     fh->handler = (char *)handler;
     fh->dir = conf->config_dir;
 
@@ -1755,6 +1772,9 @@ command_rec python_commands[] =
     AP_INIT_FLAG(
         "PythonDebug", directive_PythonDebug, NULL, OR_ALL,
         "Send (most) Python error output to the client rather than logfile."),
+    AP_INIT_FLAG(
+        "PythonEnablePdb", directive_PythonEnablePdb, NULL, OR_ALL,
+        "Run handlers in PDB (Python Debugger). Use with -DONE_PROCESS."),
     AP_INIT_RAW_ARGS(
         "PythonFixupHandler", directive_PythonFixupHandler, NULL, OR_ALL,
         "Python fixups handlers."),

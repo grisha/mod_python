@@ -44,7 +44,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.8 2002/09/02 21:25:59 gtrubetskoy Exp $
+ * $Id: connobject.c,v 1.9 2002/09/06 22:06:28 gtrubetskoy Exp $
  *
  */
 
@@ -69,7 +69,7 @@ PyObject * MpConn_FromConn(conn_rec *c)
 
     result = PyMem_NEW(connobject, 1);
     if (! result)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     result->conn = c;
     result->ob_type = &MpConn_Type;
@@ -82,6 +82,196 @@ PyObject * MpConn_FromConn(conn_rec *c)
     return (PyObject *)result;
 }
 
+/**
+ ** conn.read(conn self, int bytes)
+ **
+ */
+
+static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
+{
+
+    apr_bucket *b;
+    apr_bucket_brigade *bb;
+    apr_status_t rc;
+    long bytes_read;
+    PyObject *result;
+    char *buffer;
+    long bufsize;
+
+    bb = apr_brigade_create(c->pool, c->bucket_alloc);
+
+    Py_BEGIN_ALLOW_THREADS;
+    rc = ap_get_brigade(c->input_filters, bb, mode, APR_BLOCK_READ, len);
+    Py_END_ALLOW_THREADS;
+
+    if (! APR_STATUS_IS_SUCCESS(rc)) {
+        PyErr_SetObject(PyExc_IOError, 
+                        PyString_FromString("Connection read error"));
+        return NULL;
+    }
+
+    /* 
+     * loop through the brigade reading buckets into the string 
+     */
+
+    b = APR_BRIGADE_FIRST(bb);
+
+    if (APR_BUCKET_IS_EOS(b)) { 
+        apr_bucket_delete(b);
+	Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    bufsize = len == 0 ? HUGE_STRING_LEN : len;
+    result = PyString_FromStringAndSize(NULL, bufsize);
+
+    /* possibly no more memory */
+    if (result == NULL) 
+        return PyErr_NoMemory();
+    
+    buffer = PyString_AS_STRING((PyStringObject *) result);
+
+    bytes_read = 0;
+
+    while ((bytes_read < len || len == 0) &&
+           !(b == APR_BRIGADE_SENTINEL(b) ||
+             APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b))) {
+
+	const char *data;
+	apr_size_t size;
+	apr_bucket *old;
+
+	if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
+	    PyErr_SetObject(PyExc_IOError, 
+			    PyString_FromString("Connection read error"));
+	    return NULL;
+	}
+
+	if (bytes_read + size > bufsize) {
+	    apr_bucket_split(b, bufsize - bytes_read);
+	    size = bufsize - bytes_read;
+	    /* now the bucket is the exact size we need */
+	}
+
+	memcpy(buffer, data, size);
+	buffer += size;
+	bytes_read += size;
+
+	/* time to grow destination string? */
+	if (len == 0 && bytes_read == bufsize) {
+
+	    _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
+	    buffer = PyString_AS_STRING((PyStringObject *) result);
+	    buffer += HUGE_STRING_LEN;
+	    bufsize += HUGE_STRING_LEN;
+	}
+
+
+        if (mode == AP_MODE_GETLINE) {
+            apr_bucket_delete(b);
+            break;
+        }
+
+	old = b;
+	b = APR_BUCKET_NEXT(b);
+	apr_bucket_delete(old);
+    }
+
+    /* resize if necessary */
+    if (bytes_read < len || len == 0) 
+	if(_PyString_Resize(&result, bytes_read))
+	    return NULL;
+
+    return result;
+}
+
+/**
+ ** conn.read(conn self, int bytes)
+ **
+ */
+
+static PyObject * conn_read(connobject *self, PyObject *args)
+{
+
+    long len = 0;
+
+    if (! PyArg_ParseTuple(args, "l|i", &len)) 
+        return NULL;
+
+    if (len == 0)
+        return PyString_FromString("");
+
+    if (len == -1)
+        return _conn_read(self->conn, AP_MODE_EXHAUSTIVE, 0);
+    else
+        return _conn_read(self->conn, AP_MODE_READBYTES, len);
+}
+
+/**
+ ** conn.readline(conn self, int bytes)
+ **
+ */
+
+static PyObject * conn_readline(connobject *self, PyObject *args)
+{
+
+    long len = 0;
+
+    if (! PyArg_ParseTuple(args, "|l", &len)) 
+        return NULL;
+
+    return _conn_read(self->conn, AP_MODE_GETLINE, len);
+}
+
+/**
+ ** conn.write(conn self, int bytes)
+ **
+ */
+
+static PyObject * conn_write(connobject *self, PyObject *args)
+{
+    char *buff;
+    int len;
+    apr_bucket_brigade *bb;
+    apr_bucket *b;
+    PyObject *s;
+    conn_rec *c = self->conn;
+
+    if (! PyArg_ParseTuple(args, "O", &s)) 
+	return NULL;
+
+    if (! PyString_Check(s)) {
+	PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
+	return NULL;
+    }
+
+    len = PyString_Size(s);
+
+    if (len) {
+	buff = apr_pmemdup(c->pool, PyString_AS_STRING(s), len);
+
+        bb = apr_brigade_create(c->pool, c->bucket_alloc);
+
+	b = apr_bucket_pool_create(buff, len, c->pool, c->bucket_alloc);
+	APR_BRIGADE_INSERT_TAIL(bb, b);
+
+        /* Make sure the data is flushed to the client */
+        b = apr_bucket_flush_create(c->bucket_alloc);
+        APR_BRIGADE_INSERT_TAIL(bb, b);
+
+        ap_pass_brigade(c->output_filters, bb);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyMethodDef connobjectmethods[] = {
+    {"read",      (PyCFunction) conn_read,      METH_VARARGS},
+    {"readline",  (PyCFunction) conn_readline,  METH_VARARGS},
+    {"write",     (PyCFunction) conn_write,     METH_VARARGS},
+    { NULL, NULL } /* sentinel */
+};
 
 #define OFF(x) offsetof(conn_rec, x)
 
@@ -135,8 +325,8 @@ static PyObject *makeipaddr(struct sockaddr_in *addr)
     long x = ntohl(addr->sin_addr.s_addr);
     char buf[100];
     sprintf(buf, "%d.%d.%d.%d",
-	    (int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
-	    (int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
+            (int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
+            (int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
     return PyString_FromString(buf);
 }
 
@@ -151,8 +341,8 @@ static PyObject *makesockaddr(struct sockaddr_in *addr)
     PyObject *addrobj = makeipaddr(addr);
     PyObject *ret = NULL;
     if (addrobj) {
-	ret = Py_BuildValue("Oi", addrobj, ntohs(addr->sin_port));
-	Py_DECREF(addrobj);
+        ret = Py_BuildValue("Oi", addrobj, ntohs(addr->sin_port));
+        Py_DECREF(addrobj);
     }
     return ret;
 }
@@ -167,44 +357,56 @@ static PyObject *makesockaddr(struct sockaddr_in *addr)
 static PyObject * conn_getattr(connobject *self, char *name)
 {
 
-    if (strcmp(name, "base_server") == 0) {
+    PyObject *res;
 
-	/* base_server serverobject is created as needed */
-	if (self->base_server == NULL) {
-	    if (self->conn->base_server == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->base_server = MpServer_FromServer(self->conn->base_server);
-		Py_INCREF(self->base_server);
-		return self->base_server;
-	    }
-	}
-	else {
-	    Py_INCREF(self->base_server);
-	    return self->base_server;
-	}
+    res = Py_FindMethod(connobjectmethods, (PyObject *)self, name);
+    if (res != NULL)
+	return res;
+    
+    PyErr_Clear();
+
+   if (strcmp(name, "base_server") == 0) {
+
+        /* base_server serverobject is created as needed */
+        if (self->base_server == NULL) {
+            if (self->conn->base_server == NULL) {
+                Py_INCREF(Py_None);
+                return Py_None;
+            }
+            else {
+                self->base_server = MpServer_FromServer(self->conn->base_server);
+                Py_INCREF(self->base_server);
+                return self->base_server;
+            }
+        }
+        else {
+            Py_INCREF(self->base_server);
+            return self->base_server;
+        }
     }
     else if (strcmp(name, "aborted") == 0) {
-	return PyInt_FromLong(self->conn->aborted);
+        return PyInt_FromLong(self->conn->aborted);
     }
     else if (strcmp(name, "keepalive") == 0) {
-	return PyInt_FromLong(self->conn->keepalive);
+        return PyInt_FromLong(self->conn->keepalive);
     }
     else if (strcmp(name, "double_reverse") == 0) {
-	return PyInt_FromLong(self->conn->double_reverse);
+        return PyInt_FromLong(self->conn->double_reverse);
     }
     else if (strcmp(name, "remote_addr") == 0) {
-	/* XXX this needs to be compatible with apr_sockaddr_t */
-	return makesockaddr(&(self->conn->remote_addr));
+        /* XXX this needs to be compatible with apr_sockaddr_t */
+        return makesockaddr(&(self->conn->remote_addr));
     }
     else if (strcmp(name, "notes") == 0) {
-	Py_INCREF(self->notes);
-	return (PyObject *) self->notes;
+        Py_INCREF(self->notes);
+        return (PyObject *) self->notes;
+    }
+    else if (strcmp(name, "hlist") == 0) {
+        Py_INCREF(self->hlo);
+        return self->hlo;
     }
     else
-	return PyMember_Get((char *)self->conn, conn_memberlist, name);
+        return PyMember_Get((char *)self->conn, conn_memberlist, name);
 
 }
 
@@ -218,12 +420,12 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
 {
 
     if (value == NULL) {
-	PyErr_SetString(PyExc_AttributeError,
-			"can't delete connection attributes");
-	return -1;
+        PyErr_SetString(PyExc_AttributeError,
+                        "can't delete connection attributes");
+        return -1;
     }
     else
-	return PyMember_Set((char *)self->conn, conn_memberlist, name, value);
+        return PyMember_Set((char *)self->conn, conn_memberlist, name, value);
 
 }
 

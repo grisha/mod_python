@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.15 2002/08/23 19:45:41 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.16 2002/09/06 22:06:28 gtrubetskoy Exp $
  *
  */
 
@@ -79,7 +79,7 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
 	if (! level) 
 	    level = APLOG_NOERRNO|APLOG_ERR;
       
-	if (!server)
+	if (!server || server == Py_None)
 	    serv_rec = NULL;
 	else {
 	    if (! MpServer_Check(server)) {

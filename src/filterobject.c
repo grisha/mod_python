@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.8 2002/08/24 02:13:47 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.9 2002/09/06 22:06:28 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -169,7 +169,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
     /* possibly no more memory */
     if (result == NULL) 
-	return NULL;
+        return PyErr_NoMemory();
     
     buffer = PyString_AS_STRING((PyStringObject *) result);
 
@@ -223,13 +223,15 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 	    bufsize += HUGE_STRING_LEN;
 	}
 
+	if (readline && newline) {
+//            apr_bucket_delete(b);
+	    break;
+        }
+
 	old = b;
 	b = APR_BUCKET_NEXT(b);
 	apr_bucket_delete(old);
 	
-	if (readline && newline)
-	    break;
-
 	if (self->is_input) {
 
 	    if (b == APR_BRIGADE_SENTINEL(self->bb_in)) {
