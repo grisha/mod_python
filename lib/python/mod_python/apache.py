@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.75 2003/08/26 01:56:39 grisha Exp $
+ # $Id: apache.py,v 1.76 2003/09/03 19:56:29 grisha Exp $
 
 import sys
 import traceback
@@ -470,9 +470,10 @@ def import_module(module_name, autoreload=1, log=0, path=None):
 
         if (not file or path and not
             filter(lambda a: os.path.dirname(file).find(a) == 0, path)):
-            raise SERVER_RETURN, HTTP_NOT_FOUND
-
-        if autoreload:
+            # there is a script by this name already imported, but it's in
+            # a different directory, therefore it's a different script
+            mtime, oldtime = 0, -1
+        elif:
             oldmtime = module.__dict__.get("__mtime__", 0)
             mtime = module_mtime(module)
         else:
