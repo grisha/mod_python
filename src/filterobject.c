@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.12 2002/09/16 21:33:39 grisha Exp $
+ * $Id: filterobject.c,v 1.13 2002/09/17 03:37:23 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -170,10 +170,12 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
     b = APR_BRIGADE_FIRST(self->bb_in);
 
-    /* reached eos on previous invocation? */
-    if (APR_BUCKET_IS_EOS(b) || b == APR_BRIGADE_SENTINEL(self->bb_in)) { 
-        if (b != APR_BRIGADE_SENTINEL(self->bb_in))
-            apr_bucket_delete(b);
+    if (b == APR_BRIGADE_SENTINEL(self->bb_in))
+        return PyString_FromString("");
+
+    /* reached eos ? */
+    if (APR_BUCKET_IS_EOS(b)) {
+        apr_bucket_delete(b);
         Py_INCREF(Py_None);
         return Py_None;
     }

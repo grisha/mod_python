@@ -224,11 +224,11 @@ class CallBack:
                 else:
                     result = object(filter)
 
-                # always close the filter
-                filter.close()
+                # always flush the filter
+                filter.flush()
 
                 assert (type(result) == type(int())), \
-                       "Filter '%s' returned invalid return code." % filter.handler
+                       "Filter '%s' returned invalid return code: %s" % (filter.handler, `result`)
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
