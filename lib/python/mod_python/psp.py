@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.17 2003/08/12 19:19:43 grisha Exp $
+ # $Id: psp.py,v 1.18 2003/08/13 17:21:32 grisha Exp $
 
 from mod_python import apache, Session, util, _psp
 import _apache
@@ -92,7 +92,7 @@ def code2str(c):
 
 def str2code(s):
 
-    return apply(new.code, marshal.loads(s))
+    return new.code(*marshal.loads(s))
 
 def load_file(dir, fname, dbmcache=None, srv=None):
 
