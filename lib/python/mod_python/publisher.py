@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.29 2003/08/08 14:50:09 grisha Exp $
+ # $Id: publisher.py,v 1.30 2003/08/12 19:19:43 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -76,7 +76,7 @@ import re
 import base64
 
 import new
-
+from types import *
 
 def handler(req):
 
@@ -98,35 +98,6 @@ def handler(req):
     # if any part of the path begins with "_", abort
     if func_path[0] == '_' or func_path.count("._"):
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
-
-    # process input, if any
-    fs = util.FieldStorage(req, keep_blank_values=1)
-    req.form = fs
-
-    args = {}
-
-    # step through fields
-    for field in fs.list:
-        
-        if field.filename:
-            # this is a file
-            val = field
-        else:
-            # this is a simple string
-            val = field.value
-
-        if args.has_key(field.name):
-            args[field.name].append(val)
-        else:
-            args[field.name] = [val]
-
-    # at the end, we replace lists with single values
-    for arg in args.keys():
-        if len(args[arg]) == 1:
-            args[arg] = args[arg][0]
-
-    # add req
-    args["req"] = req
 
     ## import the script
     path, module_name =  os.path.split(req.filename)
@@ -177,41 +148,20 @@ def handler(req):
     except AttributeError:
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
     
-    # not callable, a class or an aunbound method
-    if not callable(object) or \
-       str(type(object)) == "<type 'class'>" \
-       or (hasattr(object, 'im_self') and not object.im_self):
+    # not callable, a class or an unbound method
+    if (not callable(object) or 
+        type(object) is ClassType or
+        (hasattr(object, 'im_self') and not object.im_self)):
 
         result = str(object)
         
     else:
         # callable, (but not a class or unbound method)
-
-        # we need to weed out unexpected keyword arguments
-        # and for that we need to get a list of them. There
-        # are a few options for callable objects here:
-
-        if str(type(object)) == "<type 'instance'>":
-            # instances are callable when they have __call__()
-            object = object.__call__
-
-        if hasattr(object, "func_code"):
-            # function
-            fc = object.func_code
-            expected = fc.co_varnames[0:fc.co_argcount]
-        elif hasattr(object, 'im_func'):
-            # method
-            fc = object.im_func.func_code
-            expected = fc.co_varnames[1:fc.co_argcount]
-
-        # remove unexpected args unless co_flags & 0x08,
-        # meaning function accepts **kw syntax
-        if not (fc.co_flags & 0x08):
-            for name in args.keys():
-                if name not in expected:
-                    del args[name]
-                
-        result = apply(object, (), args)
+        
+        # process input, if any
+        req.form = util.FieldStorage(req, keep_blank_values=1)
+        
+        result = util.apply_fs_data(object, req.form, req=req)
 
     if result:
         result = str(result)
@@ -256,7 +206,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
     if hasattr(object, "__auth_realm__"):
         realm = object.__auth_realm__
 
-    if type(object) == type(process_auth):
+    if type(object) is FunctionType:
         # functions are a bit tricky
 
         if hasattr(object, "func_code"):
@@ -300,7 +250,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         if callable(__auth__):
             rc = __auth__(req, user, passwd)
         else:
-            if type(__auth__) == type({}): # dictionary
+            if type(__auth__) is DictionaryType:
                 rc = __auth__.has_key(user) and __auth__[user] == passwd
             else:
                 rc = __auth__
@@ -315,7 +265,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         if callable(__access__):
             rc = __access__(req, user)
         else:
-            if type(__access__) in (type([]), type(())):
+            if type(__access__) in (ListType, TupleType):
                 rc = user in __access__
             else:
                 rc = __access__
@@ -335,7 +285,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
         obj = getattr(obj, obj_str)
 
         # object cannot be a module
-        if type(obj) == type(apache):
+        if type(obj) == ModuleType:
             raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
 
         realm, user, passwd = process_auth(req, obj, realm,
