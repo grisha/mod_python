@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.5 2002/06/03 14:31:15 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.6 2002/07/16 18:06:03 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -61,7 +61,7 @@
  */
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
-			      ap_input_mode_t mode, apr_size_t *readbytes,
+			      ap_input_mode_t mode, apr_size_t readbytes,
 			      char * handler, char *dir)
 {
     filterobject *result;
@@ -86,7 +86,7 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
 	result->bb_in = bb;
 	result->bb_out = NULL;
 	result->mode = 0;
-	result->readbytes = NULL;
+	result->readbytes = 0;
     }
 
     result->closed = 0;
@@ -142,7 +142,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
 	Py_BEGIN_ALLOW_THREADS;
 	self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
-				  APR_BLOCK_READ, *self->readbytes);
+				  APR_BLOCK_READ, self->readbytes);
 	Py_END_ALLOW_THREADS;
 
 	if (! APR_STATUS_IS_SUCCESS(self->rc)) {
@@ -239,7 +239,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
 		Py_BEGIN_ALLOW_THREADS;
 		self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
-					  APR_BLOCK_READ, *self->readbytes);
+					  APR_BLOCK_READ, self->readbytes);
 		Py_END_ALLOW_THREADS;
 
 		if (! APR_STATUS_IS_SUCCESS(self->rc)) {
