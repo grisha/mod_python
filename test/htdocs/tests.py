@@ -52,11 +52,11 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.13 2002/10/12 05:41:32 grisha Exp $
+ # $Id: tests.py,v 1.14 2002/10/12 05:45:29 grisha Exp $
  #
 
 # mod_python tests
-print "IN TESTS"
+
 from mod_python import apache
 import unittest
 import re
