@@ -44,7 +44,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.4 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: util.c,v 1.5 2002/07/31 21:49:50 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -125,5 +125,78 @@ apr_status_t python_decref(void *object)
     return 0;
 }
 
+/**
+ ** find_module
+ ** 
+ *   Find an Apache module by name, used by get_addhandler_extensions
+ */
 
+module *find_module(char *name)
+{
+    int n; 
+    for (n = 0; ap_loaded_modules[n]; ++n) {
+
+	if (strcmp(name, ap_loaded_modules[n]->name) == 0)
+	    return ap_loaded_modules[n];
+
+    }
+    return NULL;
+}
+ 
+/**
+ ** get_addhandler_extensions
+ ** 
+ *   Get extensions specified for AddHandler, if any. To do this we
+ *   retrieve mod_mime's config. This is used by the publisher to strip
+ *   file extentions from modules in the most meaningful way.
+ *
+ *   XXX This function is a hack and will stop working if mod_mime people
+ *   decide to change their code. A better way to implement this would
+ *   be via the config tree, but it doesn't seem to be quite there just
+ *   yet, because it doesn't have .htaccess directives.
+ */
+
+char * get_addhandler_extensions(request_rec *req)
+{
+
+    /* these typedefs are copied from mod_mime.c */
+
+    typedef struct {
+	apr_hash_t  *extension_mappings;  
+	apr_array_header_t *remove_mappings; 
+	char *default_language;
+	int multimatch;
+    } mime_dir_config;
+
+    typedef struct extension_info {
+	char *forced_type;                /* Additional AddTyped stuff */
+	char *encoding_type;              /* Added with AddEncoding... */
+	char *language_type;              /* Added with AddLanguage... */
+	char *handler;                    /* Added with AddHandler... */
+	char *charset_type;               /* Added with AddCharset... */
+	char *input_filters;              /* Added with AddInputFilter... */
+	char *output_filters;             /* Added with AddOutputFilter... */
+    } extension_info;
+
+    mime_dir_config *mconf;
+
+    apr_hash_index_t *hi;
+    void *val;
+    void *key;
+    extension_info *ei;
+    char *result = NULL;
+
+    module *mod_mime = find_module("mod_mime.c");
+    mconf = (mime_dir_config *) ap_get_module_config(req->per_dir_config, mod_mime);
+
+    for (hi = apr_hash_first(req->pool, mconf->extension_mappings); hi; hi = apr_hash_next(hi)) {
+	apr_hash_this(hi, &key, NULL, &val);
+	ei = (extension_info *)val;
+	if (ei->handler) 
+	    if (strcmp("python-program", ei->handler) == 0) 
+		result = apr_pstrcat(req->pool, (char *)key, " ", result, NULL);
+    }
+
+    return result;
+}
 

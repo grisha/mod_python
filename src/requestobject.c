@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.16 2002/06/03 14:31:15 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.17 2002/07/31 21:49:50 gtrubetskoy Exp $
  *
  */
 
@@ -329,6 +329,29 @@ static PyObject * req_get_config(requestobject *self, PyObject *args)
 	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
 					       &python_module);
     return MpTable_FromTable(conf->directives);
+}
+
+/**
+ ** request.get_addhandler_exts(request self)
+ **
+ *     Returns file extentions that were given as argument to AddHandler mod_mime
+ *     directive, if any, if at all. This is useful for the Publisher, which can
+ *     chop off file extentions for modules based on this info.
+ *
+ *     XXX Due to the way this is implemented, it is best stay undocumented.
+ */
+
+static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
+{
+
+    char *exts = get_addhandler_extensions(self->request_rec);
+
+    if (exts) 
+	return PyString_FromString(exts);
+    else {
+	Py_INCREF(Py_None);
+        return Py_None;
+    }
 }
 
 //XXX document - get_dirs and get_all_dirs gone
@@ -703,6 +726,7 @@ static PyMethodDef requestobjectmethods[] = {
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
     {"get_all_config",        (PyCFunction) req_get_all_config,        METH_VARARGS},
     {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_VARARGS},
+    {"get_addhandler_exts",   (PyCFunction) req_get_addhandler_exts,   METH_VARARGS},
     {"get_config",            (PyCFunction) req_get_config,            METH_VARARGS},
     {"get_remote_host",       (PyCFunction) req_get_remote_host,       METH_VARARGS},
     {"get_options",           (PyCFunction) req_get_options,           METH_VARARGS},
@@ -810,7 +834,7 @@ static void request_dealloc(requestobject *self)
 /**
  ** tuple_from_finfo
  **
- *  makes a tuple from apr_finfo_t
+ *  makes a tuple similar to return of os.stat() from apr_finfo_t
  *
  */
 
@@ -818,37 +842,89 @@ static PyObject *tuple_from_finfo(apr_finfo_t f)
 {
     PyObject *t;
 
-    t = PyTuple_New(14);
+    if (f.filetype == APR_NOFILE) {
+	Py_INCREF(Py_None);
+	return Py_None;
+    }
+      
+    t = PyTuple_New(12);
 
-    PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f.valid));
-    PyTuple_SET_ITEM(t, 1, PyInt_FromLong(f.protection));
-    PyTuple_SET_ITEM(t, 2, PyInt_FromLong(f.user));
-    PyTuple_SET_ITEM(t, 3, PyInt_FromLong(f.group));
-    PyTuple_SET_ITEM(t, 4, PyInt_FromLong(f.inode));
-    PyTuple_SET_ITEM(t, 5, PyInt_FromLong(f.device));
-    PyTuple_SET_ITEM(t, 6, PyInt_FromLong(f.nlink));
-    PyTuple_SET_ITEM(t, 7, PyLong_FromLong(f.size));
-    PyTuple_SET_ITEM(t, 8, PyLong_FromLong(f.csize));
-    PyTuple_SET_ITEM(t, 9, PyFloat_FromDouble(f.atime/1000000));
-    PyTuple_SET_ITEM(t, 10, PyFloat_FromDouble(f.mtime/1000000));
-    PyTuple_SET_ITEM(t, 11, PyFloat_FromDouble(f.ctime/1000000));
+    if (f.valid & APR_FINFO_PROT) {
+	PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f.protection));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 0, Py_None);
+    }
+    if (f.valid & APR_FINFO_INODE) {
+	PyTuple_SET_ITEM(t, 1, PyInt_FromLong(f.inode));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 1, Py_None);
+    }
+    if (f.valid & APR_FINFO_DEV) {
+	PyTuple_SET_ITEM(t, 2, PyInt_FromLong(f.device));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 2, Py_None);
+    }
+    if (f.valid & APR_FINFO_NLINK) {
+	PyTuple_SET_ITEM(t, 3, PyInt_FromLong(f.nlink));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 3, Py_None);
+    }
+    if (f.valid & APR_FINFO_USER) {
+	PyTuple_SET_ITEM(t, 4, PyInt_FromLong(f.user));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 4, Py_None);
+    }
+    if (f.valid & APR_FINFO_GROUP) {
+	PyTuple_SET_ITEM(t, 5, PyInt_FromLong(f.group));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 5, Py_None);
+    }
+    if (f.valid & APR_FINFO_SIZE) {
+	PyTuple_SET_ITEM(t, 6, PyInt_FromLong(f.size));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 6, Py_None);
+    }
+    if (f.valid & APR_FINFO_ATIME) {
+	PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f.atime/1000000));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 7, Py_None);
+    }
+    if (f.valid & APR_FINFO_MTIME) {
+	PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f.mtime/1000000));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 8, Py_None);
+    }
+    if (f.valid & APR_FINFO_CTIME) {
+	PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f.ctime/10000000));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 9, Py_None);
+    }
     if (f.fname) {
-	PyTuple_SET_ITEM(t, 12, PyString_FromString(f.fname));
+	PyTuple_SET_ITEM(t, 10, PyString_FromString(f.fname));
     }
     else {
 	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 12, Py_None);
+	PyTuple_SET_ITEM(t, 10, Py_None);
     }
-    if (f.name) {
-	PyTuple_SET_ITEM(t, 13, PyString_FromString(f.name));
-    }
-    else {
+    if (f.valid & APR_FINFO_NAME) {
+	PyTuple_SET_ITEM(t, 11, PyString_FromString(f.name));
+    } else {
 	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 13, Py_None);
+	PyTuple_SET_ITEM(t, 11, Py_None);
     }
-
-    //XXX
-    //filehand (remember to adjust tuple size above, also constant in apache.py!)
+    /* it'd be nice to also return the file dscriptor, 
+       f.filehand->filedes, but it's platform dependent,
+       so may be later... */
 
     return t;
 }

@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.15 2002/07/26 13:10:30 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.16 2002/07/31 21:49:50 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -65,12 +65,6 @@ import base64
 
 import new
 
-# list of suffixes - .py, .pyc, etc.
-suffixes = map(lambda x: x[0], imp.get_suffixes())
-
-# now compile a regular expression out of it:
-exp = "\\" + string.join(suffixes, "$|\\")
-suff_matcher = re.compile(exp)
 
 def handler(req):
 
@@ -122,13 +116,24 @@ def handler(req):
     # add req
     args["req"] = req
 
-    # import the script
+    ## import the script
     path, module_name =  os.path.split(_req.filename)
 
     # get rid of the suffix
-    module_name = suff_matcher.sub("", module_name)
+    #   explanation: Suffixes that will get stripped off
+    #   are those that were specified as an argument to the
+    #   AddHandler directive. Everything else will be considered
+    #   a package.module rather than module.suffix
+    exts = req.get_addhandler_exts()
+    if exts:
+        suffixes = exts.strip().split()
+        exp = "\\." + string.join(suffixes, "$|\\.")
+        suff_matcher = re.compile(exp) # python caches these, so its fast
+        module_name = suff_matcher.sub("", module_name)
 
     # import module (or reload if needed)
+    # the [path] argument tells import_module not to allow modules whose
+    # full path is not in [path] or below.
     module = apache.import_module(module_name, _req, [path])
 
     # does it have an __auth__?
@@ -317,3 +322,5 @@ class File:
         self.headers = field.headers
         self.filename = field.filename
     
+        
+

@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.18 2002/06/03 14:31:16 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.19 2002/07/31 21:49:50 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -56,6 +56,7 @@
 
 /* Apache headers */
 #include "httpd.h"
+#define CORE_PRIVATE
 #include "http_config.h"
 #include "http_core.h"
 #include "http_main.h"
