@@ -1,0 +1,65 @@
+\documentclass{manual}
+
+\title{Mod\_python Manual}
+
+\author{Gregory Trubetskoy}
+
+% Please at least include a long-lived email address;
+% the rest is at your discretion.
+\authoraddress{
+	E-mail: \email{grisha@modpython.org}
+}
+
+\date{\today}			% update before release!
+				% Use an explicit date so that reformatting
+				% doesn't cause a new date to be used.  Setting
+				% the date to \today can be used during draft
+				% stages to make it easier to handle versions.
+
+\release{2.7}			% release version; this is used to define the
+				% \version macro
+
+\makeindex			% tell \index to actually write the .idx file
+\makemodindex			% If this contains a lot of module sections.
+
+
+\begin{document}
+
+\maketitle
+
+% This makes the contents more accessible from the front page of the HTML.
+\ifhtml
+\chapter*{Front Matter\label{front}}
+\fi
+
+\input{copyright}
+
+\begin{abstract}
+
+\noindent
+Mod_python allows embedding Python within the Apache http server for a
+considerable boost in performance and added flexibility in designing
+web based applications.
+
+This document describes all aspects of mod_python utilization, from
+history to installation to tutorial to api and Apache directive
+reference.
+
+\end{abstract}
+
+\tableofcontents
+
+\input{modpython1} % Introduction
+\input{modpython2} % Installation
+\input{modpython3} % Tutorial
+\input{modpython4} % Python API
+\input{modpython5} % Apache directives
+\input{modpython6} % Handlers
+
+%\appendix
+%\chapter{...}
+%My appendix.
+
+\input{modpython.ind}
+
+\end{document}

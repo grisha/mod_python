@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: cgihandler.html,v 1.3 2000/10/17 03:06:30 gtrubetskoy Exp $ -->
+<!-- $Id: cgihandler.html,v 1.4 2000/12/05 00:13:58 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -16,23 +16,28 @@
       To use it, simply add this to your .htaccess file:
       <pre>
          SetHandler python-program
-         PythonHandler cgihandler
+         PythonHandler mod_python.cgihandler
     </pre>
     <p>
-      <h3>CGI is not exactly the same as cgihandler</h3>
+      As of version 2.7, the cgihandler will properly reload even indirectly
+      imported modules. This is done by saving a list of loaded modules 
+      <code>(sys.modules)</code> prior
+      to executing a CGI script, and then comparing it with a list of imported
+      modules after the CGI script is done. Modules (except for whose whose 
+      __file__ attribute points to the standard Python library location) will be deleted
+      from <code>sys.modules</code> thereby forcing Python to load them again
+      next time the CGI script imports them.
     <p>
-      The cgihandler reloads the module for every hit. However, the modules imported
-      by the main module do not get reloaded. This is good for performance, but if
-      your CGI scripts relied on this functionality, they will be broken.
+      If you do not want the above behaviour, edit the cgihandler.py file and
+      comment out the code delimited by ###.
     <p>
-      In my tests, the cgihandler was leaking some memory. I haven't been
-      able to figure out why, I suspect it has something to do with having to reload
-      the same module a lot.
-    
+      In my tests, the cgihandler was leaking some memory when processing a lot
+      of file uploads. It is still not clear what causes this. The way to work
+      around this is to set the Apache MaxRequestsPerChild to a non-zero value.
     <hr>
 <!-- Created: Wed May 10 15:17:29 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon Oct 16 23:05:38 EDT 2000
+Last modified: Sat Nov 18 21:47:44 EST 2000
 <!-- hhmts end -->
   </body>
 </html>
