@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.4 2003/06/30 18:04:35 grisha Exp $
+ # $Id: Cookie.py,v 1.5 2003/07/01 20:30:20 grisha Exp $
 
 """
 
@@ -76,67 +76,6 @@ of Expires, but my limited tests show that Max-Age is ignored
 by the two browsers tested (IE and Safari). As a result of this,
 perhaps trying to be RFC-compliant (by automatically providing
 Max-Age and Version) could be a waste of cookie space...
-
-
-Sample usage:
-
-A "Cookie" is a cookie, not a list of cookies as in std lib Cookie.py
-
-* making a cookie:
-
->>> c = Cookie("spam", "eggs")
->>> print c
-spam=eggs; version=1
->>> c.max_age = 3
->>> str(c)
-'spam=eggs; version=1; expires=Sat, 14-Jun-2003 02:42:36 GMT; max_age=3'
->>>
-
-* bogus attributes not allowed:
-
->>> c.eggs = 24
-Traceback (most recent call last):
-  File "<stdin>", line 1, in ?
-  AttributeError: 'Cookie' object has no attribute 'eggs'
-
-* parsing (note the result is a dict of cookies)
-
->>> Cookie.parse(str(c))
-{'spam': <Cookie: spam=eggs; version=1; expires=Sat, 14-Jun-2003 02:42:36 GMT; max_age=3>}
->>>
-
-* signed cookies (uses hmac):
-
->>> sc = SignedCookie("spam", "eggs", "secret")
->>> print sc
-spam=da1170b718dfbad95c392db649d24898eggs; version=1
->>>
-
-* parsing signed cookies:
-
->>> SignedCookie.parse("secret", str(sc))
-{'spam': <SignedCookie: spam=da1170b718dfbad95c392db649d24898eggs; version=1>}
->>>
-
->>> SignedCookie.parse("evil", str(sc))
-   [snip]
-        Cookie.CookieError: Incorrectly Signed Cookie: spam=da1170b718dfbad95c392db649d24898eggs
->>>
-
-* marshal cookies (subclass of SignedCookie, so MUST be signed),
-  also - this is marshal, not pickle (that would be too scary):
-
->>> mc = MarshalCookie("spam", {"eggs":24}, "secret")
->>> print mc
-spam=a90f71893109ca246ab68860f552302ce3MEAAAAZWdnc2kYAAAAMA==; version=1
->>>
-
->>> newmc = MarshalCookie.parse("secret", str(mc))
->>> print newmc["spam"]
-spam=a90f71893109ca246ab68860f552302ce3MEAAAAZWdnc2kYAAAAMA==; version=1
->>> newmc["spam"].value
-{'eggs': 24}
->>>
 
 """
 
@@ -420,8 +359,8 @@ def _parseCookie(str, Class):
 
         else:
             # start a new cookie
-            c = Class(key, val)
-            result[key] = c
+            c = Class(l_key, val)
+            result[l_key] = c
 
     return result
 
@@ -444,7 +383,7 @@ def getCookie(req, Class=Cookie, data=None):
     """
     
     if not req.headers_in.has_key("cookie"):
-        return None
+        return {}
 
     cookies = req.headers_in["cookie"]
     if type(cookies) == type([]):
