@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.7 2000/12/06 03:05:37 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.8 2002/08/12 02:01:15 gtrubetskoy Exp $
 
 @SET_MAKE@
 LIBEXECDIR=@LIBEXECDIR@
@@ -119,7 +119,8 @@ install_py_lib:
 	do \
 		$(INSTALL) $$f $(PY_STD_LIB)/site-packages/mod_python; \
 	done
-	python $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
+	${PYTHONBIN} $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
+	${PYTHONBIN} -O $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
 
 clean:
 	cd src && $(MAKE) clean
