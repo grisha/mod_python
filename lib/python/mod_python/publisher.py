@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.27 2002/12/28 03:43:40 grisha Exp $
+ # $Id: publisher.py,v 1.28 2003/05/22 18:36:21 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -150,8 +150,15 @@ def handler(req):
     # import module (or reload if needed)
     # the [path] argument tells import_module not to allow modules whose
     # full path is not in [path] or below.
-    module = apache.import_module(module_name, req.get_config(), [path])
-
+    try:
+        module = apache.import_module(module_name, req.get_config(), [path])
+    except ImportError:
+        # try again, using default module, perhaps this is a
+        # /directory/function (as opposed to /directory/module/function)
+        func_path = module_name
+        module_name = "index"
+        module = apache.import_module(module_name, req.get_config(), [path])
+        
     # does it have an __auth__?
     realm, user, passwd = process_auth(req, module)
 

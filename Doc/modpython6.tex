@@ -56,7 +56,10 @@ path, one element at a time from left to right, mapping the elements
 to Python object within the module.
 
 If no path_info was given in the URL, the Publisher handler will use
-the default value of "index".
+the default value of "index". If the last element is an object inside
+a module, and the one immediately preceeding it is a directory
+(i.e. no module name is given), then the module name will also default
+to "index".
 
 The traversal will stop and \constant{HTTP_NOTFOUND} will be returned to
 the client if:
@@ -76,6 +79,41 @@ security reasons.
 
 If an object in the path could not be found, \constant{HTTP_NOT_FOUND}
 is returned to the client.
+
+For eaxmple, given the following configuration:
+
+\begin{verbatim}
+DocumentRoot /some/dir
+
+<Directory /some/dir>
+    SetHandler python-program
+    PythonHandler mod_python.publisher
+</Directory>
+\end{verbatim}
+
+And the following \file{/some/dir/index.py} file:
+
+\begin{verbatim}
+def index(req):
+
+    return "We are in index()"
+
+def hello(req):
+
+    return "We are in hello()"
+\end{verbatim}
+
+Then:
+
+http://www.somehost/index/index will return "We are in index()"
+
+http://www.somehost/index/ will return "We are in index()"
+
+http://www.somehost/index/hello will return "We are in hello()"
+
+http://www.somehost/hello will return "We are in hello()"
+
+http://www.somehost/spam will return "404 Not Found"
 
 \subsubsection{Argument Matching and Invocation\label{hand-pub-alg-args}}
 
