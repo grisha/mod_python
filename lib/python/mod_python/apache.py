@@ -442,7 +442,7 @@ def import_module(module_name, autoreload=1, log=0, path=None):
         else:
             mtime, oldmtime = 0, -1
 
-        if mtime > oldmtime:
+        if mtime != oldmtime:
 
             # Import the module
             if log:
