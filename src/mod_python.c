@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.54 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.55 2001/11/06 05:06:58 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -638,6 +638,11 @@ static requestobject *get_request_object(request_rec *req)
 	req_config->dynhls = apr_hash_make(req->pool);
 	ap_set_module_config(req->request_config, &python_module, req_config);
 
+	/* register the clean up directive handler */
+	apr_pool_cleanup_register(req->pool, (void *)req, 
+			  python_cleanup_handler, 
+			  apr_pool_cleanup_null);
+
 	/* XXX why no incref here? */
 	return request_obj;
     }
@@ -844,10 +849,10 @@ static int python_handler(request_rec *req, char *phase)
     Py_XDECREF(request_obj->phase);
     request_obj->phase = PyString_FromString(phase);
 
-    /* create an hahdler list object */
+    /* create a hahdler list object */
     request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
-    apr_pool_cleanup_register(req->pool, request_obj->hlo, python_decref, 
-    apr_pool_cleanup_null);
+    //apr_pool_cleanup_register(req->pool, request_obj->hlo, python_decref, 
+    //apr_pool_cleanup_null);
 
     /* add dynamically registered handlers, if any */
     if (dynhle) {
@@ -950,15 +955,63 @@ static int python_handler(request_rec *req, char *phase)
  **
  *    Runs handler registered via PythonCleanupHandler. Clean ups
  *    registered via register_cleanup() run in python_cleanup() above.
- *
- *    This is a little too similar to python_handler, except the
- *    return of the function doesn't matter.
  */
 
 static apr_status_t python_cleanup_handler(void *data)
 {
 
-    return APR_SUCCESS;
+    apr_status_t rc;
+    py_req_config *req_config;
+    request_rec *req = (request_rec *)data;
+
+    rc = python_handler((request_rec *)data, "PythonCleanupHandler");
+
+    /* now we need to decrement the reference to req._Request
+       to eliminate a circular reference that will prevent
+       the request object from ever being deallocated.
+       Then we DECREF what should be the last reference to
+       request object.
+    */
+
+    req_config = (py_req_config *) ap_get_module_config(req->request_config,
+							&python_module);
+
+    if (req_config && req_config->request_obj) {
+
+	interpreterdata *idata;
+	PyThreadState *tstate;
+	requestobject *request_obj = req_config->request_obj;
+
+#ifdef WITH_THREAD  
+	PyEval_AcquireLock();
+#endif
+	idata = get_interpreter_data(NULL, req->server);
+#ifdef WITH_THREAD
+	PyEval_ReleaseLock();
+#endif
+	tstate = PyThreadState_New(idata->istate);
+#ifdef WITH_THREAD  
+	PyEval_AcquireThread(tstate);
+#else
+	PyThreadState_Swap(tstate);
+#endif
+
+	Py_XDECREF(request_obj->Request);
+	request_obj->Request = NULL;
+
+	Py_XDECREF(request_obj);
+
+	/* release the lock and destroy tstate*/
+	/* XXX Do not use blah blah...  */
+	PyThreadState_Swap(NULL);
+	PyThreadState_Delete(tstate);
+#ifdef WITH_THREAD
+	PyEval_ReleaseLock();
+#endif
+
+    }
+
+    return rc;
 }
 
 
@@ -1630,10 +1683,6 @@ static int PythonLogHandler(request_rec *req) {
 }
 static int PythonPostReadRequestHandler(request_rec *req) {
     int rc;
-
-    /* register the clean up directive handler */
-    apr_pool_cleanup_register(req->pool, (void *)req, python_cleanup_handler, 
-			      apr_pool_cleanup_null);
 
     /* run PythonInitHandler */
     rc = python_handler(req, "PythonInitHandler");

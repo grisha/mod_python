@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.16 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.17 2001/11/06 05:06:58 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -171,5 +171,6 @@ typedef struct
 } py_filter_handler;
 
 apr_status_t python_cleanup(void *data);
+static apr_status_t python_cleanup_handler(void *data);
 
 #endif /* !Mp_MOD_PYTHON_H */

@@ -1,3 +1,6 @@
+Nov  6 2001 -	More internal changes. Bugs from previous change, cleaner
+		reference keeping.
+
 Nov  1 2001 -	Many internal changes. We no longer use req->notes for things
 		that shouldn't be there, handler directives can be restricted
 		to specific file extensions thereby allowing multiple handlers

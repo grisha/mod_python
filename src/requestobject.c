@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.13 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.14 2001/11/06 05:06:58 gtrubetskoy Exp $
  *
  */
 
@@ -87,8 +87,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->rbuff_len = 0;
 
     _Py_NewReference(result);
-    apr_pool_cleanup_register(req->pool, (PyObject *)result, python_decref, 
-			      apr_pool_cleanup_null);
 
     return (PyObject *) result;
 }
@@ -650,7 +648,7 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
 	free(ci);
 	return NULL;
     }
-    
+
     apr_pool_cleanup_register(self->request_rec->pool, ci, python_cleanup, 
 			      apr_pool_cleanup_null);
 
@@ -805,6 +803,7 @@ static void request_dealloc(requestobject *self)
     Py_XDECREF(self->notes);
     Py_XDECREF(self->phase);
     Py_XDECREF(self->Request);
+    Py_XDECREF(self->hlo);
 
     free(self);
 }
