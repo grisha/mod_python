@@ -1,4 +1,8 @@
 
+Jun 11 2000 -   Stephane Bidoul's thread-safe win32 changes put in. As part
+		of this, all chdir()'s are gone and now instead of '.', the
+		file path is prepended to pythonpath.
+
 Jun  8 2000 -   2.3 Released.
 
 Jun  7 2000 -	PythonImport now works.
