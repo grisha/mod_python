@@ -206,6 +206,9 @@ void yyfree (void * ,yyscan_t yyscanner );
 
 /* Begin user sect3 */
 
+#define yywrap(n) 1
+#define YY_SKIP_YYWRAP
+
 #define yytext_ptr yytext_r
 
 #ifdef YY_HEADER_EXPORT_START_CONDITIONS
@@ -316,9 +319,9 @@ extern int yylex (yyscan_t yyscanner);
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 197 "psp_parser.l"
+#line 199 "psp_parser.l"
 
 
-#line 323 "include/psp_flex.h"
+#line 326 "include/psp_flex.h"
 #undef yyIN_HEADER
 #endif /* yyHEADER_H */
