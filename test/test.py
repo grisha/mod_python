@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.26 2003/01/23 20:20:00 grisha Exp $
+ # $Id: test.py,v 1.27 2003/01/23 22:34:18 grisha Exp $
  #
 
 """
@@ -857,7 +857,7 @@ def suite():
 
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(PerInstanceTestCase("testLoadModule"))
-##     mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
+    mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
     mpTestSuite.addTest(PerInstanceTestCase("testPerRequestTests"))
     return mpTestSuite
 

@@ -57,7 +57,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.13 2002/12/30 15:17:56 grisha Exp $
+ * $Id: connobject.c,v 1.14 2003/01/23 22:34:18 grisha Exp $
  *
  */
 
@@ -405,6 +405,9 @@ static PyObject * conn_getattr(connobject *self, char *name)
     }
     else if (strcmp(name, "double_reverse") == 0) {
         return PyInt_FromLong(self->conn->double_reverse);
+    }
+    else if (strcmp(name, "local_addr") == 0) {
+        return makesockaddr(self->conn->local_addr);
     }
     else if (strcmp(name, "remote_addr") == 0) {
         return makesockaddr(self->conn->remote_addr);
