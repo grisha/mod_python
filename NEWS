@@ -1,3 +1,8 @@
+Jan 19 2000 -	Added req._content_type_set flag which is set to 1 when
+		a value is assigned to content_type from Python. This way
+		the publisher handler can know if it's been purposely set
+		and will not attempt to guess it.
+
 Jan 18 2000 -	Documented req.form. Fixed a security problem with the
 		Publisher handler - it now does not allow modules to be
 		published, so a user can't access test.os.renames, etc.
