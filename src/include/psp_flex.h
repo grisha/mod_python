@@ -2,9 +2,9 @@
 #define yyHEADER_H 1
 #define yyIN_HEADER 1
 
-#line 6 "include/flex.h"
+#line 6 "include/psp_flex.h"
 
-#line 8 "include/flex.h"
+#line 8 "include/psp_flex.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -212,8 +212,7 @@ void yyfree (void * ,yyscan_t yyscanner );
 #define INITIAL 0
 #define TEXT 1
 #define PYCODE 2
-#define STRING 3
-#define INDENT 4
+#define INDENT 3
 
 #endif
 
@@ -317,9 +316,9 @@ extern int yylex (yyscan_t yyscanner);
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 282 "psp_parser.l"
+#line 173 "psp_parser.l"
 
 
-#line 324 "include/flex.h"
+#line 323 "include/psp_flex.h"
 #undef yyIN_HEADER
 #endif /* yyHEADER_H */

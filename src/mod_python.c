@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.89 2003/05/24 03:55:27 grisha Exp $
+ * $Id: mod_python.c,v 1.90 2003/05/29 14:15:47 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -124,7 +124,6 @@ static PyObject * make_obcallback(server_rec *s)
      */
     /* Py_InitModule("_apache", _apache_module_methods); */
     init_apache();
-	_psp_module_init();
 
     /* Now execute the equivalent of
      * >>> import <module>

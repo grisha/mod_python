@@ -52,14 +52,14 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_interface.h,v 1.1 2003/04/09 14:05:56 grisha Exp $
+ * $Id: _pspmodule.h,v 1.1 2003/05/29 14:15:52 grisha Exp $
  *
  */
 
 #ifndef __PSP_MODULE_H
 #define __PSP_MODULE_H
 
-void _psp_module_init(void);
+void init_psp(void);
 
 #endif /* __PSP_MODULE_H */
 

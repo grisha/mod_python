@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.3 2002/12/30 19:01:27 grisha Exp $
+ # $Id: Makefile.in,v 1.4 2003/05/29 14:15:46 grisha Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
@@ -62,7 +62,7 @@ MP_VERSION=@MP_VERSION@
 
 dist: unixdist
 
-unixdist: mod_python 
+unixdist: mod_python src 
 	@if [ ! -f dist/mod_python-$(MP_VERSION).tar.gz ]; then \
 		echo "Building a source distribution"; \
 		$(PYTHON_BIN) setup.py sdist; \
@@ -74,13 +74,11 @@ unixdist: mod_python
 windist: mod_python.so
 	$(PYTHON_BIN) setup.py bdist_wininst --install-script=win32_postinstall.py
 
+install: install_py_lib
+
 # this may require root privilidges
-install_py_lib: unixdist
-	cd dist; \
-	gunzip -c mod_python-$(MP_VERSION).tar.gz | tar xf -; \
-	cd mod_python-$(MP_VERSION); \
+install_py_lib: mod_python src
 	$(PYTHON_BIN) setup.py install --optimize 2 --force; \
-	cd ..; rm -rf mod_python-$(MP_VERSION)
 
 mod_python.so:
 	@echo "Please place a WIN32 compiled mod_python.so in this directory"
@@ -89,8 +87,11 @@ mod_python.so:
 mod_python:
 	ln -s ../lib/python/mod_python
 
+src:
+	ln -s ../src
+
 clean:
 	rm -rf mod_python build dist
 
 distclean:
-	rm -rf mod_python build dist mod_python.so setup.py Makefile MANIFEST MANIFSET.in
+	rm -rf mod_python src build dist mod_python.so setup.py Makefile MANIFEST MANIFSET.in

@@ -340,8 +340,8 @@ static void yy_fatal_error (yyconst char msg[] ,yyscan_t yyscanner );
 	*yy_cp = '\0'; \
 	yyg->yy_c_buf_p = yy_cp;
 
-#define YY_NUM_RULES 16
-#define YY_END_OF_BUFFER 17
+#define YY_NUM_RULES 13
+#define YY_END_OF_BUFFER 14
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -349,12 +349,11 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[39] =
+static yyconst flex_int16_t yy_accept[30] =
     {   0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,   14,
-       17,    1,   16,    5,    2,    2,    5,   11,    6,    6,
-       11,   11,    7,    8,   13,   13,   15,   14,    4,    0,
-        9,    8,    0,   14,    3,   10,   12,    0
+        0,    0,    0,    0,    0,    0,    0,   10,   14,    1,
+       13,    5,    4,    4,    5,    9,    6,    6,    9,    8,
+       12,   12,   10,    3,    7,   11,   10,    2,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -362,17 +361,17 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    4,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    5,    1,    6,    1,    1,    7,    1,    1,    1,
+        1,    2,    1,    1,    1,    1,    5,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    8,
-        9,   10,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    6,    1,    7,
+        8,    9,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
 
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,   11,    1,   12,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -389,50 +388,43 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[13] =
+static yyconst flex_int32_t yy_meta[10] =
     {   0,
-        1,    2,    1,    1,    2,    1,    1,    1,    1,    1,
-        1,    1
+        1,    1,    1,    1,    1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int16_t yy_base[44] =
+static yyconst flex_int16_t yy_base[33] =
     {   0,
-       46,   45,    0,    6,   14,    0,   24,   28,   44,   33,
-       37,   50,   50,   50,   50,   50,   26,   50,   50,   50,
-       26,   19,   50,   23,   50,    7,   50,    0,    3,    5,
-       50,    2,    0,    0,   50,   50,   50,   50,   38,   40,
-       42,   44,    0
+       29,   28,    0,    5,   12,    0,   19,   23,   30,   33,
+       33,   33,   33,   33,   24,   33,   33,   33,   18,   33,
+       33,   14,    9,    2,   33,   33,    4,   33,   33,    4,
+        1,    0
     } ;
 
-static yyconst flex_int16_t yy_def[44] =
+static yyconst flex_int16_t yy_def[33] =
     {   0,
-       39,   39,   40,   40,   38,    5,   41,   41,   42,   42,
-       38,   38,   38,   38,   38,   38,   38,   38,   38,   38,
-       38,   38,   38,   38,   38,   38,   38,   43,   38,   38,
-       38,   38,   38,   43,   38,   38,   38,    0,   38,   38,
-       38,   38,   38
+       30,   30,   31,   31,   29,    5,   32,   32,   29,   29,
+       29,   29,   29,   29,   29,   29,   29,   29,   29,   29,
+       29,   29,   29,   29,   29,   29,   29,   29,    0,   29,
+       29,   29
     } ;
 
-static yyconst flex_int16_t yy_nxt[63] =
+static yyconst flex_int16_t yy_nxt[43] =
     {   0,
-       38,   34,   15,   16,   38,   37,   32,   17,   15,   16,
-       36,   35,   33,   17,   18,   18,   19,   20,   18,   21,
-       22,   18,   18,   18,   23,   24,   13,   32,   31,   26,
-       13,   30,   29,   26,   28,   13,   38,   28,   12,   12,
-       14,   14,   25,   25,   27,   27,   13,   13,   13,   11,
-       38,   38,   38,   38,   38,   38,   38,   38,   38,   38,
-       38,   38
+       21,   12,   13,   14,   10,   27,   15,   13,   14,   28,
+       27,   15,   16,   16,   17,   18,   19,   20,   16,   16,
+       16,   11,   26,   22,   23,   11,   25,   22,   24,   29,
+       11,   11,    9,   29,   29,   29,   29,   29,   29,   29,
+       29,   29
     } ;
 
-static yyconst flex_int16_t yy_chk[63] =
+static yyconst flex_int16_t yy_chk[43] =
     {   0,
-        0,   43,    3,    3,    0,   33,   32,    3,    4,    4,
-       30,   29,   26,    4,    5,    5,    5,    5,    5,    5,
-        5,    5,    5,    5,    5,    5,    7,   24,   22,    7,
-        8,   21,   17,    8,   10,   10,   11,   10,   39,   39,
-       40,   40,   41,   41,   42,   42,    9,    2,    1,   38,
-       38,   38,   38,   38,   38,   38,   38,   38,   38,   38,
-       38,   38
+       32,   31,    3,    3,   30,   27,    3,    4,    4,   24,
+       23,    4,    5,    5,    5,    5,    5,    5,    5,    5,
+        5,    7,   22,    7,    8,    8,   19,    8,   15,    9,
+        2,    1,   29,   29,   29,   29,   29,   29,   29,   29,
+       29,   29
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -498,42 +490,13 @@ static yyconst flex_int16_t yy_chk[63] =
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.c,v 1.4 2003/05/24 03:55:27 grisha Exp $
+ * $Id: psp_parser.c,v 1.5 2003/05/29 14:15:48 grisha Exp $
  *
- * This file originally by Sterling Hughes.
+ * This file originally written by Sterling Hughes.
  * 
  */
 
-/* 
- * Briefly we are dealing with five modes here:
- * 0 (INITIAL) - we print a little header, req.print(""" and 
- *   immeditely enter TEXT mode.
- * TEXT - this is your plain old HTML or whatever is in the file.
- *   We copy everything into ob, if we see eol, we flush ob to
- *   pycode. If we see <% or <%= we enter PYCODE mode.
- * PYCODE - we are inside Python code. Copy everithing similar
- *   TEXT, but watch out for the following:
- *     { - means "simlated" block. We increment in_block counter.
- *         from here on any python code will be indented in_block
- *         times.
- *     } - decrement in_block
- *     ", ' or """ - enter STRING mode
- * STRING - Copy stuff over, but watch out for a backslash. A backslash
- *   sets the escape flag, so a closing quote is ignored. The """ case is
- *   a bit more complex.
- * INDENT - we left Python code after encountering %> and are
- *   now in the indent before the first non-whitespace char, e.g.
- *
- *   %>
- *   ....<h1>hello</h1>
- *
- *   The space represented by dots above is in INDENT. If in block, 
- *   we output whitespace, else, just pass blanks through.
- *   Then print req.write(""" and enter TEXT mode.
- */
-
 #include "psp_parser.h"
-#include <stdio.h>
 
 #define OUTPUT_WHITESPACE(__wsstring) \
 	psp_string_0((__wsstring)); \
@@ -544,14 +507,12 @@ static yyconst flex_int16_t yy_chk[63] =
 
 
 
-
-#line 549 "psp_parser.c"
+#line 511 "psp_parser.c"
 
 #define INITIAL 0
 #define TEXT 1
 #define PYCODE 2
-#define STRING 3
-#define INDENT 4
+#define INDENT 3
 
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
  * down here because we want the user's section 1 to have been scanned first.
@@ -765,10 +726,10 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 106 "psp_parser.l"
+#line 76 "psp_parser.l"
 
 
-#line 772 "psp_parser.c"
+#line 733 "psp_parser.c"
 
 	if ( yyg->yy_init )
 		{
@@ -822,13 +783,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 39 )
+				if ( yy_current_state >= 30 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 50 );
+		while ( yy_base[yy_current_state] != 33 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -854,12 +815,10 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 108 "psp_parser.l"
+#line 78 "psp_parser.l"
 {
-    psp_string_0(&PSP_PG(ob));
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("#\n# This is file is auto-generated by mod_python PSP.\n#\n")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("#\n# This file is auto-generated by mod_python PSP.\n#\n")); 
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\nreq.write(\"\"\"")); 
-    psp_string_free(&PSP_PG(ob));
 
     yyless(0);
 
@@ -867,72 +826,46 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 case 2:
-/* rule 2 can match eol */
 YY_RULE_SETUP
-#line 119 "psp_parser.l"
-{ 
-    if (PSP_PG(ob).length) { 
-        psp_string_0(&PSP_PG(ob)); 
-        psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length); 
-        psp_string_free(&PSP_PG(ob)); 
-    }  
-
-    psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-} 
-	YY_BREAK
-case 3:
-YY_RULE_SETUP
-#line 129 "psp_parser.l"
+#line 87 "psp_parser.l"
 {
-	if (PSP_PG(ob).length) {
-		psp_string_0(&PSP_PG(ob));
-		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-		psp_string_free(&PSP_PG(ob));
-	}
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
-
-	OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-	psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write("));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\"); req.write(str("));
 	PSP_PG(is_psp_echo) = 1;
 
 	BEGIN PYCODE;
 }
 	YY_BREAK
-case 4:
+case 3:
 YY_RULE_SETUP
-#line 144 "psp_parser.l"
+#line 94 "psp_parser.l"
 {
-	if (PSP_PG(ob).length) { 
-		psp_string_0(&PSP_PG(ob));
-		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-		psp_string_free(&PSP_PG(ob));
-	}  
         psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n\n")); 
-	CLEAR_WHITESPACE(&PSP_PG(whitespace));
 
 	BEGIN PYCODE;
 }
 	YY_BREAK
+case 4:
+/* rule 4 can match eol */
+YY_RULE_SETUP
+#line 100 "psp_parser.l"
+{
+	psp_string_appendc(&PSP_PG(pycode), '\n');
+}
+	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 156 "psp_parser.l"
+#line 104 "psp_parser.l"
 {
 	if (yytext[0] == '"') {
-		psp_string_appendl(&PSP_PG(ob), STATIC_STR("\\\""));
+		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\""));
 	} else {
-		psp_string_appendc(&PSP_PG(ob), yytext[0]);
+		psp_string_appendc(&PSP_PG(pycode), yytext[0]);
 	}
 }
 	YY_BREAK
 case YY_STATE_EOF(TEXT):
-#line 164 "psp_parser.l"
+#line 112 "psp_parser.l"
 {
-    if (PSP_PG(ob).length) {
-        psp_string_0(&PSP_PG(ob));
-        OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-        psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-        psp_string_free(&PSP_PG(ob));
-    }
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
     yyterminate();
 }
@@ -940,150 +873,89 @@ case YY_STATE_EOF(TEXT):
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 175 "psp_parser.l"
+#line 117 "psp_parser.l"
 {
 	psp_string_appendc(&PSP_PG(pycode), '\n');
-}
-	YY_BREAK
-case 7:
-YY_RULE_SETUP
-#line 179 "psp_parser.l"
-{
-	psp_string_appendc(&PSP_PG(whitespace), '\t');
-	PSP_PG(in_block)++;
-}
-	YY_BREAK
-case 8:
-YY_RULE_SETUP
-#line 184 "psp_parser.l"
-{
-	CLEAR_WHITESPACE(&PSP_PG(whitespace));
-	PSP_PG(in_block)--;
-	if (PSP_PG(in_block) < 0) {
-		PSP_PG(in_block) = 0;
-	}
-}
-	YY_BREAK
-case 9:
-YY_RULE_SETUP
-#line 192 "psp_parser.l"
-{
-	if (PSP_PG(is_psp_echo)) {
-		psp_string_appendc(&PSP_PG(pycode), ')'); 
-		PSP_PG(is_psp_echo) = 0;
-	} 
 
         BEGIN INDENT;
 }
 	YY_BREAK
-case 10:
+case 7:
 YY_RULE_SETUP
-#line 201 "psp_parser.l"
+#line 123 "psp_parser.l"
 {
-        PSP_PG(string_char) = '3';
-        psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
 
-        BEGIN STRING;
-}
-	YY_BREAK
-case 11:
-YY_RULE_SETUP
-#line 208 "psp_parser.l"
-{
-        if (yytext[0] == '"' || yytext[0] == '\'') {
-                PSP_PG(string_char) = yytext[0];
-                BEGIN STRING;
-        }	
-        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-}
-	YY_BREAK
-case 12:
-YY_RULE_SETUP
-#line 216 "psp_parser.l"
-{
-        if (PSP_PG(string_char) == '3') {
-                if (!PSP_PG(is_string_escape)) {
-                    psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
-                    BEGIN PYCODE;
-                }
-                else {
-                    psp_string_appendc(&PSP_PG(pycode), '"');
-                    yyless(1);
-                }
-        }
-        PSP_PG(is_string_escape) = 0;
-}
-	YY_BREAK
-case 13:
-YY_RULE_SETUP
-#line 230 "psp_parser.l"
-{
-	if (yytext[0] == '\\') {
-		PSP_PG(is_string_escape) = 1;
-	} else {
-		if (yytext[0] == PSP_PG(string_char)) {
-			if (!PSP_PG(is_string_escape)) {
-				BEGIN PYCODE;
-			}
-		}
-		PSP_PG(is_string_escape) = 0;
-	}
-	
-	psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-}
-	YY_BREAK
-case 14:
-YY_RULE_SETUP
-#line 245 "psp_parser.l"
-{
-        psp_string_appendc(&PSP_PG(pycode), '\n'); 
-
-        if (PSP_PG(in_block)) {
-                OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-        }
+	if (PSP_PG(is_psp_echo)) {
+            psp_string_appendl(&PSP_PG(pycode), STATIC_STR(")); req.write(\"\"\""));
+            PSP_PG(is_psp_echo) = 0;
+	} 
         else {
-                CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
-		psp_string_appendl(&PSP_PG(whitespace), yytext, yyleng);
-		psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
-	}
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
+            if (PSP_PG(after_colon)) {
+                /* this is dumb mistake-proof measure, if %> 
+                   is immediately following where there should be an indent */
+                psp_string_appendc(&PSP_PG(whitespace), '\t');
+            }
+            OUTPUT_WHITESPACE(&PSP_PG(whitespace));
+            psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
+        }
 
         BEGIN TEXT;
 }
 	YY_BREAK
-case 15:
+case 8:
 YY_RULE_SETUP
-#line 261 "psp_parser.l"
+#line 142 "psp_parser.l"
 {
-    psp_string_appendc(&PSP_PG(pycode), '\n'); 
-
-    if (PSP_PG(in_block)) {
-        OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-    }
-    else {
-        CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
-    }
-
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
-
-    if (yytext[0] == '"') {
-        psp_string_appendl(&PSP_PG(ob), STATIC_STR("\\\""));
-    } else {
-        psp_string_appendc(&PSP_PG(ob), yytext[0]);
-    }
-    
-    BEGIN TEXT;
+        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+	PSP_PG(after_colon) = 1;
 }
 	YY_BREAK
-case 16:
+case 9:
 YY_RULE_SETUP
-#line 282 "psp_parser.l"
+#line 147 "psp_parser.l"
+{
+        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+        PSP_PG(after_colon) = 0;
+}
+	YY_BREAK
+case 10:
+YY_RULE_SETUP
+#line 152 "psp_parser.l"
+{
+
+        CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+        psp_string_appendl(&PSP_PG(whitespace), yytext, yyleng);
+        psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
+
+        BEGIN PYCODE;
+}
+	YY_BREAK
+case 11:
+YY_RULE_SETUP
+#line 161 "psp_parser.l"
+{
+    yyless(0);
+    BEGIN PYCODE;
+}
+	YY_BREAK
+case 12:
+YY_RULE_SETUP
+#line 166 "psp_parser.l"
+{
+
+        CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+        yyless(0);
+        BEGIN PYCODE;
+}
+	YY_BREAK
+case 13:
+YY_RULE_SETUP
+#line 173 "psp_parser.l"
 ECHO;
 	YY_BREAK
-#line 1084 "psp_parser.c"
+#line 957 "psp_parser.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PYCODE):
-case YY_STATE_EOF(STRING):
 case YY_STATE_EOF(INDENT):
 	yyterminate();
 
@@ -1370,7 +1242,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 39 )
+			if ( yy_current_state >= 30 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
@@ -1399,11 +1271,11 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 39 )
+		if ( yy_current_state >= 30 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 38);
+	yy_is_jam = (yy_current_state == 29);
 
 	return yy_is_jam ? 0 : yy_current_state;
 }
@@ -2199,7 +2071,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 282 "psp_parser.l"
+#line 173 "psp_parser.l"
 
 
 

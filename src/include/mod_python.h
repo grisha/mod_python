@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.29 2003/05/24 03:55:27 grisha Exp $
+ * $Id: mod_python.h,v 1.30 2003/05/29 14:15:52 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -83,7 +83,6 @@
 #include "apr_lib.h"
 #include "apr_hash.h"
 #include "scoreboard.h"
-#include "psp_parser.h"
 
 /* Python headers */
 /* this gets rid of some comile warnings */
@@ -101,9 +100,6 @@
 #include <sys/socket.h>
 #endif
 
-/* _apache initialization function */
-void init_apache(void);
-
 /* pool given to us in ChildInit. We use it for 
    server.register_cleanup() */
 extern apr_pool_t *child_init_pool;
@@ -112,7 +108,6 @@ extern apr_pool_t *child_init_pool;
 extern module AP_MODULE_DECLARE_DATA python_module;
 
 #include "mpversion.h"
-#include "_apachemodule.h"
 #include "util.h"
 #include "hlist.h"
 #include "hlistobject.h"
@@ -121,7 +116,8 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #include "connobject.h"
 #include "requestobject.h"
 #include "filterobject.h"
-#include "psp_flex.h"
+#include "_apachemodule.h"
+#include "_pspmodule.h"
 
 /** Things specific to mod_python, as an Apache module **/
 
