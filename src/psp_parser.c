@@ -467,61 +467,22 @@ static yyconst flex_int16_t yy_chk[107] =
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "psp_parser.l"
 #line 2 "psp_parser.l"
-/* ====================================================================
- * The Apache Software License, Version 1.1
+/*
+ * Copyright 2004 Apache Software Foundation 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License.  You
+ * may obtain a copy of the License at
  *
- * Copyright (c) 2000-2002 The Apache Software Foundation.  All rights
- * reserved.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.  See the License for the specific language governing
+ * permissions and limitations under the License.
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Apache" and "Apache Software Foundation" must
- *    not be used to endorse or promote products derived from this
- *    software without prior written permission. For written
- *    permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    "mod_python", or "modpython", nor may these terms appear in their
- *    name, without prior written permission of the Apache Software
- *    Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- *
- * $Id: psp_parser.c,v 1.18 2004/02/16 19:00:06 grisha Exp $
+ * $Id: psp_parser.c,v 1.19 2004/02/18 23:04:36 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -547,7 +508,7 @@ static yyconst flex_int16_t yy_chk[107] =
 
 
 
-#line 551 "psp_parser.c"
+#line 512 "psp_parser.c"
 
 #define INITIAL 0
 #define TEXT 1
@@ -768,10 +729,10 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 86 "psp_parser.l"
+#line 47 "psp_parser.l"
 
 
-#line 775 "psp_parser.c"
+#line 736 "psp_parser.c"
 
 	if ( yyg->yy_init )
 		{
@@ -858,7 +819,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 88 "psp_parser.l"
+#line 49 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
@@ -868,7 +829,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 95 "psp_parser.l"
+#line 56 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
@@ -878,7 +839,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 102 "psp_parser.l"
+#line 63 "psp_parser.l"
 {    /* expression */
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0); req.write(str("));
     PSP_PG(is_psp_echo) = 1;
@@ -888,7 +849,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 109 "psp_parser.l"
+#line 70 "psp_parser.l"
 {     /* python code */
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0);")); 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
@@ -898,14 +859,14 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 116 "psp_parser.l"
+#line 77 "psp_parser.l"
 {     /* directive */
     BEGIN DIR;
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 120 "psp_parser.l"
+#line 81 "psp_parser.l"
 {    /* comment */
     BEGIN COMMENT;
 }
@@ -913,14 +874,14 @@ YY_RULE_SETUP
 case 7:
 /* rule 7 can match eol */
 YY_RULE_SETUP
-#line 124 "psp_parser.l"
+#line 85 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), '\n');
 }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 128 "psp_parser.l"
+#line 89 "psp_parser.l"
 {
     if (yytext[0] == '"') {
         psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\""));
@@ -930,7 +891,7 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 case YY_STATE_EOF(TEXT):
-#line 136 "psp_parser.l"
+#line 97 "psp_parser.l"
 {
     yypop_buffer_state(yyscanner);
     if (!YY_CURRENT_BUFFER) {
@@ -947,7 +908,7 @@ case YY_STATE_EOF(TEXT):
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 149 "psp_parser.l"
+#line 110 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), '\n');
         
@@ -957,7 +918,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 156 "psp_parser.l"
+#line 117 "psp_parser.l"
 {
 
     if (PSP_PG(is_psp_echo)) {
@@ -985,7 +946,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 181 "psp_parser.l"
+#line 142 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), yytext[0]);
     PSP_PG(after_colon) = 1;
@@ -993,7 +954,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 186 "psp_parser.l"
+#line 147 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), yytext[0]);
     PSP_PG(after_colon) = 0;
@@ -1001,7 +962,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 191 "psp_parser.l"
+#line 152 "psp_parser.l"
 {
 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
@@ -1013,7 +974,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 200 "psp_parser.l"
+#line 161 "psp_parser.l"
 {
     yyless(0);
     BEGIN PYCODE;
@@ -1022,7 +983,7 @@ YY_RULE_SETUP
 case 15:
 /* rule 15 can match eol */
 YY_RULE_SETUP
-#line 205 "psp_parser.l"
+#line 166 "psp_parser.l"
 {
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     yyless(0);
@@ -1031,7 +992,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 211 "psp_parser.l"
+#line 172 "psp_parser.l"
 {
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     yyless(0);
@@ -1041,7 +1002,7 @@ YY_RULE_SETUP
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 217 "psp_parser.l"
+#line 178 "psp_parser.l"
 {
 
     char *filename;
@@ -1085,24 +1046,24 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 259 "psp_parser.l"
+#line 220 "psp_parser.l"
 {
     BEGIN TEXT;
 }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 263 "psp_parser.l"
+#line 224 "psp_parser.l"
 {
     BEGIN TEXT;
 }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 267 "psp_parser.l"
+#line 228 "psp_parser.l"
 ECHO;
 	YY_BREAK
-#line 1106 "psp_parser.c"
+#line 1067 "psp_parser.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PYCODE):
 case YY_STATE_EOF(INDENT):
@@ -2222,7 +2183,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 267 "psp_parser.l"
+#line 228 "psp_parser.l"
 
 
 
