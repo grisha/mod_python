@@ -1,3 +1,5 @@
+Jun 11 2001 -	2.7.5 released for those who want Python 2.1
+
 Jun 11 2001 -	Changed configure.in to accomodate Python 2.1. It looks like
 		everything else works without any changes.
 
