@@ -18,10 +18,77 @@ If you can't read instructions:
 
 OS Hints:
 
-FreeBSD:        Apache has to be compiled with threads, even if using the
-                prefork MPM (recommended). In the ports collection, edit the 
-                Makefile to add --enable-threads in the CONFIGURE_ARGS 
-                section.
-                This has been tested on FreeBSD 4.7; it is possible that
-                earlier versions of FreeBSD may have issues with httpd's
-                use of threads.
+FreeBSD:        
+
+Apache has to be compiled with threads, even if using the prefork MPM
+(recommended). In the ports collection, edit the Makefile to add
+--enable-threads in the CONFIGURE_ARGS section.  This has been tested
+on FreeBSD 4.7; it is possible that earlier versions of FreeBSD may
+have issues with httpd's use of threads.
+
+Mac OS X/Darwin:
+
+(Disclaimer: I am not an expert on Darwin, if you see something
+incorrect or have suggestions, please mail the dev list. This worked
+for me on OS X 10.2.2, fink Python 2.2.1 and httpd 2.0.43 compiled
+from source)
+
+1. Libtool that comes with OS X 10.2.2 or earlier is buggy. Here is a patch to fix it. 
+
+--- /usr/bin/glibtool.orig  Fri Nov 15 16:14:59 2002
++++ /usr/bin/glibtool    Fri Nov 15 16:16:36 2002
+@@ -181,7 +181,7 @@
+ old_archive_from_expsyms_cmds=""
+ 
+ # Commands used to build and install a shared archive.
+-archive_cmds="\$nonopt \$(test \\\"x\$module\\\" = xyes && echo -bundle || echo -dynamiclib) \$allow_undefined_flag -o \$lib \$libobjs \$deplibs\$linker_flags -install_name \$rpath/\$soname \$verstring"
++archive_cmds="\$nonopt \$(test x\$module = xyes && echo -bundle || echo -dynamiclib -install_name \$rpath/\$soname) \$allow_undefined_flag -o \$lib \$libobjs \$deplibs\$linker_flags \$verstring"
+ archive_expsym_cmds=""
+ postinstall_cmds=""
+ postuninstall_cmds=""
+--- /usr/share/aclocal/libtool.m4.orig     Fri Nov 15 16:18:23 2002
++++ /usr/share/aclocal/libtool.m4  Fri Nov 15 16:18:45 2002
+@@ -1580,7 +1580,7 @@
+     # FIXME: Relying on posixy $() will cause problems for
+     #        cross-compilation, but unfortunately the echo tests do not
+     #        yet detect zsh echo's removal of \ escapes.
+-    archive_cmds='$nonopt $(test "x$module" = xyes && echo -bundle || echo -dynamiclib) $allow_undefined_flag -o $lib $libobjs $deplibs$linker_flags -install_name $rpath/$soname $verstring'
++    archive_cmds='$nonopt $(test x$module = xyes && echo -bundle || echo -dynamiclib -install_name $rpath/$soname) $allow_undefined_flag -o $lib $libobjs $deplibs$linker_flags $verstring'
+     # We need to add '_' to the symbols in $export_symbols first
+     #archive_expsym_cmds="$archive_cmds"' && strip -s $export_symbols'
+     hardcode_direct=yes
+
+Note that the Fink libtool (1.4.2-5) has a bug too. The Fink libtool
+is half way there in that it will work with gcc2, but gcc3 does not
+allow -install_name without -dynamiclib. I don't provide a patch for
+Fink libtool since it's so easy to just fix it by manually editing the
+file.
+
+2. Now that libtool situation is fixed, rebuild httpd. Make sure to
+rerun ./buildconf before ./configure. Also make sure --enable-so is
+specified as argument to ./configure.
+
+3. On Darwin, libpython cannot be linked statically with mod_python
+using libtool. libpython has to be a dynamic shared object. The Python
+distribution does not provide a way of building libpython as a shared
+library, but the Fink Python distribution comes with one
+(/sw/lib/python2.2/config/libpython2.2.dylib), so the easiest thing is
+to install Python from Fink (fink.sourceforge.net).
+
+4. Now configure, build, install mod_python like you normally would:
+  ./configure --with-apxs=/where/ever/apxs
+  make
+  (su)
+  make install
+
+5. You are not out of the woods yet. Python has a lot of its built-in
+modules as shared libraries (or mach-o bundles to be precise). They
+are linked with "--bundle_loader python.exe", which means that many
+symbols are expected to be defined in the executable loading the
+bundle. Such would not be the case when the module is loaded from
+within mod_python, and therefore you will get "undefined symbol"
+errors when trying to import a built-in module, e.g. "time".
+
+I don't know what the *right* solution for this is, but here is a
+trick that works: define DYLD_FORCE_FLAT_NAMESPACE environment
+variable prior to launching httpd.
