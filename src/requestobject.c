@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.51 2003/09/09 21:48:01 grisha Exp $
+ * $Id: requestobject.c,v 1.52 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
@@ -498,8 +498,8 @@ static PyObject * req_read(requestobject *self, PyObject *args)
     
     /* Free rbuff if we're done with it */
     if (self->rbuff_pos >= self->rbuff_len && self->rbuff != NULL) {
-	free(self->rbuff);
-	self->rbuff = NULL;
+        free(self->rbuff);
+        self->rbuff = NULL;
     }
 
     if (copied == len)
@@ -618,8 +618,8 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
        somehow? */
     if (self->rbuff_pos >= self->rbuff_len && self->rbuff != NULL)
     {
-	free(self->rbuff);
-	self->rbuff = NULL;
+        free(self->rbuff);
+        self->rbuff = NULL;
     }
 
     /* if got this far, the buffer should be empty, we need to read more */
@@ -649,9 +649,9 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 
         if (chunk_len == -1) {
 
-	    /* Free rbuff since returning NULL here should end the request */
-	    free(self->rbuff);
-	    self->rbuff = NULL;
+            /* Free rbuff since returning NULL here should end the request */
+            free(self->rbuff);
+            self->rbuff = NULL;
 
             PyErr_SetObject(PyExc_IOError, 
                             PyString_FromString("Client read error (Timeout?)"));
@@ -676,8 +676,8 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
     /* Free rbuff if we're done with it */
     if (self->rbuff_pos >= self->rbuff_len && self->rbuff != NULL)
     {
-	free(self->rbuff);
-	self->rbuff = NULL;
+        free(self->rbuff);
+        self->rbuff = NULL;
     }
 
     /* resize if necessary */
@@ -823,9 +823,9 @@ static PyObject * req_write(requestobject *self, PyObject *args)
     if (len > 0 ) {
 
         Py_BEGIN_ALLOW_THREADS
-	rc = ap_rwrite(buff, len, self->request_rec);
-	if (rc != -1)
-	    rc = ap_rflush(self->request_rec);
+        rc = ap_rwrite(buff, len, self->request_rec);
+        if (rc != -1)
+            rc = ap_rflush(self->request_rec);
         Py_END_ALLOW_THREADS
             if (rc == -1) {
                 PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
@@ -1089,13 +1089,13 @@ static PyObject *getreq_recmbr_off(requestobject *self, void *name)
     PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
     char *addr = (char *)self->request_rec + md->offset;
     if (sizeof(apr_off_t) == sizeof(LONG_LONG)) {
-	LONG_LONG l = *(LONG_LONG*)addr;
-	return PyLong_FromLongLong(l);
+        LONG_LONG l = *(LONG_LONG*)addr;
+        return PyLong_FromLongLong(l);
     }
     else {
-	/* assume it's long */
-	long l = *(long*)addr;
-	return PyLong_FromLong(l);
+        /* assume it's long */
+        long l = *(long*)addr;
+        return PyLong_FromLong(l);
     }
 }
 

@@ -63,15 +63,15 @@ extern "C" {
  *
  * serverobject.h
  *
- * $Id: serverobject.h,v 1.5 2003/07/12 03:44:53 grisha Exp $
+ * $Id: serverobject.h,v 1.6 2003/09/10 02:11:22 grisha Exp $
  *
  */
 
     typedef struct serverobject {
-	PyObject_HEAD
-	PyObject       *dict;
-	server_rec     *server;
-	PyObject       *next;
+        PyObject_HEAD
+        PyObject       *dict;
+        server_rec     *server;
+        PyObject       *next;
     } serverobject;
     
     extern DL_IMPORT(PyTypeObject) MpServer_Type;

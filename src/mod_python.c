@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.100 2003/09/08 19:31:50 grisha Exp $
+ * $Id: mod_python.c,v 1.101 2003/09/10 02:11:22 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -335,62 +335,62 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     ap_mpm_query(AP_MPMQ_MAX_THREADS, &max_threads);
     ap_mpm_query(AP_MPMQ_MAX_DAEMON_USED, &max_procs);
     max_clients = (((!max_threads) ? 1 : max_threads) *
-		   ((!max_procs) ? 1 : max_procs));
+                   ((!max_procs) ? 1 : max_procs));
     locks = max_clients; /* XXX this is completely out of the blue */
 
     ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
-		 "mod_python: Creating %d session mutexes based "
-		 "on %d max processes and %d max threads.", 
-		 locks, max_procs, max_threads);
+                 "mod_python: Creating %d session mutexes based "
+                 "on %d max processes and %d max threads.", 
+                 locks, max_procs, max_threads);
 
     glb->g_locks = (apr_global_mutex_t **) 
-	apr_palloc(p, locks * sizeof(apr_global_mutex_t *));
+        apr_palloc(p, locks * sizeof(apr_global_mutex_t *));
     glb->nlocks = locks;
     glb->parent_pid = getpid();
 
     for (n=0; n<locks; n++) {
-	apr_status_t rc;
-	apr_global_mutex_t **mutex = glb->g_locks;
+        apr_status_t rc;
+        apr_global_mutex_t **mutex = glb->g_locks;
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
-	char fname[255];
+        char fname[255];
 
-	snprintf(fname, 255, "/tmp/mpmtx%d%d", glb->parent_pid, n);
+        snprintf(fname, 255, "/tmp/mpmtx%d%d", glb->parent_pid, n);
 #else
-	char *fname = NULL;
+        char *fname = NULL;
 #endif
-	rc = apr_global_mutex_create(&mutex[n], fname, APR_LOCK_DEFAULT, 
-				     p);
-	if (rc != APR_SUCCESS) {
-	    ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
-			 "mod_python: Failed to create global mutex %d of %d (%s).",
-			 n, locks, (!fname) ? "<null>" : fname);
-	    if (n > 1) {
-		/* we were able to crate at least two, so lets just print a 
-		   warning/hint and proceed
-		*/
-		ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-			     "mod_python: We can probably continue, but with diminished ability "
-			     "to process session locks.");
-		ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-			     "mod_python: Hint: On Linux, the problem may be the number of "
-			     "available semaphores, check 'sysctl kernel.sem'");
-		/* now free one lock so that if there is a module that wants a lock, it
-		   will be ok */
-		apr_global_mutex_destroy(mutex[n-1]);
-		glb->nlocks = n-1;
-		break;
-		
-	    }
-	    else {
-		return rc;
-	    }
-	}
-	else {
+        rc = apr_global_mutex_create(&mutex[n], fname, APR_LOCK_DEFAULT, 
+                                     p);
+        if (rc != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
+                         "mod_python: Failed to create global mutex %d of %d (%s).",
+                         n, locks, (!fname) ? "<null>" : fname);
+            if (n > 1) {
+                /* we were able to crate at least two, so lets just print a 
+                   warning/hint and proceed
+                */
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+                             "mod_python: We can probably continue, but with diminished ability "
+                             "to process session locks.");
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+                             "mod_python: Hint: On Linux, the problem may be the number of "
+                             "available semaphores, check 'sysctl kernel.sem'");
+                /* now free one lock so that if there is a module that wants a lock, it
+                   will be ok */
+                apr_global_mutex_destroy(mutex[n-1]);
+                glb->nlocks = n-1;
+                break;
+                
+            }
+            else {
+                return rc;
+            }
+        }
+        else {
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
-	    chown(fname, unixd_config.user_id, -1);
+            chown(fname, unixd_config.user_id, -1);
 #endif
-	}
+        }
     }
     return APR_SUCCESS;
 }
@@ -400,8 +400,8 @@ static apr_status_t reinit_mutexes(server_rec *s, apr_pool_t *p, py_global_confi
     int n;
 
     for (n=0; n< glb->nlocks; n++) {
-	apr_status_t rc;
-	apr_global_mutex_t **mutex = glb->g_locks;
+        apr_status_t rc;
+        apr_global_mutex_t **mutex = glb->g_locks;
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
         char fname[255];
@@ -409,14 +409,14 @@ static apr_status_t reinit_mutexes(server_rec *s, apr_pool_t *p, py_global_confi
 #else
         char *fname = NULL;
 #endif
-	rc = apr_global_mutex_child_init(&mutex[n], fname, p);
+        rc = apr_global_mutex_child_init(&mutex[n], fname, p);
 
-	if (rc != APR_SUCCESS) {
-	    ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, s,
-			 "mod_python: Failed to reinit global mutex %s.",
-			 (!fname) ? "<null>" : fname);
-	    return rc;
-	}
+        if (rc != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, s,
+                         "mod_python: Failed to reinit global mutex %s.",
+                         (!fname) ? "<null>" : fname);
+            return rc;
+        }
     }
     return APR_SUCCESS;
 }
@@ -484,7 +484,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     /* global config */
     glb = python_create_global_config(s);
     if ((rc = init_mutexes(s, p, glb)) != APR_SUCCESS) {
-	return rc;
+        return rc;
     }
 
     /* initialize global Python interpreter if necessary */
@@ -1843,7 +1843,7 @@ static int PythonHandler(request_rec *req) {
      * above).
      */
     if (!req->handler || (strcmp(req->handler, "mod_python") &&
-			  strcmp(req->handler, "python-program")))
+                          strcmp(req->handler, "python-program")))
         return DECLINED;
 
     return python_handler(req, "PythonHandler");

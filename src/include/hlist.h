@@ -57,7 +57,7 @@
  *
  * hlist.h 
  *
- * $Id: hlist.h,v 1.3 2002/11/08 00:15:11 gstein Exp $
+ * $Id: hlist.h,v 1.4 2003/09/10 02:11:22 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -72,18 +72,18 @@ extern "C" {
 
     /* handler list entry */
     typedef struct hl_entry {
-	const char *handler;
-	const char *directory;
-	int silent;  /* 1 for PythonHandlerModule, where
-			if a handler is not found in a module,
-			no error should be reported */
-	struct hl_entry *next;
+        const char *handler;
+        const char *directory;
+        int silent;  /* 1 for PythonHandlerModule, where
+                        if a handler is not found in a module,
+                        no error should be reported */
+        struct hl_entry *next;
     } hl_entry;
     
     hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
-			const int s);
+                        const int s);
     hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-			   const char *d, const int s);
+                           const char *d, const int s);
     hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle);
 
 #ifdef __cplusplus

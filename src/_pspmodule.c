@@ -54,7 +54,7 @@
  *
  * This file originally written by Stering Hughes
  * 
- * $Id: _pspmodule.c,v 1.5 2003/08/05 19:28:26 grisha Exp $
+ * $Id: _pspmodule.c,v 1.6 2003/09/10 02:11:22 grisha Exp $
  *
  * See accompanying documentation and source code comments for
  * details.
@@ -114,14 +114,14 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     }
 
     if (dir) {
-	path = malloc(strlen(filename)+strlen(dir)+1);
-	if (!path) 
-	    return PyErr_NoMemory();
-	strcpy(path, dir);
-	strcat(path, filename);
+        path = malloc(strlen(filename)+strlen(dir)+1);
+        if (!path) 
+            return PyErr_NoMemory();
+        strcpy(path, dir);
+        strcat(path, filename);
     }
     else {
-	path = filename;
+        path = filename;
     }
     
     Py_BEGIN_ALLOW_THREADS
@@ -130,14 +130,14 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
 
     if (f == NULL) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
-	if (dir) free(path);
+        if (dir) free(path);
         return NULL;
     }
     if (dir) free(path);
 
     parser = psp_parser_init();
     if (dir)
-	parser->dir = dir;
+        parser->dir = dir;
 
     yylex_init(&scanner);
     yyset_in(f, scanner);
@@ -149,15 +149,15 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     psp_string_0(&parser->pycode);
 
     if (PyErr_Occurred()) {
-	psp_parser_cleanup(parser);
-	return NULL;
+        psp_parser_cleanup(parser);
+        return NULL;
     }
 
     if (parser->pycode.blob) {
-	code = PyString_FromString(parser->pycode.blob);
+        code = PyString_FromString(parser->pycode.blob);
     }
     else {
-	code = PyString_FromString("");
+        code = PyString_FromString("");
     }
 
     psp_parser_cleanup(parser);

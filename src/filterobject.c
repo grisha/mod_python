@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.22 2003/05/05 02:23:28 grisha Exp $
+ * $Id: filterobject.c,v 1.23 2003/09/10 02:11:22 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -113,14 +113,14 @@
  */
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
-			      ap_input_mode_t mode, apr_size_t readbytes,
-			      char * handler, char *dir)
+                              ap_input_mode_t mode, apr_size_t readbytes,
+                              char * handler, char *dir)
 {
     filterobject *result;
 
     result = PyMem_NEW(filterobject, 1);
     if (! result)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     result->f = f;
     result->ob_type = &MpFilter_Type;
@@ -129,16 +129,16 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
     result->rc = APR_SUCCESS;
 
     if (is_input) {
-	result->bb_in = NULL;
-	result->bb_out = bb;
-	result->mode = mode;
-	result->readbytes = readbytes;
+        result->bb_in = NULL;
+        result->bb_out = bb;
+        result->mode = mode;
+        result->readbytes = readbytes;
     }
     else {
-	result->bb_in = bb;
-	result->bb_out = NULL;
-	result->mode = 0;
-	result->readbytes = 0;
+        result->bb_in = bb;
+        result->bb_out = NULL;
+        result->mode = 0;
+        result->readbytes = 0;
     }
 
     result->closed = 0;
@@ -151,7 +151,7 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
 
     _Py_NewReference(result);
     apr_pool_cleanup_register(f->r->pool, (PyObject *)result, python_decref, 
-			      apr_pool_cleanup_null);
+                              apr_pool_cleanup_null);
 
     return (PyObject *)result;
 }
@@ -199,7 +199,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     conn_rec *c = self->request_obj->request_rec->connection;
 
     if (! PyArg_ParseTuple(args, "|l", &len)) 
-	return NULL;
+        return NULL;
 
     if (self->closed) {
         PyErr_SetString(PyExc_ValueError, "I/O operation on closed filter");
@@ -208,22 +208,22 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
     if (self->is_input) {
 
-	/* does the output brigade exist? */
-	if (!self->bb_in) {
-	    self->bb_in = apr_brigade_create(self->f->r->pool, 
-					     c->bucket_alloc);
-	}
+        /* does the output brigade exist? */
+        if (!self->bb_in) {
+            self->bb_in = apr_brigade_create(self->f->r->pool, 
+                                             c->bucket_alloc);
+        }
 
-	Py_BEGIN_ALLOW_THREADS;
-	self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
-				  APR_BLOCK_READ, self->readbytes);
-	Py_END_ALLOW_THREADS;
+        Py_BEGIN_ALLOW_THREADS;
+        self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
+                                  APR_BLOCK_READ, self->readbytes);
+        Py_END_ALLOW_THREADS;
 
-	if (! APR_STATUS_IS_SUCCESS(self->rc)) {
-	    PyErr_SetObject(PyExc_IOError, 
-			    PyString_FromString("Input filter read error"));
-	    return NULL;
-	}
+        if (! APR_STATUS_IS_SUCCESS(self->rc)) {
+            PyErr_SetObject(PyExc_IOError, 
+                            PyString_FromString("Input filter read error"));
+            return NULL;
+        }
     }
 
     /* 
@@ -257,28 +257,28 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
            !(APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b) ||
              b == APR_BRIGADE_SENTINEL(self->bb_in))) {
 
-	const char *data;
-	apr_size_t size;
-	apr_bucket *old;
-	int i;
+        const char *data;
+        apr_size_t size;
+        apr_bucket *old;
+        int i;
 
-	if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
-	    PyErr_SetObject(PyExc_IOError, 
-			    PyString_FromString("Filter read error"));
-	    return NULL;
-	}
+        if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
+            PyErr_SetObject(PyExc_IOError, 
+                            PyString_FromString("Filter read error"));
+            return NULL;
+        }
 
-	if (bytes_read + size > bufsize) {
-	    apr_bucket_split(b, bufsize - bytes_read);
-	    size = bufsize - bytes_read;
-	    /* now the bucket is the exact size we need */
-	}
+        if (bytes_read + size > bufsize) {
+            apr_bucket_split(b, bufsize - bytes_read);
+            size = bufsize - bytes_read;
+            /* now the bucket is the exact size we need */
+        }
 
-	if (readline) {
+        if (readline) {
 
-	    /* scan for newline */
-	    for (i=0; i<size; i++) {
-		if (data[i] == '\n') {
+            /* scan for newline */
+            for (i=0; i<size; i++) {
+                if (data[i] == '\n') {
                     if (i+1 != size) {   /* (no need to split if we're at end of bucket) */
                         
                         /* split after newline */
@@ -286,59 +286,59 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
                         size = i + 1;
                     }
                     newline = 1;
-		    break;
-		}
-	    }
-	}
-
-	memcpy(buffer, data, size);
-	buffer += size;
-	bytes_read += size;
-
-	/* time to grow destination string? */
-	if (newline == 0 && len < 0 && bytes_read == bufsize) {
-
-	    _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
-	    buffer = PyString_AS_STRING((PyStringObject *) result);
-	    buffer += HUGE_STRING_LEN;
-
-	    bufsize += HUGE_STRING_LEN;
-	}
-
-	if (readline && newline) {
-            apr_bucket_delete(b);
-	    break;
+                    break;
+                }
+            }
         }
 
-	old = b;
-	b = APR_BUCKET_NEXT(b);
-	apr_bucket_delete(old);
-	
-	if (self->is_input) {
+        memcpy(buffer, data, size);
+        buffer += size;
+        bytes_read += size;
 
-	    if (b == APR_BRIGADE_SENTINEL(self->bb_in)) {
-		/* brigade ended, but no EOS - get another
-		   brigade */
+        /* time to grow destination string? */
+        if (newline == 0 && len < 0 && bytes_read == bufsize) {
 
-		Py_BEGIN_ALLOW_THREADS;
-		self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
-					  APR_BLOCK_READ, self->readbytes);
-		Py_END_ALLOW_THREADS;
+            _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
+            buffer = PyString_AS_STRING((PyStringObject *) result);
+            buffer += HUGE_STRING_LEN;
 
-		if (! APR_STATUS_IS_SUCCESS(self->rc)) {
-		    PyErr_SetObject(PyExc_IOError, 
-				    PyString_FromString("Input filter read error"));
-		    return NULL;
-		}
-		b = APR_BRIGADE_FIRST(self->bb_in);
-	    }
-	}
+            bufsize += HUGE_STRING_LEN;
+        }
+
+        if (readline && newline) {
+            apr_bucket_delete(b);
+            break;
+        }
+
+        old = b;
+        b = APR_BUCKET_NEXT(b);
+        apr_bucket_delete(old);
+        
+        if (self->is_input) {
+
+            if (b == APR_BRIGADE_SENTINEL(self->bb_in)) {
+                /* brigade ended, but no EOS - get another
+                   brigade */
+
+                Py_BEGIN_ALLOW_THREADS;
+                self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
+                                          APR_BLOCK_READ, self->readbytes);
+                Py_END_ALLOW_THREADS;
+
+                if (! APR_STATUS_IS_SUCCESS(self->rc)) {
+                    PyErr_SetObject(PyExc_IOError, 
+                                    PyString_FromString("Input filter read error"));
+                    return NULL;
+                }
+                b = APR_BRIGADE_FIRST(self->bb_in);
+            }
+        }
     }
 
     /* resize if necessary */
     if (bytes_read < len || len < 0) 
-	if(_PyString_Resize(&result, bytes_read))
-	    return NULL;
+        if(_PyString_Resize(&result, bytes_read))
+            return NULL;
 
     return result;
 }
@@ -382,11 +382,11 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
     conn_rec *c = self->request_obj->request_rec->connection;
 
     if (! PyArg_ParseTuple(args, "O", &s)) 
-	return NULL;
+        return NULL;
 
     if (! PyString_Check(s)) {
-	PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
-	return NULL;
+        PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
+        return NULL;
     }
 
     if (self->closed) {
@@ -398,19 +398,19 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
 
     if (len) {
 
-	/* does the output brigade exist? */
-	if (!self->bb_out) {
-	    self->bb_out = apr_brigade_create(self->f->r->pool, 
-					      c->bucket_alloc);
-	}
-	
+        /* does the output brigade exist? */
+        if (!self->bb_out) {
+            self->bb_out = apr_brigade_create(self->f->r->pool, 
+                                              c->bucket_alloc);
+        }
+        
         buff = apr_bucket_alloc(len, c->bucket_alloc);
         memcpy(buff, PyString_AS_STRING(s), len);
 
         b = apr_bucket_heap_create(buff, len, apr_bucket_free,
                                    c->bucket_alloc);
 
-	APR_BRIGADE_INSERT_TAIL(self->bb_out, b);
+        APR_BRIGADE_INSERT_TAIL(self->bb_out, b);
 
     }
 
@@ -431,12 +431,12 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
 
     /* does the output brigade exist? */
     if (!self->bb_out) {
-	self->bb_out = apr_brigade_create(self->f->r->pool,
-					  c->bucket_alloc);
+        self->bb_out = apr_brigade_create(self->f->r->pool,
+                                          c->bucket_alloc);
     }
 
     APR_BRIGADE_INSERT_TAIL(self->bb_out, 
-			    apr_bucket_flush_create(c->bucket_alloc));
+                            apr_bucket_flush_create(c->bucket_alloc));
 
     Py_BEGIN_ALLOW_THREADS;
     self->rc = ap_pass_brigade(self->f->next, self->bb_out);
@@ -444,8 +444,8 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
     Py_END_ALLOW_THREADS;
 
     if(self->rc != APR_SUCCESS) { 
-	PyErr_SetString(PyExc_IOError, "Flush failed.");
-	return NULL;
+        PyErr_SetString(PyExc_IOError, "Flush failed.");
+        return NULL;
     }
 
     Py_INCREF(Py_None);
@@ -474,7 +474,7 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
 
         APR_BRIGADE_INSERT_TAIL(self->bb_out, 
                                 apr_bucket_eos_create(c->bucket_alloc));
-	
+        
         if (! self->is_input) {
             Py_BEGIN_ALLOW_THREADS;
             self->rc = ap_pass_brigade(self->f->next, self->bb_out);
@@ -483,7 +483,7 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
             self->bb_out = NULL;
         }
 
-	self->closed = 1;
+        self->closed = 1;
     }
 
     Py_INCREF(Py_None);
@@ -564,31 +564,31 @@ static PyObject * filter_getattr(filterobject *self, char *name)
 
     res = Py_FindMethod(filterobjectmethods, (PyObject *)self, name);
     if (res != NULL)
-	return res;
+        return res;
     
     PyErr_Clear();
 
     if (strcmp(name, "name") == 0) {
-	if (! self->f->frec->name) {
-	    Py_INCREF(Py_None);
-	    return Py_None;
-	}
-	else {
-	    return PyString_FromString(self->f->frec->name);
-	}
+        if (! self->f->frec->name) {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+        else {
+            return PyString_FromString(self->f->frec->name);
+        }
     } 
     else if (strcmp(name, "req") == 0) {
-	if (! self->request_obj) {
-	    Py_INCREF(Py_None);
-	    return Py_None;
-	}
-	else {
-	    Py_INCREF(self->request_obj);
-	    return (PyObject *)self->request_obj;
-	}
+        if (! self->request_obj) {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+        else {
+            Py_INCREF(self->request_obj);
+            return (PyObject *)self->request_obj;
+        }
     }
     else
-	return PyMember_Get((char *)self, filter_memberlist, name);
+        return PyMember_Get((char *)self, filter_memberlist, name);
 }
 
 /**
@@ -601,9 +601,9 @@ static PyObject * filter_getattr(filterobject *self, char *name)
 static int filter_setattr(filterobject *self, char *name, PyObject *v)
 {
     if (v == NULL) {
-	PyErr_SetString(PyExc_AttributeError,
-			"can't delete filter attributes");
-	return -1;
+        PyErr_SetString(PyExc_AttributeError,
+                        "can't delete filter attributes");
+        return -1;
     }
     return PyMember_Set((char *)self, filter_memberlist, name, v);
 }
