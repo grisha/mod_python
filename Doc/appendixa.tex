@@ -1,0 +1,145 @@
+\chapter{Windows Installation\label{app-wininst}}
+\indexii{windows}{installation}
+
+Notes originally created by Enrique Vaamonde \email{evaamo@loquesea.com} 
+
+\emph{Your mileage may vary with these instructions}
+
+You need to have the following packages properly installed and
+configured in your system:
+
+\begin{itemize}
+
+\item
+Python 1.5.2 or 2.0
+\item
+Apache 1.3
+\item
+Winzip 6.x or later. 
+
+\end{itemize}
+
+
+You need to download both the mod_python.dll and the mod_python-x.tgz
+(where x is the version number) files from the main page.  Once you
+have all the things above mentioned we're good to go.
+
+\begin{enumerate}
+
+\item
+Installing mod_python libraries
+
+\begin{itemize}
+
+\item
+Use Winzip to extract the distribution file (mod_python-x.tgz) into a
+temporary folder (i.e C:$\backslash$temp):
+
+\item
+NOTE: If Winzip shows this warning "Archive contains one file, should
+Winzip decompress it to a temporary folder?" just click on Yes, the
+content of the file should appear in Winzip right after.
+
+\item
+Select all the files in Winzip and click on the Extract button, then
+type-in the path or just browse your way to the temporary folder and
+click extract.
+
+\item       
+Open your Windows Explorer and locate the temporary folder where you
+extracted the distribution file, you should have a new folder in your
+temporary folder (C:$\backslash$temp$\backslash$mod_python-x ).
+
+\item            
+Move (or just drag \& drop) the mod_python-x folder into the Python lib
+folder (i.e C:$\backslash$Program Files$\backslash$Python$\backslash$lib).
+
+\item            
+Move the files in the folder lib inside the mod_python folder
+(C:$\backslash$Program Files$\backslash$Python$\backslash$lib$\backslash$mod_python-x$\backslash$lib$\backslash$mod_python ) to the
+C:$\backslash$Program Files$\backslash$Python$\backslash$lib$\backslash$mod_python folder. It's safe to delete
+these folders we just emptied.
+
+\end{itemize}
+
+\item
+Integrating it with Apache
+
+      
+Once the distribution file is correctly extracted and later moved into
+the Python directory, it's time to modify your Apache configuration
+(httpd.conf) and integrate the server with mod_python. These are a few
+steps we must do first:
+
+\begin{itemize}
+
+\item            
+Locate the file mod_python.dll that you downloaded before and move it
+to Apache's modules folder (i.e C:$\backslash$Program Files$\backslash$Apache
+Group$\backslash$Apache$\backslash$modules).
+            
+\item
+Go to the Apache configuration folder (i.e C:$\backslash$Program Files$\backslash$Apache Group$\backslash$Apache$\backslash$conf$\backslash$) and edit the httpd.conf file. 
+            
+Add the following line in the section "Dynamic Shared Object (DSO)
+Support" of the httpd.conf file:
+
+\begin{verbatim}
+LoadModule python_module modules/mod_python.dll
+\end{verbatim}                    
+
+\item
+Add the following lines in the section ScriptAlias and CGI of the httpd.conf: 
+
+\begin{verbatim}                         
+<Directory "<Your Document Root>/python">
+   AddHandler python-program .py
+   PythonHandler test
+   PythonDebug on
+</Directory>
+\end{verbatim}                
+    
+                    
+NOTE: Replace the <Your Document Root> above with the Document Root
+you specified on the DocumentRoot directive in the Apache's httpd.conf
+file.
+                    
+\item
+Last, create a folder under your Document Root called python. 
+
+\end{itemize}
+
+\item
+Testing
+
+\begin{itemize}
+
+\item            
+Create a text file in the folder we created above and call it test.py
+(you can use Notepad for this).
+     
+\item       
+Insert the following lines and save the file (Make sure it gets saved
+with the .py extension):
+
+\begin{verbatim}                    
+from mod_python import apache
+
+def handler(req):
+   req.content_type = "text/plain" 
+   req.send_http_header()
+   req.write("Hello World!")
+   return apache.OK
+\end{verbatim}                   
+
+\item            
+Make sure Apache is running (or launch it!) and then point your
+browser to the URL referring to the test.py, you should see "Hello
+World!".
+     
+\end{itemize}
+\end{enumerate}
+       
+That's it, you're ready to roll!! If you don't see the "Hello World!"
+message, the next section is for you.
+
