@@ -57,7 +57,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.14 2002/12/02 21:53:11 grisha Exp $
+ * $Id: serverobject.c,v 1.15 2002/12/30 15:17:56 grisha Exp $
  *
  */
 
@@ -182,14 +182,14 @@ static struct memberlist server_memberlist[] = {
     {"keep_alive_max",     T_INT,       OFF(keep_alive_max),     RO},
     {"keep_alive",         T_INT,       OFF(keep_alive),         RO},
     /* XXX send_buffer_size gone. where? document */
-    //{"send_buffer_size",   T_INT,       OFF(send_buffer_size),   RO},
+    /*{"send_buffer_size",   T_INT,       OFF(send_buffer_size),   RO},*/
     {"path",               T_STRING,    OFF(path),               RO},
     {"pathlen",            T_INT,       OFF(pathlen),            RO},
     /* XXX names */
     /* XXX wild names */
     /* XXX server_uid and server_gid seem gone. Where? Document. */
-    //{"server_uid",         T_INT,       OFF(server_uid),         RO},
-    //{"server_gid",         T_INT,       OFF(server_gid),         RO},
+    /*{"server_uid",         T_INT,       OFF(server_uid),         RO},*/
+    /*{"server_gid",         T_INT,       OFF(server_gid),         RO},*/
     /* XXX Document limit* below. Make RW? */
     {"limit_req_line",       T_INT,       OFF(limit_req_line),     RO},
     {"limit_req_fieldsize",  T_INT,       OFF(limit_req_fieldsize),RO},
