@@ -98,14 +98,14 @@
 	if (PSP_PG(ob).length) {
 		psp_string_0(&PSP_PG(ob));
 		OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\""));
+		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("sys.stdout.write(\""));
 		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
 		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\")\n"));
 		psp_string_free(&PSP_PG(ob));
 	}
 
 	OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-	psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write("));
+	psp_string_appendl(&PSP_PG(pycode), STATIC_STR("sys.stdout.write("));
 	PSP_PG(is_psp_echo) = 1;
 
 	BEGIN IN_PYCODE;
@@ -115,9 +115,9 @@
 	if (PSP_PG(ob).length) {
 		psp_string_0(&PSP_PG(ob));
 		OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\""));
+		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("print \""));
 		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\")\n"));
+		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\n"));
 		psp_string_free(&PSP_PG(ob));
 	} 
 	
@@ -137,9 +137,9 @@
 	if (PSP_PG(ob).length) {
 		psp_string_0(&PSP_PG(ob));
 		OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\""));
+		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("print \""));
 		psp_string_appendl(&PSP_PG(pycode), PSP_PG(ob).blob, PSP_PG(ob).length);
-		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\")\n"));
+		psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\n"));
 		psp_string_free(&PSP_PG(ob));
 	} 
 
