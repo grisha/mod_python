@@ -761,7 +761,7 @@ def restore_nocgi(sav_env, si, so):
     osenv = os.environ
 
     # restore env
-    for k in osenv:
+    for k in osenv.keys():
         del osenv[k]
     for k in sav_env:
         osenv[k] = env[k]
