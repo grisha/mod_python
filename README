@@ -1,4 +1,15 @@
 
+This is the Mod_Python README file. It consists of 3 parts:
+
+
+1. Getting Started
+2. New in 3.0
+3. Migrating from Mod_Python 2.7.8
+4. OS Hints
+
+
+
+1. Getting Started
 
 See the HTML documentation in the doc-html directory for installation
 instructions and documentation.
@@ -16,7 +27,52 @@ If you can't read instructions:
 
 	If the above worked - read the tutorial in the doc directory.
 
-OS Hints:
+
+2. New in 3.0
+
+o  Compatibility with Apache Httpd 2.0 and Python 2.2. (Apache Httpd
+   1.3 and versions of Python prior to 2.2 will not work.)
+o  Support for filters (HTTP content only).
+o  Support for connection handlers allowing for implementation of
+   layer 4 protocols.
+o  Python*Handler directives can now be assigned to specific file
+   extensions.
+o  The publisher handler supports default module and method names
+   allowing for cleaner more intuitive url's.
+o  A basic test suite.
+o  Many other miscellaneous and internal changes.
+
+3. Migrating from Mod_Python 2.7.8.
+
+First, this version of Mod_Python requires Apache Httpd 2, and Python
+2.2. (Python 2.2.2 and Apache Httpd 2.0.43 are latest at the time of
+this writing). Please make sure you read the appropriate docs to
+understand the impact of upgrading both of those, especially upgrading
+httpd. Check out http://httpd.apache.org/docs-2.0/upgrading.html.
+
+Some changes in Mod_Python may impact your existing code:
+
+   When configuring/compiling, note that --with-python argument of
+   ./configure now takes the path to a Python executable, rather than
+   a directory where the source is. The option of having a source
+   directory is no longer supported. If you want a separate version of
+   Python for use with mod_python, you must have it installed.
+
+   Apache 2 will use threads by default, and so will Python. The old
+   warnings about threads no longer apply, for the most part you
+   shouldn't worry about it. 
+
+   The user name is now req.user instead of req.connection.user. 
+
+   There is no need for the req.send_http_header() method. It is still
+   there for backwards compatibility, but it is a noop. Httpd automatically
+   sends out headers as soon as the first byte of output comes through.
+
+   The request object no longer has a _req member. _req was undocumented and
+   shouldn't have been used, but if you were using it anyway, your
+   code will break. 
+
+4. OS Hints
 
 FreeBSD:        
 
