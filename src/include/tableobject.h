@@ -63,17 +63,12 @@ extern "C" {
  *
  * tableobject.h
  *
- * $Id: tableobject.h,v 1.6 2002/11/08 00:15:11 gstein Exp $
+ * $Id: tableobject.h,v 1.7 2003/07/17 00:51:46 grisha Exp $
  *
  */
 
 /*
  * This is a mapping of a Python object to an Apache table.
- *
- * This object behaves like a dictionary. Note that the
- * underlying table can have duplicate keys, which can never
- * happen to a Python dictionary. But this is such a rare thing 
- * that I can't even think of a possible scenario or implications.
  *
  */
 

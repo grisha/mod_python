@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.90 2003/05/29 14:15:47 grisha Exp $
+ * $Id: mod_python.c,v 1.91 2003/07/17 00:51:46 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -321,6 +321,40 @@ apr_status_t python_cleanup(void *data)
 }
 
 /**
+ ** python_create_global_config
+ **
+ *      This creates the part of config that survives
+ *  server restarts
+ *
+ */
+
+static py_global *python_create_global_config(server_rec *s)
+{
+    apr_pool_t *pool = s->process->pool;
+    py_global *glb;
+
+    /* do we already have it in s->process->pool? */
+
+    apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY, pool);
+
+    if (glb) {
+        return glb; 
+    }
+
+
+    /* otherwise, create it */
+
+    glb = (py_global *)apr_palloc(pool, sizeof(*glb));
+    glb->shm_file = "/tmp/mod_python.shm"; //XXX
+    glb->shm_size = 64000; //XXX
+    glb->shm = NULL;
+    glb->rmm = NULL;
+    glb->table = NULL;
+
+    return glb;
+}
+
+/**
  ** python_init()
  **
  *      Called by Apache at mod_python initialization time.
@@ -375,10 +409,15 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* release the lock; now other threads can run */
         PyEval_ReleaseLock();
 #endif
-/* XXX		PSP_PG(files) = PyDict_New(); */
+
     }
+
+    python_create_global_config(s);
+    /* table_rmm_init(s, p); */
+
     return OK;
 }
+
 
 /**
  ** python_create_config
@@ -397,10 +436,10 @@ static py_config *python_create_config(apr_pool_t *p)
     conf->hlists = apr_hash_make(p);
     conf->in_filters = apr_hash_make(p);
     conf->out_filters = apr_hash_make(p);
+    conf->global = NULL;
 
     return conf;
 }
-
 
 /**
  ** python_create_dir_config
@@ -436,6 +475,8 @@ static void *python_create_srv_config(apr_pool_t *p, server_rec *srv)
 {
 
     py_config *conf = python_create_config(p);
+
+    conf->global = python_create_global_config(srv);
 
     return conf;
 }
@@ -520,6 +561,8 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
         apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
     }
+
+    merged_conf->global = nc->global ? nc->global : cc->global;
 
     return (void *) merged_conf;
 }

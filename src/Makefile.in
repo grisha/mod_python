@@ -95,7 +95,7 @@ mod_python.so: $(SRCS) @SOLARIS_HACKS@
 	@echo
 
 clean:
-	rm -rf $(OBJS) core libpython.a mod_python.so *~ .libs *.o *.slo *.lo *.la psp_parser.c
+	rm -rf $(OBJS) core libpython.a mod_python.so *~ .libs *.o *.slo *.lo *.la 
 
 distclean: clean
 	rm -f Makefile .depend .install
