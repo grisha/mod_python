@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.14 2002/10/12 05:45:29 grisha Exp $
+ # $Id: tests.py,v 1.15 2002/10/12 20:02:03 grisha Exp $
  #
 
 # mod_python tests
@@ -508,6 +508,13 @@ def postreadrequest(req):
     req.write("test ok")
 
     return apache.DONE
+
+
+def trans(req):
+
+    req.filename = req.document_root()+"/tests.py"
+
+    return apache.OK
 
 def import_test(req):
 
