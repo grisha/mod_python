@@ -249,7 +249,6 @@ AC_SUBST(PY_STD_LIB)
 PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 
 # set python std library variable
-AC_MSG_CHECKING(what libraries Python was linked with)
 AC_SUBST(LIBS)
 
 PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
@@ -257,6 +256,24 @@ PyLIBPL=${PyLIBP}/config
 PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
 PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
 PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
+AC_CHECK_LIB(python${PyVERSION}, Py_NewInterpreter,
+             [ PyPYTHONLIBS="-lpython${PyVERSION}" ],
+             [ LDFLAGS="$save_LDFLAGS"
+               if test -f ${PyLIBPL}/libpython${PyVERSION}.a; then
+                  PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+               else
+                  AC_ERROR(Can not link to python)
+               fi
+              ], 
+              [ ${PyLIBS} ${PyMODLIBS} ] )
+LIBS="$save_LIBS"
+
+# (actually this check already just happened above)
+AC_MSG_CHECKING(what libraries Python was linked with) 
 PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
  
 ## XXX this is a small work around for a weird RedHat problem
