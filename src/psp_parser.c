@@ -521,7 +521,7 @@ static yyconst flex_int16_t yy_chk[107] =
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.c,v 1.17 2003/11/04 20:30:39 grisha Exp $
+ * $Id: psp_parser.c,v 1.18 2004/02/16 19:00:06 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -1052,7 +1052,11 @@ YY_RULE_SETUP
     filename = strchr(yytext, '"') + 1;
     filename[strchr(filename, '"')-filename] = '\0';
 
-    if (PSP_PG(dir)) {
+    /* XXX The absolute path check won't work on Windows,
+     * needs to be corrected
+     */
+
+    if (PSP_PG(dir) && filename[0] != '/') {
         path = malloc(strlen(filename)+strlen(PSP_PG(dir))+1);
         if (path == NULL) {
             PyErr_NoMemory();
@@ -1081,24 +1085,24 @@ YY_RULE_SETUP
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 255 "psp_parser.l"
+#line 259 "psp_parser.l"
 {
     BEGIN TEXT;
 }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 259 "psp_parser.l"
+#line 263 "psp_parser.l"
 {
     BEGIN TEXT;
 }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 263 "psp_parser.l"
+#line 267 "psp_parser.l"
 ECHO;
 	YY_BREAK
-#line 1102 "psp_parser.c"
+#line 1106 "psp_parser.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PYCODE):
 case YY_STATE_EOF(INDENT):
@@ -2218,7 +2222,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 263 "psp_parser.l"
+#line 267 "psp_parser.l"
 
 
 
