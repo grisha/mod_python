@@ -1,4 +1,4 @@
-# $Id: testconf.py.in,v 1.3 2002/10/10 21:28:32 grisha Exp $
+# $Id: testconf.py.in,v 1.4 2003/10/21 21:06:50 grisha Exp $
 
 
 
@@ -10,3 +10,10 @@
 HTTPD="@HTTPD@"
 TESTHOME="@TEST_SERVER_ROOT@"
 MOD_PYTHON_SO="@MOD_PYTHON_SO@"
+LIBEXECDIR="@LIBEXECDIR@"
+
+
+# makes emacs go into python mode
+### Local Variables:
+### mode:python
+### End:
