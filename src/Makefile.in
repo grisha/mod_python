@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.14 2002/08/18 18:43:36 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.15 2002/08/19 20:12:48 gtrubetskoy Exp $
 
 CC=@CC@
 RANLIB=@RANLIB@
@@ -108,7 +108,7 @@ depend:
 			sed 's|\(.*\)\.o|$(srcdir)/\1.c|'`
 
 clean:
-	rm -f $(OBJS) core libpython.a mod_python.so *~
+	rm -rf $(OBJS) core libpython.a mod_python.so *~ .libs
 
 # this is a hack to help avoid a gcc/solaris problem
 # python uses assert() which needs _eprintf()
