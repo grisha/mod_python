@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.55 2003/12/11 03:41:30 grisha Exp $
+ * $Id: requestobject.c,v 1.56 2004/02/16 18:59:15 grisha Exp $
  *
  */
 
@@ -1279,7 +1279,7 @@ static PyGetSetDef request_getsets[] = {
     {"prev",       (getter)getmakeobj, NULL, "If redirected, pointer to the from request", "prev"},
     {"main",       (getter)getmakeobj, NULL, "If subrequest, pointer to the main request", "main"},
     {"the_request", (getter)getreq_recmbr, NULL, "First line of request", "the_request"},
-    {"assbackwards", (getter)getreq_recmbr, NULL, "HTTP/0.9 \"simple\" request", "assbackwards"},
+    {"assbackwards", (getter)getreq_recmbr, (setter)setreq_recmbr, "HTTP/0.9 \"simple\" request", "assbackwards"},
     {"proxyreq",     (getter)getreq_recmbr, NULL, "A proxy request: one of apache.PROXYREQ_* values", "proxyreq"},
     {"header_only",  (getter)getreq_recmbr, NULL, "HEAD request, as oppsed to GET", "header_only"},
     {"protocol",     (getter)getreq_recmbr, NULL, "Protocol as given to us, or HTTP/0.9", "protocol"},
