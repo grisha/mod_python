@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.10 2002/08/09 17:13:54 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.11 2002/08/09 21:40:56 gtrubetskoy Exp $
  *
  */
 
@@ -620,15 +620,15 @@ static PyObject *table_richcompare(PyObject *v, PyObject *w, int op)
  **
  */
 
-static PyObject * table_has_key(tableobject *self, PyObject *args)
+static PyObject * table_has_key(tableobject *self, PyObject *key)
 {
 
-    const char *val, *key;
+    const char *val;
 
-    if (! PyArg_ParseTuple(args, "s", &key))
+    if (!PyString_CheckExact(key))
 	return NULL;
 
-    val = apr_table_get(self->table, key);
+    val = apr_table_get(self->table, PyString_AsString(key));
 
     if (val)
 	return PyInt_FromLong(1);
@@ -637,7 +637,7 @@ static PyObject * table_has_key(tableobject *self, PyObject *args)
 }
 
 /**
- ** table_has_key
+ ** table_get
  **
  *    implements get([failobj]) method
  */
@@ -662,7 +662,7 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
 }
 
 /**
- ** table_has_key
+ ** table_setdefault
  **
  *    implements setdefault(key, [val]) method
  */
@@ -1100,7 +1100,7 @@ static PyObject *tableiter_iternext(tableiterobject *ti)
 
 }
 
-PyTypeObject PyTableIter_Type = {
+PyTypeObject MpTableIter_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,					/* ob_size */
     "dictionary-iterator",			/* tp_name */

@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.12 2002/06/03 14:31:15 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.13 2002/08/09 21:40:56 gtrubetskoy Exp $
  *
  */
 
@@ -383,6 +383,9 @@ DL_EXPORT(void) init_apache()
     if (Mp_ServerReturn == NULL)
 	return;
     PyDict_SetItemString(d, "SERVER_RETURN", Mp_ServerReturn);
+
+    PyDict_SetItemString(d, "table", (PyObject *)&MpTable_Type);
+
 }
 
 PyObject *get_ServerReturn() 

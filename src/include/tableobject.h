@@ -50,7 +50,7 @@ extern "C" {
  *
  * tableobject.h
  *
- * $Id: tableobject.h,v 1.3 2001/08/18 22:43:46 gtrubetskoy Exp $
+ * $Id: tableobject.h,v 1.4 2002/08/09 21:40:57 gtrubetskoy Exp $
  *
  */
 
@@ -71,6 +71,7 @@ extern "C" {
     } tableobject;
     
     extern DL_IMPORT(PyTypeObject) MpTable_Type;
+    extern DL_IMPORT(PyTypeObject) MpTableIter_Type;
     
 #define MpTable_Check(op) ((op)->ob_type == &MpTable_Type)
     
