@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.60 2002/06/03 14:31:15 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.61 2002/07/16 18:06:05 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -258,7 +258,7 @@ apr_status_t python_cleanup(void *data)
 /**
  ** python_init()
  **
- *      Called at Apache mod_python initialization time.
+ *      Called by Apache at mod_python initialization time.
  */
 
 static int python_init(apr_pool_t *p, apr_pool_t *ptemp, 
@@ -1023,7 +1023,8 @@ static apr_status_t python_cleanup_handler(void *data)
 static apr_status_t python_filter(int is_input, ap_filter_t *f, 
 				  apr_bucket_brigade *bb,
 				  ap_input_mode_t mode,
-				  apr_size_t *readbytes) {
+				  apr_read_type_e block,
+				  apr_size_t readbytes) {
 
     PyObject *resultobject = NULL;
     interpreterdata *idata;
@@ -1035,6 +1036,8 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     filterobject *filter;
     python_filter_ctx *ctx;
     py_filter_handler *fh;
+
+    return APR_SUCCESS;
 
     /* we only allow request level filters so far */
     req = f->r;
@@ -1052,8 +1055,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
        so a fitler can spit out an error without causing infinite loop */
     if (ctx->transparent) {
 	if (is_input) 
-	    return ap_get_brigade(f->next, bb, mode, APR_BLOCK_READ, 
-				  *readbytes);
+	    return ap_get_brigade(f->next, bb, mode, block, readbytes);
 	else
 	    return ap_pass_brigade(f->next, bb);
     }
@@ -1182,12 +1184,6 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     }
     return filter->rc;
 
-
-
-
-
-
-
     return APR_SUCCESS;
 }
 
@@ -1201,9 +1197,10 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 static apr_status_t python_input_filter(ap_filter_t *f, 
 					apr_bucket_brigade *bb,
 					ap_input_mode_t mode,
-					apr_size_t *readbytes) 
+					apr_read_type_e block,
+					apr_off_t readbytes)
 {
-    return python_filter(1, f, bb, mode, readbytes);
+    return python_filter(1, f, bb, mode, block, readbytes);
 }
 
 
@@ -1216,7 +1213,7 @@ static apr_status_t python_input_filter(ap_filter_t *f,
 static apr_status_t python_output_filter(ap_filter_t *f, 
 					 apr_bucket_brigade *bb)
 {
-    return python_filter(0, f, bb, 0, NULL);
+    return python_filter(0, f, bb, 0, 0, 0);
 }
 
 
