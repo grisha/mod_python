@@ -44,7 +44,7 @@
  *
  * filterobject.h 
  *
- * $Id: filterobject.h,v 1.5 2002/07/16 18:06:07 gtrubetskoy Exp $
+ * $Id: filterobject.h,v 1.6 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  */
 
@@ -77,7 +77,6 @@ extern "C" {
 	char *dir;
 
 	requestobject *request_obj;
-	PyObject *Request;
 
     } filterobject;
 

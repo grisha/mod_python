@@ -44,7 +44,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.5 2002/07/31 21:49:50 gtrubetskoy Exp $
+ * $Id: util.c,v 1.6 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -111,6 +111,186 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
 	return t;
     }
 }
+
+/**
+ ** tuple_from_finfo
+ **
+ *  makes a tuple similar to return of os.stat() from apr_finfo_t
+ *
+ */
+
+PyObject *tuple_from_finfo(apr_finfo_t *f)
+{
+    PyObject *t;
+
+    if (f->filetype == APR_NOFILE) {
+	Py_INCREF(Py_None);
+	return Py_None;
+    }
+      
+    t = PyTuple_New(12);
+
+    if (f->valid & APR_FINFO_PROT) {
+	PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f->protection));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 0, Py_None);
+    }
+    if (f->valid & APR_FINFO_INODE) {
+	PyTuple_SET_ITEM(t, 1, PyInt_FromLong(f->inode));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 1, Py_None);
+    }
+    if (f->valid & APR_FINFO_DEV) {
+	PyTuple_SET_ITEM(t, 2, PyInt_FromLong(f->device));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 2, Py_None);
+    }
+    if (f->valid & APR_FINFO_NLINK) {
+	PyTuple_SET_ITEM(t, 3, PyInt_FromLong(f->nlink));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 3, Py_None);
+    }
+    if (f->valid & APR_FINFO_USER) {
+	PyTuple_SET_ITEM(t, 4, PyInt_FromLong(f->user));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 4, Py_None);
+    }
+    if (f->valid & APR_FINFO_GROUP) {
+	PyTuple_SET_ITEM(t, 5, PyInt_FromLong(f->group));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 5, Py_None);
+    }
+    if (f->valid & APR_FINFO_SIZE) {
+	PyTuple_SET_ITEM(t, 6, PyInt_FromLong(f->size));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 6, Py_None);
+    }
+    if (f->valid & APR_FINFO_ATIME) {
+	PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f->atime/1000000));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 7, Py_None);
+    }
+    if (f->valid & APR_FINFO_MTIME) {
+	PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f->mtime/1000000));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 8, Py_None);
+    }
+    if (f->valid & APR_FINFO_CTIME) {
+	PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f->ctime/10000000));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 9, Py_None);
+    }
+    if (f->fname) {
+	PyTuple_SET_ITEM(t, 10, PyString_FromString(f->fname));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 10, Py_None);
+    }
+    if (f->valid & APR_FINFO_NAME) {
+	PyTuple_SET_ITEM(t, 11, PyString_FromString(f->name));
+    } else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 11, Py_None);
+    }
+    /* it'd be nice to also return the file dscriptor, 
+       f->filehand->filedes, but it's platform dependent,
+       so may be later... */
+
+    return t;
+}
+
+/**
+ ** tuple_from_apr_uri
+ **
+ *  makes a tuple from uri_components
+ *
+ */
+
+PyObject *tuple_from_apr_uri(apr_uri_t *u)
+{
+    PyObject *t;
+
+    t = PyTuple_New(9);
+
+    if (u->scheme) {
+	PyTuple_SET_ITEM(t, 0, PyString_FromString(u->scheme));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 0, Py_None);
+    }
+    if (u->hostinfo) {
+	PyTuple_SET_ITEM(t, 1, PyString_FromString(u->hostinfo));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 1, Py_None);
+    }
+    if (u->user) {
+	PyTuple_SET_ITEM(t, 2, PyString_FromString(u->user));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 2, Py_None);
+    }
+    if (u->password) {
+	PyTuple_SET_ITEM(t, 3, PyString_FromString(u->password));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 3, Py_None);
+    }
+    if (u->hostname) {
+	PyTuple_SET_ITEM(t, 4, PyString_FromString(u->hostname));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 4, Py_None);
+    }
+    if (u->port_str) {
+	PyTuple_SET_ITEM(t, 5, PyInt_FromLong(u->port));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 5, Py_None);
+    }
+    if (u->path) {
+	PyTuple_SET_ITEM(t, 6, PyString_FromString(u->path));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 6, Py_None);
+    }
+    if (u->query) {
+	PyTuple_SET_ITEM(t, 7, PyString_FromString(u->query));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 7, Py_None);
+    }
+    if (u->fragment) {
+	PyTuple_SET_ITEM(t, 8, PyString_FromString(u->fragment));
+    }
+    else {
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(t, 8, Py_None);
+    }
+    // XXX hostent, is_initialized, dns_*
+
+    return t;
+}
+
 
 /**
  ** python_decref
@@ -200,3 +380,19 @@ char * get_addhandler_extensions(request_rec *req)
     return result;
 }
 
+/**
+ ** find_memberdef
+ ** 
+ *   Find a memberdef in a PyMemberDef array
+ */
+const PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
+{
+    PyMemberDef *md;
+
+    for (md = mlist; md->name != NULL; md++)
+	if (strcmp(md->name, name) == 0)
+	    return md;
+
+    /* this should never happen or the mlist is screwed up */
+    return NULL;
+}

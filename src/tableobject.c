@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.14 2002/08/12 02:01:17 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.15 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  */
 
@@ -990,10 +990,10 @@ static PyObject *table_iter(tableobject *self)
 }
 
 static char mp_table_doc[] =
-"mp_table() -> new empty table.\n"
-"mp_table(mapping) -> new table initialized from a mapping object's\n"
+"table() -> new empty table.\n"
+"table(mapping) -> new table initialized from a mapping object's\n"
 "    (key, value) pairs.\n"
-"mp_table(seq) -> new table initialized as if via:\n"
+"table(seq) -> new table initialized as if via:\n"
 "    d = {}\n"
 "    for k, v in seq:\n"
 "        d[k] = v";

@@ -1,5 +1,8 @@
+#ifndef Mp_APACHEMODULE_H
+#define Mp_APACHEMODULE_H
+
 /* ====================================================================
- * Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
+ * Copyright (c) 2002 Gregory Trubetskoy.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,47 +45,15 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  *
- * requestobject.h
+ * apachemodule.h 
  *
- * $Id: requestobject.h,v 1.8 2002/08/15 21:46:35 gtrubetskoy Exp $
+ * $Id: _apachemodule.h,v 1.1 2002/08/15 21:46:35 gtrubetskoy Exp $
+ *
+ * See accompanying documentation and source code comments 
+ * for details.
  *
  */
 
-#ifndef Mp_REQUESTOBJECT_H
-#define Mp_REQUESTOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
+PyObject *get_ServerReturn(void);
 
-    typedef struct requestobject {
-	PyObject_HEAD
-	PyObject       * dict;
-	request_rec    * request_rec;
-	PyObject       * connection;
-	PyObject       * server;
-	PyObject       * next;
-	PyObject       * prev;
-	PyObject       * main;
-	PyObject       * headers_in;
-	PyObject       * headers_out;
-	PyObject       * err_headers_out;
-	PyObject       * subprocess_env;
-	PyObject       * notes;
-	PyObject       * phase;
-	int              content_type_set;
-	hlistobject    * hlo;
-	char           * rbuff;       /* read bufer */
-	int              rbuff_len;   /* read buffer size */
-	int              rbuff_pos;   /* position into the buffer */
-    } requestobject;
-
-    extern DL_IMPORT(PyTypeObject) MpRequest_Type;
-    
-#define MpRequest_Check(op) ((op)->ob_type == &MpRequest_Type)
-    
-    extern DL_IMPORT(PyObject *) MpRequest_FromRequest Py_PROTO((request_rec *r));
-
-#ifdef __cplusplus
-}
-#endif
-#endif /* !Mp_REQUESTOBJECT_H */
+#endif /* !Mp_APACHEMODULE_H */

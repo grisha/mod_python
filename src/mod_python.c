@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.63 2002/08/11 22:53:10 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.64 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -68,7 +68,7 @@ apr_pool_t *child_init_pool = NULL;
  *      Creates a new Python interpeter.
  */
 
-PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
+static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
 {
     PyThreadState *tstate;
     
@@ -106,7 +106,7 @@ PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
  *      NOTE: Lock must be acquired prior to entering this function.
  */
 
-interpreterdata *get_interpreter_data(const char *name, server_rec *srv)
+static interpreterdata *get_interpreter_data(const char *name, server_rec *srv)
 {
     PyObject *p;
     interpreterdata *idata = NULL;
@@ -960,13 +960,6 @@ static apr_status_t python_cleanup_handler(void *data)
 
     rc = python_handler((request_rec *)data, "PythonCleanupHandler");
 
-    /* now we need to decrement the reference to req._Request
-       to eliminate a circular reference that will prevent
-       the request object from ever being deallocated.
-       Then we DECREF what should be the last reference to
-       request object.
-    */
-
     req_config = (py_req_config *) ap_get_module_config(req->request_config,
 							&python_module);
 
@@ -989,9 +982,6 @@ static apr_status_t python_cleanup_handler(void *data)
 #else
 	PyThreadState_Swap(tstate);
 #endif
-
-	Py_XDECREF(request_obj->Request);
-	request_obj->Request = NULL;
 
 	Py_XDECREF(request_obj);
 
