@@ -51,7 +51,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.36 2000/10/29 01:29:06 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.37 2000/10/30 23:16:10 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -570,9 +570,11 @@ static int python_handler(request_rec *req, char *handler)
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, &python_module);
 
     /* is there a handler? */
-    if (! ap_table_get(conf->directives, handler)) {
-	if (! ap_table_get(req->notes, handler))
+    if (! ap_table_get(conf->directives, "PythonHandlerModule")) {
+	if (! ap_table_get(conf->directives, handler)) {
+	    if (! ap_table_get(req->notes, handler))
 	    return DECLINED;
+	}
     }
 
     /*
@@ -611,9 +613,15 @@ static int python_handler(request_rec *req, char *handler)
 	    
 	    s = ap_table_get(conf->dirs, handler);
 	    if (! s) {
-		/* this one must have been added via req.add_handler() */
-		char * ss = ap_pstrcat(req->pool, handler, "_dir", NULL);
-		s = ap_table_get(req->notes, ss);
+
+		/* are we using PythonHandlerModule? */
+		s = ap_table_get(conf->dirs, "PythonHandlerModule");
+		
+		if (! s) {
+		    /* this one must have been added via req.add_handler() */
+		    char * ss = ap_pstrcat(req->pool, handler, "_dir", NULL);
+		    s = ap_table_get(req->notes, ss);
+		}
 	    }
 	    if (strcmp(s, "") == 0)
 		interpreter = NULL;
@@ -688,15 +696,21 @@ static int python_handler(request_rec *req, char *handler)
 	request_obj->hstack = ap_pstrdup(req->pool, ap_table_get(conf->directives,
 								 handler));
     }
-    if ((s = ap_table_get(req->notes, handler))) {
-	if (request_obj->hstack) {
+    if ((s = ap_table_get(conf->directives, "PythonHandlerModule"))) {
+	if (request_obj->hstack)
 	    request_obj->hstack = ap_pstrcat(req->pool, request_obj->hstack,
 					     " ", s, NULL);
-	}
-	else {
+	else 
 	    request_obj->hstack = ap_pstrdup(req->pool, s);
-	}
+    }	
+    if ((s = ap_table_get(req->notes, handler))) {
+	if (request_obj->hstack)
+	    request_obj->hstack = ap_pstrcat(req->pool, request_obj->hstack,
+					     " ", s, NULL);
+	else
+	    request_obj->hstack = ap_pstrdup(req->pool, s);
     }
+
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
@@ -1243,6 +1257,10 @@ static const char *directive_PythonInitHandler(cmd_parms *cmd, void * mconfig,
 					       const char *val) {
     return python_directive(cmd, mconfig, "PythonInitHandler", val);
 }
+static const char *directive_PythonHandlerModule(cmd_parms *cmd, void * mconfig,
+					  const char *val) {
+    return python_directive(cmd, mconfig, "PythonHandlerModule", val);
+}
 static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd, 
 							  void * mconfig, 
 							  const char *val) {
@@ -1318,7 +1336,7 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
      * Cleanups registered first will be called last. This will
      * end the Python enterpreter *after* all other cleanups.
      */
-    /* ap_register_cleanup(p, NULL, (void (*)(void *))Py_Finalize, ap_null_cleanup);*/
+
     ap_register_cleanup(p, NULL, python_finalize, ap_null_cleanup);
 
     /*
@@ -1590,6 +1608,14 @@ command_rec python_commands[] =
 	OR_ALL,
 	RAW_ARGS,
 	"Python logger handlers."
+    },
+    {
+	"PythonHandlerModule",
+	directive_PythonHandlerModule,
+	NULL,
+	OR_ALL,
+	RAW_ARGS,
+	"A Python module containing handlers to be executed."
     },
     {
 	"PythonNoReload",                 

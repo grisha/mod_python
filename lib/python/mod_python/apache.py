@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.22 2000/10/21 20:24:54 gtrubetskoy Exp $
+  $Id: apache.py,v 1.23 2000/10/30 23:16:10 gtrubetskoy Exp $
 
 """
 
@@ -65,7 +65,7 @@ class CallBack:
         self.req = None
 
 
-    def resolve_object(self, module, object_str):
+    def resolve_object(self, module, object_str, silent=0):
         """
         This function traverses the objects separated by .
         (period) to find the last one we're looking for:
@@ -81,6 +81,10 @@ class CallBack:
 
             parent = obj
 
+            # don't through attribute errors when silent
+            if silent and not hasattr(module, obj_str):
+                return None
+                
             # this adds a little clarity if we have an attriute error
             if obj == module and not hasattr(module, obj_str):
                 if hasattr(module, "__file__"):
@@ -108,6 +112,7 @@ class CallBack:
             self.req = req
 
         def pop(self):
+
             handlers = string.split(self.req.hstack)
             if not handlers:
                 return None
@@ -140,7 +145,7 @@ class CallBack:
             dirs = _req.get_all_dirs()
 
             hstack = self.HStack(_req)
-        
+
             handler = hstack.pop()
             while handler:
 
@@ -167,7 +172,10 @@ class CallBack:
                         if sys.path != newpath:
                             sys.path[:] = newpath
                 else:
-                    dir = _req.get_all_dirs()[htype]
+                    if config.has_key("PythonHandlerModule"):
+                        dir = _req.get_all_dirs()["PythonHandlerModule"]
+                    else:
+                        dir = _req.get_all_dirs()[htype]
                     if dir not in sys.path:
                         sys.path[:0] = [dir]
 
@@ -175,19 +183,25 @@ class CallBack:
                 module = import_module(module_name, _req)
 
                 # find the object
-                object = self.resolve_object(module, object_str)
+                silent = config.has_key("PythonHandlerModule")
+                object = self.resolve_object(module, object_str, silent)
 
-                # call the object
-                if config.has_key("PythonEnablePdb"):
-                    if config["PythonEnablePdb"]:
-                        result = pdb.runcall(object, self.req)
-                else:
-                    result = object(self.req)
+                if object:
 
-                # stop cycling through handlers
-                if result != OK:
-                    break
-                
+                    # call the object
+                    if config.has_key("PythonEnablePdb"):
+                        if config["PythonEnablePdb"]:
+                            result = pdb.runcall(object, self.req)
+                    else:
+                        result = object(self.req)
+
+                    # stop cycling through handlers
+                    if result != OK:
+                        break
+                    
+                elif silent:
+                    result = DECLINED
+                        
                 handler = hstack.pop()
 
 
@@ -552,6 +566,7 @@ def init():
 ## Some functions made public
 make_table = _apache.make_table
 log_error = _apache.log_error
+parse_qs = _apache.parse_qs
 
 ## Some constants
 
