@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.8 2000/08/28 22:46:11 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.9 2000/09/04 15:54:56 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -282,6 +282,11 @@
 	    function. After a call to this function,
 	    <code>request.subprocess_env</code> will contain a lot of
 	    CGI information.
+
+	  <dt><br><b>child_terminate()</b>
+	  <dd>
+	    Terminate a child process. This should terminate the current child 
+	    process in a nice fashion.
 
 	  <dt><br><b>get_basic_auth_pw()</b>
 	  <dd>
@@ -762,7 +767,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon Aug 28 18:42:10 EDT 2000
+Last modified: Fri Sep  1 18:17:08 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

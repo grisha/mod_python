@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.12 2000/08/28 19:32:59 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.13 2000/09/04 15:54:56 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -34,6 +34,7 @@
       <li><a href="#PythonDebug">PythonDebug</a>
       <li><a href="#PythonImport">PythonImport</a>
       <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
+      <li><a href="#PythonInterpPerServer">PythonInterpPerServer</a>
       <li><a href="#PythonInterpreter">PythonInterpreter</a>
       <li><a href="#PythonNoReload">PythonNoReload</a>
       <li><a href="#PythonOptimize">PythonOptimize</a>
@@ -474,6 +475,26 @@ NOTE: In early phases of the request prior to the URI translation
       there is no way around this.
 <hr>
 
+<h2><a name="PythonInterpPerServer">PythonInterpPerServer</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonInterpPerServer {On, Off}<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> PythonInterpPerServer Off<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+Instructs mod_python to name subinterpreters using the virtual server name
+rather than the directory in which the Python*Handler directive currently in 
+effect was encountered. This means that all scripts in this virtual server
+will execute in the same subinterpreter.
+
+<hr>
+
 <h2><a name="PythonNoReload">PythonNoReload</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> PythonNoReload {On, Off}<br>
@@ -570,7 +591,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon Aug 28 15:31:16 EDT 2000
+Last modified: Sat Sep  2 15:06:30 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.26 2000/08/28 22:46:11 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.27 2000/09/04 15:54:56 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -426,6 +426,7 @@ typedef struct requestobject {
 static void request_dealloc(requestobject *self);
 static PyObject * request_getattr(requestobject *self, char *name);
 static int request_setattr(requestobject *self, char *name, PyObject *value);
+static PyObject * req_child_terminate      (requestobject *self, PyObject *args);
 static PyObject * req_add_common_vars      (requestobject *self, PyObject *args);
 static PyObject * req_add_handler          (requestobject *self, PyObject *args);
 static PyObject * req_get_all_config       (requestobject *self, PyObject *args);
@@ -462,6 +463,7 @@ static PyTypeObject requestobjecttype = {
 static PyMethodDef requestobjectmethods[] = {
     {"add_common_vars",      (PyCFunction) req_add_common_vars,      METH_VARARGS},
     {"add_handler",          (PyCFunction) req_add_handler,          METH_VARARGS},
+    {"child_terminate",      (PyCFunction) req_child_terminate,      METH_VARARGS},
     {"get_all_config",       (PyCFunction) req_get_all_config,       METH_VARARGS},
     {"get_all_dirs",         (PyCFunction) req_get_all_dirs,         METH_VARARGS},
     {"get_basic_auth_pw",    (PyCFunction) req_get_basic_auth_pw,    METH_VARARGS},
@@ -1673,10 +1675,23 @@ static PyObject * req_send_http_header(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.child_terminate(request self)
+ **
+ *    terminates a child process
+ */
+
+static PyObject * req_child_terminate(requestobject *self, PyObject *args)
+{
+    ap_child_terminate(self->request_rec);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
  ** request.get_basic_auth_pw(request self)
  **
  *    get basic authentication password,
- *    similat to ap_get_basic_auth_pw
+ *    similar to ap_get_basic_auth_pw
  */
 
 static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
@@ -1710,8 +1725,10 @@ static PyObject * req_write(requestobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "s#", &buff, &len))
 	return NULL;  /* bad args */
 
+    Py_BEGIN_ALLOW_THREADS
     ap_rwrite(buff, len, self->request_rec);
     rc = ap_rflush(self->request_rec);
+    Py_END_ALLOW_THREADS
     if (rc == EOF) {
 	PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
 	return NULL;
@@ -1775,13 +1792,17 @@ static PyObject * req_read(requestobject *self, PyObject *args)
 
     /* read it in */
     buffer = PyString_AS_STRING((PyStringObject *) result);
+    Py_BEGIN_ALLOW_THREADS
     chunk_len = ap_get_client_block(self->request_rec, buffer, len);
+    Py_END_ALLOW_THREADS
     bytes_read = chunk_len;
 
     /* if this is a "short read", try reading more */
     while ((bytes_read < len) && (chunk_len != 0)) {
+	Py_BEGIN_ALLOW_THREADS
 	chunk_len = ap_get_client_block(self->request_rec, 
 					buffer+bytes_read, len-bytes_read);
+	Py_END_ALLOW_THREADS
 	ap_reset_timeout(self->request_rec);
 	if (chunk_len == -1) {
 	    ap_kill_timeout(self->request_rec);
@@ -2088,8 +2109,8 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
 		dir = ap_table_get(conf->dirs, currhand);
 
 		/*
-		 * make a note that the handler's been added. python_handler
-		 * won't bother checking for it unless it sees this flag 
+		 * make a note that the handler's been added. 
+		 * req_get_all_* rely on this to be faster
 		 */
 		ap_table_set(self->request_rec->notes, "py_more_directives", "1");
 
@@ -2140,6 +2161,13 @@ void python_init(server_rec *s, pool *p)
 
     char buff[255];
 
+    /* mod_python version */
+    ap_add_version_component(VERSION_COMPONENT);
+    
+    /* Python version */
+    sprintf(buff, "Python/%s", strtok((char *)Py_GetVersion(), " "));
+    ap_add_version_component(buff);
+
     /* initialize global Python interpreter if necessary */
     if (! Py_IsInitialized()) 
     {
@@ -2149,13 +2177,6 @@ void python_init(server_rec *s, pool *p)
 	serverobjecttype.ob_type = &PyType_Type;
 	connobjecttype.ob_type = &PyType_Type;
 	requestobjecttype.ob_type = &PyType_Type;
-
-	/* mod_python version */
-	ap_add_version_component(VERSION_COMPONENT);
-
-	/* Python version */
-	sprintf(buff, "Python/%s", strtok((char *)Py_GetVersion(), " "));
-	ap_add_version_component(buff);
 
 	/* initialze the interpreter */
 	Py_Initialize();
@@ -2562,7 +2583,10 @@ static int python_handler(request_rec *req, char *handler)
 	    return DECLINED;
     }
 
-    /* determine interpreter to use */
+    /*
+     * determine interpreter to use 
+     */
+
     if ((s = ap_table_get(conf->directives, "PythonInterpreter"))) {
 	/* forced by configuration */
 	interpreter = s;
@@ -2584,6 +2608,9 @@ static int python_handler(request_rec *req, char *handler)
 		     */
 		    interpreter = NULL;
 	    }
+	}
+	else if (ap_table_get(conf->directives, "PythonInterpPerServer")) {
+	    interpreter = req->server->server_hostname;
 	}
 	else {
 	    /* - default -
@@ -2887,6 +2914,30 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
     else {
 	ap_table_unset(conf->directives, key);
 	ap_table_unset(conf->dirs, key);
+    }
+
+    return NULL;
+}
+
+/**
+ ** directive_PythonInterpPerServer
+ **
+ *      This function called whenever PythonInterpPerServer directive
+ *      is encountered.
+ */
+
+static const char *directive_PythonInterpPerServer(cmd_parms *cmd, 
+						   void *mconfig, int val) {
+    py_dir_config *conf;
+    const char *key = "PythonInterpPerServer";
+
+    conf = (py_dir_config *) mconfig;
+
+    if (val) {
+	ap_table_set(conf->directives, key, "1");
+    }
+    else {
+	ap_table_unset(conf->directives, key);
     }
 
     return NULL;
@@ -3268,6 +3319,14 @@ command_rec python_commands[] =
 	OR_ALL,                         
 	FLAG,                               
 	"Create subinterpreters per directory rather than per directive."
+    },
+    {
+	"PythonInterpPerServer",
+	directive_PythonInterpPerServer,
+	NULL,                                
+	RSRC_CONF,
+	FLAG,                               
+	"Create subinterpreters per server rather than per directive."
     },
     {
 	"PythonInterpreter",                 
