@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: httpdconf.py,v 1.2 2002/10/10 21:28:32 grisha Exp $
+ # $Id: httpdconf.py,v 1.3 2002/10/12 05:41:31 grisha Exp $
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
@@ -199,11 +199,15 @@ class PythonConnectionHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class PythonDebug(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class PythonHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
-class PythonDebug(Directive):
+class PythonImport(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 

@@ -440,16 +440,17 @@ information.
 \index{PythonImport}
 
 \strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
-PythonImport \emph{module} ... \\
+PythonImport \emph{module} \emph{interpreter_name}\\
 \citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
-directory\\
+server config\\
 \citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
-Tells the server to import the Python module module at process
-startup. This is useful for initialization tasks that could be time
-consuming and should not be done at the request processing time,
-e.g. initializing a database connection.
+Tells the server to import the Python module module at process startup
+under the specified interpreter name. This is useful for
+initialization tasks that could be time consuming and should not be
+done at the request processing time, e.g. initializing a database
+connection.
 
 The import takes place at child process initialization, so the module
 will actually be imported once for every child process spawned.
@@ -457,14 +458,11 @@ will actually be imported once for every child process spawned.
 Note that at the time when the import takes place, the configuration
 is not completely read yet, so all other directives, including
 PythonInterpreter have no effect on the behavior of modules imported
-by this directive. Because of this limitation, the use of this
-directive should be limited to situations where it is absolutely
-necessary, and the recommended approach to one-time initializations
-should be to use the Python import mechanism.
-
-The module will be imported within the subinterpreter according with
-the directory name specified by the \code{<Directory>} directive. For
-all other subinterpreters, the module will not appear imported.
+by this directive. Because of this limitation, the interpreter must be
+specified explicitely, and must match the name under which subsequent
+requests relying on this operation will execute. If you are not sure
+under what interpreter name a request is running, examine the
+\member{interpreter} member of the request object.
 
 See also Multiple Interpreters. 
 

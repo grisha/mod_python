@@ -52,11 +52,11 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.12 2002/10/10 21:28:33 grisha Exp $
+ # $Id: tests.py,v 1.13 2002/10/12 05:41:32 grisha Exp $
  #
 
 # mod_python tests
-
+print "IN TESTS"
 from mod_python import apache
 import unittest
 import re
@@ -508,6 +508,17 @@ def postreadrequest(req):
     req.write("test ok")
 
     return apache.DONE
+
+def import_test(req):
+
+    import sys
+    if sys.modules.has_key("dummymodule"):
+        req.write("test ok")
+    else:
+        req.log_error("dummymodule not found in sys.modules")
+        req.write("test failed")
+
+    return apache.OK
 
 def outputfilter(filter):
 
