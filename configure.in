@@ -256,11 +256,18 @@ PyLIBPL=${PyLIBP}/config
 PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
 PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
 PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PyFRAMEWORK=`grep "^PYTHONFRAMEWORK=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PyFRAMEWORKDIR=`grep "^PYTHONFRAMEWORKDIR=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   ' | sed 's/ //g'`
 
 save_LDFLAGS="$LDFLAGS"
 save_LIBS="$LIBS"
-LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
-AC_CHECK_LIB(python${PyVERSION}, Py_NewInterpreter,
+if test "$PyFRAMEWORKDIR" != "no-framework"; then
+  if test -n "$PyFRAMEWORK"; then
+    PyPYTHONLIBS="-framework $PyFRAMEWORK"
+  fi
+else
+  LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
+  AC_CHECK_LIB(python${PyVERSION}, Py_NewInterpreter,
              [ PyPYTHONLIBS="-lpython${PyVERSION}" ],
              [ LDFLAGS="$save_LDFLAGS"
                if test -f ${PyLIBPL}/libpython${PyVERSION}.a; then
@@ -270,6 +277,7 @@ AC_CHECK_LIB(python${PyVERSION}, Py_NewInterpreter,
                fi
               ], 
               [ ${PyLIBS} ${PyMODLIBS} ] )
+fi
 LIBS="$save_LIBS"
 
 # (actually this check already just happened above)
