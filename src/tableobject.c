@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.11 2002/08/09 21:40:56 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.12 2002/08/09 21:44:32 gtrubetskoy Exp $
  *
  */
 
@@ -669,22 +669,22 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
 
 static PyObject *table_setdefault(register tableobject *self, PyObject *args)
 {
-	PyObject *key;
-	PyObject *failobj = Py_None;
-	PyObject *val = NULL;
+    PyObject *key;
+    PyObject *failobj = Py_None;
+    PyObject *val = NULL;
 
-	if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
+	return NULL;
 
-	val = table_subscript(self, key);
+    val = table_subscript(self, key);
 
-	if (val == NULL) {
-		val = failobj;
-		table_ass_subscript(self, key, val);
-	}
+    if (val == NULL) {
+	val = failobj;
+	table_ass_subscript(self, key, val);
+    }
 
-	Py_XINCREF(val);
-	return val;
+    Py_XINCREF(val);
+    return val;
 }
 
 /**
@@ -809,17 +809,17 @@ static PyObject *select_item(apr_table_entry_t *elts)
 
 static PyObject *table_iterkeys(tableobject *self)
 {
-	return tableiter_new(self, select_key);
+    return tableiter_new(self, select_key);
 }
 
 static PyObject *table_itervalues(tableobject *self)
 {
-	return tableiter_new(self, select_value);
+    return tableiter_new(self, select_value);
 }
 
 static PyObject *table_iteritems(tableobject *self)
 {
-	return tableiter_new(self, select_item);
+    return tableiter_new(self, select_item);
 }
 
 static char has_key__doc__[] =
