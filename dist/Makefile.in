@@ -55,7 +55,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.1 2002/12/30 18:44:27 grisha Exp $
+ # $Id: Makefile.in,v 1.2 2002/12/30 18:59:35 grisha Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
@@ -77,11 +77,11 @@ windist: mod_python.so
 
 # this may require root privilidges
 install_py_lib: unixdist
-	@cd dist; \
+	cd dist; \
 	gunzip -c mod_python-$(MP_VERSION).tar.gz | tar xf -; \
 	cd mod_python-$(MP_VERSION); \
 	$(PYTHON_BIN) setup.py install --optimize 2 --force; \
-	rm -rf mod_python-$(MP_VERSION)
+	cd ..; rm -rf mod_python-$(MP_VERSION)
 
 mod_python.so:
 	@echo "Please place a WIN32 compiled mod_python.so in this directory"
