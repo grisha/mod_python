@@ -1,3 +1,6 @@
+Jun 11 2001 -	Changed configure.in to accomodate Python 2.1. It looks like
+		everything else works without any changes.
+
 Jun  4 2001 -	2.7.4 released.
 
 May 28 2001 -	Renamed make_table, log_error, table_add and copy_table with
