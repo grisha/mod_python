@@ -777,6 +777,8 @@ def init():
 make_table = _apache.table
 log_error = _apache.log_error
 table = _apache.table
+config_tree = _apache.config_tree
+server_root = _apache.server_root
 
 ## Some constants
 

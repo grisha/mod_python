@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.17 2002/09/12 18:24:06 gstein Exp $
+ * $Id: _apachemodule.c,v 1.18 2002/09/19 20:11:35 grisha Exp $
  *
  */
 
@@ -352,12 +352,35 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
     return pairs;
 }
 
+/**
+ ** config_tree
+ **
+ *   Returns a copy of the config tree
+ */
+
+static PyObject *config_tree()
+{
+    return cfgtree_walk(ap_conftree);
+}
+
+/**
+ ** server_root
+ **
+ *   Returns ServerRoot
+ */
+
+static PyObject *server_root()
+{
+    return PyString_FromString(ap_server_root);
+}
 
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
     {"log_error",                 (PyCFunction)mp_log_error,     METH_VARARGS},
     {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
     {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
+    {"config_tree",               (PyCFunction)config_tree,      METH_NOARGS},
+    {"server_root",               (PyCFunction)server_root,      METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
