@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.41 2002/04/10 21:24:24 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.42 2002/07/16 18:58:43 gtrubetskoy Exp $
 
 import sys
 import string
@@ -225,7 +225,7 @@ class CallBack:
         """
 
         # be cautious
-        result, handler = HTTP_INTERNAL_SERVER_ERROR, ""
+        result = HTTP_INTERNAL_SERVER_ERROR
 
         # is there a Request object for this request?
         if not _req._Request:
@@ -318,7 +318,7 @@ class CallBack:
             try:
                 (etype, value, traceback) = traceblock
                 result = self.ReportError(req, etype, value, traceback,
-                                          phase=phase, hname=handler,
+                                          phase=_req.phase, hname=hlist.handler,
                                           debug=debug)
             finally:
                 traceback = None
@@ -328,7 +328,7 @@ class CallBack:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 result = self.ReportError(req, exc_type, exc_value, exc_traceback,
-                                          phase=phase, hname=handler, debug=debug)
+                                          phase=_req.phase, hname=hlist.handler, debug=debug)
             finally:
                 exc_traceback = None
 
