@@ -128,7 +128,7 @@ class CallBack:
             finally:
                 exc_traceback = None
 
-    return result
+        return result
 
     def FilterDispatch(self, filter):
 
@@ -234,7 +234,7 @@ class CallBack:
             finally:
                 exc_traceback = None
 
-    return OK
+        return OK
 
     def HandlerDispatch(self, req):
         """
@@ -349,17 +349,16 @@ class CallBack:
             finally:
                 exc_traceback = None
 
-    return result
+        return result
 
 
     def ReportError(self, etype, evalue, etb, req=None, filter=None, srv=None,
                     phase="N/A", hname="N/A", debug=0):
-    """
-    This function is only used when debugging is on.
-    It sends the output similar to what you'd see
-    when using Python interactively to the browser
-    """
-
+        """
+        This function is only used when debugging is on.
+        It sends the output similar to what you'd see
+        when using Python interactively to the browser
+        """
         try:       # try/finally
             try:        # try/except
 
