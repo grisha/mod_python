@@ -1533,15 +1533,25 @@ static const char *directive_PythonAutoReload(cmd_parms *cmd,
 static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig, 
                                           const char *key, const char *val)
 {
-
     py_config *conf;
 
     conf = (py_config *) mconfig;
-    apr_table_set(conf->options, key, val);
 
-    conf = ap_get_module_config(cmd->server->module_config,
-                                &python_module);
-    apr_table_set(conf->options, key, val);
+    if(val!=NULL) {
+        apr_table_set(conf->options, key, val);
+
+        conf = ap_get_module_config(cmd->server->module_config,
+                                    &python_module);
+        apr_table_set(conf->options, key, val);
+    }
+    else {
+    	/** XXX This doesn't work, unfortunately */
+        apr_table_unset(conf->options, key);
+
+        conf = ap_get_module_config(cmd->server->module_config,
+                                    &python_module);
+        apr_table_unset(conf->options, key);
+    }
 
     return NULL;
 }
@@ -2022,7 +2032,7 @@ command_rec python_commands[] =
     AP_INIT_FLAG(
         "PythonOptimize", directive_PythonOptimize, NULL, RSRC_CONF,
         "Set the equivalent of the -O command-line flag on the interpreter."),
-    AP_INIT_TAKE2(
+    AP_INIT_TAKE12(
         "PythonOption", directive_PythonOption, NULL, OR_ALL,
         "Useful to pass custom configuration information to scripts."),
     AP_INIT_TAKE1(
