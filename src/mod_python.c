@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.28 2000/09/04 19:21:20 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.29 2000/09/05 12:46:55 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -2849,7 +2849,10 @@ static int python_handler(request_rec *req, char *handler)
 /**
  ** python_cleanup
  **
- *     This function gets called for registered cleanups
+ *     This function gets called for clean ups registered
+ *     with register_cleanup(). Clean ups registered via
+ *     PythonCleanupHandler run in python_cleanup_handler()
+ *     below.
  */
 
 void python_cleanup(void *data)
@@ -2939,6 +2942,179 @@ void python_cleanup(void *data)
     free(ci);
     return;
 }
+
+/**
+ ** python_cleanup_handler
+ **
+ *    Runs handler registered via PythonCleanupHandler. Clean ups
+ *    registered via register_cleanup() run in python_cleanup() above.
+ *
+ *    This is a little too similar to python_handler, except the
+ *    return of the function doesn't matter.
+ */
+
+void python_cleanup_handler(void *data)
+{
+
+    request_rec *req = (request_rec *)data;
+    char *handler = "PythonCleanupHandler";
+    interpreterdata *idata;
+    requestobject *request_obj;
+    const char *s;
+    py_dir_config * conf;
+    const char * interpreter = NULL;
+#ifdef WITH_THREAD
+    PyThreadState *tstate;
+#endif
+    
+    /* get configuration */
+    conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, &python_module);
+
+    /* is there a handler? */
+    if (! ap_table_get(conf->directives, handler)) {
+	return;
+    }
+
+    /*
+     * determine interpreter to use 
+     */
+
+    if ((s = ap_table_get(conf->directives, "PythonInterpreter"))) {
+	/* forced by configuration */
+	interpreter = s;
+    }
+    else {
+	if ((s = ap_table_get(conf->directives, "PythonInterpPerDirectory"))) {
+	    /* base interpreter on directory where the file is found */
+	    if (ap_is_directory(req->filename))
+		interpreter = ap_make_dirstr_parent(req->pool, 
+						    ap_pstrcat(req->pool, 
+							       req->filename, 
+							       SLASH_S, NULL ));
+	    else {
+		if (req->filename)
+		    interpreter = ap_make_dirstr_parent(req->pool, req->filename);
+		else
+		    /* very rare case, use global interpreter */
+		    interpreter = NULL;
+	    }
+	}
+	else if (ap_table_get(conf->directives, "PythonInterpPerServer")) {
+	    interpreter = req->server->server_hostname;
+	}
+	else {
+	    /* - default -
+	     * base interpreter name on directory where the handler directive
+	     * was last found. If it was in http.conf, then we will use the 
+	     * global interpreter.
+	     */
+	    
+	    if (! s) {
+		s = ap_table_get(conf->dirs, handler);
+		if (strcmp(s, "") == 0)
+		    interpreter = NULL;
+		else
+		    interpreter = s;
+	    }
+	}
+    }
+    
+#ifdef WITH_THREAD  
+    /* acquire lock (to protect the interpreters dictionary) */
+    PyEval_AcquireLock();
+#endif
+
+    /* get/create interpreter */
+    idata = get_interpreter_data(interpreter, req->server);
+   
+#ifdef WITH_THREAD
+    /* release the lock */
+    PyEval_ReleaseLock();
+#endif
+
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
+		      "python_cleanup_handler: get_interpreter_data returned NULL!");
+        return;
+    }
+    
+#ifdef WITH_THREAD  
+    /* create thread state and acquire lock */
+    tstate = PyThreadState_New(idata->istate);
+    PyEval_AcquireThread(tstate);
+#endif
+
+    if (!idata->obcallback) {
+
+        idata->obcallback = make_obcallback();
+        /* we must have a callback object to succeed! */
+        if (!idata->obcallback) 
+        {
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
+			  "python_cleanup_handler: make_obcallback returned no obCallBack!");
+#ifdef WITH_THREAD
+	    PyThreadState_Swap(NULL);
+	    PyThreadState_Delete(tstate);
+	    PyEval_ReleaseLock();
+#endif
+	    return;
+        }
+    }
+
+    /* 
+     * make a note of which subinterpreter we're running under.
+     * this information is used by register_cleanup()
+     */
+    if (interpreter)
+	ap_table_set(req->notes, "python_interpreter", interpreter);
+    else
+	ap_table_set(req->notes, "python_interpreter", GLOBAL_INTERPRETER);
+    
+    /* create/acquire request object */
+    request_obj = get_request_object(req);
+
+    /* make a note of which handler we are in right now */
+    ap_table_set(req->notes, "python_handler", handler);
+
+    /* put the list of handlers on the hstack */
+    if ((s = ap_table_get(conf->directives, handler))) {
+	request_obj->hstack = ap_pstrdup(req->pool, ap_table_get(conf->directives,
+								 handler));
+    }
+    if ((s = ap_table_get(req->notes, handler))) {
+	if (request_obj->hstack) {
+	    request_obj->hstack = ap_pstrcat(req->pool, request_obj->hstack,
+					     " ", s, NULL);
+	}
+	else {
+	    request_obj->hstack = ap_pstrdup(req->pool, s);
+	}
+    }
+    /* 
+     * Here is where we call into Python!
+     * This is the C equivalent of
+     * >>> obCallBack.Dispatch(request_object, handler)
+     */
+    PyObject_CallMethod(idata->obcallback, "Dispatch", "Os", 
+			request_obj, handler);
+     
+#ifdef WITH_THREAD
+    /* release the lock and destroy tstate*/
+    /* XXX Do not use 
+     * . PyEval_ReleaseThread(tstate); 
+     * . PyThreadState_Delete(tstate);
+     * because PyThreadState_delete should be done under 
+     * interpreter lock to work around a bug in 1.5.2 (see patch to pystate.c 2.8->2.9) 
+     */
+    PyThreadState_Swap(NULL);
+    PyThreadState_Delete(tstate);
+    PyEval_ReleaseLock();
+#endif
+
+    /* unlike python_handler, there is nothing to return */
+    return;
+}
+
 
 /**
  ** directive_PythonImport
@@ -3192,6 +3368,10 @@ static const char *directive_PythonAuthzHandler(cmd_parms *cmd, void * mconfig,
 						const char *val) {
     return python_directive(cmd, mconfig, "PythonAuthzHandler", val);
 }
+static const char *directive_PythonCleanupHandler(cmd_parms *cmd, void * mconfig, 
+						  const char *val) {
+    return python_directive(cmd, mconfig, "PythonCleanupHandler", val);
+}
 static const char *directive_PythonFixupHandler(cmd_parms *cmd, void * mconfig, 
 						const char *val) {
     return python_directive(cmd, mconfig, "PythonFixupHandler", val);
@@ -3349,6 +3529,7 @@ static int PythonHandler(request_rec *req) {
 static int PythonHeaderParserHandler(request_rec *req) {
     int rc;
     
+    /* run PythonInitHandler, if not already */
     if (! ap_table_get(req->notes, "python_init_ran")) {
 	rc = python_handler(req, "PythonInitHandler");
 	if ((rc != OK) && (rc != DECLINED))
@@ -3362,6 +3543,11 @@ static int PythonLogHandler(request_rec *req) {
 static int PythonPostReadRequestHandler(request_rec *req) {
     int rc;
 
+    /* register the clean up directive handler */
+    ap_register_cleanup(req->pool, (void *)req, python_cleanup_handler, 
+			ap_null_cleanup);
+
+    /* run PythonInitHandler */
     rc = python_handler(req, "PythonInitHandler");
     ap_table_set(req->notes, "python_init_ran", "1");
     if ((rc != OK) && (rc != DECLINED))
@@ -3419,7 +3605,15 @@ command_rec python_commands[] =
 	NULL,
 	OR_ALL,
 	RAW_ARGS,
-	"Python authorization (user allowed _here_) handlers."
+	"Python authorization handlers."
+    },
+    {
+	"PythonCleanupHandler",
+	directive_PythonCleanupHandler,
+	NULL,
+	OR_ALL,
+	RAW_ARGS,
+	"Python clean up handlers."
     },
     {
 	"PythonDebug",                 
