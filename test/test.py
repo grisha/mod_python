@@ -52,9 +52,106 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.12 2002/10/08 21:38:54 grisha Exp $
+ # $Id: test.py,v 1.13 2002/10/09 15:06:53 grisha Exp $
  #
- 
+
+"""
+
+  Writing Tests
+
+  Writing mod_python tests can be a tricky task. This module
+  attempts to lay out a framework for making the testing process
+  consistent and quick to implement.
+
+  All tests are based on Python Unit Test framework, it's a good
+  idea to study the docs for the unittest module before going any
+  further.
+
+  To write a test, first decide in which of the 3 following categories
+  it falls:
+
+      o Simple tests that do not require any special server configuration
+        and can be conducted along with other similar tests all in one
+        request.
+
+      o Per-Request tests. These tests require a whole separate request
+        (or several requests) for a complete test.
+
+      o Per-Instance tests. These require restarting the instance of
+        http and running it in a particular way, perhaps with a special
+        config to complete the test. An example might be load testing, or
+        checking for memory leaks.
+
+  There are two modules involved in testing - the one you're looking at
+  now (test.py), which is responsible for setting up the http config
+  running it and initiating requests, AND htdocs/tests.py (sorry for
+  boring names), which is where all mod_python handlers reside.
+
+  To write a Simple test:
+
+     o Look at tests.SimpleTestCase class and the test methods in it,
+       then write your own following the example.
+       
+     o Look at the tests.make_suite function, and make sure your test
+       is added to the suite in there.
+
+     o Keep in mind that the only way for Simple tests to communicate
+       with the outside world is via the error log, do not be shy about
+       writing to it.
+
+   To write a Per-Request test:
+
+   Most, if not all per-request tests require special server configuration
+   as part of the fixture. To avoid having to restart the server with a
+   different config (which would, btw, effectively turn this into a per-
+   instance test), we separate configs by placing them in separate virtual
+   hosts. This will become clearer if you follow the code.
+
+     o Look at test.PerRequestCase class.
+
+     o Note that for every test there are two methods defined: the test
+       method itself, plus a method with the same name ending with
+       "_conf". The _conf methods are supposed to return the virtual
+       host config necessary for this test. As tests are instantiated,
+       the configs are appended to a class variable (meaning its shared
+       across all instances) appendConfig, then before the suite is run,
+       the httpd config is built and httpd started. Each test will
+       know to query its own virtual host. This way all tests can be
+       conducted using a single instance of httpd.
+
+     o Note how the _config methods generate the config - they use the
+       httpdconf module to generate an object whose string representation
+       is the config part, simlar to the way HTMLgen produces html. You
+       do not have to do it this way, but it makes for cleaner code.
+
+     o Every Per-Request test must also have a corresponding handler in
+       the tests module. The convention is name everything based on the
+       subject of the test, e.g. the test of req.document_root() will have
+       a test method in PerRequestCase class called test_req_documet_root,
+       a config method PerRequestCase.test_req_document_root_conf, the
+       VirtualHost name will be test_req_document_root, and the handler
+       in tests.py will be called req_document_root.
+
+     o Note that you cannot use urllib if you have to specify a custom
+       host: header, which is required for this whole thing to work.
+       There is a convenience method, vhost_get, which takes the host
+       name as the first argument, and optionally path as the second
+       (though that is almost never needed). If vhost_get does not
+       suffice, use httplib. Note the very useful skip_host=1 argument.
+
+     o Remember to have your test added to the suite in
+       PerInstanceTestCase.testPerRequestTests
+
+  To write a Per-Instance test:
+
+     o Look at test.PerInstanceTestCase class.
+
+     o You have to start httpd in your test, but no need to stop it,
+       it will be stopped for you in tearDown()
+
+     o Add the test to the suite in test.suite() method
+
+"""
 import testconf
 from httpdconf import *
 
