@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.44 2002/07/26 13:10:30 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.45 2002/07/26 13:11:31 gtrubetskoy Exp $
 
 import sys
 import string
@@ -223,7 +223,7 @@ class CallBack:
         """
         This is the handler dispatcher.
         """
-        print 1
+
         # be cautious
         result = HTTP_INTERNAL_SERVER_ERROR
 
@@ -239,7 +239,7 @@ class CallBack:
 
         try:
             hlist = _req.hlist
-            print "here"
+
             while hlist.handler:
 
                 # split module::handler
