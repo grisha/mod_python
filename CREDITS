@@ -41,6 +41,9 @@ Sean Reifschneider <jafo-rpms@tummy.com>
 Chris Trengove <trengove@econdata.com.au>
 	[difficult to find thread bug on win32]
 
+Jarkko Torppa <torppa@cute.fi>
+	[bugfixes/patches]
+
 Greg Stein <gstein@lyra.org> 
 	[Python and Apache expert advice]
 

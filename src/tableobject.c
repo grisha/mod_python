@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.13 2002/08/11 19:44:27 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.14 2002/08/12 02:01:17 gtrubetskoy Exp $
  *
  */
 
@@ -82,6 +82,9 @@ PyObject * MpTable_FromTable(apr_table_t *t)
  *  NOTE: The ap_table gets greated in its own pool, which lives
  *  throught the live of the tableobject. This is because this
  *  object may persist from hit to hit.
+ *
+ *  ALSO NOTE: table_new() also creates tables, independent of this
+ *  (it gets called when table is being subclassed)
  *
  */
 
@@ -581,8 +584,8 @@ static int table_compare(tableobject *a, tableobject *b)
     ad = PyDict_New();
     bd = PyDict_New();
 
-    PyDict_Merge(ad, a, 0);
-    PyDict_Merge(bd, b, 0);
+    PyDict_Merge(ad, (PyObject*)a, 0);
+    PyDict_Merge(bd, (PyObject*)b, 0);
 
     result = PyObject_Compare(ad, bd);
 
@@ -646,7 +649,7 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
     PyObject *key;
     PyObject *failobj = Py_None;
     PyObject *val = NULL;
-    char *sval;
+    const char *sval;
 
     if (!PyArg_ParseTuple(args, "S|S:get", &key, &failobj))
 	return NULL;
@@ -675,7 +678,7 @@ static PyObject *table_setdefault(register tableobject *self, PyObject *args)
     PyObject *failobj = NULL;
     PyObject *val = NULL;
     char *k = NULL;
-    char *v = NULL;
+    const char *v = NULL;
 
     if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
 	return NULL;
@@ -933,10 +936,27 @@ static PyObject *table_alloc(PyTypeObject *type, int nitems)
     return MpTable_New();
 }
 
+/**
+ ** table_new
+ **
+ */
+
 static PyObject *table_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    PyObject *self;
+
     assert(type != NULL && type->tp_alloc != NULL);
-    return type->tp_alloc(type, 0);
+    self = type->tp_alloc(type, 0);
+    if (self != NULL) {
+	apr_pool_t *p;
+	tableobject *t = (tableobject *)self;
+	apr_pool_sub_make(&p, NULL, NULL);
+	t->pool = p;
+	t->table = apr_table_make(p, 2);
+    }
+
+    return self;
+
 }
 
 static int table_init(tableobject *self, PyObject *args, PyObject *kwds)
