@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.17 2002/10/14 21:18:24 grisha Exp $
+ # $Id: tests.py,v 1.18 2002/10/24 21:44:22 grisha Exp $
  #
 
 # mod_python tests
@@ -130,6 +130,7 @@ class SimpleTestCase(unittest.TestCase):
 
         req = self.req
         log = req.log_error
+
         log("Examining request memebers:")
 
         log("    req.connection: %s" % `req.connection`)
