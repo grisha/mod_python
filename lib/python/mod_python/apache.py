@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.24 2000/11/09 00:09:18 gtrubetskoy Exp $
+  $Id: apache.py,v 1.25 2000/11/12 05:01:22 gtrubetskoy Exp $
 
 """
 
@@ -17,8 +17,6 @@ import stat
 import imp
 import types
 import _apache
-
-# XXX consider using intern() for some strings
 
 # a small hack to improve PythonPath performance. This
 # variable stores the last PythonPath in raw (unevaled) form.
@@ -60,44 +58,6 @@ class CallBack:
 
     def __init__(self):
         self.req = None
-
-
-    def resolve_object(self, module, object_str, silent=0):
-        """
-        This function traverses the objects separated by .
-        (period) to find the last one we're looking for:
-
-           From left to right, find objects, if it is
-           an unbound method of a class, instantiate the
-           class passing the request as single argument
-        """
-
-        obj = module
-        
-        for obj_str in  string.split(object_str, '.'):
-
-            parent = obj
-
-            # don't through attribute errors when silent
-            if silent and not hasattr(module, obj_str):
-                return None
-                
-            # this adds a little clarity if we have an attriute error
-            if obj == module and not hasattr(module, obj_str):
-                if hasattr(module, "__file__"):
-                    s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
-                    raise AttributeError, s
-
-            obj = getattr(obj, obj_str)
-            
-            if hasattr(obj, "im_self") and not obj.im_self:
-                # this is an unbound method, its class
-                # needs to be instantiated
-                instance = parent(self.req)
-                obj = getattr(instance, obj_str)
-                
-        return obj
-
 
     class HStack:
         """
@@ -181,7 +141,7 @@ class CallBack:
 
                 # find the object
                 silent = config.has_key("PythonHandlerModule")
-                object = self.resolve_object(module, object_str, silent)
+                object = resolve_object(module, object_str, silent)
 
                 if object:
 
@@ -200,7 +160,6 @@ class CallBack:
                     result = DECLINED
                         
                 handler = hstack.pop()
-
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -287,7 +246,7 @@ class CallBack:
             etb = None
             return DONE
 
-def import_module(module_name, req=None):
+def import_module(module_name, req=None, path=None):
     """ 
     Get the module to handle the request. If
     autoreload is on, then the module will be reloaded
@@ -331,10 +290,21 @@ def import_module(module_name, req=None):
         # import the module for the first time
         else:
 
-            module = __import__(module_name)
-            components = string.split(module_name, '.')
-            for cmp in components[1:]:
-                module = getattr(module, cmp)
+            parts = string.split(module_name, '.')
+            for i in range(len(parts)):
+                f, p, d = imp.find_module(parts[i], path)
+                try:
+                    mname = string.join(parts[:i+1], ".")
+                    module = imp.load_module(mname, f, p, d)
+                finally:
+                    if f: f.close()
+                if hasattr(module, "__path__"):
+                    path = module.__path__
+
+##            module = __import__(module_name)
+##            components = string.split(module_name, '.')
+##            for cmp in components[1:]:
+##                module = getattr(module, cmp)
 
         # find out the last modification time
         # but only if there is a __file__ attr
@@ -363,6 +333,41 @@ def import_module(module_name, req=None):
 
     return module
 
+def resolve_object(module, object_str, silent=0):
+    """
+    This function traverses the objects separated by .
+    (period) to find the last one we're looking for:
+
+       From left to right, find objects, if it is
+       an unbound method of a class, instantiate the
+       class passing the request as single argument
+    """
+
+    obj = module
+
+    for obj_str in  string.split(object_str, '.'):
+
+        parent = obj
+
+        # don't throw attribute errors when silent
+        if silent and not hasattr(module, obj_str):
+            return None
+
+        # this adds a little clarity if we have an attriute error
+        if obj == module and not hasattr(module, obj_str):
+            if hasattr(module, "__file__"):
+                s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
+                raise AttributeError, s
+
+        obj = getattr(obj, obj_str)
+
+        if hasattr(obj, "im_self") and not obj.im_self:
+            # this is an unbound method, its class
+            # needs to be instantiated
+            instance = parent(self.req)
+            obj = getattr(instance, obj_str)
+
+    return obj
 
 def build_cgi_env(req):
     """

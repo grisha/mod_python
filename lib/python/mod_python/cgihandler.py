@@ -1,7 +1,7 @@
 """
  (C) Gregory Trubetskoy, 1998 <grisha@ispol.com>
 
- $Id: cgihandler.py,v 1.6 2000/10/29 01:29:06 gtrubetskoy Exp $
+ $Id: cgihandler.py,v 1.7 2000/11/12 05:01:22 gtrubetskoy Exp $
 
  This file is part of mod_python. See COPYRIGHT file for details.
 
@@ -10,6 +10,7 @@
 import apache
 import imp
 import os
+import sys
 
 # if threads are not available
 # create a functionless lock object
@@ -32,18 +33,27 @@ except (ImportError, AttributeError):
 # is a more sensible remedy, but this seems to work OK.
 os.environ = {}
 
-# uncomment the 5 lines beginning ### to enable experimental reload feature
-# remember all imported modules
-###import sys
-###original = sys.modules.keys()
+original = sys.modules.keys()
+
+# find out the standard library location
+stdlib, x = os.path.split(os.__file__)
 
 def handler(req):
 
-###    # if there are any new modules since the import of this module,
-###    # delete them
-###    for m in sys.modules.keys():
-###        if m not in original:
-###            del sys.modules[m]
+    ### if you don't need indirect modules reloaded, comment out
+    ### code unitl ### end
+
+    # if there are any new modules since the import of this module,
+    # delete them.
+    for m in sys.modules.keys():
+        if m not in original:
+            # unless they are part of standard library
+            mod = sys.modules[m]
+            if hasattr(mod, "__file__"):
+                path, x = os.path.split(mod.__file__)
+                if path != stdlib:
+                    del sys.modules[m]
+    ### end
 
     # get the filename of the script
     if req.subprocess_env.has_key("script_filename"):
