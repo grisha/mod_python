@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.67 2003/01/26 19:24:42 grisha Exp $
+ # $Id: apache.py,v 1.68 2003/02/28 04:55:15 grisha Exp $
 
 import sys
 import traceback
@@ -160,7 +160,6 @@ class CallBack:
             # Any other rerror (usually parsing)
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                filter.disable()
                 result = self.ReportError(exc_type, exc_value, exc_traceback, srv=conn.base_server,
                                           phase=filter.name, hname=handler, debug=debug)
             finally:
