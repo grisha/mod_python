@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.22 2003/09/05 15:04:44 grisha Exp $
+ # $Id: psp.py,v 1.23 2003/09/08 19:31:50 grisha Exp $
 
 import apache, Session, util, _psp
 import _apache
@@ -75,7 +75,7 @@ tempdir = tempfile.gettempdir()
 def path_split(filename):
 
     dir, fname = os.path.split(filename)
-    if os.name == "nt":
+    if sys.platform.startswith("win"):
         dir += "\\"
     else:
         dir += "/"

@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.77 2003/09/05 15:04:43 grisha Exp $
+ # $Id: apache.py,v 1.78 2003/09/08 19:31:50 grisha Exp $
 
 import sys
 import traceback
@@ -461,15 +461,11 @@ def import_module(module_name, autoreload=1, log=0, path=None):
         file = module.__dict__.get("__file__")
 
         # the "and not" part of this condition is to prevent execution
-        # of arbitrary already imported modules, such as os. the
-        # not-so-obvious filter(lambda...) call means:
-        # return entries from path (which is a list) which fully match at
-        # beginning the dirname of file. E.g. if file is /a/b/c/d.py, a path
-        # of /a/b/c will pass, because the file is below the /a/b/c path, but
-        # path of /a/b/c/g will not pass.
+        # of arbitrary already imported modules, such as os. The
+        # reason we use startswith as opposed to exact match is that
+        # modules inside packages are actually in subdirectories.
 
-        if (not file or path and not
-            filter(lambda a: os.path.dirname(file).find(a) == 0, path)):
+        if not file or (path and not filter(file.startswith, path)):
             # there is a script by this name already imported, but it's in
             # a different directory, therefore it's a different script
             mtime, oldtime = 0, -1

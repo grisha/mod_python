@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.99 2003/08/21 18:25:12 grisha Exp $
+ * $Id: mod_python.c,v 1.100 2003/09/08 19:31:50 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -329,8 +329,11 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     int n;
 
     /* figre out maximum possible concurrent connections */
+    /* MAX_DAEMON_USED seems to account for MaxClients, as opposed to
+       MAX_DAEMONS, which is ServerLimit
+    */
     ap_mpm_query(AP_MPMQ_MAX_THREADS, &max_threads);
-    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &max_procs);
+    ap_mpm_query(AP_MPMQ_MAX_DAEMON_USED, &max_procs);
     max_clients = (((!max_threads) ? 1 : max_threads) *
 		   ((!max_procs) ? 1 : max_procs));
     locks = max_clients; /* XXX this is completely out of the blue */
@@ -362,8 +365,8 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
 	    ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
 			 "mod_python: Failed to create global mutex %d of %d (%s).",
 			 n, locks, (!fname) ? "<null>" : fname);
-	    if (n > 0) {
-		/* we were able to crate at least one, so lets just print a 
+	    if (n > 1) {
+		/* we were able to crate at least two, so lets just print a 
 		   warning/hint and proceed
 		*/
 		ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
@@ -372,7 +375,10 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
 		ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
 			     "mod_python: Hint: On Linux, the problem may be the number of "
 			     "available semaphores, check 'sysctl kernel.sem'");
-		glb->nlocks = n;
+		/* now free one lock so that if there is a module that wants a lock, it
+		   will be ok */
+		apr_global_mutex_destroy(mutex[n-1]);
+		glb->nlocks = n-1;
 		break;
 		
 	    }

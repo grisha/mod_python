@@ -279,7 +279,7 @@ def connectionhandler(conn):
 \section{\module{apache} -- Access to Apache Internals.}
 \declaremodule[apache]{extension}{apache}
 \modulesynopsis{Access to Apache Internals}
-\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+\moduleauthor{Gregory Trubetskoy}{grisha@apache.org}
 
 The Python interface to Apache internals is contained in a module
 appropriately named \module{apache}, located inside the
@@ -1348,7 +1348,7 @@ server) serving the request.
 \section{\module{util} -- Miscellaneous Utilities\label{pyapi-util}}
 \declaremodule[util]{extension}{util}
 \modulesynopsis{Miscellaneous Utilities}
-\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+\moduleauthor{Gregory Trubetskoy}{grisha@apache.org}
 
 The \module{util} module provides a number of utilities handy to a web
 application developer similar to those in the standard library
@@ -1559,7 +1559,7 @@ class. This class is similar to the standard library module
 \section{\module{Cookie} -- HTTP State Management\label{pyapi-cookie}}
 \declaremodule[Cookie]{extension}{Cookie}
 \modulesynopsis{HTTP State Management}
-\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+\moduleauthor{Gregory Trubetskoy}{grisha@apache.org}
 
 The \module{Cookie} module provides convenient ways for creating,
 parsing, sending and receiving HTTP Cookies, as defined in the
@@ -1786,7 +1786,7 @@ def handler(req):
 \section{\module{Session} -- Session Management\label{pyapi-sess}}
 \declaremodule[Session]{extension}{Session}
 \modulesynopsis{Session Management}
-\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+\moduleauthor{Gregory Trubetskoy}{grisha@apache.org}
 
 The \module{Session} module provides objects for maintaining persistent
 sessions across requests.
@@ -1981,29 +1981,23 @@ if sess.is_new():
 
 \end{classdesc}
 
-\section{\module{_psp} -- Python Server Pages\label{pyapi-psp}}
-\declaremodule[psp]{extension}{_psp}
+\section{\module{psp} -- Python Server Pages\label{pyapi-psp}}
+\declaremodule[psp]{extension}{psp}
 \modulesynopsis{Python Server Pages}
-\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+\moduleauthor{Gregory Trubetskoy}{grisha@apache.org}
 
-The \module{_psp} module provides a way to convert text documents
+The \module{psp} module provides a way to convert text documents
 (including, but not limited to HTML documents) containing Python code
 embedded in special brackets into pure Python code suitable for
 execution within a mod_python handler, thereby providing a versatile
-mechanism for delivering dynamic content in a style similar to similar
-to ASP, JSP and others.
+mechanism for delivering dynamic content in a style similar to ASP,
+JSP and others.
 
-The parser used by \module{_psp} is written in C (generated using flex)
+The parser used by \module{psp} is written in C (generated using flex)
 and is therefore very fast.
-
-Unlike other mod_python modules, \module{_psp} is written in such a way
-that it can be imported outside of the Apache httpd process, e.g. in
-stand-alone command-line programs.
 
 \emph{See \ref{hand-psp} ``PSP Handler'' for additional PSP
 information.}
-
-\subsection{PSP Syntax\label{pyapi-psp-syntax}}
 
 Inside the document, Python \dfn{code} needs to be surrounded by
 \samp{<\%} and \samp{\%>}. Python \dfn{expressions} are enclosed in
@@ -2111,7 +2105,139 @@ If the \function{parse()} function was called with the \var{dir}
 argument, then the file can be specified as a relative path, otherwise
 it has to be absolute.
 
-\subsection{Functions\label{pyapi-psp-funcs}}
+\begin{classdesc}{PSP}{req, \optional{, filename, string}}
+  This class represents a PSP object.
+
+  \var{req} is a request object; \var{filename} and \var{string} are
+  optional keyword arguments which indicate the source of the PSP
+  code. Only one of these can be specified. If neither is specified,
+  \code{req.filename} is used as \var{filename}.
+
+  This class is used internally by the PSP handler, but can also be
+  used as a general purpose templating tool.
+
+  When a file is used as the source, the code object resulting from
+  the specified file is stored in a memory cache keyed on file name
+  and file modification time. The cache is global to the Python
+  interpreter. Therefore, unless the file modification time changes,
+  the file is parsed and resulting code is compiled only once per
+  interpreter.
+
+  The cache is limited to 512 pages, which depending on the size of
+  the pages could potentially occupy a significant amount of
+  memory. If memory is of concern, then you can switch to dbm file
+  caching. Our simple tests showed only 20\% slower performance using
+  bsd db. You will need to check which implementation \module{anydbm}
+  defaults to on your system as some dbm libraries impose a limit on
+  the size of the entry making them unsuitable. Dbm caching can be
+  enabled via \code{PSPDbmCache} Python option, e.g.:
+
+\begin{verbatim}
+PythonOption PSPDbmCache ``/tmp/pspcache.dbm''
+\end{verbatim}
+  Note that the dbm cache file is not deleted when the server
+  restarts.
+
+  Unlike with files, the code objects resulting from a string are
+  cached in memory only. There is no option to cache in a dbm file at
+  this time.
+
+  \begin{methoddesc}[PSP]{run}{\optional{vars}}
+    This method will execute the code (produced at object
+    initialization time by parsing and compiling the PSP
+    source). Optional argument \var{vars} is a dictionary keyed by
+    strings that will be passed in as global variables.
+
+    Additionally, the PSP code will be given global variables
+    \code{req}, \code{psp}, \code{session} and \code{form}. A session
+    will be created and assigned to \code{session} variable only if
+    \code{session} is referenced in the code (the PSP handler examines
+    \code{co_names} of the code object to make that
+    determination). Remember that a mere mention of \code{session}
+    will generate cookies and turn on session locking, which may or
+    may not be what you want. Similarly, a mod_python
+    \class{FieldStorage} object will be instantiated if \code{form} is
+    referenced in the code.
+
+    The object passed in \code{psp} is an instance of
+    \class{PSPInstance}.
+
+  \end{methoddesc}
+
+  \begin{methoddesc}[PSP]{display_code}{}
+    Returns an HTML-formatted string representing a side-by-side
+    listing of the original PSP code and resulting Python code
+    produced by the PSP parser. 
+  \end{methoddesc}
+
+  Here is an example of how \class{PSP} can be used as a templating
+  mechanism:
+  
+  The template file:
+  \begin{verbatim}
+<html>
+  <!-- This is a simple psp template called template.html -->
+  <h1>Hello, <%=what%>!</h1>
+</html>
+  \end{verbatim}
+  The handler code:
+  \begin{verbatim}
+from mod_python import apache, psp
+
+def handler(req):
+    template = psp.PSP(req, filename='template.html')
+    template.run({'what':'world'})
+    return apache.OK
+  \end{verbatim}
+
+\end{classdesc}
+
+\begin{classdesc}{PSPInstance}{}
+  An object of this class is passed as a global variable \code{psp} to
+  the PSP code. Objects of this class are instantiated internally and
+  the interface to \method{__init__} is purposely undocumented.
+
+  \begin{methoddesc}[PSPInstance]{set_error_page}{filename}
+    Used to set a psp page to be processed when an exception
+    occurs. If the path is absolute, it will be appended to document
+    root, otherwise the file is assumed to exist in the same directory
+    as the current page. The error page will receive one additional
+    variable, \code{exception}, which is a 3-tuple returned by
+    \code{sys.exc_info()}.
+  \end{methoddesc}
+
+  \begin{methoddesc}[PSPInstance]{apply_data}{object\optional{, **kw}}
+    This method will call the callable object \var{object}, passing form
+    data as keyword arguments, and return the result.
+  \end{methoddesc}
+
+  \begin{methoddesc}[PSPInstance]{redirect}{location\optional{, permanent=0}}
+    This method will redirect the browser to location
+    \var{location}. If \var{permanent} is true, then
+    \constant{MOVED_PERMANENTLY} will be sent (as opposed to
+    \constant{MOVED_TEMPORARILY}).
+
+    \begin{notice}
+      Redirection can only happen before any data is sent to the
+      client, therefore the Python code block calling this method must
+      be at the very beginning of the page. Otherwise an
+      \exception{IOError} exception will be raised.
+    \end{notice}
+
+    Example:
+    \begin{verbatim}
+<%
+
+# note that the '<' above is the first byte of the page!
+psp.redirect('http://www.modpython.org')
+%>
+    \end{verbatim}
+  \end{methoddesc}
+
+\end{classdesc}
+
+Additionally, the \module{psp} module provides the following low level
+functions:
 
 \begin{funcdesc}{parse}{filename\optional{, dir}}
 
@@ -2131,6 +2257,3 @@ it has to be absolute.
   of resulting Python code.
 
 \end{funcdesc}
-
-
-
