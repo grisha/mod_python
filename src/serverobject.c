@@ -44,7 +44,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.6 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.7 2001/09/06 20:27:31 gtrubetskoy Exp $
  *
  */
 
@@ -229,7 +229,7 @@ static PyObject * server_getattr(serverobject *self, char *name)
 	}
 
     else if (strcmp(name, "error_log") == 0)
-	return PyInt_FromLong((long)fileno(self->server->error_log));
+	return PyInt_FromLong((long)fileno((FILE *)self->server->error_log));
   
     else if (strcmp(name, "names") == 0) {
 	return tuple_from_array_header(self->server->names);

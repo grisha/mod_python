@@ -1321,28 +1321,9 @@ echo "configure:1321: checking Python version" >&5
 PyVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:3]'`
 echo "$ac_t""$PyVERSION" 1>&6
 
-# check if python is compiled with threads
-echo $ac_n "checking whether Python is compiled with thread support""... $ac_c" 1>&6
-echo "configure:1327: checking whether Python is compiled with thread support" >&5
-PyTHREADS=`$PYTHON_BIN -c "import sys; print \"thread\" in sys.builtin_module_names"`
-if test "$PyTHREADS" = "1"; then
-  echo "$ac_t""yes" 1>&6
-  echo
-  echo "  ****** WARNING ******"
-  echo "  Python is compiled with thread support. Apache 1.3 does not use threads."
-  echo "  On some systems this will cause problems during compilation, on others "
-  echo "  it may result in unpredictable behaviour of your Apache server. Yet on"
-  echo "  others it will work just fine. The recommended approach is to compile"
-  echo "  Python without thread support in a separate location and specify it with"
-  echo "  --with-python option to this ./configure script."
-  echo 
-else
-  echo "$ac_t""no threads, good" 1>&6
-fi
-
 # find out compiled in install prefix
 echo $ac_n "checking Python install prefix""... $ac_c" 1>&6
-echo "configure:1346: checking Python install prefix" >&5
+echo "configure:1327: checking Python install prefix" >&5
 PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
 echo "$ac_t""$PyEXEC_INSTALLDIR" 1>&6
 
@@ -1352,7 +1333,7 @@ PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 
 # set python std library variable
 echo $ac_n "checking what libraries Python was linked with""... $ac_c" 1>&6
-echo "configure:1356: checking what libraries Python was linked with" >&5
+echo "configure:1337: checking what libraries Python was linked with" >&5
 
 if test -z "$PYTHON_SRC"; then
   PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
@@ -1383,7 +1364,7 @@ LIBS="${LIBS} ${PY_LIBS}"
 echo "$ac_t""$PY_LIBS" 1>&6
 
 echo $ac_n "checking linker flags used to link Python""... $ac_c" 1>&6
-echo "configure:1387: checking linker flags used to link Python" >&5
+echo "configure:1368: checking linker flags used to link Python" >&5
 
 if test -z "$PYTHON_SRC"; then
   PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
@@ -1398,7 +1379,7 @@ LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 echo "$ac_t""$PY_LDFLAGS" 1>&6
 
 echo $ac_n "checking where Python include files are""... $ac_c" 1>&6
-echo "configure:1402: checking where Python include files are" >&5
+echo "configure:1383: checking where Python include files are" >&5
 
 if test -z "$PYTHON_SRC"; then
   PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
@@ -1414,7 +1395,7 @@ echo "$ac_t""$PY_INCLUDES" 1>&6
 # Extract the first word of ""mkdep"", so it can be a program name with args.
 set dummy "mkdep"; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1418: checking for $ac_word" >&5
+echo "configure:1399: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1452,7 +1433,7 @@ if test -z "${MKDEP}"; then
   # Extract the first word of ""makedepend"", so it can be a program name with args.
 set dummy "makedepend"; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1456: checking for $ac_word" >&5
+echo "configure:1437: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
