@@ -90,12 +90,13 @@ The publisher handler provides simple ways to control access to
 modules and functions.
 
 At every traversal step, the Publisher handler checks for presence of
-\method{__auth__}, \method{__access__} attributes, in this order, as 
+\method{__auth__} and \method{__access__} attributes (in this order), as 
 well as \method{__auth_realm__} attribute. 
 
-If \method{__auth__} is found, it will be called with three arguments:
-the \class{Request} object, a string containing the user name and a
-string containing the password. If the return value of
+If \method{__auth__} is found and it is callable, it will be called
+with three arguments: the \class{Request} object, a string containing
+the user name and a string containing the password. If the return
+value of
 \code{__auth__} is false, then \constant{HTTP_UNAUTHORIZED} is
 returned to the client (which will usually cause a password dialog box
 to appear).
@@ -114,9 +115,9 @@ If there exists an \code{__auth_realm__} string, it will be sent
 to the client as Authorization Realm (this is the text that usually
 appears at the top of the password dialog box).
 
-If \method{__access__} is found, it will be called with two arguments:
-the \class{Request} object and a string containing the user name. If
-the return value of \code{__access__} is false, then
+If \method{__access__} is found and it is callable, it will be called
+with two arguments: the \class{Request} object and a string containing
+the user name. If the return value of \code{__access__} is false, then
 \constant{HTTP_FORBIDDEN} is returned to the client.
 
 If \method{__access__} is a list, then the user name will be matched
@@ -229,7 +230,7 @@ not see the environment available to the Python program, nor will they
 be able to read/write from standard input/output with the results expected
 in a "true" CGI environment.
 
-The handler is provide as a stepping stone for the migration of legacy
+The handler is provided as a stepping stone for the migration of legacy
 code away from CGI. It is not recommended that you settle on using
 this handler as the preferred way to use mod_python for the long term.
 
