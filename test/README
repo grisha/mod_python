@@ -1,7 +1,7 @@
 
 Most likely you don't need anything in this directory.
 
-It directory contains test scripts for mod_python. These are poorly
+This directory contains test scripts for mod_python. These are poorly
 written and used during development, are not for general consumption,
 your mileage will vary.
 
