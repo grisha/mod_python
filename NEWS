@@ -1,3 +1,8 @@
+May 17 2000 -	Fixed a threading bug reported by Chris Trengove where
+		the callback object could have the reference to self.req
+		overwritten by other threads. The reference to the Request
+		object is now stored inside the requestobject C structure.
+
 May 12 2000 -	2.7.3 released
 
 Apr 10 2000 - 	Fixed a PythonImport bug reported by Chris Hagner. Removed

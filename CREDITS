@@ -29,6 +29,9 @@ Miguel Marques <miguel@yorku.ca>
 Sean Reifschneider <jafo-rpms@tummy.com> 
 	[RH rpm]
 
+Chris Trengove <trengove@econdata.com.au>
+	[difficult to find thread bug on win32]
+
 Greg Stein <gstein@lyra.org> 
 	[Python and Apache expert advice]
 

@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.8 2001/04/07 05:43:21 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.9 2001/05/18 02:42:45 gtrubetskoy Exp $
  *
  */
 
@@ -95,6 +95,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->err_headers_out = MpTable_FromTable(req->err_headers_out);
     result->subprocess_env = MpTable_FromTable(req->subprocess_env);
     result->notes = MpTable_FromTable(req->notes);
+    result->Request = NULL;
     result->header_sent = 0;
     result->content_type_set = 0;
     result->hstack = NULL;
@@ -184,7 +185,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     if (! valid_handler(handler)) {
 	PyErr_SetString(PyExc_IndexError, 
 			ap_psprintf(self->request_rec->pool,
-				   "Invalid handler: %s", handler));
+				    "Invalid handler: %s", handler));
 	return NULL;
     }
     
@@ -875,6 +876,7 @@ static void request_dealloc(requestobject *self)
     Py_XDECREF(self->err_headers_out);
     Py_XDECREF(self->subprocess_env);
     Py_XDECREF(self->notes);
+    Py_XDECREF(self->Request);
 
     free(self);
 }
@@ -1016,6 +1018,16 @@ static PyObject * request_getattr(requestobject *self, char *name)
     else if (strcmp(name, "_content_type_set") == 0) {
 	return PyInt_FromLong(self->content_type_set);
     }
+    else if (strcmp(name, "_Request") == 0) {
+	if (self->Request == NULL) {
+	    Py_INCREF(Py_None);
+	    return Py_None;
+	}
+	else {
+	    Py_INCREF(self->Request);
+	    return (PyObject *) self->Request;
+	}
+    }
     else
 	return PyMember_Get((char *)self->request_rec, request_memberlist, name);
 
@@ -1049,6 +1061,15 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
     else if (strcmp(name, "hstack") == 0) {
 	self->hstack = ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
 	return 0;
+    }
+    else if (strcmp(name, "_Request") == 0) {
+	if (! PyInstance_Check(value)) {
+	    PyErr_SetString(PyExc_AttributeError,
+			    "special attribute _Request must be an instance");
+	    return -1;
+	}
+	Py_INCREF(value);
+	self->Request = value;
     }
     else
 	return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);

@@ -50,7 +50,7 @@ extern "C" {
  *
  * requestobject.h
  *
- * $Id: requestobject.h,v 1.4 2001/01/20 03:11:24 gtrubetskoy Exp $
+ * $Id: requestobject.h,v 1.5 2001/05/18 02:42:45 gtrubetskoy Exp $
  *
  */
 
@@ -67,6 +67,7 @@ extern "C" {
 	PyObject       * err_headers_out;
 	PyObject       * subprocess_env;
 	PyObject       * notes;
+	PyObject       * Request;
 	int              header_sent;
 	int              content_type_set;
 	char           * hstack;

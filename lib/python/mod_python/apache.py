@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.29 2001/04/11 02:52:09 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.30 2001/05/18 02:42:45 gtrubetskoy Exp $
 
 import sys
 import string
@@ -122,11 +122,10 @@ class CallBack:
         result, handler = HTTP_INTERNAL_SERVER_ERROR, ""
 
         # is there a Request object for this request?
-        if not self.req or (self.req._req != _req):
-            # self.req is a regular oject, _req is a built-in.
-            # for speed, we mostly use the built-in. Users
-            # should only use self.req.
-            self.req = Request(_req)
+        if not _req._Request:
+            req = Request(_req)
+        else:
+            req = _req._Request
 
         # config
         config = _req.get_config()
@@ -177,16 +176,16 @@ class CallBack:
 
                 # find the object
                 silent = config.has_key("PythonHandlerModule")
-                object = resolve_object(self.req, module, object_str, silent)
+                object = resolve_object(req, module, object_str, silent)
 
                 if object:
 
                     # call the object
                     if config.has_key("PythonEnablePdb"):
                         if config["PythonEnablePdb"]:
-                            result = pdb.runcall(object, self.req)
+                            result = pdb.runcall(object, req)
                     else:
-                        result = object(self.req)
+                        result = object(req)
 
                     # stop cycling through handlers
                     if result != OK:
@@ -221,7 +220,7 @@ class CallBack:
             # Program run-time error
             try:
                 (etype, value, traceback) = traceblock
-                result = self.ReportError(etype, value, traceback,
+                result = self.ReportError(req, etype, value, traceback,
                                           htype=htype, hname=handler,
                                           debug=debug)
             finally:
@@ -239,7 +238,7 @@ class CallBack:
 	return result
 
 
-    def ReportError(self, etype, evalue, etb, htype="N/A", hname="N/A", debug=0):
+    def ReportError(self, req, etype, evalue, etb, htype="N/A", hname="N/A", debug=0):
 	""" 
 	This function is only used when debugging is on.
 	It sends the output similar to what you'd see
@@ -247,7 +246,6 @@ class CallBack:
 	"""
 
         try:
-            req = self.req._req
 
             if str(etype) == "exceptions.IOError" \
                and str(evalue)[:5] == "Write":
