@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.19 2002/08/15 21:46:35 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.20 2002/08/16 22:07:15 gtrubetskoy Exp $
  *
  */
 
@@ -258,6 +258,8 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
  **
  *  returns get_config + all the handlers added by req.add_handler
  */
+
+// GT HERE - this is broken, it needs to get stuff from hlist.
 
 static PyObject *req_get_all_config(requestobject *self, PyObject *args)
 {

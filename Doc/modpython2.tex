@@ -10,23 +10,23 @@ the mod_python mailing list by sending an e-mail with the word
 
 \begin{itemize}
 \item
-Python 2.2. Later versions and versions as old as 1.5.2 should work as well.
+Python 2.2.1 or later. Earlier versions of Python will not work.
 \item
-Apache 2.0. (For Apache 1.3.x, use mod_python version 2.7.x)
+Apache 2.0.40 or later (For Apache 1.3.x, use mod_python version 2.7.x).
 \end{itemize}
 
-You will need to have the include files for both Apache and Python, as
-well as the Python library installed on your system.  If you installed
-Python and Apache from source, then you already have everything that's
-needed. However, if you are using prepackaged software (e.g. Linux Red
-Hat RPM, Debian, or Solaris packages from sunsite, etc) then chances
-are, you have just the binaries and not the sources on your
-system. Often, the Apache and Python include files and libraries
-necessary to compile mod_python are part of separate "development"
-package. If you are not sure whether you have all the necessary files,
-either compile and install Python and Apache from source, or refer to
-the documentation for your system on how to get the development
-packages.
+In order to compile mod_python you will need to have the include files
+for both Apache and Python, as well as the Python library installed on
+your system.  If you installed Python and Apache from source, then you
+already have everything needed. However, if you are using prepackaged
+software (e.g. Linux Red Hat RPM, Debian, or Solaris packages from
+sunsite, etc) then chances are, you have just the binaries and not the
+sources on your system. Often, the Apache and Python include files and
+libraries necessary to compile mod_python are part of separate
+"development" package. If you are not sure whether you have all the
+necessary files, either compile and install Python and Apache from
+source, or refer to the documentation for your system on how to get
+the development packages.
 
 \section{Compiling\label{inst-compiling}}
 \indexii{compiling}{mod_python}
@@ -34,21 +34,21 @@ packages.
 There are two ways in which modules can be compiled and linked to
 Apache - statically, or as a DSO (Dynamic Shared Object).
 
-\dfn{Static} linking is an older approach. With dynamic linking
-available on most platforms it is used less and less. The main
-drawback is that it entails recompiling Apache, which some people
-cannot do for a variety of reasons.
-
 \dfn{DSO} is a more popular approach nowadays and is the recommended
-one for mod_python. The module gets compiled as a shared library that
-is dynamically loaded by the server at run time. 
+one for mod_python. The module gets compiled as a shared library which
+is dynamically loaded by the server at run time.
 
 The advantage of DSO is that a module can be installed without
 recompiling Apache and used as needed.  A more detailed description of
 the Apache DSO mechanism is available at
 \url{http://httpd.apache.org/docs-2.0/dso.html}.
 
-At this time only DSO is supported by mod_python.
+\emph{At this time only DSO is supported by mod_python.}
+
+\dfn{Static} linking is an older approach. With dynamic linking
+available on most platforms it is used less and less. The main
+drawback is that it entails recompiling Apache, which in many
+instances is not a favorable option.
 
 \subsection{Running ./configure\label{inst-configure}}
 \index{./configure}
@@ -121,8 +121,8 @@ is going to point to the place where Python would be ultimately
 installed, not the source deirectory. (Consider that until Python is
 installed, the location for third party libraries,
 \filenq{site-packages}, does not exist). Generally, it's best to try
-to keep the version of Python that you use for mod_python the same as
-the one you use everywhere on the system.
+to keep the version of Python that you use for mod_python same as the
+one you use everywhere on the system.
 
 \end{itemize}
 
@@ -262,11 +262,13 @@ example, htdocs/test.
 
 \item
 Add the following Apache directives, which can appear in either the
-main server configuration file, or \filenq{.htaccess}.  If you are going
-to be using the \filenq{.htaccess} file, you will not need the
-\code{<Directory>} tag below, and you will need to make sure the
-\code{AllowOverride} directive applicable to this directory has at least
-\code{FileInfo} specified. (The default is \code{None}, which will not work.)
+main server configuration file, or \filenq{.htaccess}.  If you are
+going to be using the \filenq{.htaccess} file, you will not need the
+\code{<Directory>} tag below (the directory then becomes the one in
+which the \filenq{.htaccess} file is located), and you will need to
+make sure the \code{AllowOverride} directive applicable to this
+directory has at least \code{FileInfo} specified. (The default is
+\code{None}, which will not work.)
 % the above has  been verified to be still true for Apache 2.0
 
 \begin{verbatim}

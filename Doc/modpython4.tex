@@ -58,13 +58,11 @@ process headers, provide content, etc. For every phase, it will call
 handlers, provided by either the Apache core or one of its modules,
 such as mod_python which passes control to functions provided by the
 user and written in Python. A handler written in Python is not any
-different than a handler written in C, and follows these rules:
+different from a handler written in C, and follows these rules:
 
-\index{req}
-\indexii{Request}{object}
-A handler function will always be passed a reference to a
-\class{Request} object. (Throughout this manual, the \class{Request}
-object is often referred to by the \code{req} variable.)
+\index{req} \indexii{request}{object} A handler function will always
+be passed a reference to a request object. (Throughout this manual,
+the request object is often referred to by the \code{req} variable.)
 
 Every handler can return:
 
@@ -199,7 +197,7 @@ functions. For a more in-depth look at Apache internals, see the
 An interface to the Apache
 \citetitle[http://dev.apache.org/apidoc/apidoc_ap_log_error.html]{ap_log_error()}
 function. \var{message} is a string with the error message, \var{level} is
-one of the following constants:
+one of the following flags constants:
 
 \begin{verbatim}
 APLOG_EMERG
@@ -214,37 +212,86 @@ APLOG_NOERRNO
 \end{verbatim}            
       
 \var{server} is a reference to a \member{Request.server} object. If
-\var{server} is not specified, then the error will be logged to the default
-error log, otherwise it will be written to the error log for the
-appropriate virtual server.
+\var{server} is not specified, then the error will be logged to the
+default error log, otherwise it will be written to the error log for
+the appropriate virtual server.
 
-If you have a reference to a \class{Request} object available,
-consider using \method{Request.log_error} intead, it will prepend
-request-specific information to the log entry.
+If you have a reference to a request object available, consider using
+\method{req.log_error} intead, it will prepend request-specific
+information such as the source IP of the request to the log entry.
 \end{funcdesc}
 
-\index{table}
-\begin{classdesc}{table}{\optional{mapping-or-sequence}}
-Returns a new empty object of type \code{mp_table}. See Section \ref{pyapi-mptable}
-for a description of a table object. XXX make_table is obsolete, use table instead
-\versionadded{3.0}
-\end{classdesc}
+\begin{funcdesc}{allow_methods}{\optional{*args}}
+A convenience function to set values in \member{req.allowed}.
+\member{req.allowed} is a bitmask that is used to construct the
+"Allow:" header. It should be set before returning a
+\code{HTTP_NOT_IMPLEMENTED} error.
+
+Arguments can be one or more of the following:
+\begin{verbatim}
+M_GET
+M_PUT
+M_POST
+M_DELETE
+M_CONNECT
+M_OPTIONS
+M_TRACE
+M_PATCH
+M_PROPFIND
+M_PROPPATCH
+M_MKCOL
+M_COPY
+M_MOVE
+M_LOCK
+M_UNLOCK
+M_VERSION_CONTROL
+M_CHECKOUT
+M_UNCHECKOUT
+M_CHECKIN
+M_UPDATE
+M_LABEL
+M_REPORT
+M_MKWORKSPACE
+M_MKACTIVITY
+M_BASELINE_CONTROL
+M_MERGE
+M_INVALID
+\end{verbatim}
+
+\end{funcdesc}
 
 \begin{funcdesc}{make_table}{} 
-This function is deprecated and is a reference to \class{table}.
+This function is obsolete and is an alias to \class{table} (see below).
 \end{funcdesc}
 
 \subsection{Table Object (mp_table)\obindex{table}\label{pyapi-mptable}}
 
+\index{table}
+\begin{classdesc}{table}{\optional{mapping-or-sequence}}
+Returns a new empty object of type \code{mp_table}. See Section
+\ref{pyapi-mptable} for description of the table object. The
+\var{mapping-or-sequence} will be used to provide initial values for
+the table.  
+
 The table object is a wrapper around the Apache APR table. The table
-object performs very much like a dictionary, with the only difference
-that key lookups are case insensitive and both keys and values must be
-strings.
+object behaves very much like a dictionary (including the Python 2.2
+features such as support of the \code{in} operator, etc.), with the 
+following differences:
+
+\begin{itemize}
+\item
+Both keys and values must be strings.
+\item
+Key lookups are case-insensitive.
+\item
+Duplicate keys are allowed (see \method{add()} below). When there is
+more than one value for a key, a subscript opration returns a list.
+\end{itemize}
 
 Much of the information that Apache uses is stored in tables. For
-example, \member{Request.header_in} and \member{Request.headers_out}.
+example, \member{req.headers_in} and \member{req.headers_out}.
 
-All the tables that mod_python provides inside the \class{Request}
+All the tables that mod_python provides inside the request
 object are actual mappings to the Apache structures, so changing the
 Python table also changes the underlying Apache table.
 
@@ -255,19 +302,28 @@ has the following method:
 \function{add()} allows for creating duplicate keys, which is useful 
 when multiple headers, such as \code{Set-Cookie:} are required.
 \end{methoddesc}
-% THE FUN STARTS HERE - MAKE REQUEST a NEW object. GT HERE.
+
+\versionadded{3.0}
+\end{classdesc}
+
 \subsection{Request Object\index{Request}\label{pyapi-mprequest}}
 
 The request object is a Python mapping to the Apache
-\code{request_rec} structure. 
+\code{request_rec} structure.
 
-The request object is a real Python object. You can dynamically
-assign attributes to it as a way to communicate between handlers.
+You can dynamically assign attributes to it as a way to communicate
+between handlers.
 
 When a handler is invoked, it is always passed a single argument - the
-\class{Request} object.
+request object.
 
 \subsubsection{Request Methods\label{pyapi-mprequest-meth}}
+
+\begin{methoddesc}[Request]{add_common_vars}{}
+Calls the Apache \cfunction{ap_add_common_vars()} function. After a
+call to this method, \member{Request.subprocess_env} will contain a
+lot of CGI information.
+\end{methoddesc}
 
 \begin{methoddesc}[Request]{add_handler}{htype, handler\optional{, dir}}
 
@@ -303,18 +359,14 @@ name. If you pass this function an invalid handler it will simply be
 ignored.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{add_common_vars}{}
-Calls the Apache \cfunction{ap_add_common_vars()} function. After a
-call to this method, \member{Request.subprocess_env} will contain a
-lot of CGI information.
-\end{methoddesc}
-
 \begin{methoddesc}[Request]{allow_methods}{methods\optional{, reset}}
 Adds methods to the \member{Request.allowed_methods} list. This list
-will be passed in \code{Allowed:} header if \constant{HTTP_METHOD_NOT_ALLOWED}
-is returned to the client. Note that Apache doesn't do anything to restrict
-the methods, this list is only used to construct the header. The actual
-method-restricting logic has to be provided in the handler code.
+will be passed in \code{Allowed:} header if
+\constant{HTTP_METHOD_NOT_ALLOWED} or \constant{HTTP_NOT_IMPLEMENTED}
+is returned to the client. Note that Apache doesn't do anything to
+restrict the methods, this list is only used to construct the
+header. The actual method-restricting logic has to be provided in the
+handler code.
 
 \var{methods} is a sequence of strings. If \var{reset} is 1, then
 the list of methods is first cleared.
@@ -326,9 +378,9 @@ used.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_config}{}
-Returns a reference to the table object containing the configuration
-in effect for this request. The table has directives as keys, and
-their values, if any, as values.
+Returns a reference to the table object containing the mod_python
+configuration in effect for this request. The table has directives as
+keys, and their values, if any, as values.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_dirs}{}
@@ -604,7 +656,7 @@ you need.
 \begin{memberdesc}[Request]{notes}
 A \code{table} object containing miscellaneous general purpose info that lives for
 as long as the request lives. Used internally by mod_python. If you need to pass
-data between handlers, it's better to simply add members to the \class{Request}
+data between handlers, it's better to simply add members to the request
 object than to use \member{notes}.
 \end{memberdesc}
 
@@ -935,7 +987,7 @@ implementation in \module{cgi} is specific to the CGI environment,
 making it not the most efficient one for mod_python. For example, the
 code in \module{util} does not use the environment variables since
 most of the information is available directly from the
-\class{Request} object. Some of the functions in the \module{util}
+request object. Some of the functions in the \module{util}
 module are implemented in C for even better performance.
 
 The recommended way of using this module is:
@@ -957,7 +1009,7 @@ class. This class is similar to the standard library module \module{cgi}
 
 \begin{classdesc}{FieldStorage}{req\optional{, keep_blank_values, strict_parsing}}
 This class provides uniform access to HTML form data submitted by the client.
-\var{req} is an instance of the mod_python \class{Request} object.
+\var{req} is an instance of the mod_python request object.
 
 The optional argument \var{keep_blank_values} is a flag indicating whether
 blank values in URL encoded form data should be treated as blank strings. The

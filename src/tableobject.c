@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.15 2002/08/15 21:46:35 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.16 2002/08/16 22:07:15 gtrubetskoy Exp $
  *
  */
 
@@ -216,26 +216,58 @@ static int tablelength(tableobject *self)
 
 static PyObject * table_subscript(tableobject *self, register PyObject *key)
 {
-    const char *v;
     char *k;
+    const apr_array_header_t *ah;
+    apr_table_entry_t *elts;
+    register int i;
+    PyObject *list;
 
     if (key && !PyString_Check(key)) {
 	PyErr_SetString(PyExc_TypeError,
 			"table keys must be strings");
 	return NULL;
     }
-
     k = PyString_AsString(key);
 
-    v = apr_table_get(self->table, k);
+    /* it's possible that we have duplicate keys, so
+       we can't simply use apr_table_get since that just
+       returns the first match.
+    */
 
-    if (! v)
-    {
+    list = PyList_New(0);
+    if (!list) 
+	return NULL;
+
+    ah = apr_table_elts (self->table);
+    elts = (apr_table_entry_t *) ah->elts;
+
+    i = ah->nelts;
+
+    while (i--)
+	if (elts[i].key) {
+	    if (strcmp(elts[i].key, k) == 0) {
+		PyObject *v = PyString_FromString(elts[i].val);
+		PyList_Insert(list, 0, v);
+		Py_DECREF(v);
+	    }
+	}
+
+    /* if no mach */
+    if (PyList_Size(list) == 0) {
 	PyErr_SetObject(PyExc_KeyError, key);
 	return NULL;
     }
 
-    return PyString_FromString(v);
+    /* if we got one match */
+    if (PyList_Size(list) == 1) {
+	PyObject *v = PyList_GetItem(list, 0);
+	Py_INCREF(v);
+	Py_DECREF(list);
+	return v;
+    }
+
+    /* else we return a list */
+    return list;
 }
 
 /**

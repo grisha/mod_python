@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.48 2002/08/15 21:46:35 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.49 2002/08/16 22:07:15 gtrubetskoy Exp $
 
 import sys
 import string
@@ -676,7 +676,7 @@ def init():
 
     return CallBack()
 
-def allow_method(req, *methods):
+def allow_methods(req, *methods):
     """
     Convenience function for dealing with req.allowed.
     example: allow_method(M_GET, M_POST)
@@ -692,8 +692,6 @@ def allow_method(req, *methods):
 ## Some functions made public
 make_table = _apache.table
 log_error = _apache.log_error
-parse_qs = _apache.parse_qs
-parse_qsl = _apache.parse_qsl
 table = _apache.table
 
 ## Some constants

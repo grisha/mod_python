@@ -33,9 +33,9 @@ PythonDebug On
 The following example will demonstrate a simple feedback form. The
 form will ask for the name, e-mail address and a comment and construct
 an e-mail to the webmaster using the information submitted by the
-user. This simple application consists of two files: \filenq{form.html},
-the form to collect the data, and \filenq{form.py}, the target of the
-form's action.
+user. This simple application consists of two files:
+\filenq{form.html} - the form to collect the data, and
+\filenq{form.py} - the target of the form's action.
 
 Here is the html for the form:
 
@@ -43,7 +43,7 @@ Here is the html for the form:
 <html>
   Please provide feedback below:
   <p>                           
-  <form action="form/email" method="POST">
+  <form action="form.py/email" method="POST">
 
     Name: <input type="text" name="name"><br>
     Email: <input type="text" name="email"><br>
@@ -66,7 +66,7 @@ SMTP_SERVER = "localhost" # your SMTP server
 
 def email(req, name, email, comment):
 
-    # see if the user provided all the parameters
+    # make sure the user provided all the parameters
     if not (name and email and comment):
         return "A required parameter is missing, \
 please go back and correct the error"
@@ -109,7 +109,7 @@ will get back to you shortly.
 When the user clicks the Submit button, the publisher handler will
 load the \function{email} function in the \module{form} module,
 passing it the form fields as keyword arguments. It will also pass the
-\class{Request} object as \code{req}.  
+request object as \code{req}.
 
 Note that you do not have to have \code{req} as one of the arguments
 if you do not need it. The publisher handler is smart enough to pass
@@ -120,12 +120,12 @@ function.
 
 Even though the Publisher handler simplifies mod_python programming a
 grat deal, all the power of mod_python is still available to this
-program, since it has access to the \class{Request} object. You can
-do all the same things you can do with a "native" mod_python handler,
-e.g. set custom headers via \code{req.headers_out}, return errors by
-raising \exception{apache.SERVER_ERROR} exceptions, write or read
-directly to and from the client via \method{req.write} and
-\method{req.read}, etc.
+program, since it has access to the request object. You can do all the
+same things you can do with a "native" mod_python handler, e.g. set
+custom headers via \code{req.headers_out}, return errors by raising
+\exception{apache.SERVER_ERROR} exceptions, write or read directly to
+and from the client via \method{req.write()} and \method{req.read()},
+etc.
 
 Read Section \ref{hand-pub} \citetitle[hand-pub.html]{Publisher Handler}
 for more information on the publisher handler. 
@@ -133,24 +133,23 @@ for more information on the publisher handler.
 \section{Quick Overview of how Apache Handles Requests\label{tut-overview}}
 
 If you would like delve in deeper into the functionaloty of
-mod_python, you need to understand what a handler is. And it's really
-rather simple.
+mod_python, you need to understand what a handler is.  
 
 Apache processes requests in \dfn{phases}. For example, the first
 phase may be to authenticate the user, the next phase to verify
 whether that user is allowed to see a particular file, then (next
-phase) read the file and send it to the client. Most requests consist
-of three phases: (1) translate the requisted URI to a file location
-(2) read the file and send it to the client, then (3) log the
-request. Exactly which phases are processed and how varies greatly and
-depends on the configuration.
+phase) read the file and send it to the client. A typical static file
+request involves three phases: (1) translate the requisted URI to a
+file location (2) read the file and send it to the client, then (3)
+log the request. Exactly which phases are processed and how varies
+greatly and depends on the configuration.
 
-A handler is a function that processes one phase. There may be more
-than one handler available to process a particular phase, in which
-case they are called in sequence. For each of the phases, there is a
-default Apache handler (most of which by default perform only very
-basic functions or do nothing), and then there are additional handlers
-provided by Apache modules, such as mod_python.
+A \dfn{handler} is a function that processes one phase. There may be
+more than one handler available to process a particular phase, in
+which case they are called by Apache in sequence. For each of the
+phases, there is a default Apache handler (most of which by default
+perform only very basic functions or do nothing), and then there are
+additional handlers provided by Apache modules, such as mod_python.
 
 Mod_python provides every possible handler to Apache. Mod_python
 handlers by default do not perform any function, unless specifically
@@ -161,14 +160,14 @@ function. So the main function of mod_python is to act as a dispatcher
 between Apache handlers and Python functions written by a developer
 like you.
 
-\indexii{generic}{handler}
-The most commonly used handler is \code{PythonHandler}. It handles the
-phase of the request during which the actual content is provided. We
-will refer to this handler from here on as \dfn{generic} handler. The
-default Apache action for this handler would be to read the file and
-send it to the client. Most applications you will write will use this
-one handler. If you insist on seeing all the possible handlers, refer
-to Section \ref{directives}, \citetitle[directives.html]{Apache Directives}.
+\indexii{generic}{handler} The most commonly used handler is
+\code{PythonHandler}. It handles the phase of the request during which
+the actual content is provided. We will refer to this handler from
+here on as \dfn{generic} handler. The default Apache action for this
+handler would be to read the file and send it to the client. Most
+applications you will write will use this one handler. To see all the
+possible handlers, refer to Section \ref{directives},
+\citetitle[directives.html]{Apache Directives}.
 
 \section{So what Exactly does Mod-python do?\label{tut-what-it-do}}
 
@@ -234,8 +233,8 @@ subdir.myscript}.)
 Look for a function called \code{handler} in \code{myscript}.
 
 \item
-Call the function, passing it a \class{Request} object. (More on what a
-\class{Request} object is later)
+Call the function, passing it a request object. (More on what a
+request object is later)
 
 \item
 At this point we're inside the script: 
@@ -265,12 +264,11 @@ explicitly in the directive using \samp{::}. For example, if the
 handler function was called \samp{spam}, then the directive would be
 \samp{PythonHandler myscript::spam}.
 
-Note that a handler must take one argument - the \class{Request}
-object. The \class{Request} object is an object that provides all of
-the information about this particular request - such as the IP of
-client, the headers, the URI, etc. The communication back to the
-client is also done via the \class{Request} object, i.e. there is no
-"response" object.
+Note that a handler must take one argument - the request object. The
+request object is an object that provides all of the information about
+this particular request - such as the IP of client, the headers, the
+URI, etc. The communication back to the client is also done via the
+request object, i.e. there is no "response" object.
 
 \item
 \begin{verbatim}
@@ -312,7 +310,7 @@ above configuration, \samp{http://myserver/mywebdir/myscript.py} and
 \samp{http://myserver/mywebdir/montypython.py} would give the exact
 same result. The important thing to understand here is that a handler
 augments the server behaviour when processing a specific type of file,
-not an individual file.
+not an individual file. 
 
 \emph{At this point, if you didn't understand the above paragraph, go
 back and read it again, until you do.}
@@ -344,7 +342,7 @@ for different functions within that script for the different handlers.
 
 Next, we need to tell Apache that we are using Basic HTTP
 authentication, and only valid users are allowed (this is fairly basic
-Apache stuff, so I'm not going to go into details here). Our config
+Apache stuff, so we're not going to go into details here). Our config
 looks like this now:
 
 \begin{verbatim}
@@ -416,9 +414,9 @@ string.
 
 We compare the values provided by the user, and if they are what we
 were expecting, we tell Apache to go ahead and proceed by returning
-\constant{apache.OK}. Apache will then proceed to the next
-handler. (which in this case would be \function{handler()} if it's a
-\code{.py} file).
+\constant{apache.OK}. Apache will then consider this phase of the
+request complete, and proceed to the next phase. (Which in this case
+would be \function{handler()} if it's a \code{.py} file).
 
 \item
 \begin{verbatim}
