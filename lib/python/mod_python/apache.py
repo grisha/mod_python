@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.46 2002/07/31 21:49:50 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.47 2002/08/11 19:44:27 gtrubetskoy Exp $
 
 import sys
 import string
@@ -428,7 +428,7 @@ def import_module(module_name, req=None, path=None):
             s = 'mod_python: (Re)importing %s from %s' % (module_name, path)
             _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
 
-        parts = string.split(module_name, '.')
+        parts = module_name.split('.')
         for i in range(len(parts)):
             f, p, d = imp.find_module(parts[i], path)
             try:
@@ -713,10 +713,11 @@ def init():
     return CallBack()
 
 ## Some functions made public
-make_table = _apache.make_table
+make_table = _apache.table
 log_error = _apache.log_error
 parse_qs = _apache.parse_qs
 parse_qsl = _apache.parse_qsl
+table = _apache.table
 
 ## Some constants
 
