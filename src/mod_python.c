@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.19 2000/06/25 20:04:05 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.20 2000/07/04 17:49:31 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -97,7 +97,7 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.4"
+#define VERSION_COMPONENT "mod_python/2.4.1"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #ifdef WIN32
