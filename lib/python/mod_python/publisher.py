@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.37 2004/06/25 00:58:00 grisha Exp $
+ # $Id: publisher.py,v 1.38 2004/08/23 16:46:18 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -44,8 +44,8 @@ imp_suffixes = " ".join([x[0][1:] for x in imp.get_suffixes()])
 
 def handler(req):
 
-    req.allow_methods(["GET", "POST"])
-    if req.method not in ["GET", "POST"]:
+    req.allow_methods(["GET", "POST", "HEAD"])
+    if req.method not in ["GET", "POST", "HEAD"]:
         raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
     func_path = ""
