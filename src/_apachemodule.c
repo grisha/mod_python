@@ -51,7 +51,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.1 2000/10/16 20:58:57 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.2 2000/10/30 23:16:10 gtrubetskoy Exp $
  *
  */
 
@@ -112,10 +112,138 @@ static PyObject * make_table(PyObject *self, PyObject *args)
     return MpTable_New();
 }
 
+/**
+ ** parse_qs
+ **
+ *   This is a C version of cgi.parse_qs
+ */
+
+static PyObject *parse_qs(PyObject *self, PyObject *args)
+{
+
+    PyObject *pairs, *dict;
+    int i, n, len, lsize;
+    char *qs;
+
+    if (! PyArg_ParseTuple(args, "s", &qs)) 
+	return NULL; /* error */
+
+    /* split query string by '&' and ';' into a list of pairs */
+    pairs = PyList_New(0);
+    if (pairs == NULL)
+	return NULL;
+
+    i = 0;
+    len = strlen(qs);
+
+    while (i < len) {
+
+	PyObject *pair;
+	char *cpair;
+	int j = 0;
+
+	pair = PyString_FromStringAndSize(NULL, len);
+	if (pair == NULL)
+	    return NULL;
+
+	/* split by '&' or ';' */
+	cpair = PyString_AS_STRING(pair);
+	while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
+	    /* replace '+' with ' ' */
+	    cpair[j] = (qs[i] == '+') ? ' ' : qs[i];
+	    i++;
+	    j++;
+	}
+	_PyString_Resize(&pair, j);
+
+	PyList_Append(pairs, pair);
+	Py_DECREF(pair);
+	i++;
+    }
+
+    /*
+     * now we have a list of "abc=def" string (pairs), let's split 
+     * them all by '=' and put them in a dictionary.
+     */
+    
+    dict = PyDict_New();
+    if (dict == NULL)
+	return NULL;
+
+    lsize = PyList_Size(pairs);
+    n = 0;
+
+    while (n < lsize) {
+
+	PyObject *pair, *key, *val;
+	char *cpair, *ckey, *cval;
+	int k, v;
+
+	pair = PyList_GET_ITEM(pairs, n);
+	cpair = PyString_AS_STRING(pair);
+
+	len = strlen(cpair);
+	key = PyString_FromStringAndSize(NULL, len);
+	val = PyString_FromStringAndSize(NULL, len);
+
+	ckey = PyString_AS_STRING(key);
+	cval = PyString_AS_STRING(val);
+
+	i = 0;
+	k = 0;
+	v = 0;
+	while (i < len) {
+	    if (cpair[i] != '=') {
+		ckey[k] = cpair[i];
+		k++;
+		i++;
+	    }
+	    else {
+		i++;      /* skip '=' */
+		while (i < len) {
+		    cval[v] = cpair[i];
+		    v++;
+		    i++;
+		}
+	    }
+	}
+
+	ckey[k] = '\0';
+	cval[v] = '\0';
+
+	ap_unescape_url(ckey);
+	ap_unescape_url(cval);
+
+	_PyString_Resize(&key, strlen(ckey));
+	_PyString_Resize(&val, strlen(cval));
+	
+ 	if (PyMapping_HasKeyString(dict, ckey)) {
+	    PyObject *list;
+	    list = PyDict_GetItem(dict, key);
+	    PyList_Append(list, val);
+	    /* PyDict_GetItem is a borrowed ref, no decref */
+	}
+	else {
+	    PyObject *list;
+	    list = Py_BuildValue("[O]", val);
+	    PyDict_SetItem(dict, key, list);
+	    Py_DECREF(list);
+	}
+	Py_DECREF(key);
+	Py_DECREF(val);
+
+	n++;
+    }
+
+    Py_DECREF(pairs);
+    return dict;
+}
+
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
   {"log_error",                 (PyCFunction)log_error,        METH_VARARGS},
   {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
+  {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
   {NULL, NULL} /* sentinel */
 };
 
