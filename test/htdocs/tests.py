@@ -815,7 +815,9 @@ def Session_Session(req):
     return apache.OK
         
 def PythonOption_items(req):
-    req.write(str(req.get_options().items()))
+    options = req.get_options().items()
+    options.sort()
+    req.write(str(options))
     return apache.OK
 
 def _test_table():
