@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: psp.py,v 1.2 2003/04/18 19:54:24 grisha Exp $
+ # $Id: psp.py,v 1.3 2003/05/24 03:56:40 grisha Exp $
 
 import mod_python
 import sys
@@ -84,11 +84,11 @@ def handler(request):
 
 	request.content_type = "text/html"
 
-	sys.stdout = _stream(request)
+#	sys.stdout = _stream(request)
 
 	req = request
-
 	code = psp.parse(request.filename)
+
 	psp.execute(code)
 
 	return mod_python.apache.OK
