@@ -1,3 +1,6 @@
+dnl Copyright 2000 Gregory Trubetskoy <grisha@ispol.com>
+dnl $Id: configure.in,v 1.2 2000/10/10 00:44:52 gtrubetskoy Exp $
+
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
 
@@ -124,7 +127,7 @@ if test -z "$PYTHON_SRC"; then
     AC_MSG_ERROR(python binary not found)
   fi
 else
-  AC_PATH_PROG(PYTHON_BIN, python, "", $PYTHON_BASE)
+  AC_PATH_PROG(PYTHON_BIN, python, "", $PYTHON_SRC)
   if test -z "$PYTHON_BIN"; then
     AC_MSG_ERROR([python executable not found in ${withval}, 
 perhaps you need to build Python first.])
@@ -136,32 +139,56 @@ AC_MSG_CHECKING(Python version)
 PyVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:3]'`]
 AC_MSG_RESULT($PyVERSION)
 
-if test -z "$PYTHON_SRC"; then
-  # find out where Python is installed
-  AC_MSG_CHECKING(Python install prefix)
-  PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
-  AC_MSG_RESULT($PyEXEC_INSTALLDIR)
+# check if python is compiled with threads
+AC_MSG_CHECKING(whether Python is compiled with thread support)
+PyTHREADS=`$PYTHON_BIN -c "import sys; print \"thread\" in sys.builtin_module_names"`
+if test "$PyTHREADS" = "1"; then
+  AC_MSG_RESULT(yes)
+  echo
+  echo "****** WARNING ******"
+  echo "  Python is compiled with thread support. Apache 1.3 does not use threads."
+  echo "  On some systems this will cause problems during compilation, on others "
+  echo "  it may result in unpredictable behaviour of your Apache server. Yet on"
+  echo "  others it will work just fine. The recommended approach is to compile"
+  echo "  Python without thread support in a separate location and specify it with"
+  echo "  --with-python option to this ./configure script."
+  echo 
+else
+  AC_MSG_RESULT([no threads, good])
 fi
 
-# set python std library variable
+# find out compiled in install prefix
+AC_MSG_CHECKING(Python install prefix)
+PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
+AC_MSG_RESULT($PyEXEC_INSTALLDIR)
+
+# this is where the Python libraries will get installed
 AC_SUBST(PY_STD_LIB)
 PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 
+# set python std library variable
 AC_MSG_CHECKING(what libraries Python was linked with)
 AC_SUBST(LIBS)
 if test -z "$PYTHON_SRC"; then
   PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
   PyLIBPL=${PyLIBP}/config
   PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 else
   PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 fi
+ 
+## XXX this is a small work around for a weird RedHat problem
+## erase -lieee from library list
+if test -f /etc/redhat-release; then
+  PY_LIBS="`echo $PY_LIBS | sed s/-lieee//`"
+fi
+
 LIBS="${LIBS} ${PY_LIBS}"
 AC_MSG_RESULT($PY_LIBS)
 
@@ -189,9 +216,7 @@ fi
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
 AC_MSG_RESULT($PY_INCLUDES)
 
-# GT STOPPED HERE - 
-# MAKE NEEDS TO INSTALL WHAT WAS COMPILED - DSO OR STATIC, REGARDLESS OF DEFAULT
-# CHECK FOR THREADS?
+### XXX CHECK FOR THREADS?
 
 AC_OUTPUT(Makefile src/Makefile src/libpython.module)
 
