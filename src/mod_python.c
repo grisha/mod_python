@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.57 2001/11/28 05:31:47 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.58 2002/03/04 21:19:17 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1051,7 +1051,8 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
        so a fitler can spit out an error without causing infinite loop */
     if (ctx->transparent) {
 	if (is_input) 
-	    return ap_get_brigade(f->next, bb, mode, readbytes);
+	    return ap_get_brigade(f->next, bb, mode, APR_BLOCK_READ, 
+				  *readbytes);
 	else
 	    return ap_pass_brigade(f->next, bb);
     }
@@ -1165,14 +1166,18 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 	Py_XDECREF(resultobject);
 
 	/* if this is a PEEK */
+	/*
 	if (mode == AP_MODE_PEEK) {
 	    if (APR_STATUS_IS_SUCCESS(filter->rc) && 
 		filter->bytes_written == 0) {
+	*/
 		/* if the filter wrote no data, 
 		   there must not be any left */
+	/*
 		return APR_EOF;
 	    }
 	}
+	*/
     }
     return filter->rc;
 
