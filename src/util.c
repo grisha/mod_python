@@ -57,7 +57,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.9 2002/09/12 18:24:06 gstein Exp $
+ * $Id: util.c,v 1.10 2002/09/15 23:45:35 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -324,7 +324,7 @@ apr_status_t python_decref(void *object)
  *   Find an Apache module by name, used by get_addhandler_extensions
  */
 
-module *find_module(char *name)
+static module *find_module(char *name)
 {
     int n; 
     for (n = 0; ap_loaded_modules[n]; ++n) {
@@ -401,14 +401,15 @@ char * get_addhandler_extensions(request_rec *req)
  ** 
  *   Find a memberdef in a PyMemberDef array
  */
-const PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
+PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
 {
-    PyMemberDef *md;
+    const PyMemberDef *md;
 
     for (md = mlist; md->name != NULL; md++)
         if (strcmp(md->name, name) == 0)
-            return md;
+            return (PyMemberDef *)md;
 
     /* this should never happen or the mlist is screwed up */
     return NULL;
 }
+
