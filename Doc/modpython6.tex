@@ -53,12 +53,23 @@ object within the module. The Publisher handler \dfn{traverses} the
 path, one element at a time from left to right, mapping the elements
 to Python object within the module.
 
-The traversal will stop and \constant{HTTP_FORBIDDEN} will be returned to
-the client if any of the traversed object's names begin with
-an underscore (\samp{\_}). Use underscores to protect objects that should
-not be accessible from the web. 
+The traversal will stop and \constant{HTTP_NOTFOUND} will be returned to
+the client if:
 
-If an oject in the path could not be found, \constant{HTTP_NOT_FOUND}
+\begin{itemize}
+
+\item
+Any of the traversed object's names begin with an underscore
+(\samp{\_}). Use underscores to protect objects that should not be
+accessible from the web.
+
+\item
+A module is encountered. Published objects cannot be modules for
+security reasons.
+
+\end{itemize}
+
+If an object in the path could not be found, \constant{HTTP_NOT_FOUND}
 is returned to the client.
 
 \subsubsection{Argument Matching and Invocation\label{hand-pub-alg-args}}
@@ -115,6 +126,18 @@ module-level code will get executed during the import even if
 being accessed, use other authentication mechanisms, e.g. the Apache
 \code{mod_auth} or with a mod_python \citetitle[dir-handlers-auh.html]
 {PythonAuthenHandler} handler.
+
+\subsection{Form Data}
+
+In the process of matching arguments, the Publisher handler creates an
+instance of \citetitle[pyapi-util-fstor.html]{FieldStorage}
+class. A reference to this instance is stored in an attribute \member{form}
+of the \class{Request} object.
+
+Since a \class{FieldStorage} can only be instantiated once per
+request, one must not attept to instantiate \class{FieldStorage} when
+using the Publisher handler and should use
+\class{Request.form} instead.
 
 \section{CGI Handler\label{hand-cgi}}
 

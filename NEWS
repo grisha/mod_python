@@ -1,3 +1,7 @@
+Jan 18 2000 -	Documented req.form. Fixed a security problem with the
+		Publisher handler - it now does not allow modules to be
+		published, so a user can't access test.os.renames, etc.
+
 Dec 18 2000 -	2.7 had a typo in it + win32 wants types initialized
 		separately like I thought. Time for 2.7.1.
 
