@@ -1,10 +1,9 @@
-
 """
-  (C) Gregory Trubetskoy <grisha@ispol.com> May 1998, Nov 1998
-
+  Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
+ 
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.5 2000/05/13 02:22:37 grisha Exp $
+  $Id: apache.py,v 1.6 2000/05/22 12:14:39 grisha Exp $
 
 """
 
@@ -161,35 +160,31 @@ class CallBack:
             if str(etype) == "exceptions.IOError" \
                and str(evalue)[:5] == "Write":
                 # if this is an IOError while writing to client,
-                # it is probably better to write to the log file
+                # it is probably better not to try to write to the cleint
                 # even if debug is on.
                 debug = 0
+            
+            # write to log
+            for e in traceback.format_exception(etype, evalue, etb):
+                s = "%s %s: %s" % (htype, hname, e[:-1])
+                _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
 
-            if debug:
+            if not debug:
+                return HTTP_INTERNAL_SERVER_ERROR
+            else:
+                # write to client
 
-                # replace magnus-internal/X-python-e with text/html
                 req.content_type = 'text/plain'
-
-                #req.status = 200 # OK
                 req.send_http_header()
 
-                s = '\\nERROR mod_python: "%s %s"\n\n' % (htype, hname)
+                s = '\nERROR mod_python: "%s %s"\n\n' % (htype, hname)
                 for e in traceback.format_exception(etype, evalue, etb):
                     s = s + e + '\n'
-                s = s + "\nNOTE: More output from other handlers, if any, may follow.\n"
-                s = s + "This will NOT happen, and request processing will STOP\n"
-                s = s + "at this point when you remove PythonDebug directive.\n\n"
 
                 req.write(s)
 
-                return OK
+                return DONE
 
-            else:
-                for e in traceback.format_exception(etype, evalue, etb):
-                    s = "%s %s: %s" % (htype, hname, e[:-1])
-                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
-
-                return HTTP_INTERNAL_SERVER_ERROR
         finally:
             # erase the traceback
             etb = None
@@ -219,74 +214,63 @@ def import_module(module_name, req=None):
             sys.path[:0] = ['.']
 
     # try to import the module
-    try:
 
-        oldmtime = None
-        mtime = None
+    oldmtime = None
+    mtime = None
 
-        if  not autoreload:
+    if  not autoreload:
 
-            # import module
+        # import module
+        exec "import " + module_name
+        module = eval(module_name)
+
+    else:
+
+        # keep track of file modification time and
+        # try to reload it if it is newer
+        if sys.modules.has_key(module_name):
+
+            # the we won't even bother importing
+            module = sys.modules[module_name]
+
+            # does it have __mtime__ ?
+            if sys.modules[module_name].__dict__.has_key("__mtime__"):
+                # remember it
+                oldmtime = sys.modules[ module_name ].__mtime__
+
+        # import the module for the first time
+        else:
+
             exec "import " + module_name
             module = eval(module_name)
 
-        else:
+        # find out the last modification time
+        # but only if there is a __file__ attr
+        if module.__dict__.has_key("__file__"):
 
-            # keep track of file modification time and
-            # try to reload it if it is newer
-            if sys.modules.has_key(module_name):
+            filepath = module.__file__
 
-                # the we won't even bother importing
-                module = sys.modules[module_name]
+            if os.path.exists(filepath):
 
-                # does it have __mtime__ ?
-                if sys.modules[module_name].__dict__.has_key("__mtime__"):
-                    # remember it
-                    oldmtime = sys.modules[ module_name ].__mtime__
+                mod = os.stat(filepath)
+                mtime = mod[stat.ST_MTIME]
 
-            # import the module for the first time
-            else:
+            # check also .py and take the newest
+            if os.path.exists(filepath[:-1]) :
 
-                exec "import " + module_name
-                module = eval(module_name)
+                # get the time of the .py file
+                mod = os.stat(filepath[:-1])
+                mtime = max(mtime, mod[stat.ST_MTIME])
 
-            # find out the last modification time
-            # but only if there is a __file__ attr
-            if module.__dict__.has_key("__file__"):
+    # if module is newer - reload
+    if (autoreload and (oldmtime < mtime)):
+        module = reload(module)
 
-                filepath = module.__file__
+    # save mtime
+    module.__mtime__ = mtime
 
-                if os.path.exists(filepath):
+    return module
 
-                    mod = os.stat(filepath)
-                    mtime = mod[stat.ST_MTIME]
-
-                # check also .py and take the newest
-                if os.path.exists(filepath[:-1]) :
-
-                    # get the time of the .py file
-                    mod = os.stat(filepath[:-1])
-                    mtime = max(mtime, mod[stat.ST_MTIME])
-
-        # if module is newer - reload
-        if (autoreload and (oldmtime < mtime)):
-            module = reload(module)
-
-        # save mtime
-        module.__mtime__ = mtime
-
-        return module
-
-    except (ImportError, AttributeError, SyntaxError):
-
-        if debug :
-            # pass it on
-            traceblock = sys.exc_info()
-            raise PROG_TRACEBACK, traceblock
-
-        else:
-            # show and HTTP error
-            raise SERVER_RETURN, HTTP_INTERNAL_SERVER_ERROR
 
 def build_cgi_env(req):
     """
@@ -576,12 +560,14 @@ except ImportError:
     
 APLOG_NOERRNO = 8
 
+OK = REQ_PROCEED = 0
+DONE = -2
+DECLINED = REQ_NOACTION = -1
+
+REQ_ABORTED = HTTP_INTERNAL_SERVER_ERROR
+REQ_EXIT = "REQ_EXIT"         
 SERVER_RETURN = "SERVER_RETURN"
 PROG_TRACEBACK = "PROG_TRACEBACK"
-OK = REQ_PROCEED = 0
-HTTP_INTERNAL_SERVER_ERROR = REQ_ABORTED = 500
-DECLINED = REQ_NOACTION = -1
-REQ_EXIT = "REQ_EXIT"         
 
 
 

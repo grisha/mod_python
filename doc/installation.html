@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: installation.html,v 1.3 2000/05/13 02:22:36 grisha Exp $ -->
+<!-- $Id: installation.html,v 1.4 2000/05/22 12:14:39 grisha Exp $ -->
 
 <html>
   <head>
@@ -10,73 +10,286 @@
   <body bgcolor=white>
     <h1>Installation</h1>
 
-    <hr>
+<em>NOTE: By far the best place to get help with installation and other issues
+is the mod_python mailing list. Please take a moment to join the
+mod_python mailing list by sending an e-mail with the word "subscribe"
+in the subject to <a href="mailto:mod_python-request@modpython.org">
+mod_python-request@modpython.org</a>.</em>
+<p>
+The installation involves the following steps:
+
+    <ul>
+      <li><a href="#prerequisites">0. Prerequisites</a>
+      <li><a href="#python">1. Installing Python libraries</a>
+      <li><a href="#compiling">2. Compiling</a>
+	<ul>
+	  <li><a href="#static">Statically linking mod_python into Apache.</a>
+	  <li><a href="#dynamic">Compiling mod_python as a DSO</a>
+	</ul>
+      <li><a href="#testing">3. Testing</a>
+      <li><a href="#trouble">4. Troubleshooting</a>
+    </ul>
+
     <blockquote>
-      <pre>
-
-Presently, mod_python is installed by statically linking mod_python into
-Apache. There are still some issues that I am trying to resolve with DSO
-support. It will work, but I do not have a clean installation procedure
-that works across platforms.
-
-Please join the mod_python mailing list by sending an e-mail with the word
-"subscribe" in the subject to mod_python-request@modpython.org.
 
 
-To install:
+      <a name="prerequisites"><h2>0. Prerequisites</h2></a>
+
+      <ul>
+	<li> Python 1.5.2
+	<li> Apache 1.3
+      </ul>
+      
+      You will need to have the include files for both Apache and
+      Python, as well as the Python library installed on your
+      system. If you installed Python and Apache from source, then you
+      have nothing to worry about. However, if you are using
+      prepackaged software (e.g. Linux Red Hat RPM, Debian, or
+      Solaris packages from sunsite, etc) then chances are, you just
+      have the binaries and not the sources on your system. Often, the
+      include files and the libraries are part of separate
+      "development" package. If you are not sure if you have all the
+      necessary files, either compile and install Python and Apache
+      from source, or refer to the documentation for your system on
+      how to get the development packages.
+
+      <a name="python"><h2>1. Installing Python Libraries</h2></a>
+
+      <ul>
+	<li>Copy the directory lib/python/mod_python to some place in 
+	  your PYTHONPATH, usually /usr/local/lib/python1.5/site-python 
+	  (this step will require root access):
+	  <pre>
+      $ su
+      # cp -r mod_python-xxx/lib/python/mod_python /usr/local/lib/python-1.5/site-packages/
+	  </pre>
+	<li>Compile the modules in the mod_python package (still as root):
+	  <pre>
+      # python /usr/local/lib/python/compileall.py /usr/local/lib/python1.5/site-packages/mod_python
+	  </pre>
+      </ul>
+
+      <a name="compiling"><h2>2. Compiling</h2></a>
+      
+      There are two ways that this module can be compiled and linked to Apache -
+      statically, or as a Dynamic Shared Object. 
+      <p>
+	Static linking is a more &quot;traditional&quot; approach, and
+	most programmers prefer it for its simplicity. The drawback is
+	that it entails recompiling Apache, which some people cannot
+	do for a variety of reasons. For example in a shared web
+	hosting environment the Apache binary might not be writable by
+	the user.
+      <p>
+	Dynamic Shared Object (DSO) is a newer and still somewhat experimental
+	approach. The module gets compiled as a library that is dynamically
+	loaded by the server at run time. A more detailed description of the
+	Apache DSO mechanism is available 
+	<a href="http://www.apache.org/docs/dso.html">here</a>.
+      <p>
+	The advantage is that a module can be installed without
+	recompiling Apache and used as needed. DSO has its
+	disadvantages, however. Compiling a module like mod_python
+	into a DSO can be a complicated process because Python, depending
+	on configuration, may rely on a number of other libraries, and you
+	need to make sure that the DSO is statically linked against each of
+	them. The DSO mechanism is not consistent from platform to platform,
+	and on some platforms there may be a performance hit associated
+	with using it.
+
+	<a name="static"><h3>Statically linking mod_python into Apache.</h3></a>
+
+      <ul>
+	<li> Unzip and untar the distribution file into some directory
+	  (xxx is the version number): 
+	  <pre>
+    $ gunzip mod_python-xxx.tgz
+    $ tar xzvf mod_python-xxx.tar
+	  </pre>
+	  
+	<li> Copy src/mod_python.c from the distribution you just untarred
+	  into the Apache source tree under src/modules/extra:<br>
+	  (assuming Apache sources are in apache_1.3.12)
+	  <pre>
+    $ cp mod_python-xxx/src/mod_python.c apache_1.3.12/src/modules/extra/
+	  </pre>
+
+	<li> A this point you have two choices, two ways to build Apache - 
+	  the new "Apaci" or
+	  the old "Configure". Use Apaci if you don't know the difference:
+	  <br><br>
+	  <b>EITHER</b> (Apaci)
+	  <ul>
+	    <li> Run ./configure from Apache directory telling it to activate
+	      the Python module, then make to compile Apache:
+	      <pre>
+     $ cd apache_1.3.12
+     $ ./configure --activate-module=src/modules/extra/mod_python.c
+     $ make
+	      </pre>
+	  </ul>
+
+	  <b>OR</b> (Configure)
+
+	  <ul>
+	    <li> Cd into the src directory, edit the Configuration file to
+	      add the module, run Configure, then make to compile Apache:
+	      <pre>
+     $ cd apache_1.3.12/src
+     $ vi Configuration
+       [add a line "AddModule modules/extra/mod_python.c"]
+     $ ./Configure
+     $ make
+	      </pre>
+	  </ul>
+	<li> Now either run "make install" to install Apache for the
+	first time, or (more likely) simply copy over the new
+	<b>httpd</b> binary to wherever Apache is on your system. This
+	step will probably require root. E.g.:
+	  <pre>
+      $ su
+      # cp src/httpd /usr/local/apache/bin/httpd
+	  </pre>
+	<li> Finally start (or restart) Apache. This is typically done like this:
+	  <pre>
+      # /usr/local/apache/bin/apachectl stop
+      # /usr/local/apache/bin/apachectl start
+	  </pre>
+	<li> If Apache didn't start, refer to the 
+	  <a href="#trouble">Troubleshooting</a> section below.
+      </ul>
+
+      <a name="dynamic"><h3>Compiling mod_python as a DSO.</h3></a>
+ 
+      The DSO compilation should be a simple process involving the
+      <code>apxs</code> tool included with Apache, but due to
+      differences in the dynamic linking mechanism and other
+      subtleties, the procedure varies from system to system. Below
+      are some notes on the successful installations I've been able to
+      perform on systems I have access to. The future plan is to improve
+      this procedure and hopefully come up with a simple script that
+      will compile a DSO on your system. Until then, however, these
+      notes is all I have:
+
+<pre>
+
+    On Linux, I was able to get dso to work the following way:
+
+    [Linux 2.2.14, Debian potato, gcc 2.9.52, Apache 1.3.12,
+     standard Debian Python development package installed]
+
+    1. cd src/modules/extra
+    2. axps -I /usr/local/include/python1.5 -c mod_python.c \
+            /usr/local/lib/python1.5/config/libpython1.5.a -lpthread
+      (You don't nead -lpthread if your Python is compiled without threads)
 
 
 
-1. Untar the file in some directory.
-2. copy mod_python/src/mod_python.c to src/modules/extra/ in the Apache sources.
-3. cd into the apache source directory
+    On FreeBSD 4.0 STABLE (May 14 2000), I wasn't able to get it to work with 
+    threads, which is how Python is configured in the ports collection, so Python
+    had to be compiled without threads first.
 
-then either
+    1. cd src/modules/extra
+    2. apxs -I ~/src/Python-1.5.2/Include -I ~/src/Python-1.5.2 \
+       -c mod_python.c ~/src/Python-1.5.2/libpython1.5.a -lm
 
-    4. ./configure --activate-module=src/modules/extra/mod_python.c
-    5. make
-OR
 
-    4. cd src
-    5. edit Configuration and add "AddModule modules/extra/mod_python.o"
-    6. ./Configure
-    7. make
 
-lastly, you need to install the Python package:
+    On Solaris 2.7 (SPARC), egcs-2.91.66. Again, I wasn't able to get it to
+    work with threads. But I also ran into an interesting problem regarding
+    __eprintf.
 
- [as root]
+    The apxs command is the same as for FreeBSD. If, upon starting Apache,
+    you get an error mentioning the unresolved __eprintf symbol, do this:
 
-1. cp lib/python/mod_python to /usr/local/lib/python1.5/site-packages/
-2. python /usr/local/lib/python/compileall.py /usr/local/lib/python1.5/site-packages/mod_python
+    1. Find where your libgcc is (try "locate libgcc"). Mine was in 
+      /usr/local/lib/gcc-lib/sparc-sun-solaris2.7/egcs-2.91.66/libgcc.a
 
- [end as root]
+    2. Extract the object, containing the __eprintf using ar:
+       ar -x /usr/local/lib/gcc-lib/sparc-sun-solaris2.7/egcs-2.91.66/libgcc.a \
+      _eprintf.o
 
-Now, see if it works:
+    3. Now run apxs, but add _eprintf.o as the last argument. This will link the
+       object in and should solve the problem. 
+      </pre>
 
-    1. ./httpd -l should list mod_python.c
-    2. pick some directory on your web site
-    3. make sure that AllowOverride isn't None for that directory
-    4. edit .htaccess so that it has:
+      <a name="testing"><h2>3. Testing</h2></a>
 
-    AddHandler python-program .py
-    PythonDebug
-    PythonHandler test
+      <ul>
+	<li> If you compiled mod_python as a DSO, you will need to
+	tell Apache to load the module by adding the following line in
+	the Apache configuration file, usually called
+	<code>httpd.conf</code> or <code> apache.conf</code>
+	(assuming you placed <code>mod_python.so</code> in the <code>libexec</code>
+	directory in the <code>ServerRoot</code>) :
+	  <pre>
+      LoadModule python_module libexec/mod_python.so
+	  </pre>
 
-    5. put a file named test.py in this directory with this in it:
+	<li> If your Apache configuration uses
+	<code>ClearModuleList</code> directive, you will need to add
+	mod_python to the module list in the Apache configuration file
+	(usually called <code>httpd.conf</code>): 
+	  <pre>
+      AddModule mod_python.c</pre>
 
-    from mod_python import apache
+	<li> Make some directory that would be visible on your website, for 
+	  example, <code>htdocs/test</code>.
 
-    def handler(req):
-        req.send_http_header()
-        req.write("Hello World!")
-        return apache.OK
+	<li> The following directives can appear in either the main
+	server configuration file, or <code>.htaccess</code>. If you
+	are going to be using the <code>.htaccess</code> file, make
+	sure the <code>AllowOverride</code> directive applicable to this
+	directory has at lease <code>FileInfo</code> specified.  The
+	default is <code>None</code>, which will not work.
+	  <pre>
+      AddHandler python-program .py
+      PythonHandler test
+      PythonDebug </pre>
 
-    6. point your browser to the URL referring to this file
+	<li> If you made changes to the main configuration file, you will
+	  need to restart Apache in order for the changes to take effect.
 
-    7. If this didn't work, either study the error output in your browser,
-       or look at the error log. Make sure you followed all the steps.
+	<li> Edit <code>test.py</code> file in the <code>htdocs/test</code> 
+	  directory so that is has the following lines:
+	  <pre>
+      from mod_python import apache
 
-    8. If that fails, e-mail me or the mod_python@modpython.org list.
+      def handler(req):
+          req.send_http_header()
+          req.write("Hello World!")
+          return apache.OK </pre>
+
+	<li> Point your browser to the URL referring to the test.py, you should
+	  see "Hellow World!". If you didn't - refer to the troubleshooting step
+	  next.
+      </ul>
+      
+      <a name="trouble"><h2>4. Troubleshooting</h2></a>
+
+      There are a couple things you can try to identify the problem:
+
+      <ul>
+	<li> Carefully study the error output, if any.
+	<li> Check the error_log file, it may contain useful clues.
+	<li> Try running Apache from the command line with an -X argument:
+	  <pre>
+      ./httpd -X</pre>
+	  This prevents it from backgrounding itself and may provide some useful
+	  information.
+	<li> Ask on the mod_python list. Make sure to provide 
+	  specifics such as:<br>
+	  . Your operating system type, name and version.<br>
+	  . Your Python version, and any unusual compilation options.<br>
+	  . Your Apache version.<br>
+	  . Relevant parts of the Apache config, .htaccess.<br>
+	  . Relevant parts of the Python code.<br>
+      </ul>
+	  
+	
+
+    </blockquote>
+
 
       </pre>
     </blockquote>
@@ -84,7 +297,7 @@ Now, see if it works:
     <hr>
 <!-- Created: Wed May 10 09:06:54 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Fri May 12 21:28:37 EDT 2000
+Last modified: Sun May 21 23:07:48 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
