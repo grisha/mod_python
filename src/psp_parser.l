@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.12 2003/08/01 01:53:13 grisha Exp $
+ * $Id: psp_parser.l,v 1.13 2003/08/05 19:28:26 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -80,6 +80,7 @@
 %x TEXT
 %x PYCODE
 %x INDENT
+%x DIR
 
 %%
 
@@ -97,18 +98,22 @@
     BEGIN TEXT;
 }
 
-<TEXT>"<%=" {
+<TEXT>"<%=" {    /* expression */
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\"); req.write(str("));
     PSP_PG(is_psp_echo) = 1;
 
     BEGIN PYCODE;
 }
 
-<TEXT>"<%" {
+<TEXT>"<%" {     /* python code */
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\");")); 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     PSP_PG(seen_newline) = 0;
     BEGIN PYCODE;
+}
+
+<TEXT>"<%@" {     /* directive */
+    BEGIN DIR;
 }
 
 <TEXT>\r\n|\n {
@@ -194,6 +199,50 @@
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     yyless(0);
     BEGIN PYCODE;
+}
+
+<DIR>"include"[ ]+"file"[ ]?=[ ]?"\""[^ ]+"\"" {
+
+    char *filename;
+    char *path;
+    FILE *f;
+
+    /* find a quote */
+    filename = strchr(yytext, '"') + 1;
+    filename[strchr(filename, '"')-filename] = '\0';
+
+    if (PSP_PG(dir)) {
+	path = malloc(strlen(filename)+strlen(PSP_PG(dir))+1);
+	if (path == NULL) {
+	    PyErr_NoMemory();
+	    yyterminate();
+	}
+	strcpy(path, PSP_PG(dir));
+	strcat(path, filename);
+    }
+    else {
+	path = filename;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    f = fopen(path, "rb");
+    Py_END_ALLOW_THREADS
+    if (f == NULL) {
+	PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
+    }
+    else {
+	FILE *save = yyget_in(yyscanner);
+	yyset_in(f, yyscanner);
+	yylex(yyscanner);
+	fclose(f);
+	yyset_in(save, yyscanner);
+    }
+
+    if (PSP_PG(dir)) free(path);
+}
+
+<DIR>"%>" {
+    BEGIN TEXT;
 }
 
 %%

@@ -1898,7 +1898,7 @@ execution within a mod_python handler, thereby providing a versatile
 mechanism for delivering dynamic content in a style similar to similar
 to ASP, JSP and others.
 
-The parser used by \module{_psp} is written in C (genrated using flex)
+The parser used by \module{_psp} is written in C (generated using flex)
 and is therefore very fast.
 
 Unlike other mod_python modules, \module{_psp} is written in such a way
@@ -1912,7 +1912,8 @@ server to use PSP.
 
 Inside the document, Python \dfn{code} needs to be surrounded by
 \samp{<\%} and \samp{\%>}. Python \dfn{expressions} are enclosed in
-\samp{<\%=} and \samp{\%>}.
+\samp{<\%=} and \samp{\%>}. A \dfn{directive} can be enclosed in
+\samp{<\%@} and \samp{\%>}.
 
 Here is a primitive PSP page that demonstrated use of both code and
 expression embedded in an HTML document:
@@ -2003,13 +2004,29 @@ above page can be written as:
 However, the above code can be confusing, thus having descriptive
 comments denoting blocks is highly recommended as a good practice.
 
+The only directive supported at this time is \code{include}, here is
+how it can be used:
+
+\begin{verbatim}
+<%@ include file="/file/to/include"%>
+\end{verbatim}
+
+If the \function{parse()} function was called with the \var{dir}
+argument, then the file can be specified as a relative path, otherwise
+it has to be absolute.
+
 \subsection{Functions\label{pyapi-psp-funcs}}
 
-\begin{funcdesc}{parse}{filename}
+\begin{funcdesc}{parse}{filename\optional{, dir}}
 
   This function will open file named \var{filename}, read and parse its
   content and return a string of resulting Python code.
 
+  If \var{dir} is specified, then the ultimate filename to be parsed
+  is constructed by concatenating \var{dir} and \var{filename}, and
+  the argument to \code{include} directive can be specified as a
+  relative path. (Note that this is a simple concatenation, no path
+  separator will be inserted if \var{dir} does not end with one).
 \end{funcdesc}
 
 \begin{funcdesc}{parsestring}{string}
