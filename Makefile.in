@@ -115,5 +115,8 @@ clean:
 	rm -f core
 
 distclean: clean
-	rm -rf Makefile config.h config.status config.cache config.log
+	cd src && $(MAKE) distclean
+	cd Doc && $(MAKE) distclean
+	rm -rf Makefile config.h config.status config.cache config.log \
+		test/testconf.py 
 
