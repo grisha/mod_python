@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.10 2004/01/14 03:20:02 grisha Exp $
+ # $Id: Session.py,v 1.11 2004/01/19 18:53:01 grisha Exp $
 
 import apache, Cookie
 import _apache
@@ -197,6 +197,12 @@ class BaseSession(dict):
             # the path where *Handler directive was specified
             dirpath = self._req.hlist.directory 
             c.path = dirpath[len(docroot):]
+
+            # XXX Not sure why, but on Win32 hlist.directory
+            # may contain a trailing \ - need to investigate,
+            # this value is given to us directly by httpd
+            if os.name == 'nt' and c.path[-1] == '\\':
+                c.path = c.path[:-1]
         
         return c
 
