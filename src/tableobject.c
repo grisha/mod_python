@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.7 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.8 2001/11/28 05:31:48 gtrubetskoy Exp $
  *
  */
 
@@ -91,7 +91,7 @@ PyObject * MpTable_New()
     apr_pool_t *p;
 
     /* XXX need second arg abort function to report mem error */
-    p = apr_pool_sub_make(NULL, NULL);
+    apr_pool_sub_make(&p, NULL, NULL);
     
     /* two is a wild guess */
     t = (tableobject *)MpTable_FromTable(apr_table_make(p, 2));

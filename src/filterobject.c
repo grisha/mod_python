@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.2 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.3 2001/11/28 05:31:47 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -61,7 +61,7 @@
  */
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
-			      ap_input_mode_t mode, apr_size_t *readbytes,
+			      ap_input_mode_t mode, apr_off_t *readbytes,
 			      char * handler, char *dir)
 {
     filterobject *result;

@@ -44,7 +44,7 @@
  *
  * filterobject.h 
  *
- * $Id: filterobject.h,v 1.2 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: filterobject.h,v 1.3 2001/11/28 05:31:48 gtrubetskoy Exp $
  *
  */
 
@@ -88,7 +88,7 @@ extern "C" {
     extern DL_IMPORT(PyObject *) 
 	MpFilter_FromFilter Py_PROTO((ap_filter_t *f, apr_bucket_brigade *bb_in, 
 				      int is_input, ap_input_mode_t mode, 
-				      apr_size_t *readbytes, char *hadler, char *dir));
+				      apr_off_t *readbytes, char *hadler, char *dir));
 
 #ifdef __cplusplus
 }
