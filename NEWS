@@ -1,3 +1,5 @@
+Apr 10 2000 - 	Fixed a PythonImport bug reported by Chris Hagner.
+
 Apr  7 2000 -   "Dissapearing args" on Solaris fixed. It was a problem
 		in parse_qsl.
 
