@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.21 2002/12/18 20:47:02 grisha Exp $
+ # $Id: tests.py,v 1.22 2003/01/23 20:20:00 grisha Exp $
  #
 
 # mod_python tests
@@ -392,6 +392,82 @@ class SimpleTestCase(unittest.TestCase):
            (req.get_remote_host() != "127.0.0.1"):
             self.fail("remote host test failed")
 
+    def test_server_members(self):
+
+        req = self.req
+        log = req.log_error
+        server = req.server
+
+        log("Examining server memebers:")
+
+        log("    server.defn_name: %s" % `server.defn_name`)
+        if server.defn_name[-9:] != "test.conf":
+            self.fail("server.defn_name does not end in 'test.conf'")
+        
+        log("    server.defn_line_number: %s" % `server.defn_line_number`)
+        if server.defn_line_number == 0:
+            self.fail("server.defn_line_number should not be 0")
+        
+        log("    server.server_admin: %s" % `server.server_admin`)
+        if server.server_admin != "serveradmin@somewhere.com":
+            self.fail("server.server_admin must be 'serveradmin@somewhere.com'")
+        
+        log("    server.server_hostname: %s" % `server.server_hostname`)
+        if server.server_hostname != "test_internal":
+            self.fail("server.server_hostname must be 'test_internal'")
+        
+        log("    server.port: %s" % `server.port`)
+        # hmm it reall is 0...
+        #if server.port == 0:
+        #    self.fail("server.port should not be 0")
+            
+        log("    server.error_fname: %s" % `server.error_fname`)
+        if server.error_fname != "logs/error_log":
+            self.fail("server.error_fname should be 'logs/error_log'")
+        
+        log("    server.loglevel: %s" % `server.loglevel`)
+        if server.loglevel != 7:
+            self.fail("server.loglevel should be 7")
+        
+        log("    server.is_virtual: %s" % `server.is_virtual`)
+        if server.is_virtual != 1:
+            self.fail("server.is_virtual should be 1")
+        
+        log("    server.timeout: %s" % `server.timeout`)
+        if server.timeout != 5000000:
+            self.fail("server.timeout should be 5000000")
+        
+        log("    server.keep_alive_timeout: %s" % `server.keep_alive_timeout`)
+        if server.keep_alive_timeout != 15000000:
+            self.fail("server.keep_alive_timeout should be 15000000")
+            
+        log("    server.keep_alive_max: %s" % `server.keep_alive_max`)
+        if server.keep_alive_max != 100:
+            self.fail("server.keep_alive_max should be 100")
+            
+        log("    server.keep_alive: %s" % `server.keep_alive`)
+        if server.keep_alive != 1:
+            self.fail("server.keep_alive should be 1")
+        
+        log("    server.path: %s" % `server.path`)
+        if server.path != "some/path":
+            self.fail("server.path should be 'some/path'")
+        
+        log("    server.pathlen: %s" % `server.pathlen`)
+        if server.pathlen != len('some/path'):
+            self.fail("server.pathlen should be %d" % len('some/path'))
+        
+        log("    server.limit_req_line: %s" % `server.limit_req_line`)
+        if server.limit_req_line != 8190:
+            self.fail("server.limit_req_line should be 8190")
+            
+        log("    server.limit_req_fieldsize: %s" % `server.limit_req_fieldsize`)
+        if server.limit_req_fieldsize != 8190:
+            self.fail("server.limit_req_fieldsize should be 8190")
+            
+        log("    server.limit_req_fields: %s" % `server.limit_req_fields`)
+        if server.limit_req_fields != 100:
+            self.fail("server.limit_req_fields should be 100")
 
 def make_suite(req):
 
@@ -402,6 +478,7 @@ def make_suite(req):
     mpTestSuite.addTest(SimpleTestCase("test_req_members", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_get_config", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_get_remote_host", req))
+    mpTestSuite.addTest(SimpleTestCase("test_server_members", req))
     return mpTestSuite
 
 

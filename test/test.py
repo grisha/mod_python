@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.25 2003/01/09 19:15:33 grisha Exp $
+ # $Id: test.py,v 1.26 2003/01/23 20:20:00 grisha Exp $
  #
 
 """
@@ -707,6 +707,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         c = VirtualHost("*",
                         ServerName("test_internal"),
+                        ServerAdmin("serveradmin@somewhere.com"),
+                        ErrorLog("logs/error_log"),
+                        ServerPath("some/path"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("python-program"),
@@ -811,8 +814,9 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_import"))
         perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
-        perRequestSuite.addTest(PerRequestTestCase("test_internal"))
         perRequestSuite.addTest(PerRequestTestCase("test_cgihandler"))
+        # this must be last so its error_log is not overwritten
+        perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)
         self.startHttpd()
@@ -853,8 +857,8 @@ def suite():
 
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(PerInstanceTestCase("testLoadModule"))
+##     mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
     mpTestSuite.addTest(PerInstanceTestCase("testPerRequestTests"))
-    mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()

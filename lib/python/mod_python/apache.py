@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.65 2003/01/09 19:14:31 grisha Exp $
+ # $Id: apache.py,v 1.66 2003/01/23 20:20:00 grisha Exp $
 
 import sys
 import traceback
@@ -128,7 +128,7 @@ class CallBack:
                     if sys.path != newpath:
                         sys.path[:] = newpath
             else:
-                if filter.dir not in sys.path:
+                if filter.dir and (filter.dir not in sys.path):
                     sys.path[:0] = [filter.dir]
 
             # import module
@@ -208,7 +208,7 @@ class CallBack:
                     if sys.path != newpath:
                         sys.path[:] = newpath
             else:
-                if filter.dir not in sys.path:
+                if filter.dir and (filter.dir not in sys.path):
                     sys.path[:0] = [filter.dir]
 
             # import module

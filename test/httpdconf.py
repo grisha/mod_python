@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: httpdconf.py,v 1.5 2002/12/18 20:47:02 grisha Exp $
+ # $Id: httpdconf.py,v 1.6 2003/01/23 20:20:00 grisha Exp $
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
@@ -243,7 +243,15 @@ class SetHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class ServerAdmin(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class ServerName(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class ServerPath(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
