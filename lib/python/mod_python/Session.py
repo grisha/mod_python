@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.6 2003/08/19 14:41:39 grisha Exp $
+ # $Id: Session.py,v 1.7 2003/08/21 18:22:22 grisha Exp $
 
 from mod_python import apache, Cookie
 import _apache
@@ -161,11 +161,7 @@ class BaseSession(dict):
             # attempt to load ourselves
             self.lock()
             if self.load():
-                if (time.time() - self._accessed) > self._timeout:
-                    # we expired
-                    self.delete()
-                else:
-                    self._new = 0
+                self._new = 0
 
         if self._new:
             # make a new session
@@ -211,30 +207,27 @@ class BaseSession(dict):
         self.delete()
         self._invalid = 1
 
-    def _load_internal(self):
-        self._created = self["_created"]
-        del self["_created"]
-        self._accessed = self["_accessed"]
-        del self["_accessed"]
-        self._timeout = self["_timeout"]
-        del self["_timeout"]
-
     def load(self):
-        if self.do_load():
-            self._load_internal()
-            return 1
-        else:
+        dict = self.do_load()
+        if dict == None:
             return 0
 
-    def _save_internal(self):
-        self["_created"] = self._created
-        self["_accessed"] = self._accessed
-        self["_timeout"] = self._timeout
+        if (time.time() - dict["_accessed"]) > dict["_timeout"]:
+            return 0
+
+        self._created  = dict["_created"]
+        self._accessed = dict["_accessed"]
+        self._timeout  = dict["_timeout"]
+        self.update(dict["_data"])
+        return 1
 
     def save(self):
         if not self._invalid:
-            self._save_internal()
-            self.do_save()
+            dict = {"_data"    : self.copy(), 
+                    "_created" : self._created, 
+                    "_accessed": self._accessed, 
+                    "_timeout" : self._timeout}
+            self.do_save(dict)
 
     def delete(self):
         self.do_delete()
@@ -344,20 +337,18 @@ class DbmSession(BaseSession):
         dbm = self._get_dbm()
         try:
             if dbm.has_key(self._sid):
-                dict = cPickle.loads(dbm[self._sid])
-                self.clear()
-                self.update(dict)
-                return 1
-            return 0
+                return cPickle.loads(dbm[self._sid])
+            else:
+                return None
         finally:
             dbm.close()
             _apache._global_unlock(self._req.server, None, 0)
 
-    def do_save(self):
+    def do_save(self, dict):
         _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
-            dbm[self._sid] = cPickle.dumps(self.copy())
+            dbm[self._sid] = cPickle.dumps(dict)
         finally:
             dbm.close()
             _apache._global_unlock(self._req.server, None, 0)
@@ -395,13 +386,11 @@ class MemorySession(BaseSession):
 
     def do_load(self):
         if MemorySession.sdict.has_key(self._sid):
-            self.clear()
-            self.update(MemorySession.sdict[self._sid])
-            return 1
-        return 0
+            return MemorySession.sdict[self._sid]
+        return None
 
-    def do_save(self):
-        MemorySession.sdict[self._sid] = self.copy()
+    def do_save(self, dict):
+        MemorySession.sdict[self._sid] = dict
 
     def do_delete(self):
         try:
