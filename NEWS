@@ -1,3 +1,5 @@
+Oct 22 2000 -   2.6.2 release
+
 Oct 22 2000 -   "Fatal Python error: PyThreadState_Get: no current thread" upon
 		exit is now fixed. Also, --with-python was improved to point
 		to the right Makefile (Modules/Makefile) when scanning for LIBS.
