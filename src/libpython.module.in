@@ -1,6 +1,0 @@
-Name: python_module
-ConfigStart
-	LIBS="$LIBS @LIBS@"
-	LDFLAGS="@LDFLAGS@"
-	INCLUDES="@INCLUDES@"
-ConfigEnd
