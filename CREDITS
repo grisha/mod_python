@@ -2,12 +2,12 @@
 The following is a list of people who have contributed to the
 development of mod_python. 
 
-Anyone who has contributed code or otherwise made contributions that
-were constructive to the development of the project may have his name
-listed here. Note that the decision on whether a name goes on this
-list or not is initially taken by me (grisha@modpython.org) and that I 
-can be wrong.  So if you feel that you should be credited as well, or 
-if you feel that you should not be listed, please e-mail me.
+Anyone who has contributed code or otherwise made contributions that were
+constructive to the development of the project may have his name listed
+here. Note that the decision on whether or not a name goes on this list is
+initially taken by me (grisha@modpython.org) and that I can be wrong.  So
+if you feel that you should be credited as well, or if you feel that you
+should not be listed, please e-mail me.
 
 The names are listed alphabetically by last name.
 
@@ -25,13 +25,17 @@ Damjan Georgievski <gdamjan@mail.net.mk>
 
 James Gessling <jgessling@etrade.com>
 
+Bob Ippolito <bob@redivi.com>
+
+Indrek Järve <indrek@inversion.ee>
+
 Mads Kiilerich <mads@kiilerich.com> 
 
 Jørgen Frøjk Kjærsgaard <jfk@metation.com>
 
-Bob Ippolito <bob@redivi.com>
-
 Miguel Marques <miguel@yorku.ca>
+
+Thom May <thommay@apache.org>
 
 Robin Munn <rmunn@pobox.com>
 
