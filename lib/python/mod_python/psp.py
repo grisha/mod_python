@@ -54,11 +54,21 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.5 2003/05/29 20:52:25 grisha Exp $
+ # $Id: psp.py,v 1.6 2003/05/30 04:37:09 grisha Exp $
 
-from mod_python import apache
-import sys
+# this trick lets us be used outside apache
+try:
+    from mod_python import apache
+except:
+    from mod_python import apache
+    apache.OK = 0
+    
 import _psp
+
+import sys
+import os
+import marshal
+import new
 
 def parse(filename):
 
@@ -68,13 +78,58 @@ def parsestring(str):
 
     return _psp.parsestring(str)
 
+def code2str(c):
+
+    ctuple = (c.co_argcount, c.co_nlocals, c.co_stacksize, c.co_flags,
+              c.co_code, c.co_consts, c.co_names, c.co_varnames, c.co_filename,
+              c.co_name, c.co_firstlineno, c.co_lnotab)
+    
+    return marshal.dumps(ctuple)
+
+def str2code(s):
+
+    return apply(new.code, marshal.loads(s))
+
+def load_file(filename):
+
+    """ This function will check for existence of a file with same
+    name, but ending with c and load it instead. The c file contains
+    already compiled code (see code2str above). My crude tests showed
+    that mileage vaires greatly as to what the actual speedup would
+    be, but on average for files that are mostly strings and not a lot
+    of Python it was 1.5 - 3 times. The good news is that this means
+    that the PSP lexer and the Python parser are *very* fast, so
+    compiling PSP pages is only necessary in extreme cases. """
+
+    smtime = 0
+    cmtime = 0
+
+    if os.path.isfile(filename):
+        smtime = os.path.getmtime(filename)
+
+    name, ext = os.path.splitext(filename)
+
+    cext = ext[:-1] + "c"
+    cname = name + cext
+    
+    if os.path.isfile(name + cext):
+        cmtime = os.path.getmtime(cname)
+
+        if cmtime > smtime:
+            # we've got a code file!
+            code = str2code(open(name + cext).read())
+
+            return code
+                
+    source = _psp.parse(filename)
+    return compile(source, filename, "exec")
+
+
 def handler(req):
 
-    source = _psp.parse(req.filename)
-
-    code = compile(source, req.filename, "exec")
+    code = load_file(req.filename)
 
     # give it it's own locals
     exec code in globals(), {"req":req}
 
-    return mod_python.apache.OK
+    return apache.OK
