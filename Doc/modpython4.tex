@@ -146,11 +146,11 @@ e.g.
 raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 \end{verbatim}
               
-Handlers can send content to the client using the \method{Request.write()}
+Handlers can send content to the client using the \method{req.write()}
 method. 
 
 Client data, such as POST requests, can be read by using the
-\method{Request.read()} function.
+\method{req.read()} function.
 
 \strong{NOTE:} The directory of the Apache \code{Python*Handler} 
 directive in effect is prepended to the \code{sys.path}. If the
@@ -168,6 +168,51 @@ def requesthandler(req):
     return apache.OK
 \end{verbatim}
 
+\section{Overview of a Filter Handler\label{pyapi-filter}}
+\index{filter}
+
+A \dfn{filter handler} is a function that can alter the input or the
+output of the server. There are two kinds of filters - \dfn{input} and
+\dfn{output} that apply to input from the client and output to the
+client respectively.
+
+At this time mod_python supports only request-level filters, meaning
+that only the body of HTTP request or response can be filtered. Apache
+provides support for connection-level filters, which will be supported
+in the future.
+
+A filter handler receives a filter object as its argument. The request
+object is available as well via \code{filter.req}, but all writing and
+reading should be done via the filter's object read and write methods.
+
+Similarly to a phase handler, a filter handler must return one of the
+status return codes.
+
+Filters must first be registered using \code{PythonInputFilter} or
+\code{PythonOutputFilter}, then added using the Apache
+\code{AddInputFilter} or \code{AddOutputFilter} directives. 
+
+Here is an example of how to specify an output filter, it tells the
+server that all .py files should processed by CAPITALIZE filter:
+
+\begin{verbatim}
+  PythonOutputFilter capitalize CAPITALIZE
+  AddOutputFilter CAPITALIZE .py
+\end{verbatim}
+
+And here is what the code for the \file{capitalize.py} might look
+like:
+
+\begin{verbatim}
+from mod_python import apache
+
+def outputfilter(filter):
+
+    filter.write(filter.read().upper())
+    return apache.OK
+
+\end{verbatim}
+
 \section{\module{apache} -- Access to Apache Internals.}
 \declaremodule[apache]{extension}{apache}
 \modulesynopsis{Access to Apache Internals}
@@ -177,9 +222,9 @@ The Python interface to Apache internals is contained in a module
 appropriately named \module{apache}, located inside the
 \module{mod_python} package. This module provides some important
 objects that map to Apache internal structures, as well as some useful
-functions, all documented below. (The \class{Request} object also
-provides an interface to Apache internals, it is covered in its own
-section of this manual.)
+functions, all documented below. (The request object also provides an
+interface to Apache internals, it is covered in its own section of
+this manual.)
 
 \indexii{_apache}{module} The \module{apache} module can only be
 imported by a script running under mod_python. This is because it

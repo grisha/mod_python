@@ -7,10 +7,10 @@
 
 All \strong{Python*Handler} directives have the following syntax: 
 
-\code{Python*Handler \emph{handler [handler]} ...}
+\code{Python*Handler \emph{handler [handler ...] [ | .ext [.ext ...] ] } }
 
-Where \emph{handler} is a callable object (e.g. a function) that accepts a
-single argument - request object.
+Where \var{handler} is a callable object that accepts a single
+argument - request object, and \var{.ext} is a file extension.
 
 Multiple handlers can be specified on a single line, in which case
 they will be called sequentially, from left to right. Same handler
@@ -19,21 +19,26 @@ result - all handlers listed will be executed sequentially, from first
 to last. If any handler in the sequence returns a value other than
 \code{apache.OK}, then execution of all subsequent handlers is aborted.
 
+The list of handlers can optionally be followed by a \code{|} followed
+by one or more file extensions. This would restrict the execution of
+the handler to those file extensions only. This feature only works for
+handlers executed after the trans phase.
+
 A \emph{handler} has the following syntax: 
 
-\code{module[::object] [module::[object]] ...}
+\code{module[::object]}
 
-Where module can be a full module name (package dot notation is
-accepted), and the optional object is the name of an object inside the
-module.
+Where \var{module} can be a full module name (package dot notation is
+accepted), and the optional \var{object} is the name of an object
+inside the module.
 
 Object can also contain dots, in which case it will be resolved from
 left to right. During resolution, if mod_python encounters an object
-of type \code{<class>}, it will try instantiate it passing it a single
+of type \code{<class>}, it will try instantiating it passing it a single
 argument, a request object.
 
 If no object is specified, then it will default to the directive of
-the handler, all lower case, with the word \samp{Python}
+the handler, all lower case, with the word \samp{python}
 removed. E.g. the default object for PythonAuthenHandler would be
 authenhandler.
 
@@ -47,12 +52,12 @@ For more information on handlers, see Overview of a Handler.
 
 Side note: The "::" was chosen for performance reasons. In order for
 Python to use objects inside modules, the modules first need to be
-imported. However, if the separator were simply a ".", it would
-involve a much more complex process of sequentially evaluating every
-word to determine whether it is a package, module, class etc. Using
-the (admittedly un-Python-like) "::" takes the time consuming work of
-figuring out where the module ends and the object inside of it begins
-away from mod_python resulting in a modest performance gain..
+imported. Having the separator as simply a ".", would considerably
+complicate process of sequentially evaluating every word to determine
+whether it is a package, module, class etc. Using the (admittedly
+un-Python-like) "::" takes the time consuming work of figuring out
+where the module part ends and the object inside of it begins away
+from mod_python resulting in a modest performance gain.
 
 \subsection{PythonPostReadRequestHandler\label{dir-handlers-prrh}}
 \index{PythonPostReadRequestHandler}
@@ -66,7 +71,7 @@ not None\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
-This routine is called after the request has been read but before any
+This handler is called after the request has been read but before any
 other phases have been processed. This is useful to make decisions
 based upon the input header fields.
 
@@ -83,6 +88,9 @@ will be called for \emph{ALL} requests on this server (not just python
 programs), which is an important consideration if performance is a
 priority.
 
+\indexii{phase}{order} The handlers below are documented in order in
+which phases are processed by Apache.
+
 \subsection{PythonTransHandler\label{dir-handlers-th}}
 \index{PythonTransHandler}
 
@@ -95,7 +103,7 @@ not None\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
-This routine gives allows for an opportunity to translate the URI into
+This handler gives allows for an opportunity to translate the URI into
 an actual filename, before the server's default rules (Alias
 directives and the like) are followed.
 
@@ -122,6 +130,30 @@ mod_python.c
 This handler is called to give the module a chance to look at the
 request headers and take any appropriate specific actions early in the
 processing sequence.
+
+\subsection{PythonInitHandler\label{dir-handlers-pih}}
+\index{PythonInitHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This handler is the first handler called in the request processing
+phases that is allowed both inside and outside \file{.htaccess} and
+directory.
+
+This handler is actually an alias to two different handlers. When
+specified in the main config file outside any directory tags, it is an
+alias to \code{PostReadRequestHandler}. When specified inside directory
+(where \code{PostReadRequestHandler} is not allowed), it aliases to
+\code{PythonHeaderParserHandler}.
+
+\emph{(This idea was borrowed from mod_perl)}
 
 \subsection{PythonAccessHandler\label{dir-handlers-ach}}
 \index{PythonAccessHandler}
@@ -188,6 +220,22 @@ def authenhandler(req):
 \code{req.connection.user} value. Apache makes no attempt to decode the
 authentication information unless \code{req.get_basic_auth_pw()} is called.
 
+\subsection{PythonAuthzHandler\label{dir-handlers-auh}}
+\index{PythonAuthzHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This handler runs after AuthenHandler and is intended for checking
+whether a user is allowed to access a particular resource. But more
+often than not it is done right in the AuthenHandler.
+
 \subsection{PythonTypeHandler\label{dir-handlers-tph}}
 \index{PythonTypeHandler}
 
@@ -234,30 +282,6 @@ mod_python.c
 This is the main request handler. 99.99% of your applications will
 only provide this one handler.
 
-\subsection{PythonInitHandler\label{dir-handlers-pih}}
-\index{PythonInitHandler}
-
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
-\emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
-server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
-not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
-mod_python.c
-
-This handler is the first handler called in the request processing
-phases that is allowed both inside and outside \file{.htaccess} and
-directory.
-
-This handler is actually an alias to two different handlers. When
-specified in the main config file outside any directory tags, it is an
-alias to \code{PostReadRequestHandler}. When specified inside directory
-(where \code{PostReadRequestHandler} is not allowed), it aliases to
-\code{PythonHeaderParserHandler}.
-
-\emph{(This idea was borrowed from mod_perl)}
-
 \subsection{PythonLogHandler\label{dir-handlers-plh}}
 \index{PythonLogHandler}
 
@@ -271,7 +295,7 @@ not None\\
 mod_python.c
 
 This routine is called to perform any module-specific logging
-activities over and above the normal server things.
+activities. 
 
 \subsection{PythonCleanupHandler\label{dir-handlers-pch}}
 \index{PythonCleanupHandler}
@@ -305,25 +329,43 @@ registered with \code{req.register_cleanup()}.
 
 \section{Other Directives\label{dir-other}}
 
-\subsection{PythonEnablePdb\label{dir-other-epd}}
-\index{PythonEnablePdb}
+\subsection{PythonInputFilter\label{dir-other-if}}
+\index{PythonInputFilter}
 
 \strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
-PythonEnablePdb \{On, Off\} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
-PythonEnablePdb Off\\
+PythonInputFilter handler name\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
-server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
-not None\\
+server config\\
 \citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
-When On, mod_python will execute the handler functions within the
-Python debugger pdb using the \code{pdb.runcall()} function.
+Registers an input filter \var{handler} under name
+\var{name}. \var{Handler} is a module name optionally followed
+\code{::} and a callable object name. If callable object name is
+omited, it will default to "inputfilter". \var{Name} is the name under
+which the filter is registered, by convention filter names are usually
+in all caps.
 
-Because pdb is an interactive tool, start httpd with the -X option
-when using this directive.
+To activate the filter, use the \code{AddInputFilter} directive.
+
+\subsection{PythonOutputFilter\label{dir-other-if}}
+\index{PythonOutputFilter}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonOutputFilter handler name\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Registers an output filter \var{handler} under name
+\var{name}. \var{Handler} is a module name optionally followed
+\code{::} and a callable object name. If callable object name is
+omited, it will default to "outputfilter". \var{Name} is the name under
+which the filter is registered, by convention filter names are usually
+in all caps.
+
+To activate the filter, use the \code{AddOutputFilter} directive.
 
 \subsection{PythonDebug\label{dir-other-pd}}
 \index{PythonDebug}

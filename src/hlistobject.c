@@ -44,7 +44,7 @@
  *
  * hlist.c 
  *
- * $Id: hlistobject.c,v 1.3 2001/11/28 05:31:47 gtrubetskoy Exp $
+ * $Id: hlistobject.c,v 1.4 2002/08/22 21:09:08 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -67,7 +67,7 @@ PyObject *MpHList_FromHLEntry(hl_entry *hle)
     result = PyMem_NEW(hlistobject, 1);
     result->ob_type = &MpHList_Type;
     if (! result) 
-	PyErr_NoMemory();
+        PyErr_NoMemory();
 
     /* XXX need second arg abort function to report mem error */
     apr_pool_sub_make(&p, NULL, NULL);
@@ -122,7 +122,6 @@ static struct memberlist hlist_memberlist[] = {
     {NULL}  /* Sentinel */
 };
 
-
 /**
  ** hlist_dealloc
  **
@@ -131,7 +130,7 @@ static struct memberlist hlist_memberlist[] = {
 static void hlist_dealloc(hlistobject *self)
 {  
     if (self->pool)
-	apr_pool_destroy(self->pool);
+        apr_pool_destroy(self->pool);
     free(self);
 }
 
@@ -146,19 +145,47 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
 
     res = Py_FindMethod(hlistmethods, (PyObject *)self, name);
     if (res != NULL)
-	return res;
+        return res;
 
     PyErr_Clear();
 
     /* when we are at the end of the list, everything
        would return None */
     if (! self->head) {
-	Py_INCREF(Py_None);
-	return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
     }
 
     return PyMember_Get((char *)self->head, hlist_memberlist, name);
 
+}
+
+/**
+ ** hlist_repr
+ **
+ *
+ */
+
+static int hlist_repr(hlistobject *self)
+{
+    PyObject *s = PyString_FromString("{");
+    if (self->head->handler) {
+        PyString_ConcatAndDel(&s, PyString_FromString("'handler:'"));
+        PyString_ConcatAndDel(&s, PyString_FromString(self->head->handler));
+        PyString_ConcatAndDel(&s, PyString_FromString("'"));
+    }
+    if (self->head->directory) {
+        PyString_ConcatAndDel(&s, PyString_FromString(",'directory':'"));
+        PyString_ConcatAndDel(&s, PyString_FromString(self->head->directory));
+        PyString_ConcatAndDel(&s, PyString_FromString("'"));
+    }
+    PyString_ConcatAndDel(&s, PyString_FromString(",'silent':"));
+    if (self->head->silent)
+        PyString_ConcatAndDel(&s, PyString_FromString("1}"));
+    else
+        PyString_ConcatAndDel(&s, PyString_FromString("0}"));
+
+    return s;
 }
 
 PyTypeObject MpHList_Type = {
@@ -172,7 +199,7 @@ PyTypeObject MpHList_Type = {
     (getattrfunc) hlist_getattr,     /*tp_getattr*/
     0,                               /*tp_setattr*/
     0,                               /*tp_compare*/
-    0,                               /*tp_repr*/
+    (reprfunc)hlist_repr,            /*tp_repr*/
     0,                               /*tp_as_number*/
     0,                               /*tp_as_sequence*/
     0,                               /*tp_as_mapping*/

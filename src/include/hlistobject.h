@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
+ * Copyright (c) 2002 Gregory Trubetskoy.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,7 +44,7 @@
  *
  * hlistobject.h 
  *
- * $Id: hlistobject.h,v 1.1 2001/11/03 04:26:43 gtrubetskoy Exp $
+ * $Id: hlistobject.h,v 1.2 2002/08/22 21:09:09 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.

@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.24 2002/08/19 20:12:49 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.25 2002/08/22 21:09:08 gtrubetskoy Exp $
  *
  */
 
@@ -64,11 +64,11 @@ PyObject * MpRequest_FromRequest(request_rec *req)
 
     result = PyMem_NEW(requestobject, 1);
     if (! result)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     result->dict = PyDict_New();
     if (!result->dict)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
     result->request_rec = req;
     result->ob_type = &MpRequest_Type;
     result->connection = NULL;
@@ -123,19 +123,19 @@ static PyObject * req_add_common_vars(requestobject *self, PyObject *args)
 static int valid_phase(const char *p)
 {
     if ((strcmp(p, "PythonHandler") != 0) &&
-	(strcmp(p, "PythonAuthenHandler") != 0) &&
-	(strcmp(p, "PythonPostReadRequestHandler") != 0) &&
-	(strcmp(p, "PythonTransHandler") != 0) &&
-	(strcmp(p, "PythonHeaderParserHandler") != 0) &&
-	(strcmp(p, "PythonAccessHandler") != 0) &&
-	(strcmp(p, "PythonAuthzHandler") != 0) &&
-	(strcmp(p, "PythonTypeHandler") != 0) &&
-	(strcmp(p, "PythonFixupHandler") != 0) &&
-	(strcmp(p, "PythonLogHandler") != 0) &&
-	(strcmp(p, "PythonInitHandler") != 0))
-	return 0;
+        (strcmp(p, "PythonAuthenHandler") != 0) &&
+        (strcmp(p, "PythonPostReadRequestHandler") != 0) &&
+        (strcmp(p, "PythonTransHandler") != 0) &&
+        (strcmp(p, "PythonHeaderParserHandler") != 0) &&
+        (strcmp(p, "PythonAccessHandler") != 0) &&
+        (strcmp(p, "PythonAuthzHandler") != 0) &&
+        (strcmp(p, "PythonTypeHandler") != 0) &&
+        (strcmp(p, "PythonFixupHandler") != 0) &&
+        (strcmp(p, "PythonLogHandler") != 0) &&
+        (strcmp(p, "PythonInitHandler") != 0))
+        return 0;
     else
-	return 1;
+        return 1;
 }
 
 /**
@@ -155,10 +155,10 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
         return NULL;
 
     if (! valid_phase(phase)) {
-	PyErr_SetString(PyExc_IndexError, 
-			apr_psprintf(self->request_rec->pool,
-				     "Invalid phase: %s", phase));
-	return NULL;
+        PyErr_SetString(PyExc_IndexError, 
+                        apr_psprintf(self->request_rec->pool,
+                                     "Invalid phase: %s", phase));
+        return NULL;
     }
     
     /* which phase are we processing? */
@@ -167,30 +167,30 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     /* are we in same phase as what's being added? */
     if (strcmp(currphase, phase) == 0) {
 
-	/* then just append to hlist */
-	hlist_append(self->request_rec->pool, self->hlo->head,
-		     handler, dir, 0);
+        /* then just append to hlist */
+        hlist_append(self->request_rec->pool, self->hlo->head,
+                     handler, dir, 0);
     }
     else {
+        /* this is a phase that we're not in */
 
-	/* this is a phase that we're not in */
-	py_req_config *req_config;
-	hl_entry *hle;
+        py_req_config *req_config;
+        hl_entry *hle;
 
-	/* get request config */
-	req_config = (py_req_config *) 
-	    ap_get_module_config(self->request_rec->request_config,
-				 &python_module);
+        /* get request config */
+        req_config = (py_req_config *) 
+            ap_get_module_config(self->request_rec->request_config,
+                                 &python_module);
 
-	hle = apr_hash_get(req_config->dynhls, phase, APR_HASH_KEY_STRING);
+        hle = apr_hash_get(req_config->dynhls, phase, APR_HASH_KEY_STRING);
 
-	if (! hle) {
-	    hle = hlist_new(self->request_rec->pool, handler, dir, 0);
-	    apr_hash_set(req_config->dynhls, phase, APR_HASH_KEY_STRING, hle);
-	}
-	else {
-	    hlist_append(self->request_rec->pool, hle, handler, dir, 0);
-	}
+        if (! hle) {
+            hle = hlist_new(self->request_rec->pool, handler, dir, 0);
+            apr_hash_set(req_config->dynhls, phase, APR_HASH_KEY_STRING, hle);
+        }
+        else {
+            hlist_append(self->request_rec->pool, hle, handler, dir, 0);
+        }
     }
     
     Py_INCREF(Py_None);
@@ -212,41 +212,41 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
     int len, i;
 
     if (! PyArg_ParseTuple(args, "O|i", &methods, &reset)) 
-	return NULL;
+        return NULL;
 
     if (! PySequence_Check(methods)){
-	PyErr_SetString(PyExc_TypeError,
-			"First argument must be a sequence");
-	return NULL;
+        PyErr_SetString(PyExc_TypeError,
+                        "First argument must be a sequence");
+        return NULL;
     }
 
     len = PySequence_Length(methods);
 
     if (len) {
 
-	PyObject *method;
+        PyObject *method;
 
-	method = PySequence_GetItem(methods, 0);
-	if (! PyString_Check(method)) {
-	    PyErr_SetString(PyExc_TypeError, 
-			    "Methods must be strings");
-	    return NULL;
-	}
+        method = PySequence_GetItem(methods, 0);
+        if (! PyString_Check(method)) {
+            PyErr_SetString(PyExc_TypeError, 
+                            "Methods must be strings");
+            return NULL;
+        }
 
-	ap_allow_methods(self->request_rec, (reset == REPLACE_ALLOW), 
-			 PyString_AS_STRING(method), NULL);
+        ap_allow_methods(self->request_rec, (reset == REPLACE_ALLOW), 
+                         PyString_AS_STRING(method), NULL);
 
-	for (i = 1; i < len; i++) {
-	    method = PySequence_GetItem(methods, i);
-	    if (! PyString_Check(method)) {
-		PyErr_SetString(PyExc_TypeError, 
-				"Methods must be strings");
-		return NULL;
-	    }
+        for (i = 1; i < len; i++) {
+            method = PySequence_GetItem(methods, i);
+            if (! PyString_Check(method)) {
+                PyErr_SetString(PyExc_TypeError, 
+                                "Methods must be strings");
+                return NULL;
+            }
 
-	    ap_allow_methods(self->request_rec, MERGE_ALLOW, 
-			     PyString_AS_STRING(method), NULL);
-	}
+            ap_allow_methods(self->request_rec, MERGE_ALLOW, 
+                             PyString_AS_STRING(method), NULL);
+        }
     }
     
     Py_INCREF(Py_None);
@@ -281,10 +281,10 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
     req = self->request_rec;
 
     if (! ap_get_basic_auth_pw(req, &pw))
-	return PyString_FromString(pw);
+        return PyString_FromString(pw);
     else {
-	Py_INCREF(Py_None);
-	return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
     }
 }
 
@@ -298,8 +298,8 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
 static PyObject * req_get_config(requestobject *self, PyObject *args)
 {
     py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
+        (py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+                                               &python_module);
     return MpTable_FromTable(conf->directives);
 }
 
@@ -319,9 +319,9 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
     char *exts = get_addhandler_extensions(self->request_rec);
 
     if (exts) 
-	return PyString_FromString(exts);
+        return PyString_FromString(exts);
     else {
-	Py_INCREF(Py_None);
+        Py_INCREF(Py_None);
         return Py_None;
     }
 }
@@ -341,28 +341,28 @@ static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
     const char *host;
 
     if (! PyArg_ParseTuple(args, "|iO", &type, &str_is_ip)) 
-	return NULL;
+        return NULL;
     
     if (str_is_ip != Py_None) {
-	host = ap_get_remote_host(self->request_rec->connection, 
-				  self->request_rec->per_dir_config, type, &_str_is_ip);
+        host = ap_get_remote_host(self->request_rec->connection, 
+                                  self->request_rec->per_dir_config, type, &_str_is_ip);
     }
     else {
-	host = ap_get_remote_host(self->request_rec->connection, 
-				  self->request_rec->per_dir_config, type, NULL);
+        host = ap_get_remote_host(self->request_rec->connection, 
+                                  self->request_rec->per_dir_config, type, NULL);
     }
 
     if (! host) {
-	Py_INCREF(Py_None);
-	return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
     }
     else {
-	if (str_is_ip != Py_None) {
-	    return Py_BuildValue("(s,i)", host, _str_is_ip);
-	}
-	else {
-	    return PyString_FromString(host);
-	}
+        if (str_is_ip != Py_None) {
+            return Py_BuildValue("(s,i)", host, _str_is_ip);
+        }
+        else {
+            return PyString_FromString(host);
+        }
     }
 }
 
@@ -374,8 +374,8 @@ static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
 static PyObject * req_get_options(requestobject *self, PyObject *args)
 {
     py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
+        (py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+                                               &python_module);
     return MpTable_FromTable(conf->options);
 }
 
@@ -421,51 +421,51 @@ static PyObject * req_read(requestobject *self, PyObject *args)
     long len = -1;
 
     if (! PyArg_ParseTuple(args, "|l", &len)) 
-	return NULL;
+        return NULL;
 
     if (len == 0) {
-	return PyString_FromString("");
+        return PyString_FromString("");
     }
 
     /* is this the first read? */
     if (! self->request_rec->read_length) {
 
-	/* then do some initial setting up */
-	rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
-	if(rc != OK) {
-	    PyObject *val = PyInt_FromLong(rc);
-	    if (val == NULL)
-		return NULL;
-	    PyErr_SetObject(get_ServerReturn(), val);
-	    Py_DECREF(val);
-	    return NULL;
-	}
+        /* then do some initial setting up */
+        rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
+        if(rc != OK) {
+            PyObject *val = PyInt_FromLong(rc);
+            if (val == NULL)
+                return NULL;
+            PyErr_SetObject(get_ServerReturn(), val);
+            Py_DECREF(val);
+            return NULL;
+        }
 
-	if (! ap_should_client_block(self->request_rec)) {
-	    /* client has nothing to send */
-	    return PyString_FromString("");
-	}
+        if (! ap_should_client_block(self->request_rec)) {
+            /* client has nothing to send */
+            return PyString_FromString("");
+        }
     }
 
     if (len < 0)
-	/* XXX ok to use request_rec->remaining? */
-	len = self->request_rec->remaining +
-	    (self->rbuff_len - self->rbuff_pos);
+        /* XXX ok to use request_rec->remaining? */
+        len = self->request_rec->remaining +
+            (self->rbuff_len - self->rbuff_pos);
 
     result = PyString_FromStringAndSize(NULL, len);
 
     /* possibly no more memory */
     if (result == NULL) 
-	return NULL;
+        return NULL;
 
     buffer = PyString_AS_STRING((PyStringObject *) result);
 
     /* if anything left in the readline buffer */
     while ((self->rbuff_pos < self->rbuff_len) && (copied < len))
-	buffer[copied++] = self->rbuff[self->rbuff_pos++];
+        buffer[copied++] = self->rbuff[self->rbuff_pos++];
     
     if (copied == len)
-	return result; 	/* we're done! */
+        return result;  /* we're done! */
 
     /* read it in */
     Py_BEGIN_ALLOW_THREADS
@@ -475,23 +475,23 @@ static PyObject * req_read(requestobject *self, PyObject *args)
 
     /* if this is a "short read", try reading more */
     while ((bytes_read < len) && (chunk_len != 0)) {
-	Py_BEGIN_ALLOW_THREADS
-	chunk_len = ap_get_client_block(self->request_rec, 
-					buffer+bytes_read, len-bytes_read);
-	Py_END_ALLOW_THREADS
-	if (chunk_len == -1) {
-	    PyErr_SetObject(PyExc_IOError, 
-			    PyString_FromString("Client read error (Timeout?)"));
-	    return NULL;
-	}
-	else
-	    bytes_read += chunk_len;
+        Py_BEGIN_ALLOW_THREADS
+        chunk_len = ap_get_client_block(self->request_rec, 
+                                        buffer+bytes_read, len-bytes_read);
+        Py_END_ALLOW_THREADS
+        if (chunk_len == -1) {
+            PyErr_SetObject(PyExc_IOError, 
+                            PyString_FromString("Client read error (Timeout?)"));
+            return NULL;
+        }
+        else
+            bytes_read += chunk_len;
     }
 
     /* resize if necessary */
     if (bytes_read < len) 
-	if(_PyString_Resize(&result, bytes_read))
-	    return NULL;
+        if(_PyString_Resize(&result, bytes_read))
+            return NULL;
 
     return result;
 }
@@ -513,100 +513,100 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
     long len = -1;
 
     if (! PyArg_ParseTuple(args, "|l", &len)) 
-	return NULL;
+        return NULL;
 
     if (len == 0) {
-	return PyString_FromString("");
+        return PyString_FromString("");
     }
 
     /* is this the first read? */
     if (! self->request_rec->read_length) {
 
-	/* then do some initial setting up */
-	rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
+        /* then do some initial setting up */
+        rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
 
-	if(rc != OK) {
-	    PyObject *val = PyInt_FromLong(rc);
-	    if (val == NULL)
-		return NULL;
-	    PyErr_SetObject(get_ServerReturn(), val);
-	    Py_DECREF(val);
-	    return NULL;
-	}
+        if(rc != OK) {
+            PyObject *val = PyInt_FromLong(rc);
+            if (val == NULL)
+                return NULL;
+            PyErr_SetObject(get_ServerReturn(), val);
+            Py_DECREF(val);
+            return NULL;
+        }
 
-	if (! ap_should_client_block(self->request_rec)) {
-	    /* client has nothing to send */
-	    return PyString_FromString("");
-	}
+        if (! ap_should_client_block(self->request_rec)) {
+            /* client has nothing to send */
+            return PyString_FromString("");
+        }
     }
 
     if (len < 0)
-	len = self->request_rec->remaining + 
-	    (self->rbuff_len - self->rbuff_pos);
+        len = self->request_rec->remaining + 
+            (self->rbuff_len - self->rbuff_pos);
 
     /* create the result buffer */
     result = PyString_FromStringAndSize(NULL, len);
 
     /* possibly no more memory */
     if (result == NULL) 
-	return NULL;
+        return NULL;
 
     buffer = PyString_AS_STRING((PyStringObject *) result);
 
     /* is there anything left in the rbuff from previous reads? */
     if (self->rbuff_pos < self->rbuff_len) {
-	
-	/* if yes, process that first */
-	while (self->rbuff_pos < self->rbuff_len) {
+        
+        /* if yes, process that first */
+        while (self->rbuff_pos < self->rbuff_len) {
 
-	    buffer[copied++] = self->rbuff[self->rbuff_pos];
-	    if ((self->rbuff[self->rbuff_pos++] == '\n') || 
-		(copied == len)) {
+            buffer[copied++] = self->rbuff[self->rbuff_pos];
+            if ((self->rbuff[self->rbuff_pos++] == '\n') || 
+                (copied == len)) {
 
-		/* our work is done */
+                /* our work is done */
 
-		/* resize if necessary */
-		if (copied < len) 
-		    if(_PyString_Resize(&result, copied))
-			return NULL;
+                /* resize if necessary */
+                if (copied < len) 
+                    if(_PyString_Resize(&result, copied))
+                        return NULL;
 
-		return result;
-	    }
-	}
+                return result;
+            }
+        }
     }
 
     /* if got this far, the buffer should be empty, we need to read more */
-	
+        
     /* create a read buffer */
     self->rbuff_len = len > HUGE_STRING_LEN ? len : HUGE_STRING_LEN;
     self->rbuff_pos = self->rbuff_len;
     self->rbuff = apr_palloc(self->request_rec->pool, self->rbuff_len);
     if (! self->rbuff)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     /* read it in */
     Py_BEGIN_ALLOW_THREADS
-	chunk_len = ap_get_client_block(self->request_rec, self->rbuff, 
-					self->rbuff_len);
+        chunk_len = ap_get_client_block(self->request_rec, self->rbuff, 
+                                        self->rbuff_len);
     Py_END_ALLOW_THREADS;
     bytes_read = chunk_len;
 
     /* if this is a "short read", try reading more */
     while ((chunk_len != 0 ) && (bytes_read + copied < len)) {
 
-	Py_BEGIN_ALLOW_THREADS
-	    chunk_len = ap_get_client_block(self->request_rec, 
-					    self->rbuff + bytes_read, 
-					    self->rbuff_len - bytes_read);
-	Py_END_ALLOW_THREADS
+        Py_BEGIN_ALLOW_THREADS
+            chunk_len = ap_get_client_block(self->request_rec, 
+                                            self->rbuff + bytes_read, 
+                                            self->rbuff_len - bytes_read);
+        Py_END_ALLOW_THREADS
 
-	if (chunk_len == -1) {
-	    PyErr_SetObject(PyExc_IOError, 
-			    PyString_FromString("Client read error (Timeout?)"));
-	    return NULL;
-	}
-	else
-	    bytes_read += chunk_len;
+        if (chunk_len == -1) {
+            PyErr_SetObject(PyExc_IOError, 
+                            PyString_FromString("Client read error (Timeout?)"));
+            return NULL;
+        }
+        else
+            bytes_read += chunk_len;
     }
     self->rbuff_len = bytes_read;
     self->rbuff_pos = 0;
@@ -614,17 +614,17 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
     /* now copy the remaining bytes */
     while (self->rbuff_pos < self->rbuff_len) {
 
-	buffer[copied++] = self->rbuff[self->rbuff_pos];
-	if ((self->rbuff[self->rbuff_pos++] == '\n') || 
-	    (copied == len)) 
-	    /* our work is done */
-	    break;
+        buffer[copied++] = self->rbuff[self->rbuff_pos];
+        if ((self->rbuff[self->rbuff_pos++] == '\n') || 
+            (copied == len)) 
+            /* our work is done */
+            break;
     }
 
     /* resize if necessary */
     if (copied < len) 
-	if(_PyString_Resize(&result, copied))
-	    return NULL;
+        if(_PyString_Resize(&result, copied))
+            return NULL;
 
     return result;
 }
@@ -644,26 +644,26 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
     long size = 0;
 
     if (! PyArg_ParseTuple(args, "|l", &sizehint)) 
-	return NULL;
+        return NULL;
 
     if (result == NULL)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     rlargs = PyTuple_New(0);
     if (result == NULL)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
 
     line = req_readline(self, rlargs);
     while (line && !(strcmp(PyString_AsString(line), "") == 0)) {
-	PyList_Append(result, line);
-	size += PyString_Size(line);
-	if (sizehint && (size >= size))
-	    break;
-	line = req_readline(self, args);
+        PyList_Append(result, line);
+        size += PyString_Size(line);
+        if (sizehint && (size >= size))
+            break;
+        line = req_readline(self, args);
     }
 
     if (!line)
-	return NULL;
+        return NULL;
 
     return result;
 }
@@ -682,33 +682,33 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
     PyObject *data = NULL;
 
     if (! PyArg_ParseTuple(args, "O|O", &handler, &data))
-	return NULL;  /* bad args */
+        return NULL;  /* bad args */
 
     ci = (cleanup_info *)malloc(sizeof(cleanup_info));
     ci->request_rec = self->request_rec;
     ci->server_rec = self->request_rec->server;
     if (PyCallable_Check(handler)) {
-	Py_INCREF(handler);
-	ci->handler = handler;
-	ci->interpreter = self->interpreter;
-	if (data) {
-	    Py_INCREF(data);
-	    ci->data = data;
-	}
-	else {
-	    Py_INCREF(Py_None);
-	    ci->data = Py_None;
-	}
+        Py_INCREF(handler);
+        ci->handler = handler;
+        ci->interpreter = self->interpreter;
+        if (data) {
+            Py_INCREF(data);
+            ci->data = data;
+        }
+        else {
+            Py_INCREF(Py_None);
+            ci->data = Py_None;
+        }
     }
     else {
-	PyErr_SetString(PyExc_ValueError, 
-			"first argument must be a callable object");
-	free(ci);
-	return NULL;
+        PyErr_SetString(PyExc_ValueError, 
+                        "first argument must be a callable object");
+        free(ci);
+        return NULL;
     }
 
     apr_pool_cleanup_register(self->request_rec->pool, ci, python_cleanup, 
-			      apr_pool_cleanup_null);
+                              apr_pool_cleanup_null);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -739,15 +739,15 @@ static PyObject * req_write(requestobject *self, PyObject *args)
     char *buff;
 
     if (! PyArg_ParseTuple(args, "s#", &buff, &len))
-	return NULL;  /* bad args */
+        return NULL;  /* bad args */
 
     Py_BEGIN_ALLOW_THREADS
     ap_rwrite(buff, len, self->request_rec);
     rc = ap_rflush(self->request_rec);
     Py_END_ALLOW_THREADS
     if (rc == EOF) {
-	PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
-	return NULL;
+        PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
+        return NULL;
     }
 
     Py_INCREF(Py_None);
@@ -787,33 +787,33 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
     PyObject *result = NULL;
 
     if (strcmp(name, "connection") == 0) {
-	if (!self->connection && !self->request_rec->connection)
-	    self->connection = MpConn_FromConn(self->request_rec->connection);
-	result = self->connection;
+        if (!self->connection && !self->request_rec->connection)
+            self->connection = MpConn_FromConn(self->request_rec->connection);
+        result = self->connection;
     }
     else if (strcmp(name, "server") == 0) {
-	if (!self->server && !self->request_rec->server) 
-	    self->server = MpServer_FromServer(self->request_rec->server);
-	result = self->server;
+        if (!self->server && !self->request_rec->server) 
+            self->server = MpServer_FromServer(self->request_rec->server);
+        result = self->server;
     }
     else if (strcmp(name, "next") == 0) {
-	if (!self->next && !self->request_rec->next)
-	    self->next = MpRequest_FromRequest(self->request_rec->next);
-	result = self->next;
+        if (!self->next && !self->request_rec->next)
+            self->next = MpRequest_FromRequest(self->request_rec->next);
+        result = self->next;
     }
     else if (strcmp(name, "prev") == 0) {
-	if (!self->prev && !self->request_rec->prev)
-	    self->prev = MpRequest_FromRequest(self->request_rec->prev);
-	result = self->prev;
+        if (!self->prev && !self->request_rec->prev)
+            self->prev = MpRequest_FromRequest(self->request_rec->prev);
+        result = self->prev;
     }
     else if (strcmp(name, "main") == 0) {
-	if (!self->main && !self->request_rec->main)
-	    self->main = MpRequest_FromRequest(self->request_rec->main);
-	result = self->main;
+        if (!self->main && !self->request_rec->main)
+            self->main = MpRequest_FromRequest(self->request_rec->main);
+        result = self->main;
     }
 
     if (!result)
-	result = Py_None;
+        result = Py_None;
 
     Py_INCREF(result);
     return result;
@@ -886,7 +886,7 @@ static struct memberlist request_rec_mbrs[] = {
 static PyObject *getreq_recmbr(requestobject *self, void *name) 
 {
     return PyMember_Get((char*)self->request_rec, request_rec_mbrs, 
-			(char*)name);
+                        (char*)name);
 }
 
 /**
@@ -898,36 +898,36 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
 static int setreq_recmbr(requestobject *self, PyObject *val, void *name) 
 {
     if (strcmp(name, "content_type") == 0) {
-	if (! PyString_Check(val)) {
-	    PyErr_SetString(PyExc_TypeError, "content_type must be a string");
-	    return -1;
-	}
-	self->request_rec->content_type = 
-	    apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
-	self->content_type_set = 1;
-	return 0;
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "content_type must be a string");
+            return -1;
+        }
+        self->request_rec->content_type = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        self->content_type_set = 1;
+        return 0;
     } 
     else if (strcmp(name, "user") == 0) {
-	if (! PyString_Check(val)) {
-	    PyErr_SetString(PyExc_TypeError, "user must be a string");
-	    return -1;
-	}
-	self->request_rec->user = 
-	    apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
-	return 0;
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "user must be a string");
+            return -1;
+        }
+        self->request_rec->user = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
     }
     else if (strcmp(name, "filename") == 0) {
-	if (! PyString_Check(val)) {
-	    PyErr_SetString(PyExc_TypeError, "filename must be a string");
-	    return -1;
-	}
-	self->request_rec->filename = 
-	    apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
-	return 0;
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "filename must be a string");
+            return -1;
+        }
+        self->request_rec->filename = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
     }
     
     return PyMember_Set((char*)self->request_rec, request_rec_mbrs, 
-			(char*)name, val);
+                        (char*)name, val);
 }
 
 /**
@@ -940,7 +940,7 @@ static PyObject *getreq_rec_ah(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     apr_array_header_t *ah = 
-	(apr_array_header_t *)(self->request_rec + md->offset);
+        (apr_array_header_t *)(self->request_rec + md->offset);
 
     return tuple_from_array_header(ah);
 }
@@ -955,7 +955,7 @@ static PyObject *getreq_rec_ml(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     ap_method_list_t *ml = 
-	(ap_method_list_t *)(self->request_rec + md->offset);
+        (ap_method_list_t *)(self->request_rec + md->offset);
 
     return tuple_from_method_list(ml);
 }
@@ -970,7 +970,7 @@ static PyObject *getreq_rec_fi(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     apr_finfo_t *fi = 
-	(apr_finfo_t *)(self->request_rec + md->offset);
+        (apr_finfo_t *)(self->request_rec + md->offset);
 
     return tuple_from_finfo(fi);
 }
@@ -985,7 +985,7 @@ static PyObject *getreq_rec_uri(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     apr_uri_t *uri = 
-	(apr_uri_t *)(self->request_rec + md->offset);
+        (apr_uri_t *)(self->request_rec + md->offset);
 
     return tuple_from_apr_uri(uri);
 }
@@ -1108,30 +1108,30 @@ PyTypeObject MpRequest_Type = {
     0,                               /*tp_as_sequence*/
     0,                               /*tp_as_mapping*/
     0,                               /*tp_hash*/
-    0,				     /* tp_call */
-    0,				     /* tp_str */
+    0,                               /* tp_call */
+    0,                               /* tp_str */
     PyObject_GenericGetAttr,         /* tp_getattro */
-    PyObject_GenericSetAttr,	     /* tp_setattro */
-    0,				     /* tp_as_buffer */
+    PyObject_GenericSetAttr,         /* tp_setattro */
+    0,                               /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
-    Py_TPFLAGS_BASETYPE,	     /* tp_flags */
-    request_doc,		     /* tp_doc */
-    0,	                             /* tp_traverse */
-    0,	                             /* tp_clear */
-    0,		                     /* tp_richcompare */
-    0,				     /* tp_weaklistoffset */
-    0,	                             /* tp_iter */
-    0,				     /* tp_iternext */
-    request_methods,		     /* tp_methods */
-    request_members,		     /* tp_members */
-    request_getsets,		     /* tp_getset */
-    0,				     /* tp_base */
-    0,				     /* tp_dict */
-    0,				     /* tp_descr_get */
-    0,				     /* tp_descr_set */
+    Py_TPFLAGS_BASETYPE,             /* tp_flags */
+    request_doc,                     /* tp_doc */
+    0,                               /* tp_traverse */
+    0,                               /* tp_clear */
+    0,                               /* tp_richcompare */
+    0,                               /* tp_weaklistoffset */
+    0,                               /* tp_iter */
+    0,                               /* tp_iternext */
+    request_methods,                 /* tp_methods */
+    request_members,                 /* tp_members */
+    request_getsets,                 /* tp_getset */
+    0,                               /* tp_base */
+    0,                               /* tp_dict */
+    0,                               /* tp_descr_get */
+    0,                               /* tp_descr_set */
     offsetof(requestobject, dict),   /* tp_dictoffset */
-    0,	                             /* tp_init */
-    0,		                     /* tp_alloc */
+    0,                               /* tp_init */
+    0,                               /* tp_alloc */
     0,                               /* tp_new */
     (destructor)request_dealloc,     /* tp_free */
 };
