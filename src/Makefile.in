@@ -63,7 +63,7 @@ MKDEP=@MKDEP@
 # requires flex 2.5.31 for reentrant support
 LEX=/usr/local/bin/flex
 INCLUDES=@INCLUDES@
-LIBS=@LIBS@ -ll
+LIBS=@LIBS@
 LDFLAGS=@LDFLAGS@
 OPT=
 CFLAGS=$(OPT) $(INCLUDES) 

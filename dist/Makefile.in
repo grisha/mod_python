@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.7 2003/06/13 02:52:03 sterling Exp $
+ # $Id: Makefile.in,v 1.8 2003/10/15 01:32:20 grisha Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
@@ -73,7 +73,7 @@ install: install_py_lib
 # this may require root privilidges
 install_py_lib: mod_python src
 	@cd src; $(MAKE) psp_parser.c
-	$(PYTHON_BIN) setup.py install --optimize 2 --force; \
+	$(PYTHON_BIN) setup.py install --optimize 2 --force
 
 mod_python.so:
 	@echo "Please place a WIN32 compiled mod_python.so in this directory"
