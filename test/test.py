@@ -1128,6 +1128,15 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok, interpreter=test_publisher"):
             self.fail(`rsp`)
 
+        # XXX is this OK ?
+        rsp = self.vhost_get("test_publisher", path="/tests.py/test_dict/items")
+        if (rsp != '[(1, 1), (2, 2), (3, 3)]'):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py/test_dict_keys")
+        if (rsp != '[1, 2, 3]'):
+            self.fail(`rsp`)
+
     def test_publisher_security_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
@@ -1161,19 +1170,27 @@ class PerRequestTestCase(unittest.TestCase):
 
         status, response = get_status("/tests.py/re")
         if status != 403:
-            self.fail('Vulnerability : module access (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : module published (%i)\n%s'%(status,response))
 
         status, response = get_status("/tests.py/OldStyleClassTest")
         if status != 403:
-            self.fail('Vulnerability : old style class access (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : old style class published (%i)\n%s'%(status,response))
 
         status, response = get_status("/tests.py/InstanceTest")
         if status != 403:
-            self.fail('Vulnerability : new style class access (%i)\n%s'%(status,response))
+            self.fail('Vulnerability : new style class published (%i)\n%s'%(status,response))
 
         status, response = get_status("/tests.py/index/func_code")
         if status != 403:
             self.fail('Vulnerability : function traversal (%i)\n%s'%(status,response))
+
+        status, response = get_status("/tests.py/old_instance/traverse/func_code")
+        if status != 403:
+            self.fail('Vulnerability : old-style method traversal (%i)\n%s'%(status,response))
+
+        status, response = get_status("/tests.py/instance/traverse/func_code")
+        if status != 403:
+            self.fail('Vulnerability : new-style method traversal (%i)\n%s'%(status,response))
 
     def test_publisher_old_style_instance_conf(self):
         c = VirtualHost("*",
@@ -1311,9 +1328,9 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
-        perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_old_style_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
