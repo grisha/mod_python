@@ -107,10 +107,11 @@ def handler(req):
     # step through fields
     for field in fs.list:
         
-        # if it is a file, make File()
         if field.filename:
-            val = File(field)
+            # this is a file
+            val = field
         else:
+            # this is a simple string
             val = field.value
 
         if args.has_key(field.name):
@@ -325,19 +326,6 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
 
     return obj
 
-
-class File:
-    """ Like a file, but also has headers and filename
-    """
-
-    def __init__(self, field):
-
-        # steal all the file-like methods
-        for m in dir(field.file):
-            self.__dict__[m] = getattr(field.file, m)
-
-        self.headers = field.headers
-        self.filename = field.filename
     
         
 
