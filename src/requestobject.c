@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.34 2002/10/10 21:28:32 grisha Exp $
+ * $Id: requestobject.c,v 1.35 2002/10/15 15:47:31 grisha Exp $
  *
  */
 
@@ -1119,6 +1119,7 @@ static PyGetSetDef request_getsets[] = {
     {NULL}  /* Sentinel */
 };
 
+#undef OFF
 #define OFF(x) offsetof(requestobject, x)
 
 static struct PyMemberDef request_members[] = {

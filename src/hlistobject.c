@@ -57,7 +57,7 @@
  *
  * hlist.c 
  *
- * $Id: hlistobject.c,v 1.5 2002/09/12 18:24:06 gstein Exp $
+ * $Id: hlistobject.c,v 1.6 2002/10/15 15:47:31 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -179,7 +179,7 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
  *
  */
 
-static int hlist_repr(hlistobject *self)
+static PyObject *hlist_repr(hlistobject *self)
 {
     PyObject *s = PyString_FromString("{");
     if (self->head->handler) {

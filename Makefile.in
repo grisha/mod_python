@@ -83,9 +83,6 @@ no_static:
 	@echo "Static compilation not available. (Probably because --with-apache was not spcified)."
 	@echo
 
-do_static:
-	@cd src && $(MAKE) static
-
 install: src/.install
 	@if test "`cat src/.install`" = "dso"; then \
 		$(MAKE) install_dso; \
@@ -102,28 +99,6 @@ install_dso:	dso
 	@echo "    LoadModule python_module $(LIBEXECDIR)/mod_python.so"
 	@echo "and if your configuration uses ClearModuleList, then also"
 	@echo "    AddModule mod_python.c"
-	@echo
-
-install_static:	static
-	@echo
-	@echo "Performing static instalation."
-	@echo
-	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) -d $(AP_SRC)/src/modules/python
-	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/libpython.a $(AP_SRC)/src/modules/python/libpython.a
-	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/Makefile.libdir $(AP_SRC)/src/modules/python/Makefile.libdir
-	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/Makefile.tmpl $(AP_SRC)/src/modules/python/Makefile.tmpl
-	$(INSTALL) -o $(AP_SRC_OWN) -g $(AP_SRC_GRP) src/libpython.module $(AP_SRC)/src/modules/python/libpython.module
-	@$(MAKE) install_py_lib
-	@echo
-	@echo "Now cd into $(AP_SRC) and reconfigure and rebuild apache with"
-	@echo "    ./configure --activate-module=src/modules/python/libpython.a"
-	@echo "    make"
-	@echo 
-	@echo "or, if you use the old Configure method, add to your src/Configuration file"
-	@echo "    AddModule modules/python/libpython.a"
-	@echo "then, in src directory:"
-	@echo "    ./Configure"
-	@echo "    make"
 	@echo
 
 install_py_lib:

@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.18 2002/09/19 20:11:35 grisha Exp $
+ * $Id: _apachemodule.c,v 1.19 2002/10/15 15:47:31 grisha Exp $
  *
  */
 
@@ -92,7 +92,7 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
 	if (! level) 
 	    level = APLOG_NOERRNO|APLOG_ERR;
       
-	if (!server || server == Py_None)
+	if (!server || (PyObject *)server == Py_None)
 	    serv_rec = NULL;
 	else {
 	    if (! MpServer_Check(server)) {
@@ -358,7 +358,7 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
  *   Returns a copy of the config tree
  */
 
-static PyObject *config_tree()
+static PyObject *config_tree(void)
 {
     return cfgtree_walk(ap_conftree);
 }
@@ -369,7 +369,7 @@ static PyObject *config_tree()
  *   Returns ServerRoot
  */
 
-static PyObject *server_root()
+static PyObject *server_root(void)
 {
     return PyString_FromString(ap_server_root);
 }
