@@ -57,7 +57,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.15 2002/12/30 15:17:56 grisha Exp $
+ * $Id: serverobject.c,v 1.16 2003/02/28 04:38:16 grisha Exp $
  *
  */
 
@@ -177,8 +177,8 @@ static struct memberlist server_memberlist[] = {
     /* XXX implement module_config ? */
     /* XXX implement lookup_defaults ? */
     /* XXX implement server_addr_rec ? */
-    {"timeout",            T_INT,       OFF(timeout),            RO},
-    {"keep_alive_timeout", T_INT,       OFF(keep_alive_timeout), RO},
+    {"timeout",            NULL,        NULL,                    RO},
+    {"keep_alive_timeout", NULL,        NULL,                    RO},
     {"keep_alive_max",     T_INT,       OFF(keep_alive_max),     RO},
     {"keep_alive",         T_INT,       OFF(keep_alive),         RO},
     /* XXX send_buffer_size gone. where? document */
@@ -261,6 +261,12 @@ static PyObject * server_getattr(serverobject *self, char *name)
     }
     else if (strcmp(name, "restart_time") == 0) {
       return PyInt_FromLong((long)ap_scoreboard_image->global->restart_time);
+    }
+    else if (strcmp(name, "timeout") == 0) {
+      return PyLong_FromLongLong(self->server->timeout);
+    }
+    else if (strcmp(name, "keep_alive_timeout") == 0) {
+	return PyLong_FromLongLong(self->server->keep_alive_timeout);
     }
     else
 	return PyMember_Get((char *)self->server, server_memberlist, name);
