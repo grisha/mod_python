@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.7 2000/05/26 19:51:19 grisha Exp $
+  $Id: apache.py,v 1.8 2000/05/29 00:00:15 grisha Exp $
 
 """
 
@@ -477,12 +477,14 @@ def init():
     """
 
     # create a callback object
-    obCallBack = CallBack()
+    # obCallBack = CallBack()
 
-    import _apache
+    ## import _apache
 
     # "give it back" to the server
-    _apache.SetCallBack(obCallBack)
+    # _apache.SetCallBack(obCallBack)
+
+    return CallBack()
 
 ## Some functions made public
 make_table = _apache.make_table

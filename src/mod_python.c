@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.9 2000/05/26 19:51:19 grisha Exp $
+ * $Id: mod_python.c,v 1.10 2000/05/29 00:00:15 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -95,7 +95,7 @@
 
 #define VERSION_COMPONENT "mod_python/2.0"
 #define MODULENAME "mod_python.apache"
-#define INITSTRING "mod_python.apache.init()"
+#define INITFUNC "init"
 #define INTERP_ATTR "__interpreter__"
 
 /* Are we in single interpreter mode? */
@@ -105,17 +105,11 @@ static int single_mode = 0;
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
 
-/* The CallBack object. This variable is used as
- * a way to pass a pointer between  SetCallBack()
- * function and make_obcallback(). Nothing else. 
- * Don't rely on its value.                      */
-static PyObject *obCallBack = NULL;
-
 /* some forward declarations */
 void python_decref(void *object);
 PyObject * make_obcallback();
 PyObject * tuple_from_array_header(const array_header *ah);
-PyObject * get_obcallback(const char *name, server_rec * req);
+PyObject * get_obcallback(const char *name, request_rec * req);
 
 /*********************************
            Python things 
@@ -125,13 +119,11 @@ PyObject * get_obcallback(const char *name, server_rec * req);
  *********************************/
 
 /* froward declarations */
-static PyObject * SetCallBack(PyObject *self, PyObject *args);
 static PyObject * log_error(PyObject *self, PyObject *args);
 static PyObject * make_table(PyObject *self, PyObject *args);
 
 /* methods of _apache */
 static struct PyMethodDef _apache_module_methods[] = {
-  {"SetCallBack",               (PyCFunction)SetCallBack,      METH_VARARGS},
   {"log_error",                 (PyCFunction)log_error,        METH_VARARGS},
   {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
   {NULL, NULL} /* sentinel */
@@ -744,7 +736,7 @@ static PyObject * table_keys(tableobject *self)
 /**
  ** copy_table
  **
- *   Merge two tables into one. Matching ley values 
+ *   Merge two tables into one. Matching key values 
  *   in second overlay the first.
  */
 
@@ -764,51 +756,6 @@ static void copy_table(table *t1, table *t2)
 	    ap_table_set(t1, elts[i].key, elts[i].val);
 }
 
-/**
- ** print_table
- **
- *   Print apache table. Only used for debugging.
- */
-
-static void print_table(table * t)
-{
-    array_header *ah;
-    table_entry *elts;
-    int i;
-
-    ah = ap_table_elts (t);
-    elts = (table_entry *) ah->elts;
-    i = ah->nelts;
-
-    while (i--)
-	if (elts[i].key)
-	    printf("   %s: \t%s\n", elts[i].key, elts[i].val);
-}
-
-/**
- ** print_array
- **
- *   Print apache array (of strings). Only used for debugging.
- */
-
-static void *print_array(array_header *ah)
-{
-    int i;
-    char **elts;
-
-    elts = (char **)ah->elts;
-
-    for (i = 0; i < ah->nelts; ++i) {
-	printf("%s ", elts[i]);
-    }
-    printf("\n");
-
-    return NULL;
-    
-    /* avoid compiler warning */
-    print_array(ah);
-
-}
 
 /********************************
   ***  end of table object ***
@@ -1425,76 +1372,6 @@ static PyObject * req_add_common_vars(requestobject *self, PyObject *args)
   ***  end of request object ***
  ********************************/
 
-/**
- ** table2dict()
- **
- *      Converts Apache table to Python dictionary.
- */
-
-static PyObject * table2dict(table * t)
-{
-
-    PyObject *result, *val;
-    array_header *ah;
-    table_entry *elts;
-    int i;
-
-    result = PyDict_New();
-
-    ah = ap_table_elts (t);
-    elts = (table_entry *) ah->elts;
-    i = ah->nelts;
-
-    while (i--)
-	if (elts[i].key)
-	{
-	    val = PyString_FromString(elts[i].val);
-	    PyDict_SetItemString(result, elts[i].key, val);
-	    Py_DECREF(val);
-	}
-
-    return result;
-
-    /* prevent compiler warning about unused 
-       function, this statement never reached */
-    table2dict(NULL);
-
-}
-
-/**
- ** python_dict_merge
- ** 
- *   Merges two Python dictionaries into one, overlaying
- *   items in the first argument by the second. Returns new
- *   reference.
- */
-
-void python_dict_merge(PyObject *d1, PyObject *d2)
-{
-
-    /*
-     * there are faster ways to do this if we were to bypas
-     * the Python API and use functions from dictobject.c
-     * directly
-     */
-    
-    PyObject *items;
-    PyObject *keyval;
-    PyObject *x;
-    PyObject *y;
-    int i;
-
-    items = PyDict_Items(d2);
-    for (i = 0; i < PyList_Size(items); i++) {
-	keyval = PyList_GetItem(items, i);
-	x = PyTuple_GetItem(keyval, 0);
-	y = PyTuple_GetItem(keyval, 1);
-	PyDict_SetItem(d1, PyTuple_GetItem(keyval, 0),
-		       PyTuple_GetItem(keyval, 1));
-    }
-    Py_DECREF(items);
-}
-
 /******************************************************************
    ***        end of Python objects and their methods        ***
  ******************************************************************/
@@ -1544,7 +1421,6 @@ void python_init(server_rec *s, pool *p)
 
 	/* initialze the interpreter */
 	Py_Initialize();
-               
 
 #ifdef WITH_THREAD
 	/* create and acquire the interpreter lock */
@@ -1553,42 +1429,21 @@ void python_init(server_rec *s, pool *p)
 	/* create the obCallBack dictionary */
 	interpreters = PyDict_New();
 
-	if (! interpreters)
-	{
+	if (! interpreters) {
 	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
 			 "python_init: PyDict_New() failed! No more memory?");
 	    exit(1);
 	}
-	  
-	/*  Initialize _apache. 
-	 *  This makes an _apache module available for import, but remember,
-	 *  the user should use "import apache" not "_apache". "_apache" 
-	 *  is for internal use only. (The only time it's needed is to assign 
-	 *  obCallBack)
-	 */
 
-	/* make obCallBack */
-	obcallback = make_obcallback();
-
-	/* get the current thread state */
-	tstate = PyThreadState_Get();
-
-	/* cast PyThreadState * to long and save it in obCallBack */
-	x = PyInt_FromLong((long) tstate);
-	PyObject_SetAttrString(obcallback, INTERP_ATTR, x);
-	Py_DECREF(x);
-
-	/* save the obCallBack */
-	PyDict_SetItemString(interpreters, "global_interpreter", obcallback);
-
+	/* make obCallBack for the global interpeter */
+	obcallback = get_obcallback(NULL, NULL);
+	
 #ifdef WITH_THREAD
-
+	
 	/* release the lock; now other threads can run */
 	PyEval_ReleaseLock();
 #endif
-
     }
-
 }
 
 /**
@@ -1700,30 +1555,21 @@ static void *python_merge_dir_config(pool *p, void *cc, void *nc)
 static const char *python_directive(cmd_parms *cmd, void * mconfig, 
 				    char *key, const char *val)
 {
-
-    int directs_offset = XtOffsetOf(py_dir_config, directives);
-    int dirs_offset = XtOffsetOf(py_dir_config, dirs);
-    int config_dir_offset = XtOffsetOf(py_dir_config, config_dir);
-    char *s;
-    table *directives;
-    table *dirs;
-
-    directives = *(table **)(mconfig + directs_offset);
-    dirs = *(table **)(mconfig + dirs_offset);
-
-    ap_table_set(directives, ap_pstrdup(cmd->pool, key), 
-		 ap_pstrdup(cmd->pool, val));
+    py_dir_config *conf;
+    
+    conf = (py_dir_config *) mconfig;
+    ap_table_set(conf->directives, key, val);
 
     /* remember the directory where the directive was found */
-    s = *(char **)(mconfig + config_dir_offset);
-    if (s) {
-	ap_table_set(dirs, ap_pstrdup(cmd->pool, key), s);
+    if (conf->config_dir) {
+	ap_table_set(conf->dirs, key, conf->config_dir);
     }
     else {
-	ap_table_set(dirs, ap_pstrdup(cmd->pool, key), "");
+	ap_table_set(conf->dirs, key, "");
     }
 
     return NULL;
+
 }
 
 
@@ -1734,80 +1580,41 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
  **
  *      This function instantiates an obCallBack object. 
  *      NOTE: The obCallBack object is instantiated by Python
- *      code. This C module calls into Python code which sets the 
- *      reference by calling SetCallBack function back into C from
- *      Python. Thus the name "CallBack". 
- * 
- * Here is a visual:
- *
- * - Begin C code
- * .   PyRun_SimpleString("init()")
- * =   Begin Python code
- * .     obCallBack = CallBack()
- * .     import _apache # this module is in C
- * .     _apache.SetCallBack(obCallBack)
- * --    Begin C code
- * .       // assigns to global obCallBack
- * --    End of C code
- * =   End of Python code
- * - we're back in C, but now global obCallBack has a value
+ *      code. This C module calls into Python code which returns 
+ *      the reference to obCallBack.
  */
 
 PyObject * make_obcallback()
 {
 
-  char buff[256];
+    PyObject *m;
+    PyObject *obCallBack;
+    char buff[256];
 
-  /* This makes _apache appear imported, and subsequent
-   * >>> import _apache 
-   * will not give an error.
-   */
-  Py_InitModule("_apache", _apache_module_methods);
+    /* This makes _apache appear imported, and subsequent
+     * >>> import _apache 
+     * will not give an error.
+     */
+    Py_InitModule("_apache", _apache_module_methods);
 
-  /* Now execute the equivalent of
-   * >>> import sys
-   * >>> import <module>
-   * >>> <initstring>
-   * in the __main__ module to start up Python.
-   */
+    /* Now execute the equivalent of
+     * >>> import <module>
+     * >>> <initstring>
+     * in the __main__ module to start up Python.
+     */
 
-  sprintf(buff, "import %s\n", MODULENAME);
-
-  if (PyRun_SimpleString(buff))
-    {
-      fprintf(stderr, "PythonInitFunction: could not import %s.\n", MODULENAME);
-      exit(1);
+    if (! ((m = PyImport_ImportModule(MODULENAME)))) {
+	fprintf(stderr, "PythonInitFunction: could not import %s.\n", MODULENAME);
+	exit(1);
     }
-
-  sprintf(buff, "%s\n", INITSTRING);
-
-  if (PyRun_SimpleString(buff))
-    {
-      fprintf(stderr, "PythonInitFunction: could not call %s.\n",
-	       INITSTRING);
-      exit(1);
+    
+    if (! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
+	fprintf(stderr, "PythonInitFunction: could not call %s.\n",
+		INITFUNC);
+	exit(1);
     }
-
-  /* we can't see it, but the execution has moved into a Python script
-   * which is doing something like this:
-   *
-   * >>> import _apache
-   * >>> _apache.SetCallBack(someCallBackObject)
-   *
-   * By now (i.e while you're reading this comment), 
-   * SetCallBack() has been called and obCallBack is assigned. 
-   */
-
-  if (! obCallBack) 
-    {
-      fprintf(stderr, "PythonInitFunction: after %s no callback object found.\n", 
-	       INITSTRING);
-      exit(1);
-    }
-
-  /* Wow, this worked! */
-
-  return obCallBack;
+    
+    return obCallBack;
 
 }
 
@@ -1829,7 +1636,7 @@ PyObject * make_obcallback()
  *      name NULL means use global interpreter.
  */
 
-PyObject * get_obcallback(const char *name, server_rec * server)
+PyObject * get_obcallback(const char *name, request_rec * req)
 {
 
   PyObject * obcallback = NULL;
@@ -1867,7 +1674,7 @@ PyObject * get_obcallback(const char *name, server_rec * server)
       if (! tstate) {
 
 	  /* couldn't create an interpreter, this is bad */
-	  ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, server,
+	  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
 		       "get_obcallback: Py_NewInterpreter() returned NULL. No more memory?");
 	  return NULL;
       }
@@ -1931,95 +1738,73 @@ static PyObject * log_error(PyObject *self, PyObject *args)
 }
 
 /**
- ** SetCallBack - assign a CallBack object
+ ** del_request_object
  **
- *      This function must be called from Python upon executing
- *      the initstring parameter, like this
- *
- *       >>> import _apache
- *       >>> _apache.SetCallBack(instance)
- *
- *      to provide the instance as the CallBack object.
+ *      This removes the reference to the request object created
+ *      by get_request_object
  */
 
-static PyObject * SetCallBack(PyObject *self, PyObject *args)
+static void del_request_object()
 {
-
-    PyObject *callback;
-
-    /* see if CallBack is in *args */
-    if (! PyArg_ParseTuple(args, "O", &callback)) 
-	return NULL;
-
-    /* store the object, incref */
-    obCallBack = callback;  
-    Py_INCREF(obCallBack);
-
-    /* return None */
-    Py_INCREF(Py_None);
-    return Py_None;
+    PyObject *dict;
+    dict = PyThreadState_GetDict();
+    if (PyMapping_HasKeyString(dict, "python_request"))
+	PyDict_DelItemString(dict, "python_request");
 }
 
 /**
  ** get_request_object
  **
- *      This creates or retrieves a previously created request object 
+ *      This creates or retrieves a previously created request object.
+ *      The pointer to request object is stored in tstate->dict, a 
+ *      special dictionary provided by Python for per-thread state.
  */
 
-static void get_request_object(request_rec *req, requestobject **request_obj)
-
+static requestobject *get_request_object(request_rec *req, 
+					 PyThreadState *tstate)
 {
+    requestobject *request_obj;
+    PyObject *dict;
 
-    char *s;
-    char s2[40];
-
-    /* see if there is a request object out there already */
-
-    /* XXX there must be a cleaner way to do this, atoi is slow? */
-    /* since tables only understand strings, we need to do some conversion */
-
-    s = (char *) ap_table_get(req->notes, "python_request_ptr");
-    if (s) {
-	*request_obj = (requestobject *) atoi(s);
+    dict = PyThreadState_GetDict();
+    request_obj = (requestobject *) PyDict_GetItemString(dict, 
+							 "python_request");
+    if (request_obj) {
 	/* we have one reference at creation that is shared, no INCREF here*/
-	return;
+	return request_obj;
     }
     else {
-	/* ap_add_cgi_vars() is necessary for path-translated for example */
-	/* ap_add_cgi_vars() sometimes recurses, so we temporarily release the lock */
-
-	/* XXX - why do I need this? Still true as of ver 1.3.12.
-	 * A trailing slash will make Apache call add_cgi_vars 
-	 * recursively ad infinitum in some handlers. May be it's an Apache bug?
-	 */
 	if ((req->path_info) && 
-	     (req->path_info[strlen(req->path_info) - 1] == '/'))
+	    (req->path_info[strlen(req->path_info) - 1] == '/'))
 	{
 	    int i;
-	    i = strlen( req->path_info );
+	    i = strlen(req->path_info);
 	    /* take out the slash */
-	    req->path_info[ i - 1 ] = 0;
+	    req->path_info[i - 1] = 0;
 
 	    Py_BEGIN_ALLOW_THREADS;
 	    ap_add_cgi_vars(req);
 	    Py_END_ALLOW_THREADS;
-	    *request_obj = make_requestobject(req);
+	    request_obj = make_requestobject(req);
 
 	    /* put the slash back in */
-	    req->path_info[ i - 1 ] = '/'; 
-	    req->path_info[ i ] = 0;
+	    req->path_info[i - 1] = '/'; 
+	    req->path_info[i] = 0;
 	} 
 	else 
 	{ 
 	    Py_BEGIN_ALLOW_THREADS;
 	    ap_add_cgi_vars(req);
 	    Py_END_ALLOW_THREADS;
-	    *request_obj = make_requestobject(req);
+	    request_obj = make_requestobject(req);
 	}
 
-	/* store the pointer to this object in notes */
-	sprintf(s2, "%d", (int) *request_obj);
-	ap_table_set(req->notes, "python_request_ptr", s2);
+	/* store the pointer to this object */
+	PyDict_SetItemString(dict, "python_request", 
+			     (PyObject *)request_obj);
+	ap_register_cleanup(req->pool, NULL, del_request_object, 
+			    ap_null_cleanup);
+	return request_obj;
     }
 }
 
@@ -2087,12 +1872,12 @@ static int python_handler(request_rec *req, char *handler)
 #endif
 
     /* get/create obcallback */
-    obcallback = get_obcallback(interpreter, req->server);
+    obcallback = get_obcallback(interpreter, req);
 
     /* we must have a callback object to succeed! */
     if (!obcallback) 
     {
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req->server,
+	ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req,
 		     "python_handler: get_obcallback returned no obCallBack!");
 	return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -2104,7 +1889,7 @@ static int python_handler(request_rec *req, char *handler)
     PyThreadState_Swap(tstate);
 
     /* create/acquire request object */
-    get_request_object(req, &request_obj);
+    request_obj = get_request_object(req, tstate);
 
     /* 
      * The current directory will be that of the last encountered 
@@ -2128,7 +1913,7 @@ static int python_handler(request_rec *req, char *handler)
 #endif
 
     if (! resultobject) {
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req->server, 
+	ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req, 
 		     "python_handler: Dispatch() returned nothing.");
 	return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -2136,7 +1921,7 @@ static int python_handler(request_rec *req, char *handler)
 	/* Attempt to analyse the result as a string indicating which
 	   result to return */
 	if (! PyInt_Check(resultobject)) {
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req->server, 
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, req, 
 			 "python_handler: Dispatch() returned non-integer.");
 	    return HTTP_INTERNAL_SERVER_ERROR;
 	}
