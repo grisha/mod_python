@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.24 2000/08/21 17:16:37 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.25 2000/08/28 19:32:22 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -415,6 +415,7 @@ typedef struct requestobject {
     tableobject    * subprocess_env;
     tableobject    * notes;
     int              header_sent;
+    char           * hstack;
 } requestobject;
 
 
@@ -423,6 +424,8 @@ static PyObject * request_getattr(requestobject *self, char *name);
 static int request_setattr(requestobject *self, char *name, PyObject *value);
 static PyObject * req_add_common_vars      (requestobject *self, PyObject *args);
 static PyObject * req_add_handler          (requestobject *self, PyObject *args);
+static PyObject * req_get_all_config       (requestobject *self, PyObject *args);
+static PyObject * req_get_all_dirs         (requestobject *self, PyObject *args);
 static PyObject * req_get_basic_auth_pw    (requestobject *self, PyObject *args);
 static PyObject * req_get_config           (requestobject *self, PyObject *args);
 static PyObject * req_get_dirs             (requestobject *self, PyObject *args);
@@ -455,6 +458,8 @@ static PyTypeObject requestobjecttype = {
 static PyMethodDef requestobjectmethods[] = {
     {"add_common_vars",      (PyCFunction) req_add_common_vars,      METH_VARARGS},
     {"add_handler",          (PyCFunction) req_add_handler,          METH_VARARGS},
+    {"get_all_config",       (PyCFunction) req_get_all_config,       METH_VARARGS},
+    {"get_all_dirs",         (PyCFunction) req_get_all_dirs,         METH_VARARGS},
     {"get_basic_auth_pw",    (PyCFunction) req_get_basic_auth_pw,    METH_VARARGS},
     {"get_config",           (PyCFunction) req_get_config,           METH_VARARGS},
     {"get_dirs",             (PyCFunction) req_get_dirs,             METH_VARARGS},
@@ -1399,6 +1404,7 @@ static requestobject * make_requestobject(request_rec *req)
     result->subprocess_env = make_tableobject(req->subprocess_env);
     result->notes = make_tableobject(req->notes);
     result->header_sent = 0;
+    result->hstack = NULL;
 
     _Py_NewReference(result);
     ap_register_cleanup(req->pool, (PyObject *)result, python_decref, 
@@ -1559,7 +1565,11 @@ static PyObject * request_getattr(requestobject *self, char *name)
     }
     else if (strcmp(name, "content_languages") == 0) {
 	return tuple_from_array_header(self->request_rec->content_languages);
-    } else
+    } 
+    else if (strcmp(name, "hstack") == 0) {
+	return PyString_FromString(self->hstack);
+    }
+    else
 	return PyMember_Get((char *)self->request_rec, request_memberlist, name);
 
 }
@@ -1580,15 +1590,20 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
     }
     else if (strcmp(name, "content_type") == 0) {
 	self->request_rec->content_type = 
-	    ap_pstrdup(self->request_rec->pool, PyString_AS_STRING(value));
+	    ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
 	return 0;
     }
     else if (strcmp(name, "filename") == 0) {
 	self->request_rec->filename =
-	    ap_pstrdup(self->request_rec->pool, PyString_AS_STRING(value));
+	    ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
 	return 0;
     }
-    return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);
+    else if (strcmp(name, "hstack") == 0) {
+	self->hstack = ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
+	return 0;
+    }
+    else
+	return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);
 }
 
 /**
@@ -1741,6 +1756,30 @@ static PyObject * req_read(requestobject *self, PyObject *args)
 }
 
 /**
+ ** valid_handler()
+ **
+ *  utility func - makes sure a handler is valid
+ */
+
+static int valid_handler(const char *h)
+{
+    if ((strcmp(h, "PythonHandler") != 0) &&
+	(strcmp(h, "PythonAuthenHandler") != 0) &&
+	(strcmp(h, "PythonPostReadRequestHandler") != 0) &&
+	(strcmp(h, "PythonTransHandler") != 0) &&
+	(strcmp(h, "PythonHeaderParserHandler") != 0) &&
+	(strcmp(h, "PythonAccessHandler") != 0) &&
+	(strcmp(h, "PythonAuthzHandler") != 0) &&
+	(strcmp(h, "PythonTypeHandler") != 0) &&
+	(strcmp(h, "PythonFixupHandler") != 0) &&
+	(strcmp(h, "PythonLogHandler") != 0) &&
+	(strcmp(h, "PythonInitHandler") != 0))
+	return 0;
+    else
+	return 1;
+}
+
+/**
  ** request.get_config(request self)
  **
  *     Returns the config directives set through Python* apache directives.
@@ -1753,6 +1792,86 @@ static PyObject * req_get_config(requestobject *self, PyObject *args)
 	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
 					       &python_module);
     return (PyObject *)make_tableobject(conf->directives);
+}
+
+/**
+ ** request.get_all_config(request self)
+ **
+ *  returns get_config + all the handlers added by req.add_handler
+ */
+
+static PyObject * req_get_all_config(requestobject *self, PyObject *args)
+{
+    table *all;
+    py_dir_config *conf =
+	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+					       &python_module);
+
+    all = ap_copy_table(self->request_rec->pool, conf->directives);
+
+    if (ap_table_get(self->request_rec->notes, "py_more_directives")) {
+
+	array_header *ah = ap_table_elts(self->request_rec->notes);
+	table_entry *elts = (table_entry *)ah->elts;
+	int i = ah->nelts;
+
+	while (i--) {
+	    if (elts[i].key) {
+		if (valid_handler(elts[i].key)) {
+		
+		    /* if exists - append, otherwise add */
+		    const char *val = ap_table_get(all, elts[i].key);
+		    if (val) {
+			ap_table_set(all, elts[i].key, 
+				     ap_pstrcat(self->request_rec->pool,
+						val, " ", elts[i].val,
+						NULL));
+		    }
+		    else {
+			ap_table_set(all, elts[i].key, elts[i].val);
+		    }
+		}
+	    }
+	}
+    }
+    return (PyObject *)make_tableobject(all);
+}
+
+/**
+ ** request.get_all_dirs(request self)
+ **
+ *  returns get_dirs + all the dirs added by req.add_handler
+ */
+
+static PyObject * req_get_all_dirs(requestobject *self, PyObject *args)
+{
+    table *all;
+    py_dir_config *conf =
+	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+					       &python_module);
+
+    all = ap_copy_table(self->request_rec->pool, conf->dirs);
+
+    if (ap_table_get(self->request_rec->notes, "py_more_directives")) {
+
+	array_header *ah = ap_table_elts(self->request_rec->notes);
+	table_entry *elts = (table_entry *)ah->elts;
+	int i = ah->nelts;
+
+	while (i--) {
+	    if (elts[i].key) {
+		
+		/* chop off _dir */
+		char *s = ap_pstrdup(self->request_rec->pool, elts[i].key);
+		if (valid_handler(s)) {
+		    
+		    s[strlen(s)-4] = 0;
+		    ap_table_set(all, s, elts[i].val);
+		}
+	    }
+	}
+    }
+    return (PyObject *)make_tableobject(all);
 }
 
 /**
@@ -1830,64 +1949,108 @@ static PyObject * req_add_common_vars(requestobject *self, PyObject *args)
 /**
  ** request.add_handler(request self, string handler, string function)
  **
- *     Allows to add another handler to thendler list.
+ *     Allows to add another handler to the handler list.
+ *
+ * The dynamic handler mechanism works like this: we have
+ * the original config, which gets build via the standard Apache
+ * config functions. The calls to add_handler() slap new values into
+ * req->notes. At handler execution time, prior to calling into python, 
+ * but after the requestobject has been created/obtained, a concatenation 
+ * of values of conf->directives+req->notes for the handler currently
+ * being executed is placed in req->hstack. Inside Python, in Dispatch(),
+ * handlers will be chopped from the begining of the string as they
+ * get executed. Add_handler is also smart enough to append to
+ * req->hstack if the handler being added is the same as the one 
+ * being currently executed.
  */
 
-static PyObject * req_add_handler(requestobject *self, PyObject *args)
+static PyObject *req_add_handler(requestobject *self, PyObject *args)
 {
-
     char *handler;
     char *function;
-    const char *existing;
-    py_dir_config *conf;
     const char *dir = NULL;
+    const char *currhand;
 
     if (! PyArg_ParseTuple(args, "ss|s", &handler, &function, &dir)) 
+        return NULL;
+
+    if (! valid_handler(handler)) {
+	PyErr_SetString(PyExc_IndexError, 
+			ap_psprintf(self->request_rec->pool,
+				   "Invalid handler: %s", handler));
 	return NULL;
+    }
+    
+    /* which handler are we processing? */
+    currhand = ap_table_get(self->request_rec->notes, "python_handler");
 
-    /* get config */
-    conf = (py_dir_config *) ap_get_module_config(
-	self->request_rec->per_dir_config, &python_module);
-	
-    /* is there a handler like this in the config already? */
-    existing = ap_table_get(conf->directives, handler);
+    if (strcmp(currhand, handler) == 0) {
 
-    if (existing) {
-
-	/* append the function to the list using the table's pool */
-	array_header *ah = ap_table_elts(conf->directives);
-	ap_table_set(conf->directives, handler, 
-		     ap_pstrcat(ah->pool, existing, " ", function, NULL));
-
+	/* if it's the same as what's being added, then just append to hstack */
+	self->hstack = ap_pstrcat(self->request_rec->pool, self->hstack, 
+				  function, NULL);
+        
 	if (dir) 
-	    ap_table_set(conf->dirs, handler, dir);
-
+            ap_table_set(self->request_rec->notes, 
+			 ap_pstrcat(self->request_rec->pool, handler, "_dir", NULL), 
+			 dir);
     }
     else {
 
-	/* XXX Validity is not checked, document this! */
-	ap_table_set(conf->directives, handler, function);
+	const char *existing;
 
-	if (! dir) {
+	/* is there a handler like this in the notes already? */
+	existing = ap_table_get(self->request_rec->notes, handler);
 
-	    /*
-	     * If no directory was explicitely specified, the new handler will 
-	     * have the same directory associated with it as the handler 
-	     * currently being processed.
-	     */
+	if (existing) {
 
-	    const char *currhand;
-	    
-	    /* which handler are we processing? */
-	    currhand = ap_table_get(self->request_rec->notes, "python_handler");
+	    /* append the function to the list using the request pool */
+	    ap_table_set(self->request_rec->notes, handler, 
+			 ap_pstrcat(self->request_rec->pool, existing, " ", 
+				    function, NULL));
 
-	    /* what's the directory for this handler? */
-	    dir = ap_table_get(conf->dirs, currhand);
+	    if (dir) {
+		char *s = ap_pstrcat(self->request_rec->pool, handler, "_dir", NULL);
+		ap_table_set(self->request_rec->notes, s, dir);
+	    }
+
 	}
+	else {
 
-	ap_table_set(conf->dirs, handler, dir);
+	    char *s;
+
+	    /* a completely new handler */
+	    ap_table_set(self->request_rec->notes, handler, function);
+
+	    if (! dir) {
+
+		/*
+		 * If no directory was explicitely specified, the new handler will 
+		 * have the same directory associated with it as the handler 
+		 * currently being processed.
+		 */
+
+		py_dir_config *conf;
+
+		/* get config */
+		conf = (py_dir_config *) ap_get_module_config(
+		    self->request_rec->per_dir_config, &python_module);
+        
+		/* what's the directory for this handler? */
+		dir = ap_table_get(conf->dirs, currhand);
+
+		/*
+		 * make a note that the handler's been added. python_handler
+		 * won't bother checking for it unless it sees this flag 
+		 */
+		ap_table_set(self->request_rec->notes, "py_more_directives", "1");
+
+	    }
+	    s = ap_pstrcat(self->request_rec->pool, handler, "_dir", NULL);
+	    ap_table_set(self->request_rec->notes, s, dir);
+	}
     }
-
+    
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -2048,7 +2211,6 @@ static void *python_merge_dir_config(pool *p, void *cc, void *nc)
      */
 
     /** create **/
-
     merged_conf->directives = ap_make_table(p, 4);
     merged_conf->dirs = ap_make_table(p, 16);
     merged_conf->options = ap_make_table(p, 16);
@@ -2345,10 +2507,11 @@ static int python_handler(request_rec *req, char *handler)
 
     /* get configuration */
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, &python_module);
-  
+
     /* is there a handler? */
     if (! ap_table_get(conf->directives, handler)) {
-	return DECLINED;
+	if (! ap_table_get(req->notes, handler))
+	    return DECLINED;
     }
 
     /* determine interpreter to use */
@@ -2363,8 +2526,16 @@ static int python_handler(request_rec *req, char *handler)
 		interpreter = ap_make_dirstr_parent(req->pool, 
 						    ap_pstrcat(req->pool, req->filename, 
 							       SLASH_S, NULL ));
-	    else
-		interpreter = ap_make_dirstr_parent(req->pool, req->filename);
+	    else {
+		if (req->filename)
+		    interpreter = ap_make_dirstr_parent(req->pool, req->filename);
+		else
+		    /* 
+		     * In early stages of the request, req->filename is not known,
+		     * so this would have to run in the global interpreter.
+		     */
+		    interpreter = NULL;
+	    }
 	}
 	else {
 	    /* - default -
@@ -2372,14 +2543,22 @@ static int python_handler(request_rec *req, char *handler)
 	     * was last found. If it was in http.conf, then we will use the 
 	     * global interpreter.
 	     */
-	    s = ap_table_get(conf->dirs, handler);
-	    if (strcmp(s, "") == 0)
-		interpreter = NULL;
-	    else
-		interpreter = s;
+	    
+	    if (! s) {
+		s = ap_table_get(conf->dirs, handler);
+		if (! s) {
+		    /* this one must have been added via req.add_handler() */
+		    char * ss = ap_pstrcat(req->pool, handler, "_dir", NULL);
+		    s = ap_table_get(req->notes, ss);
+		}
+		if (strcmp(s, "") == 0)
+		    interpreter = NULL;
+		else
+		    interpreter = s;
+	    }
 	}
     }
-
+    
 #ifdef WITH_THREAD  
     /* acquire lock (to protect the interpreters dictionary) */
     PyEval_AcquireLock();
@@ -2398,7 +2577,7 @@ static int python_handler(request_rec *req, char *handler)
 		      "python_handler: get_interpreter_data returned NULL!");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
-
+    
 #ifdef WITH_THREAD  
     /* create thread state and acquire lock */
     tstate = PyThreadState_New(idata->istate);
@@ -2428,6 +2607,20 @@ static int python_handler(request_rec *req, char *handler)
     /* make a note of which handler we are in right now */
     ap_table_set(req->notes, "python_handler", handler);
 
+    /* put the list of handlers on the hstack */
+    if ((s = ap_table_get(conf->directives, handler))) {
+	request_obj->hstack = ap_pstrdup(req->pool, ap_table_get(conf->directives,
+								 handler));
+    }
+    if ((s = ap_table_get(req->notes, handler))) {
+	if (request_obj->hstack) {
+	    request_obj->hstack = ap_pstrcat(req->pool, request_obj->hstack,
+					     " ", s, NULL);
+	}
+	else {
+	    request_obj->hstack = ap_pstrdup(req->pool, s);
+	}
+    }
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
@@ -2435,7 +2628,7 @@ static int python_handler(request_rec *req, char *handler)
      */
     resultobject = PyObject_CallMethod(idata->obcallback, "Dispatch", "Os", 
 				       request_obj, handler);
-
+     
 #ifdef WITH_THREAD
     /* release the lock and destroy tstate*/
     /* XXX Do not use 
@@ -2474,7 +2667,6 @@ static int python_handler(request_rec *req, char *handler)
 		    (! conf->authoritative))
 		    result = DECLINED;
 	    }
-
 	}
     } 
 
@@ -2724,18 +2916,6 @@ static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
  **
  */
 
-static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
-    return python_directive(cmd, mconfig, "PythonPostReadRequestHandler", val);
-}
-static const char *directive_PythonTransHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
-    return python_directive(cmd, mconfig, "PythonTransHandler", val);
-}
-static const char *directive_PythonHeaderParserHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
-    return python_directive(cmd, mconfig, "PythonHeaderParserHandler", val);
-}
 static const char *directive_PythonAccessHandler(cmd_parms *cmd, void * mconfig, 
 						 const char *val) {
     return python_directive(cmd, mconfig, "PythonAccessHandler", val);
@@ -2745,23 +2925,40 @@ static const char *directive_PythonAuthenHandler(cmd_parms *cmd, void * mconfig,
     return python_directive(cmd, mconfig, "PythonAuthenHandler", val);
 }
 static const char *directive_PythonAuthzHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
+						const char *val) {
     return python_directive(cmd, mconfig, "PythonAuthzHandler", val);
 }
-static const char *directive_PythonTypeHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
-    return python_directive(cmd, mconfig, "PythonTypeHandler", val);
-}
-static const char *directive_PythonHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
-    return python_directive(cmd, mconfig, "PythonHandler", val);
-}
 static const char *directive_PythonFixupHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
+						const char *val) {
     return python_directive(cmd, mconfig, "PythonFixupHandler", val);
 }
+static const char *directive_PythonHandler(cmd_parms *cmd, void * mconfig, 
+					   const char *val) {
+    return python_directive(cmd, mconfig, "PythonHandler", val);
+}
+static const char *directive_PythonHeaderParserHandler(cmd_parms *cmd, void * mconfig, 
+						       const char *val) {
+    return python_directive(cmd, mconfig, "PythonHeaderParserHandler", val);
+}
+static const char *directive_PythonInitHandler(cmd_parms *cmd, void * mconfig,
+					       const char *val) {
+    return python_directive(cmd, mconfig, "PythonInitHandler", val);
+}
+static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd, 
+							  void * mconfig, 
+							  const char *val) {
+    return python_directive(cmd, mconfig, "PythonPostReadRequestHandler", val);
+}
+static const char *directive_PythonTransHandler(cmd_parms *cmd, void * mconfig, 
+						const char *val) {
+    return python_directive(cmd, mconfig, "PythonTransHandler", val);
+}
+static const char *directive_PythonTypeHandler(cmd_parms *cmd, void * mconfig, 
+					       const char *val) {
+    return python_directive(cmd, mconfig, "PythonTypeHandler", val);
+}
 static const char *directive_PythonLogHandler(cmd_parms *cmd, void * mconfig, 
-						 const char *val) {
+					      const char *val) {
     return python_directive(cmd, mconfig, "PythonLogHandler", val);
 }
 
@@ -2769,7 +2966,6 @@ static const char *directive_PythonLogHandler(cmd_parms *cmd, void * mconfig,
 /**
  ** Handlers
  **
- *  (In order, in which they get called by Apache)
  */
 
 static void PythonChildInitHandler(server_rec *s, pool *p) 
@@ -2798,8 +2994,7 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
 	    char *module = elts[i].key;
 	    char *dir = elts[i].val;
 
-	    /* XXX PythonInterpreter has no effect */
-	    /* This needs to be addressed in config_merge? */
+	    /* Note: PythonInterpreter has no effect */
 	    interpreter = dir;
 
 #ifdef WITH_THREAD  
@@ -2869,15 +3064,6 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
     }
 }
 
-static int PythonPostReadRequestHandler(request_rec *req) {
-    return python_handler(req, "PythonPostReadRequestHandler");
-}
-static int PythonTransHandler(request_rec *req) {
-    return python_handler(req, "PythonTransHandler");
-}
-static int PythonHeaderParserHandler(request_rec *req) {
-    return python_handler(req, "PythonHeaderParserHandler");
-}
 static int PythonAccessHandler(request_rec *req) {
     return python_handler(req, "PythonAccessHandler");
 }
@@ -2887,22 +3073,45 @@ static int PythonAuthenHandler(request_rec *req) {
 static int PythonAuthzHandler(request_rec *req) {
     return python_handler(req, "PythonAuthzHandler");
 }
-static int PythonTypeHandler(request_rec *req) {
-    return python_handler(req, "PythonTypeHandler");
-}
-static int PythonHandler(request_rec *req) {
-    return python_handler(req, "PythonHandler");
+static void PythonChildExitHandler(server_rec *srv, pool *p) {
+    Py_Finalize();
 }
 static int PythonFixupHandler(request_rec *req) {
     return python_handler(req, "PythonFixupHandler");
 }
+static int PythonHandler(request_rec *req) {
+    return python_handler(req, "PythonHandler");
+}
+static int PythonHeaderParserHandler(request_rec *req) {
+    int rc;
+    
+    if (! ap_table_get(req->notes, "python_init_ran")) {
+	rc = python_handler(req, "PythonInitHandler");
+	if ((rc != OK) && (rc != DECLINED))
+	    return rc;
+    }
+    return python_handler(req, "PythonHeaderParserHandler");
+}
 static int PythonLogHandler(request_rec *req) {
     return python_handler(req, "PythonLogHandler");
 }
+static int PythonPostReadRequestHandler(request_rec *req) {
+    int rc;
 
-static void PythonChildExitHandler(server_rec *srv, pool *p) {
-    Py_Finalize();
+    rc = python_handler(req, "PythonInitHandler");
+    ap_table_set(req->notes, "python_init_ran", "1");
+    if ((rc != OK) && (rc != DECLINED))
+	return rc;
+
+    return python_handler(req, "PythonPostReadRequestHandler");
 }
+static int PythonTransHandler(request_rec *req) {
+    return python_handler(req, "PythonTransHandler");
+}
+static int PythonTypeHandler(request_rec *req) {
+    return python_handler(req, "PythonTypeHandler");
+}
+
 
 
 /******************************************************************
@@ -2995,6 +3204,14 @@ command_rec python_commands[] =
 	ACCESS_CONF,
 	ITERATE,
 	"Modules to be imported when this directive is processed."
+    },
+    {
+	"PythonInitHandler",
+	directive_PythonInitHandler,
+	NULL,
+	OR_ALL,
+	RAW_ARGS,
+	"Python request initialization handler."
     },
     {
 	"PythonInterpPerDirectory",                 

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.11 2000/08/16 18:49:32 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.12 2000/08/28 19:32:59 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -25,6 +25,7 @@
       <li><a href="#PythonTypeHandler">PythonTypeHandler</a>
       <li><a href="#PythonFixupHandler">PythonFixupHandler</a>
       <li><a href="#PythonHandler">PythonHandler</a>
+      <li><a href="#PythonInitHandler">PythonInitHandler</a>
       <li><a href="#PythonLogHandler">PythonLogHandler</a>
 	<br><br>
 	<a href="#other">Other Directives</a>
@@ -291,6 +292,30 @@
       provide this one handler. 
 
 <hr>
+<h2><a name="PythonInitHandler">PythonInitHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This handler is the first handler called in the request processing phases that
+      is allowed both inside and outside htaccess and directory. 
+    <p>
+      This handler is actually an alias to two different handlers. When specified
+      in the main config file outside any directory tags, it is an alias to
+      PostReadRequestHandler. When specified inside directory (where 
+      PostReadRequestHandler is not allowed), it aliases to HeaderParserHandler.
+    <p>
+      <em>(This idea was borrowed from mod_perl)</em>
+
+<hr>
 <h2><a name="PythonLogHandler">PythonLogHandler</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
@@ -440,7 +465,13 @@ default, scripts in <code>/directory</code> and
 interpreter based on the directory where PythonHandler was encountered
 (<code>/directory</code>).  With PythonInterpPerDirectory, there would
 be two different interpreters, one for each directory.
-
+<p>
+NOTE: In early phases of the request prior to the URI translation 
+      (PostReadRequestHandler and TransHandler) the path is not yet known 
+      because the URI has not been translated. During
+      those phases and with PythonInterpPerDirectory on, all python code gets executed
+      in the global intepreter. This may not be exactly what you want, but unfortunately
+      there is no way around this.
 <hr>
 
 <h2><a name="PythonNoReload">PythonNoReload</a></h2>
@@ -539,7 +570,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Wed Aug 16 12:51:10 EDT 2000
+Last modified: Mon Aug 28 15:31:16 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

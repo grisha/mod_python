@@ -1,3 +1,8 @@
+Aug 27 2000 -   Added PythonInitHandler. Also, it looks like dynamic handler
+		addition now works correctly, after trying 15 different ways of
+		implementing it, resorting to req->notes seems to be the only
+		option.
+
 Aug 18 2000 -   Added req.get_remote_host()
 
 Aug 16 2000 -   Added Dr. Timochouk's PythonOptimize directive patch.

@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.17 2000/08/21 17:16:37 gtrubetskoy Exp $
+  $Id: apache.py,v 1.18 2000/08/28 19:32:59 gtrubetskoy Exp $
 
 """
 
@@ -62,23 +62,22 @@ class CallBack:
         return obj
 
 
-    class Stacker:
+    class HStack:
+        """
+        The actual stack string lives in the request object so
+        it can be manipulated by both apache.py and mod_python.c
+        """
+        
+        def __init__(self, req):
+            self.req = req
 
-        def __init__(self, config):
-            self.config = config
-
-        def pop(self, htype):
-            handlers = string.split(self.config[htype])
+        def pop(self):
+            handlers = string.split(self.req.hstack)
             if not handlers:
                 return None
             else:
-                self.config[htype] = string.join(handlers[1:], " ")
+                self.req.hstack = string.join(handlers[1:], " ")
                 return handlers[0]
-
-        def push(self, htype, handler):
-            self.config[htype] = self.config[htype] + " " + handler
-            
-        
 
     def Dispatch(self, req, htype):
         """
@@ -98,12 +97,12 @@ class CallBack:
         try:
 
             # cycle through the handlers
-            stack = self.Stacker(config)
-            while 1:
+            dirs = req.get_all_dirs()
 
-                handler = stack.pop(htype)
-                if not handler:
-                    break
+            hstack = self.HStack(req)
+        
+            handler = hstack.pop()
+            while handler:
 
                 # split module::handler
                 l = string.split(handler, '::', 1)
@@ -128,7 +127,6 @@ class CallBack:
                         if sys.path != newpath:
                             sys.path = newpath
                 else:
-                    dir = req.get_dirs()[htype]
                     if dir not in sys.path:
                         sys.path[:0] = [dir]
 
@@ -148,6 +146,9 @@ class CallBack:
                 # stop cycling through handlers
                 if result != OK:
                     break
+                
+                handler = hstack.pop()
+
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
