@@ -1,0 +1,119 @@
+# Makefile for mod_python documentation
+# ---------------------------------
+#
+# See also the README file.
+#
+PYTHON_SRC=	@PYTHON_SRC@
+
+# This is the *documentation* release, and is used to construct the file
+# names of the downloadable tarballs.
+RELEASE=	2.7
+
+MKHOWTO=	$(PYTHON_SRC)/Doc/tools/mkhowto
+
+# These must be declared phony since there
+# are directories with matching names:
+.PHONY: html
+
+# This can be changed to a4
+PAPER=		letter
+
+MPFILES=	modpython.tex \
+		copyright.tex \
+		modpython1.tex \
+		modpython2.tex \
+		modpython3.tex \
+		modpython5.tex \
+		modpython6.tex
+
+# Main target
+all:	pdf
+
+dvi:	$(MPFILES)
+	$(MKHOWTO) --dvi modpython.tex
+
+pdf:	$(MPFILES)
+	$(MKHOWTO) --pdf --$(PAPER) modpython.tex
+
+ps:	$(MPFILES)
+	$(MKHOWTO) --ps --$(PAPER) modpython.tex
+
+html:	$(MPFILES)
+	$(MKHOWTO) --html modpython.tex
+	mkdir -p icons
+	cp $(PYTHON_SRC)/Doc/html/icons/* icons/
+
+world:	ps pdf html tarballs
+
+
+# Release packaging targets:
+
+pdf-$(PAPER)-$(RELEASE).tgz: pdf
+	tar cf - *.pdf | gzip -9 >$@
+
+pdf-$(PAPER)-$(RELEASE).tar.bz2: pdf
+	tar cf - *.pdf | bzip2 -9 >$@
+
+pdf-$(PAPER)-$(RELEASE).zip: pdf
+	rm -f $@
+	zip -q -9 $@ *.pdf
+
+postscript-$(PAPER)-$(RELEASE).tar.bz2: ps
+	tar cf - *.ps | bzip2 -9 >$@
+
+postscript-$(PAPER)-$(RELEASE).tgz: ps
+	tar cf - *.ps | gzip -9 >$@
+
+postscript-$(PAPER)-$(RELEASE).zip: ps
+	rm -f $@
+	zip -q -9 $@ *.ps
+
+html-$(RELEASE).tgz:	html
+	tar cf - modpython | gzip -9 >$@
+
+html-$(RELEASE).tar.bz2:	html
+	tar cf - modpython | bzip2 -9 >$@
+
+html-$(RELEASE).zip:	html
+	rm -f $@
+	zip -q -9 $@ modpython
+
+# convenience targets:
+
+tarhtml:	html-$(RELEASE).tgz
+tarps:		postscript-$(PAPER)-$(RELEASE).tgz
+tarpdf:		pdf-$(PAPER)-$(RELEASE).tgz
+
+tarballs:	tarpdf tarps tarhtml
+
+ziphtml:	html-$(RELEASE).zip
+zipps:		postscript-$(PAPER)-$(RELEASE).zip
+zippdf:		pdf-$(PAPER)-$(RELEASE).zip
+
+zips:		zippdf zipps ziphtml
+
+bziphtml:	html-$(RELEASE).tar.bz2
+bzipps:		postscript-$(PAPER)-$(RELEASE).tar.bz2
+bzippdf:	pdf-$(PAPER)-$(RELEASE).tar.bz2
+
+bzips:		bzippdf bzipps bziphtml
+
+
+# Housekeeping targets
+
+# Remove temporary files; all except the following:
+# - sources: .tex, .bib, .sty, *.cls
+# - useful results: .dvi, .pdf, .ps, .texi, .info
+clean:
+	rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm *.syn *.pla api.tex
+
+# Remove temporaries as well as final products
+clobber:	clean
+	rm -rf modpython
+	rm -f html-$(RELEASE).tgz
+	rm -f pdf-$(RELEASE).tgz postscript-$(RELEASE).tgz
+	rm -f html-$(RELEASE).zip
+	rm -f pdf-$(RELEASE).zip postscript-$(RELEASE).zip
+
+realclean:  clobber
+distclean:  clobber

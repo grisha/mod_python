@@ -1,0 +1,558 @@
+\chapter{Apache Configuration Directives\label{directives}}
+
+\section{Handlers\label{dir-handlers}}
+
+\subsection{Python*Handler Directive Syntax\label{dir-handlers-syn}}
+\index{Python*Handler Syntax}
+
+All \strong{Python*Handler} directives have the following syntax: 
+
+\code{Python*Handler \emph{handler [handler]} ...}
+
+Where \emph{handler} is a callable object (e.g. a function) that accepts a
+single argument - request object.
+
+Multiple handlers can be specified on a sinlge line, in which case
+they will be called sequentially, from left to right. Same handler
+directives can be specified multiple times as well, with the same
+result - all hanlders listed will be executed sequentially, from first
+to last. If any handler in the sequence returns a value other than
+\code{apache.OK}, then execution of all subsequent handlers is aborted.
+
+A \emph{handler} has the following syntax: 
+
+\code{module[::object] [module::[object]] ...}
+
+Where module can be a full module name (package dot notation is
+accepted), and the optional object is the name of an object inside the
+module.
+
+Object can also contain dots, in which case it will be resolved from
+left to right. During resolution, if mod_python encounters an object
+of type <class>, it will try instantiate it passing it a single
+argument, a request object.
+
+If no object is specified, then it will default to the directive of
+the handler, all lower case, with the word \samp{Python}
+removed. E.g. the default object for PythonAuthenHandler would be
+authenhandler.
+
+Example: 
+
+\begin{verbatim}
+PythonAuthzHandler mypackage.mymodule::checkallowed
+\end{verbatim}
+
+For more information on handlers, see Overview of a Handler.
+
+Side note: The "::" was chosen for performance reasons. In order for
+Python to use objects inside modules, the modules first need to be
+imported. However, if the separator were simply a ".", it would
+involve a much more complex process of sequentially evaluating every
+word to determine whether it is a package, module, class etc. Using
+the (admittedly un-Python-like) "::" takes the time consuming work of
+figuring out where the module ends and the object inside of it begins
+away from mod_python resulting in a modest performance gain..
+
+\subsection{PythonPostReadRequestHandler\label{dir-handlers-prrh}}
+\index{PythonPostReadRequestHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This routine is called after the request has been read but before any
+other phases have been processed. This is useful to make decisions
+based upon the input header fields.
+
+NOTE: At the time when this phase of the request is being processed,
+the URI has not been translated into a path name, therefore this
+directive will never be executed by Apache if specified within
+\code{<Directory>}, \code{<Location>}, \code{<File>} directives or in
+an \file{.htaccess} file. The only place this can be specified is the
+main configuration file, and the code for it will execute in the
+global interpreter.
+
+
+\subsection{PythonTransHandler\label{dir-handlers-th}}
+\index{PythonTransHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This routine gives allows for an opportunity to translate the URI into
+an actual filename, before the server's default rules (Alias
+directives and the like) are followed.
+
+NOTE: At the time when this phase of the request is being processed,
+the URI has not been translated into a path name, therefore this
+directive will never be executed by Apache if specified within
+\code{<Directory>}, \code{<Location>}, \code{<File>} directives or in
+an \file{.htaccess} file. The only place this can be specified is the
+main configuration file, and the code for it will execute in the
+global interpreter.
+
+\subsection{PythonHeaderParserHandler\label{dir-handlers-hph}}
+\index{PythonHeaderParserHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This handler is called to give the module a chance to look at the
+request headers and take any appropriate specific actions early in the
+processing sequence.
+
+\subsection{PythonAccessHandler\label{dir-handlers-ach}}
+\index{PythonAccessHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This routine is called to check for any module-specific restrictions
+placed upon the requested resource.
+
+For example, this can be used to restrict access by IP number. To do
+so, you would return \code{HTTP_FORBIDDEN} or some such to indicate
+that access is not allowed.
+
+\subsection{PythonAuthenHandler\label{dir-handlers-auh}}
+\index{PythonAuthenHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This routine is called to check the authentication information sent
+with the request (such as looking up the user in a database and
+verifying that the [encrypted] password sent matches the one in the
+database).
+
+To obtain the username, use \code{req.connection.user}. To obtain the
+password entered by the user, use the \code{req.get_basic_auth_pw()}
+function.
+
+A return of \code{apache.OK} means the authentication succeeded. A
+return of \code{apache.HTTP_UNAUTHORIZED} with most browser will bring
+up the password dialog box again. A return of
+\code{apache.HTTP_FORBIDDEN} will usually show the error on the
+browser and not bring up the password dialog
+\code{again. HTTP_FORBIDDEN} should be used when authentication
+succeeded, but the user is not permitted to access a particular URL.
+
+An example authentication handler might look like this: 
+
+\begin{verbatim}
+def authenhandler(req):
+
+    pw = req.get_basic_auth_pw()
+    user = req.connection.user     
+    if user == "spam" and pw == "eggs":
+        return apache.OK
+    else:
+        return apache.HTTP_UNAUTHORIZED
+\end{verbatim}    
+
+\strong{Note:} \code{req.get_basic_auth_pw()} must be called prior to using the
+\code{req.connection.user} value. Apache makes no attempt to decode the
+authentication information unless \code{req.get_basic_auth_pw()} is called.
+
+\subsection{PythonTypeHandler\label{dir-handlers-tph}}
+\index{PythonTypeHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This routine is called to determine and/or set the various document
+type information bits, like Content-type (via \code{r->content_type}),
+language, et cetera.
+
+\subsection{PythonFixupHandler\label{dir-handlers-fuh}}
+\index{PythonFixupHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This routine is called to perform any module-specific fixing of header
+fields, et cetera. It is invoked just before any content-handler.
+
+\subsection{PythonHandler\label{dir-handlers-ph}}
+\index{PythonHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This is the main request handler. 99.99% of your applications will
+only provide this one handler.
+
+\subsection{PythonInitHandler\label{dir-handlers-pih}}
+\index{PythonInitHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This handler is the first handler called in the request processing
+phases that is allowed both inside and outside \file{.htaccess} and
+directory.
+
+This handler is actually an alias to two different handlers. When
+specified in the main config file outside any directory tags, it is an
+alias to PostReadRequestHandler. When specified inside directory
+(where PostReadRequestHandler is not allowed), it aliases to
+HeaderParserHandler.
+
+\emph{(This idea was borrowed from mod_perl)}
+
+\subsection{PythonLogHandler\label{dir-handlers-plh}}
+\index{PythonLogHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This routine is called to perform any module-specific logging
+activities over and above the normal server things.
+
+\subsection{PythonCleanupHandler\label{dir-handlers-pch}}
+\index{PythonCleanupHandler}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\emph{Python*Handler Syntax}\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+This is the very last handler, called just before the request object
+is destroyed by Apache.
+
+Unlike all the other handlers, the return value of this handler is
+ignored. Any errors will be logged to the error log, but will not be
+sent to the client, even if PythonDebug is On.
+
+This handler is not a valid argument to the \code{rec.add_handler()}
+function. For dynamic clean up registration, use
+\code{req.register_cleanup()}.
+
+Once cleanups have started, it is not possible to register more of
+them. Terefore, \code{req.register_cleanup()} has no effect within this
+handler.
+
+Cleanups registered with this directive will execute \emph{after} cleanups
+registered with \code{req.register_cleanup()}.
+
+\section{Other Directives\label{dir-other}}
+
+\subsection{PythonEnablePdb\label{dir-other-epd}}
+\index{PythonEnablePdb}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonEnablePdb \{On, Off\} \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+PythonEnablePdb Off\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+When On, mod_python will execute the handler functions within the
+Python debugger pdb using the \code{pdb.runcall()} function.
+
+Because pdb is an interactive tool, start httpd with the -X option
+when using this directive.
+
+\subsection{PythonDebug\label{dir-other-pd}}
+\index{PythonDebug}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonDebug \{On, Off\} \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+PythonDebug Off\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Normally, the traceback output resulting from uncaught Python errors
+is sent to the error log. With PythonDebug On directive specified, the
+output will be sent to the client (as well as the log), except when
+the error is \exception{IOError} while writing, in which case it will go
+to the error log.
+
+This directive is very useful during the development process. It is
+recommended that you do not use it production environment as it may
+reveal to the client unintended, possibly sensitive security
+information.
+
+\subsection{PythonImport\label{dir-other-pi}}
+\index{PythonImport}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonImport \emph{module} ... \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+directory\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Tells the server to import the Python module module at process
+startup. This is useful for initialization tasks that could be time
+consuming and should not be done at the request processing time,
+e.g. initializing a database connection.
+
+The import takes place at child process initialization, so the module
+will actually be imported once for every child process spawned.
+
+Note that at the time when the import takes place, the configuration
+is not completely read yet, so all other directives, including
+PythonInterpreter have no effect on the behaviour of modules imported
+by this directive. Because of this limitation, the use of this
+directive should be limited to situations where it is absolutely
+necessary, and the recommended approach to one-time initializations
+should be to use the Python import mechanism.
+
+The module will be imported within the subinterpreter according with
+the directory name specified by the \code{<Directory>} directive. For
+all other subinterpreters, the module will not appear imported.
+
+See also Multiple Interpreters. 
+
+\subsection{PythonInterpPerDirectory\label{dir-other-ipd}}
+\index{PythonInterpPerDirectory}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonInterpPerDirectory \{On, Off\} \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+PythonInterpPerDirectory Off\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Instructs mod_python to name subinterpreters using the directory of
+the file in the request (\code{req.filename}) rather than the the
+server name. This means that scripts in different directories will
+execute in different subinterpreters as opposed to the default policy
+where scripts in the same virtual server execute in the same
+subinterpreter, even if they are in different directories.
+
+For example, assume there is a
+\file{/directory/subdirectory}. \file{/directory} has an .htaccess
+file with a PythonHandler directive.  \file{/directory/subdirectory}
+doesn't have an .htacess. By default, scripts in /directory and
+\file{/directory/subdirectory} would execute in the same interpreter assuming
+both directories are accessed via the same virtual server. With
+PythonInterpPerDirectory, there would be two different interpreters,
+one for each directory.
+
+\strong{Note:} In early phases of the request prior to the URI translation
+(PostReadRequestHandler and TransHandler) the path is not yet known
+because the URI has not been translated. During those phases and with
+PythonInterpPerDirectory on, all python code gets executed in the
+global intepreter. This may not be exactly what you want, but
+unfortunately there is no way around this.
+
+See also Multiple Interpreters. 
+
+\subsection{PythonInterpPerDirective\label{dir-other-ipdv}}
+\index{PythonPythonInterpPerDirective}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonInterpPerDirective \{On, Off\} \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+PythonInterpPerDirective Off\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Instructs mod_python to name subinterpreters using the directory in
+which the Python*Handler directive currently in effect was
+encountered.
+
+For example, assume there is a
+\file{/directory/subdirectory}. \file{/directory} has an .htaccess
+file with a PythonHandler directive.  \file{/directory/subdirectory}
+has another \file{.htacess} file with another PythonHandler. By
+default, scripts in \file{/directory} and
+\file{/directory/subdirectory} would execute in the same interpreter
+assuming both directories are in the same virtual server. With
+PythonInterpPerDirective, there would be two different interpreters,
+one for each directive.
+
+See also Multiple Interpreters. 
+
+\subsection{PythonHandlerModule\label{dir-other-phm}}
+\index{PythonHandlerModule}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonHandlerModule module \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+PythonHandlerModule can be used an alternative to Python*Handler
+directives. The module specified in this handler will be searched for
+existance of functions matching the default handler function names,
+and if a function is found, it will be executed.
+
+For example, instead of:
+\begin{verbatim}
+PythonAutenHandler mymodule
+PythonHandler mymodule
+PythonLogHandler mymodule
+\end{verbatim}    
+
+one can simply say
+\begin{verbatim}
+PythonHandlerModule mymodule
+\end{verbatim}    
+
+\subsection{PythonNoReload\label{dir-other-pnr}}
+\index{PythonNoReload}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonNoReload \{On, Off\} \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+PythonNoReload Off\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Instructs mod_python not to check the modification date of the module
+file. By default, mod_python checks the time-stamp of the file and
+reloads the module if the module's file modification date is later
+than the last import or reload.
+
+This options is useful in production environment where the modules do
+not change, it will save some processing time and give a small
+performance gain.
+
+\subsection{PythonOption\label{dir-other-po}}
+\index{PythonOption}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonOption key value \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Assigns a key value pair to a table that can be later retrieved by the
+\code{req.get_options()} function. This is useful to pass information
+between the apache configuration files (\file{httpd.conf},
+\file{.htaccess}, etc) and the Python programs.
+
+\subsection{PythonPath\label{dir-other-pp}}
+\index{PythonPath}
+
+\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonPath \emph{path} \\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+server config, virtual host, directory, htaccess\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+not None\\
+\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+PythonPath directive sets the PythonPath. The path must be specified
+in Python list notation, e.g.
+
+\begin{verbatim}
+PythonPath "['/usr/local/lib/python2.0', '/usr/local/lib/site_python', '/some/other/place']"
+\end{verbatim}
+
+The path specified in this directive will replace the path, not add to
+it. However, because the value of the directive is evaled, to append a
+directory to the path, one can specify something like
+
+\begin{verbatim}
+PythonPath "sys.path+['/mydir']"
+\end{verbatim}
+
+Mod_python tries to minimize the number of evals associated with the
+PythonPath directive because evals are slow and can negatively impact
+performance, especially when the directive is specified in an
+\file{.htaccess} file which gets parsed at every hit. Mod_python will
+remember the arguments to the PythonPath directive in the un-evaled
+form, and before evaling the value it will compare it to the
+remembered value. If the value is the same, no action is
+taken. Because of this, you should not rely on the directive as a way
+to restore the pythonpath to some value if your code changes it.
+
+Note that this directive should not be used as a security measure
+since the Python path is easily manipulated from within the scripts.
+

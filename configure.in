@@ -1,5 +1,5 @@
 dnl Copyright 2000 Gregory Trubetskoy <grisha@ispol.com>
-dnl $Id: configure.in,v 1.6 2000/10/29 01:29:06 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.7 2000/12/05 00:13:57 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -130,6 +130,7 @@ fi
 AC_MSG_CHECKING(for --with-python)
 AC_ARG_WITH(python, [--with-python=DIR	Path to Python sources],
 [
+  AC_SUBST(PYTHON_SRC)
   PYTHON_SRC=`cd $withval; pwd`
   AC_MSG_RESULT($PYTHON_SRC)
 ],
@@ -241,7 +242,7 @@ if test -z "${MKDEP}"; then
   AC_PATH_PROG(MKDEP, "makedepend")
 fi
 
-AC_OUTPUT(Makefile src/Makefile src/libpython.module)
+AC_OUTPUT(Makefile src/Makefile src/libpython.module Doc/Makefile)
 
 if test -n "$MKDEP"; then
   # make dependencies

@@ -1,3 +1,9 @@
+Dec  4 2000 -	Initial (not proof-read) LaTeX source for documentation is 
+		checked in.
+
+Nov 26 2000 -	Dilligently migrating all the documentation to LaTeX using the
+		Python standards. 
+
 Nov 17 2000 -	I forgot to uncomment type initialization. type(req.headers_in)
 		would segfault. Fixed. Continuing work on publisher.py module.
 

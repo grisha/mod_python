@@ -1,0 +1,299 @@
+\chapter{Tutorial\label{tutorial}}
+
+\begin{flushright}
+\emph{So how can I make this work?}
+\end{flushright}
+
+\emph{This is a quick guide to getting started with mod_python programming once you have it installed. This is \textbf{not} an installation manual!}
+
+\emph{It is also highly recommended to read (at least the top part of) the
+Python API section after completing this tutorial.}
+
+\section{Quick Overview of how Apache Handles Requests\label{tut-overview}}
+
+It may seem like a little too much for starters, but you need to
+understand what a handler is in order to use mod_python. And it's
+really rather simple.
+
+Apache processes requests in phases. For example, the first phase may
+be to authenticate the user, the next phase to verify whether that
+user is allowed to see a particular file, then (next phase) read the
+file and send it to the client. Most requests consist of two phases:
+(1) read the file and send it to the client, then (2) log the
+request. Exactly which phases are processed and how varies greatly and
+depends on the configuration.
+
+A handler is a function that processes one phase. There may be more
+than one handler available to process a particular phase, in which
+case they are called in sequence. For each of the phases, there is a
+default Apache handler (most of which perform only very basic
+functions or do nothing), and then there are additional handlers
+provided by Apache modules, such as mod_python.
+
+Mod_python provides nearly every possible handler to
+Apache. Mod_python handlers by default do not perform any function,
+unless specifically told so by a configuration directive. These
+directives begin with Python and end with Handler
+(e.g. \code{PythonAuthenHandler}) and associate a phase with a Python
+function. So the main function of mod_python is to act as a dispatcher
+between Apache handlers and python functions written by a developer
+like you.
+
+The most commonly used handler is \code{PythonHandler}. It's for the phase of
+the request during which the actual content is provided. For lack of a
+better term, I will refer to this handler from here on as generic
+handler. The default Apache action for this handler would be to read
+the file and send it to the client. Most applications you will write
+will use this one handler. If you insist on seeing ALL the possible
+handlers, refer to the \citetitle[directives.html]{Apache Directives} section.
+
+\section{So what Exactly does mod_python do?\label{tut-what-it-do}}
+
+Let's pretend we have the following configuration: 
+\begin{verbatim}
+<Directory /mywebdir>
+    AddHandler python-program .py
+    PythonHandler myscript
+</Directory>
+\end{verbatim}
+
+\strong{NB:} \file{/mywebdir} is an absolute physical path. 
+
+And let's say that we have a python program (windows users: substitute
+forward slashes for backslashes) \file{/mywedir/myscript.py} that looks like
+this:
+
+\begin{verbatim}
+    from mod_python import apache
+
+    def handler(req):
+
+        req.content_type = "text/plain"
+        req.send_http_header()
+        req.write("Hello World!")
+
+        return apache.OK
+\end{verbatim}    
+
+Here is what's going to happen: The \code{AddHandler} directive tells
+Apache that any request for any file ending with \file{.py} in the
+\file{/mywebdir} directory or a subdirectory thereof needs to be
+processed by mod_python.
+
+When such a request comes in, Apache starts stepping through its
+request processing phases calling handlers in mod_python. The
+mod_python handlers check if a directive for that handler was
+specified in the configuration. In this particular example, no action
+will be taken by mod_python for all handlers except for the generic
+handler. When we get to the generic handler, mod_python will notice
+that \samp{PythonHandler myscript} directive was specified and do the
+following:
+
+\begin{enumerate}
+
+\item
+If not already done, prepend the directory in which the
+\code{PythonHandler} directive was found to sys.path.
+
+\item
+Attempt to import a module by name \code{myscript}. (Note that if
+\code{myscript} was in a subdirectory of the directory where
+\code{PythonHandler} was specified, then the import would not work
+because said subdirectory would not be in the pythonpath. One way
+around this is to use package notation, e.g. \samp{PythonHandler
+subdir.myscript}.)
+
+\item 
+Look for a function called \code{handler} in \code{myscript}.
+
+\item
+Call the function, passing it a \emph{request object}. (More on what a
+\emph{request object} is later)
+
+\item
+At this point we're inside the script: 
+
+
+\begin{verbatim}
+from mod_python import apache
+\end{verbatim}
+This imports the apache module which provides us the interface to
+Apache. With a few rare exceptions, every mod_python program will have
+this line.
+
+\begin{verbatim}
+def handler(req):
+\end{verbatim}
+This is our \emph{handler function} declaration. It is called \samp{handler}
+because mod_python takes the name of the directive, converts it to
+lower case and removes the word "python". Thus \samp{PythonHandler} becomes
+\samp{handler}. You could name it something else, and specify it explicitly
+in the directive using the special "::" notation. For example, if the
+function was called \samp{spam}, then the directive would be
+\samp{PythonHandler myscript::spam}.
+
+
+Note that a handler must take one argument - that mysterious \emph{request
+object}. There is really no mystery about it though.  The request
+object is an object that provides a whole bunch of information about
+this particular request - such as the IP of client, the headers, the
+URI, etc. The communication back to the client is also done via the
+request object, i.e. there is no "response" object.
+
+
+\begin{verbatim}
+    req.content_type = "text/plain"
+\end{verbatim}
+This sets the content type to "text/plain". The default is usually
+"text/html", but since our handler doesn't produce any html,
+"text/plain" is more appropriate.
+
+
+\begin{verbatim}
+    req.send_http_header()
+\end{verbatim}
+This function sends the HTTP headers to the client. You can't really
+start writing to the client without sending the headers first. Note
+that one of the headers is "content-type". So if you want to set
+custom content-types, you better do it before you call
+\code{req.send_http_header()}.
+
+
+\begin{verbatim}
+    req.write("Hello Wordl!")
+\end{verbatim}
+This writes the "Hello World!" string to the client. (Did I really
+have to explain this one?)
+
+
+\begin{verbatim}
+    return apache.OK
+\end{verbatim}
+This tells mod_python (who is calling this function) that everything
+went OK and that the request has been processed. If things did not go
+OK, that line could be return \code{apache.HTTP_INTERNAL_SERVER_ERROR}
+or return \code{apache.HTTP_FORBIDDEN}. When things do not go OK,
+Apache will log the error and generate an error message for the
+client.
+
+\strong{Some food for thought:} If you were paying attention, you noticed that
+nowhere did it say that in order for all of the above to happen, the
+URL needs to refer to \file{myscript.py}. The only requirement was
+that it refers to a .py file. In fact the name of the file doesn't
+matter, and the file referred to in the URL doesn't have to exist. So,
+given the above configuration,
+\file{http://myserver/mywebdir/myscript.py} and
+\file{http://myserver/mywebdir/montypython.py} would give the exact same
+result.
+
+ \emph{At this point, if you didn't understand the above paragraph, go back and read it again, until you do.}
+
+\end{enumerate}
+
+\section{Now something more complicated\label{tut-more-complicated}}
+
+Now that you know how to write a primitive handler, let's try
+something more complicated.
+
+Let's say we want to password-protect this directory. We want the
+login to be "spam", and the password to be "eggs".
+
+First, we need to tell Apache to call our authentication handler when
+authentication is needed. We do this by adding the
+\code{PythonAuthenHandler}. So now our config looks like this:
+
+\begin{verbatim}
+<Directory /mywebdir>
+    AddHandler python-program .py
+    PythonHandler myscript
+    PythonAuthenHandler myscript
+</Directory>
+\end{verbatim}
+
+Notice that the same script is specified for two different
+handlers. This is fine, because if you remember, mod_python will look
+for different functions within that script for the different handlers.
+
+Next, we need to tell Apache that we are using basic HTTP
+authentication, and only valid users are allowed (this is pretty basic
+Apache stuff, so I'm not going to go into details here). Our config
+looks like this now:
+
+\begin{verbatim}
+<Directory /mywebdir>
+    AddHandler python-program .py
+    PythonHandler myscript
+    PythonAuthenHandler myscript
+    AuthType Basic
+    AuthName "Restricted Area"
+    require valid-user
+</Directory>
+\end{verbatim}          
+
+Now we need to write an authentication handler function in
+\file{myscript.py}. A basic authentication handler would look like this:
+
+\begin{verbatim}
+def authenhandler(req):
+
+    pw = req.get_basic_auth_pw()
+    user = req.connection.user     
+    if user == "spam" and pw == "eggs":
+        return apache.OK
+    else:
+        return apache.HTTP_UNAUTHORIZED
+\end{verbatim}  
+
+Let's look at this line by line: 
+
+\begin{verbatim}
+def authenhandler(req):
+\end{verbatim}
+
+This is the handler function declaration. This one is called
+\code{authenhandler} because, as we already described above, mod_python takes
+the name of the directive (\code{PythonAuthenHandler}), drops the word
+"Python" and converts it lower case.
+
+\begin{verbatim}
+    pw = req.get_basic_auth_pw()
+\end{verbatim}
+                  
+This is how we obtain the password. The basic HTTP authentication
+transmits the password in base64 encoded form to make it a little bit
+less obvious. This function decodes the password and returns it as a
+string.
+
+\begin{verbatim}
+    user = req.connection.user
+\end{verbatim}
+                  
+This is how you obtain the username that the user entered. In case
+you're wondering, the \emph{connection object} is an object that
+contains information specific to a \emph{connection}. With HTTP
+Keep-Alive, a single \emph{connection} can serve multiple \emph{requests}.
+
+\strong{NOTE:} The two lines above MUST be in that order. The reason is that
+\code{connection.user} is asigned a value by the \code{get_basic_auth_pw()}
+function. If you try to use the \code{connection.user} value without calling
+\code{get_basic_auth_pw()} first, it will be None.
+
+\begin{verbatim}
+    if user == "spam" and pw == "eggs":
+        return apache.OK
+\end{verbatim}
+
+We compare the values provided by the user, and if they are what we
+were expecting, we tell Apache to go ahead and proceed by returning
+\code{apache.OK}. Apache will then proceed to the next handler. (which in
+this case would be \code{handler()} if it's a .py file).
+
+\begin{verbatim}
+    else:
+        return apache.HTTP_UNAUTHORIZED 
+\end{verbatim}
+
+Else, we tell Apache to return HTTP_UNAUTHORIZED to the client. 
+
+\emph{XXX To be continued....}
+

@@ -51,7 +51,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.38 2000/11/18 04:21:32 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.39 2000/12/05 00:14:02 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -283,7 +283,7 @@ void python_init(server_rec *s, pool *p)
     if (! Py_IsInitialized()) 
     {
 
-	/* initialize types */
+	/* initialize types XXX break windows? */
 /* 	MpTable_Type.ob_type = &PyType_Type;  */
 /*  	MpServer_Type.ob_type = &PyType_Type; */
 /*  	MpConn_Type.ob_type = &PyType_Type;  */

@@ -3,13 +3,16 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: util.py,v 1.1 2000/11/12 05:01:22 gtrubetskoy Exp $
+  $Id: util.py,v 1.2 2000/12/05 00:13:58 gtrubetskoy Exp $
 
 """
 
 import apache
 import string
 import StringIO
+
+parse_qs = apache.parse_qs
+parse_qsl = apache.parse_qsl
 
 """ The classes below are a drop-in replacement for the standard
     cgi.py FieldStorage class. They should have pretty much the same
@@ -69,7 +72,7 @@ class FieldStorage:
 
         # always process GET-style parameters
         if _req.args:
-            pairs = apache.parse_qsl(req.args, keep_blank_values)
+            pairs = parse_qsl(req.args, keep_blank_values)
             for pair in pairs:
                 file = StringIO.StringIO(pair[1])
                 self.list.append(Field(pair[0], file, "text/plain", {},
@@ -90,13 +93,14 @@ class FieldStorage:
 
             if ctype == "application/x-www-form-urlencoded":
                 
-                pairs = apache.parse_qsl(req.read(clen))
+                pairs = parse_qsl(req.read(clen))
                 for pair in pairs:
                     self.list.append(Field(pair[0], pair[1]))
 
             elif ctype[:10] == "multipart/":
 
                 # figure out boundary
+                # XXX what about req.boundary?
                 try:
                     i = string.rindex(string.lower(ctype), "boundary=")
                     boundary = ctype[i+9:]

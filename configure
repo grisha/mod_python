@@ -1212,6 +1212,7 @@ echo "configure:1211: checking for --with-python" >&5
 if test "${with_python+set}" = set; then
   withval="$with_python"
   
+  
   PYTHON_SRC=`cd $withval; pwd`
   echo "$ac_t""$PYTHON_SRC" 1>&6
 
@@ -1225,7 +1226,7 @@ if test -z "$PYTHON_SRC"; then
   # Extract the first word of "python", so it can be a program name with args.
 set dummy python; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1229: checking for $ac_word" >&5
+echo "configure:1230: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_PYTHON_BIN'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1264,7 +1265,7 @@ else
   # Extract the first word of "python", so it can be a program name with args.
 set dummy python; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1268: checking for $ac_word" >&5
+echo "configure:1269: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_PYTHON_BIN'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1305,13 +1306,13 @@ fi
 
 # find out python version
 echo $ac_n "checking Python version""... $ac_c" 1>&6
-echo "configure:1309: checking Python version" >&5
+echo "configure:1310: checking Python version" >&5
 PyVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:3]'`
 echo "$ac_t""$PyVERSION" 1>&6
 
 # check if python is compiled with threads
 echo $ac_n "checking whether Python is compiled with thread support""... $ac_c" 1>&6
-echo "configure:1315: checking whether Python is compiled with thread support" >&5
+echo "configure:1316: checking whether Python is compiled with thread support" >&5
 PyTHREADS=`$PYTHON_BIN -c "import sys; print \"thread\" in sys.builtin_module_names"`
 if test "$PyTHREADS" = "1"; then
   echo "$ac_t""yes" 1>&6
@@ -1330,7 +1331,7 @@ fi
 
 # find out compiled in install prefix
 echo $ac_n "checking Python install prefix""... $ac_c" 1>&6
-echo "configure:1334: checking Python install prefix" >&5
+echo "configure:1335: checking Python install prefix" >&5
 PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
 echo "$ac_t""$PyEXEC_INSTALLDIR" 1>&6
 
@@ -1340,7 +1341,7 @@ PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 
 # set python std library variable
 echo $ac_n "checking what libraries Python was linked with""... $ac_c" 1>&6
-echo "configure:1344: checking what libraries Python was linked with" >&5
+echo "configure:1345: checking what libraries Python was linked with" >&5
 
 if test -z "$PYTHON_SRC"; then
   PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
@@ -1366,7 +1367,7 @@ LIBS="${LIBS} ${PY_LIBS}"
 echo "$ac_t""$PY_LIBS" 1>&6
 
 echo $ac_n "checking linker flags used to link Python""... $ac_c" 1>&6
-echo "configure:1370: checking linker flags used to link Python" >&5
+echo "configure:1371: checking linker flags used to link Python" >&5
 
 if test -z "$PYTHON_SRC"; then
   PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
@@ -1381,7 +1382,7 @@ LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 echo "$ac_t""$PY_LDFLAGS" 1>&6
 
 echo $ac_n "checking where Python include files are""... $ac_c" 1>&6
-echo "configure:1385: checking where Python include files are" >&5
+echo "configure:1386: checking where Python include files are" >&5
 
 if test -z "$PYTHON_SRC"; then
   PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
@@ -1397,7 +1398,7 @@ echo "$ac_t""$PY_INCLUDES" 1>&6
 # Extract the first word of ""mkdep"", so it can be a program name with args.
 set dummy "mkdep"; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1401: checking for $ac_word" >&5
+echo "configure:1402: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1435,7 +1436,7 @@ if test -z "${MKDEP}"; then
   # Extract the first word of ""makedepend"", so it can be a program name with args.
 set dummy "makedepend"; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1439: checking for $ac_word" >&5
+echo "configure:1440: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1582,7 +1583,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "Makefile src/Makefile src/libpython.module" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile src/Makefile src/libpython.module Doc/Makefile" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1629,6 +1630,7 @@ s%@AP_SRC@%$AP_SRC%g
 s%@AP_SRC_OWN@%$AP_SRC_OWN%g
 s%@AP_SRC_GRP@%$AP_SRC_GRP%g
 s%@STATIC@%$STATIC%g
+s%@PYTHON_SRC@%$PYTHON_SRC%g
 s%@PYTHON_BIN@%$PYTHON_BIN%g
 s%@PY_STD_LIB@%$PY_STD_LIB%g
 s%@INCLUDES@%$INCLUDES%g
@@ -1674,7 +1676,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile src/libpython.module"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile src/libpython.module Doc/Makefile"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then

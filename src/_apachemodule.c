@@ -51,7 +51,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.3 2000/11/09 00:09:18 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.4 2000/12/05 00:14:02 gtrubetskoy Exp $
  *
  */
 
@@ -357,11 +357,11 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
 
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
-  {"log_error",                 (PyCFunction)log_error,        METH_VARARGS},
-  {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
-  {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
-  {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
-  {NULL, NULL} /* sentinel */
+    {"log_error",                 (PyCFunction)log_error,        METH_VARARGS},
+    {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
+    {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
+    {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
+    {NULL, NULL} /* sentinel */
 };
 
 /* Module initialization */
@@ -374,6 +374,6 @@ DL_EXPORT(void) init_apache()
     d = PyModule_GetDict(m);
     Mp_ServerReturn = PyErr_NewException("_apache.SERVER_RETURN", NULL, NULL);
     if (Mp_ServerReturn == NULL)
-	return NULL;
+	return;
     PyDict_SetItemString(d, "SERVER_RETURN", Mp_ServerReturn);
 }

@@ -49,7 +49,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.4 2000/10/22 03:32:44 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.5 2000/12/05 00:13:57 gtrubetskoy Exp $
 
 @SET_MAKE@
 LIBEXECDIR=@LIBEXECDIR@
@@ -98,7 +98,6 @@ install_dso:	dso
 	@echo "and if your configuration uses ClearModuleList, then also"
 	@echo "    AddModule mod_python.c"
 	@echo
-
 
 install_static:	static
 	@echo
