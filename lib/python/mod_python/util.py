@@ -41,14 +41,14 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: util.py,v 1.7 2002/08/15 21:46:35 gtrubetskoy Exp $
+ # $Id: util.py,v 1.8 2002/08/16 22:07:15 gtrubetskoy Exp $
 
-import apache
+import _apache
 import string
 import StringIO
 
-parse_qs = apache.parse_qs
-parse_qsl = apache.parse_qsl
+parse_qs = _apache.parse_qs
+parse_qsl = _apache.parse_qsl
 
 """ The classes below are a (almost) a drop-in replacement for the
     standard cgi.py FieldStorage class. They should have pretty much the
