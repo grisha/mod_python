@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.10 2002/10/08 21:38:55 grisha Exp $
+ # $Id: tests.py,v 1.11 2002/10/09 15:06:53 grisha Exp $
  #
 
 # mod_python tests
@@ -63,7 +63,7 @@ import re
 import time
 import os
 
-class InternalTestCase(unittest.TestCase):
+class SimpleTestCase(unittest.TestCase):
 
     def __init__(self, methodName, req):
         unittest.TestCase.__init__(self, methodName)
@@ -388,12 +388,12 @@ class InternalTestCase(unittest.TestCase):
 def make_suite(req):
 
     mpTestSuite = unittest.TestSuite()
-    mpTestSuite.addTest(InternalTestCase("test_apache_log_error", req))
-    mpTestSuite.addTest(InternalTestCase("test_apache_table", req))
-    mpTestSuite.addTest(InternalTestCase("test_req_add_common_vars", req))
-    mpTestSuite.addTest(InternalTestCase("test_req_members", req))
-    mpTestSuite.addTest(InternalTestCase("test_req_get_config", req))
-    mpTestSuite.addTest(InternalTestCase("test_req_get_remote_host", req))
+    mpTestSuite.addTest(SimpleTestCase("test_apache_log_error", req))
+    mpTestSuite.addTest(SimpleTestCase("test_apache_table", req))
+    mpTestSuite.addTest(SimpleTestCase("test_req_add_common_vars", req))
+    mpTestSuite.addTest(SimpleTestCase("test_req_members", req))
+    mpTestSuite.addTest(SimpleTestCase("test_req_get_config", req))
+    mpTestSuite.addTest(SimpleTestCase("test_req_get_remote_host", req))
     return mpTestSuite
 
 
