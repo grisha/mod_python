@@ -160,13 +160,13 @@ function. So the main function of mod_python is to act as a dispatcher
 between Apache handlers and Python functions written by a developer
 like you.
 
-\indexii{generic}{handler} The most commonly used handler is
-\code{PythonHandler}. It handles the phase of the request during which
-the actual content is provided. We will refer to this handler from
-here on as \dfn{generic} handler. The default Apache action for this
-handler would be to read the file and send it to the client. Most
-applications you will write will use this one handler. To see all the
-possible handlers, refer to Section \ref{directives},
+The most commonly used handler is \code{PythonHandler}. It handles the
+phase of the request during which the actual content is
+provided. Becausee it has no name, it is sometimes referred to as as
+\dfn{generic} handler. The default Apache action for this handler is
+to read the file and send it to the client. Most applications you will
+write will override this one handler. To see all the possible
+handlers, refer to Section \ref{directives},
 \citetitle[directives.html]{Apache Directives}.
 
 \section{So what Exactly does Mod-python do?\label{tut-what-it-do}}
