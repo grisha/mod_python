@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.9 2003/10/21 20:42:38 grisha Exp $
+ # $Id: Makefile.in,v 1.10 2003/10/22 20:30:04 grisha Exp $
  #
 
 PYTHON_BIN=@PYTHON_BIN@
@@ -73,7 +73,6 @@ install: install_py_lib
 # this may require root priviledges
 install_py_lib: mod_python src
 	@cd src; $(MAKE) psp_parser.c
-	$(PYTHON_BIN) setup.py install --optimize 2 --force
 	if test -z "$(DESTDIR)" ; then \
 		$(PYTHON_BIN) setup.py install --optimize 2 --force ; \
 	else \
