@@ -70,6 +70,7 @@ dso: @DSO@
 
 do_dso:
 	@cd src && $(MAKE)
+	@cd dist && $(MAKE) dist
 
 no_dso:
 	@echo
@@ -102,13 +103,14 @@ install_dso:	dso
 	@echo
 
 install_py_lib:
-	$(INSTALL) -d $(PY_STD_LIB)/site-packages/mod_python
-	@for f in `ls lib/python/mod_python/*.py`; \
-	do \
-		$(INSTALL) $$f $(PY_STD_LIB)/site-packages/mod_python; \
-	done
-	${PYTHON_BIN} $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
-	${PYTHON_BIN} -O $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
+	cd dist && $(MAKE) install_py_lib
+#	$(INSTALL) -d $(PY_STD_LIB)/site-packages/mod_python
+#	@for f in `ls lib/python/mod_python/*.py`; \
+#	do \
+#		$(INSTALL) $$f $(PY_STD_LIB)/site-packages/mod_python; \
+#	done
+#	${PYTHON_BIN} $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
+#	${PYTHON_BIN} -O $(PY_STD_LIB)/compileall.py $(PY_STD_LIB)/site-packages/mod_python
 
 clean:
 	cd src && $(MAKE) clean

@@ -1204,12 +1204,12 @@ if test "$STATIC" = "no_static" -a "$DSO" = "no_dso"; then
   { echo "configure: error: Neither static nor DSO option available, there is no point in continuing." 1>&2; exit 1; }
 fi
 
+
 echo $ac_n "checking for --with-python""... $ac_c" 1>&6
-echo "configure:1209: checking for --with-python" >&5
+echo "configure:1210: checking for --with-python" >&5
 # Check whether --with-python or --without-python was given.
 if test "${with_python+set}" = set; then
   withval="$with_python"
-  
   
   PYTHON_BIN="$withval"
   echo "$ac_t""$PYTHON_BIN" 1>&6
@@ -1506,7 +1506,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py dist/Makefile" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1601,7 +1601,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py dist/Makefile"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
