@@ -1829,11 +1829,7 @@ if sess.is_new():
   \end{methoddesc}
 
   \begin{methoddesc}[BaseSession]{save}{}
-    This method should write session values to storage. It is a good
-    idea to call this method after you modify session data. (It will
-    be called automatically when the session object is destroyed, but
-    it is best to save data explicitely.) In \class{BaseSession} this
-    is a noop.
+    This method writes session values to storage.
   \end{methoddesc}
 
   \begin{methoddesc}[BaseSession]{delete}{}

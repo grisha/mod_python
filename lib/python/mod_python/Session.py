@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.1 2003/08/01 01:53:13 grisha Exp $
+ # $Id: Session.py,v 1.2 2003/08/04 23:24:01 grisha Exp $
 
 from mod_python import apache, Cookie
 import _apache
@@ -349,7 +349,7 @@ class DbmSession(BaseSession):
                             apache.APLOG_NOTICE)
 
     def do_load(self):
-#        self.lock(key=1)
+        self.lock(key=0)
         dbm = self._get_dbm()
         try:
             if dbm.has_key(self._sid):
@@ -360,25 +360,25 @@ class DbmSession(BaseSession):
             return 0
         finally:
             dbm.close()
-#            self.unlock(key=1)
+            self.unlock(key=0)
 
     def do_save(self):
-        self.lock(key=1)
+        self.lock(key=0)
         dbm = self._get_dbm()
         try:
             dbm[self._sid] = cPickle.dumps(self.copy())
         finally:
             dbm.close()
-            self.unlock(key=1)
+            self.unlock(key=0)
 
     def do_delete(self):
-        self.lock(key=1)
+        self.lock(key=0)
         dbm = self._get_dbm()
         try:
             del self._dbm[self._sid]
         finally:
             dbm.close()
-            self.unlock(key=1)
+            self.unlock(key=0)
 
 Session = DbmSession
     

@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.34 2003/08/01 01:53:13 grisha Exp $
+ # $Id: test.py,v 1.35 2003/08/04 23:24:01 grisha Exp $
  #
 
 """
@@ -1064,6 +1064,8 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         f = urllib.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
         f.read()
         f.close()
+
+        time.sleep(2)
 
         self.stopHttpd()
 

@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.22 2003/08/01 01:53:13 grisha Exp $
+ * $Id: _apachemodule.c,v 1.23 2003/08/04 23:24:01 grisha Exp $
  *
  */
 
@@ -410,10 +410,21 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
 	return NULL;
     }
     else {
-	hash = abs(hash);
+	hash = abs(hash) + 1;
     }
-    
-    index = hash % (glb->nlocks);
+
+    /* we make sure that index is never 0 unless
+     * explicitely requested. This way 0 is reserved for
+     * special needs (probably dbm access locking, see
+     * Session.py)
+     */
+
+    if (hash == 0) {
+	index = 0;
+    }
+    else {
+	index = (hash % (glb->nlocks-1)+1);
+    }
     
     if ((rv = apr_global_mutex_lock(glb->g_locks[index])) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
@@ -463,10 +474,15 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
 	return NULL;
     }
     else {
-	hash = abs(hash);
+	hash = abs(hash) + 1;
     }
     
-    index = hash % (glb->nlocks);
+    if (hash == 0) {
+	index = 0;
+    }
+    else {
+	index = (hash % (glb->nlocks-1)+1);
+    }
     
     if ((rv = apr_global_mutex_unlock(glb->g_locks[index])) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
