@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.45 2002/07/26 13:11:31 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.46 2002/07/31 21:49:50 gtrubetskoy Exp $
 
 import sys
 import string
@@ -401,8 +401,15 @@ def import_module(module_name, req=None, path=None):
         file = module.__dict__.get("__file__")
 
         # the "and not" part of this condition is to prevent execution
-        # of arbitrary already imported modules, such as os
-        if not file or (path and not os.path.dirname(file) in path):
+        # of arbitrary already imported modules, such as os. the
+        # not-so-obvious filter(lambda...) call means:
+        # return entries from path (which is a list) which fully match at
+        # beginning the dirname of file. E.g. if file is /a/b/c/d.py, a path
+        # of /a/b/c will pass, because the file is below the /a/b/c path, but
+        # path of /a/b/c/g will not pass.
+
+        if (not file or path and not
+            filter(lambda a: os.path.dirname(file).find(a) == 0, path)):
             raise SERVER_RETURN, HTTP_NOT_FOUND
 
         if autoreload:
@@ -804,20 +811,18 @@ SERVER_RETURN = _apache.SERVER_RETURN
 PROG_TRACEBACK = "PROG_TRACEBACK"
 
 # the req.finfo tuple
-FINFO_VALID = 0
-FINFO_PROTECTION = 1
-FINFO_USER = 2
-FINFO_GROUP = 3
-FINFO_INODE = 4
-FINFO_DEVICE = 5
-FINFO_NLINK = 6
+FINFO_MODE = 0
+FINFO_INO = 1
+FINFO_DEV = 2
+FINFO_NLINK = 4
+FINFO_UID = 5
+FINFO_GID = 6
 FINFO_SIZE = 7
-FINFO_CSIZE = 8
-FINFO_ATIME = 9
-FINFO_MTIME = 10
-FINFO_CTIME = 11
-FINFO_FNAME = 12
-FINFO_NAME = 13
+FINFO_ATIME = 8
+FINFO_MTIME = 9
+FINFO_CTIME = 10
+FINFO_FNAME = 11
+FINFO_NAME = 12
 #FINFO_FILEHAND = 14
 
 # the req.parsed_uri

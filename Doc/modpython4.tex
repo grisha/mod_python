@@ -58,7 +58,7 @@ A \dfn{handler} is a function that processes a particular phase of a
 request. Apache processes requests in phases - read the request,
 process headers, provide content, etc. For every phase, it will call
 handlers, provided by either the Apache core or one of its modules,
-such as mod_python, which passes control to functions provided by the
+such as mod_python which passes control to functions provided by the
 user and written in Python. A handler written in Python is not any
 different than a handler written in C, and follows these rules:
 
