@@ -1363,8 +1363,13 @@ if test -z "$PYTHON_SRC"; then
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 else
   PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  if test ${PyVERSION} = "2.1"; then
+    PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  else
+    PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  fi
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 fi
  
@@ -1378,7 +1383,7 @@ LIBS="${LIBS} ${PY_LIBS}"
 echo "$ac_t""$PY_LIBS" 1>&6
 
 echo $ac_n "checking linker flags used to link Python""... $ac_c" 1>&6
-echo "configure:1382: checking linker flags used to link Python" >&5
+echo "configure:1387: checking linker flags used to link Python" >&5
 
 if test -z "$PYTHON_SRC"; then
   PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
@@ -1393,7 +1398,7 @@ LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 echo "$ac_t""$PY_LDFLAGS" 1>&6
 
 echo $ac_n "checking where Python include files are""... $ac_c" 1>&6
-echo "configure:1397: checking where Python include files are" >&5
+echo "configure:1402: checking where Python include files are" >&5
 
 if test -z "$PYTHON_SRC"; then
   PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
@@ -1409,7 +1414,7 @@ echo "$ac_t""$PY_INCLUDES" 1>&6
 # Extract the first word of ""mkdep"", so it can be a program name with args.
 set dummy "mkdep"; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1413: checking for $ac_word" >&5
+echo "configure:1418: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1447,7 +1452,7 @@ if test -z "${MKDEP}"; then
   # Extract the first word of ""makedepend"", so it can be a program name with args.
 set dummy "makedepend"; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1451: checking for $ac_word" >&5
+echo "configure:1456: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_MKDEP'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else

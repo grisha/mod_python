@@ -42,7 +42,7 @@
  # ====================================================================
  #
 
-dnl $Id: configure.in,v 1.10 2001/04/07 05:43:21 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.11 2001/06/11 19:16:25 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -248,8 +248,13 @@ if test -z "$PYTHON_SRC"; then
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 else
   PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  if test ${PyVERSION} = "2.1"; then
+    PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  else
+    PyLIBS=`grep "^LIB[[SMC]]=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+  fi
   PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 fi
  
