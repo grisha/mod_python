@@ -418,14 +418,14 @@ lot of CGI information.
 \begin{methoddesc}[request]{add_handler}{htype, handler\optional{, dir}}
 
 Allows dynamic handler registration. \var{htype} is a string
-containing the name of any of the apache \code{Python*Handler}
-directives, e.g. \samp{PythonHandler}. \var{handler} is a string
-containing the name of the module and the handler function.  Optional
-\var{dir} is a string containing the name of the directory to be added
-to the pythonpath. If no directory is specified, then, if there is
-already a handler of the same type specified, its directory is
-inherited, otherwise the directory of the presently executing handler
-is used.
+containing the name of any of the apache request (but not filter or
+connection) handler directives,
+e.g. \samp{PythonHandler}. \var{handler} is a string containing the
+name of the module and the handler function.  Optional \var{dir} is a
+string containing the name of the directory to be added to the
+pythonpath. If no directory is specified, then, if there is already a
+handler of the same type specified, its directory is inherited,
+otherwise the directory of the presently executing handler is used.
                   
 A handler added this way only persists throughout the life of the
 request. It is possible to register more handlers while inside the
