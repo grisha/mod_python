@@ -47,7 +47,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.19 2002/07/31 21:49:50 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.20 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -87,7 +87,7 @@
 #endif
 
 /* _apache initialization function */
-void init_apache();
+void init_apache(void);
 
 /* pool given to us in ChildInit. We use it for 
    server.register_cleanup() */
@@ -97,6 +97,7 @@ extern apr_pool_t *child_init_pool;
 extern module AP_MODULE_DECLARE_DATA python_module;
 
 #include "mpversion.h"
+#include "_apachemodule.h"
 #include "util.h"
 #include "hlist.h"
 #include "hlistobject.h"

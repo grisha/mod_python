@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: util.py,v 1.6 2000/12/13 23:45:48 gtrubetskoy Exp $
+ # $Id: util.py,v 1.7 2002/08/15 21:46:35 gtrubetskoy Exp $
 
 import apache
 import string
@@ -100,30 +100,28 @@ class FieldStorage:
 
     def __init__(self, req, keep_blank_values=0, strict_parsing=0):
 
-        self._req =_req = req._req
-
         self.list = []
 
         # always process GET-style parameters
-        if _req.args:
+        if req.args:
             pairs = parse_qsl(req.args, keep_blank_values)
             for pair in pairs:
                 file = StringIO.StringIO(pair[1])
                 self.list.append(Field(pair[0], file, "text/plain", {},
                                        None, {}))
 
-        if _req.method == "POST":
+        if req.method == "POST":
 
             try:
-                clen = int(_req.headers_in["content-length"])
+                clen = int(req.headers_in["content-length"])
             except (KeyError, ValueError):
                 # absent content-length is not acceptable
                 raise apache.SERVER_RETURN, apache.HTTP_LENGTH_REQUIRED
 
-            if not _req.headers_in.has_key("content-type"):
+            if not req.headers_in.has_key("content-type"):
                 ctype = "application/x-www-form-urlencoded"
             else:
-                ctype = _req.headers_in["content-type"]
+                ctype = req.headers_in["content-type"]
 
             if ctype == "application/x-www-form-urlencoded":
                 
@@ -147,10 +145,10 @@ class FieldStorage:
                     raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
 
                 #read until boundary
-                line = _req.readline()
+                line = req.readline()
                 sline = string.strip(line)
                 while line and sline != boundary:
-                    line = _req.readline()
+                    line = req.readline()
 
                 while 1:
 
@@ -159,7 +157,7 @@ class FieldStorage:
                     ctype, type_options = "text/plain", {}
                     disp, disp_options = None, {}
                     headers = apache.make_table()
-                    line = _req.readline()
+                    line = req.readline()
                     while line and line not in ["\n", "\r\n"]:
                         h, v = string.split(line, ":", 1)
                         headers.add(h, v)
@@ -168,7 +166,7 @@ class FieldStorage:
                             disp, disp_options = parse_header(v)
                         elif h == "content-type":
                             ctype, type_options = parse_header(v)
-                        line = _req.readline()
+                        line = req.readline()
 
                     if disp_options.has_key("name"):
                         name = disp_options["name"]
@@ -182,7 +180,7 @@ class FieldStorage:
                         file = StringIO.StringIO()
 
                     # read it in
-                    self.read_to_boundary(_req, boundary, file)
+                    self.read_to_boundary(req, boundary, file)
                     file.seek(0)
 
                     # make a Field
@@ -207,17 +205,17 @@ class FieldStorage:
         return tempfile.TemporaryFile("w+b")
 
 
-    def skip_to_boundary(self, _req, boundary):
-        line = _req.readline()
+    def skip_to_boundary(self, req, boundary):
+        line = req.readline()
         sline = string.strip(line)
         last_bound = boundary + "--"
         while line and sline != boundary and sline != last_bound:
-            line = _req.readline()
+            line = req.readline()
             sline = string.strip(line)
 
-    def read_to_boundary(self, _req, boundary, file):
+    def read_to_boundary(self, req, boundary, file):
         delim = ""
-        line = _req.readline()
+        line = req.readline()
         sline = string.strip(line)
         last_bound = boundary + "--"
         while line and sline != boundary and sline != last_bound:
@@ -229,7 +227,7 @@ class FieldStorage:
                 delim = "\n"
                 line = line[:-1]
             file.write(odelim + line)
-            line = _req.readline()
+            line = req.readline()
             sline = string.strip(line)
 
     def __getitem__(self, key):

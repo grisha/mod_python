@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.16 2002/07/31 21:49:50 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.17 2002/08/15 21:46:35 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -68,18 +68,15 @@ import new
 
 def handler(req):
 
-    # use direct access to _req for speed
-    _req = req._req
-
-    _req.allow_methods(["GET", "POST"])
-    if _req.method not in ["GET", "POST"]:
+    req.allow_methods(["GET", "POST"])
+    if req.method not in ["GET", "POST"]:
         raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
     # get the path PATH_INFO (everthing after script)
-    if not _req.subprocess_env.has_key("PATH_INFO"):
+    if not req.subprocess_env.has_key("PATH_INFO"):
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
     
-    func_path = _req.subprocess_env["PATH_INFO"][1:] # skip first /
+    func_path = req.subprocess_env["PATH_INFO"][1:] # skip first /
     func_path = string.replace(func_path, "/", ".")
     if func_path[-1] == ".":
         func_path = func_path[:-1] 
@@ -117,7 +114,7 @@ def handler(req):
     args["req"] = req
 
     ## import the script
-    path, module_name =  os.path.split(_req.filename)
+    path, module_name =  os.path.split(req.filename)
 
     # get rid of the suffix
     #   explanation: Suffixes that will get stripped off
@@ -134,7 +131,7 @@ def handler(req):
     # import module (or reload if needed)
     # the [path] argument tells import_module not to allow modules whose
     # full path is not in [path] or below.
-    module = apache.import_module(module_name, _req, [path])
+    module = apache.import_module(module_name, req, [path])
 
     # does it have an __auth__?
     realm, user, passwd = process_auth(req, module)
@@ -192,7 +189,7 @@ def handler(req):
             else:
                 req.content_type = 'text/plain'
 
-        if _req.method != "HEAD":
+        if req.method != "HEAD":
             req.write(result)
         else:
             req.write("")

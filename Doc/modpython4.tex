@@ -223,16 +223,23 @@ consider using \method{Request.log_error} intead, it will prepend
 request-specific information to the log entry.
 \end{funcdesc}
 
-\begin{funcdesc}{make_table}{}
+\index{table}
+\begin{classdesc}{table}{\optional{mapping-or-sequence}}
 Returns a new empty object of type \code{mp_table}. See Section \ref{pyapi-mptable}
 for a description of a table object. XXX make_table is obsolete, use table instead
+\versionadded{3.0}
+\end{classdesc}
+
+\begin{funcdesc}{make_table}{} 
+This function is deprecated and is a reference to \class{table}.
 \end{funcdesc}
 
 \subsection{Table Object (mp_table)\obindex{table}\label{pyapi-mptable}}
 
-The table object is a Python mapping to the Apache table. The table
-object performs just like a dictionary, with the only difference that
-key lookups are case insensitive.
+The table object is a wrapper around the Apache APR table. The table
+object performs very much like a dictionary, with the only difference
+that key lookups are case insensitive and both keys and values must be
+strings.
 
 Much of the information that Apache uses is stored in tables. For
 example, \member{Request.header_in} and \member{Request.headers_out}.
@@ -248,7 +255,7 @@ has the following method:
 \function{add()} allows for creating duplicate keys, which is useful 
 when multiple headers, such as \code{Set-Cookie:} are required.
 \end{methoddesc}
-
+% THE FUN STARTS HERE - MAKE REQUEST a NEW object. GT HERE.
 \subsection{Request Object\index{Request}\label{pyapi-mprequest}}
 
 The request object is a Python mapping to the Apache

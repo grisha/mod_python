@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.6 2002/07/16 18:06:03 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.7 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -96,8 +96,7 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
     result->handler = handler;
     result->dir = dir;
 
-    result->request_obj = NULL; /* C object, "_req" */
-    result->Request = NULL;     /* Python obj */
+    result->request_obj = NULL; 
 
     _Py_NewReference(result);
     apr_pool_cleanup_register(f->r->pool, (PyObject *)result, python_decref, 
@@ -438,7 +437,7 @@ static struct memberlist filter_memberlist[] = {
     {"softspace",          T_INT,       OFF(softspace),            },
     {"closed",             T_INT,       OFF(closed),             RO},
     {"name",               T_OBJECT,    0,                       RO},
-    {"req",                T_OBJECT,    OFF(Request),              },
+    {"req",                T_OBJECT,    OFF(request_obj),          },
     {"is_input",           T_INT,       OFF(is_input),           RO},
     {"handler",            T_STRING,    OFF(handler),            RO},
     {"dir",                T_STRING,    OFF(dir),                RO},
@@ -486,7 +485,7 @@ static PyObject * filter_getattr(filterobject *self, char *name)
 	    return PyString_FromString(self->f->frec->name);
 	}
     } 
-    else if (strcmp(name, "_req") == 0) {
+    else if (strcmp(name, "req") == 0) {
 	if (! self->request_obj) {
 	    Py_INCREF(Py_None);
 	    return Py_None;
@@ -494,16 +493,6 @@ static PyObject * filter_getattr(filterobject *self, char *name)
 	else {
 	    Py_INCREF(self->request_obj);
 	    return (PyObject *)self->request_obj;
-	}
-    }
-    else if (strcmp(name, "req") == 0) {
-	if (! self->Request) {
-	    Py_INCREF(Py_None);
-	    return Py_None;
-	}
-	else {
-	    Py_INCREF(self->Request);
-	    return (PyObject *)self->Request;
 	}
     }
     else

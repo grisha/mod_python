@@ -47,7 +47,7 @@
  *
  * util.h 
  *
- * $Id: util.h,v 1.4 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: util.h,v 1.5 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -56,6 +56,10 @@
 
 PyObject * tuple_from_array_header(const apr_array_header_t *ah);
 PyObject * tuple_from_method_list(const ap_method_list_t *l);
+PyObject *tuple_from_finfo(apr_finfo_t *f);
+PyObject *tuple_from_apr_uri(apr_uri_t *u);
+char * get_addhandler_extensions(request_rec *req);
 apr_status_t python_decref(void *object);
+const PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name);
 
 #endif /* !Mp_UTIL_H */

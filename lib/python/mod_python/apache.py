@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.47 2002/08/11 19:44:27 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.48 2002/08/15 21:46:35 gtrubetskoy Exp $
 
 import sys
 import string
@@ -57,35 +57,6 @@ import _apache
 # a small hack to improve PythonPath performance. This
 # variable stores the last PythonPath in raw (unevaled) form.
 _path = None
-
-class Request:
-    """ This is a normal Python Class that can be subclassed.
-        However, most of its functionality comes from a built-in
-        object of type mp_request provided by mod_python at
-        initialization and stored in self._req.
-    """
-
-    def __init__(self, _req):
-        # look at __setattr__ if changing this line!
-        self._req = _req
-
-    def __getattr__(self, attr):
-        try:
-            return getattr(self._req, attr)
-        except AttributeError:
-            raise AttributeError, attr
-
-    def __setattr__(self, attr, val):
-        try:
-            if attr != "_req":
-                setattr(self._req, attr, val)
-            else:
-                self.__dict__["_req"] = val
-        except AttributeError:
-            self.__dict__[attr] = val
-
-    def __nonzero__(self):
-        return 1
 
 class CallBack:
     """
@@ -113,16 +84,10 @@ class CallBack:
 
     def FilterDispatch(self, filter):
 
-        _req = filter._req
-
-        # is there a Request object for this request?
-        if not _req._Request:
-            _req._Request = Request(_req)
-            
-        req = filter.req = _req._Request
+        req = filter.req
 
         # config
-        config = _req.get_config()
+        config = req.get_config()
         debug = config.has_key("PythonDebug")
 
         try:
@@ -158,7 +123,7 @@ class CallBack:
                     sys.path[:0] = [filter.dir]
 
             # import module
-            module = import_module(module_name, _req)
+            module = import_module(module_name, req)
 
             # find the object
             object = resolve_object(req, module, object_str, 0)
@@ -181,14 +146,14 @@ class CallBack:
                 if len(value.args) == 2:
                     (result, status) = value.args
                     if status:
-                        _req.status = status
+                        req.status = status
                 else:
                     result = value.args[0]
                     
                 if type(result) != type(7):
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
                     s = s + "%s, but it must be a tuple or an int." % type(result)
-                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, _req.server)
+                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
 
                     return
 
@@ -219,7 +184,7 @@ class CallBack:
 
 	return
 
-    def HandlerDispatch(self, _req):
+    def HandlerDispatch(self, req):
         """
         This is the handler dispatcher.
         """
@@ -227,18 +192,12 @@ class CallBack:
         # be cautious
         result = HTTP_INTERNAL_SERVER_ERROR
 
-        # is there a Request object for this request?
-        if not _req._Request:
-            _req._Request = Request(_req)
-
-        req = _req._Request
-
         # config
-        config = _req.get_config()
+        config = req.get_config()
         debug = config.has_key("PythonDebug")
 
         try:
-            hlist = _req.hlist
+            hlist = req.hlist
 
             while hlist.handler:
 
@@ -248,7 +207,7 @@ class CallBack:
                 module_name = l[0]
                 if len(l) == 1:
                     # no oject, provide default
-                    object_str = string.lower(_req.phase[len("python"):])
+                    object_str = string.lower(req.phase[len("python"):])
                 else:
                     object_str = l[1]
 
@@ -271,7 +230,7 @@ class CallBack:
                         sys.path[:0] = [dir]
 
                 # import module
-                module = import_module(module_name, _req)
+                module = import_module(module_name, req)
 
                 # find the object
                 object = resolve_object(req, module, object_str, hlist.silent)
@@ -300,14 +259,14 @@ class CallBack:
                 if len(value.args) == 2:
                     (result, status) = value.args
                     if status:
-                        _req.status = status
+                        req.status = status
                 else:
                     result = value.args[0]
                     
                 if type(result) != type(7):
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
                     s = s + "%s, but it must be a tuple or an int." % type(result)
-                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, _req.server)
+                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
                     return HTTP_INTERNAL_SERVER_ERROR
 
             except:
@@ -318,7 +277,7 @@ class CallBack:
             try:
                 (etype, value, traceback) = traceblock
                 result = self.ReportError(req, etype, value, traceback,
-                                          phase=_req.phase, hname=hlist.handler,
+                                          phase=req.phase, hname=hlist.handler,
                                           debug=debug)
             finally:
                 traceback = None
@@ -328,7 +287,7 @@ class CallBack:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 result = self.ReportError(req, exc_type, exc_value, exc_traceback,
-                                          phase=_req.phase, hname=hlist.handler, debug=debug)
+                                          phase=req.phase, hname=hlist.handler, debug=debug)
             finally:
                 exc_traceback = None
 
@@ -344,32 +303,37 @@ class CallBack:
 
         try:
 
-            if str(etype) == "exceptions.IOError" \
-               and str(evalue)[:5] == "Write":
-                # if this is an IOError while writing to client,
-                # it is probably better not to try to write to the cleint
-                # even if debug is on.
-                debug = 0
-            
-            # write to log
-            for e in traceback.format_exception(etype, evalue, etb):
-                s = "%s %s: %s" % (phase, hname, e[:-1])
-                _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
+            try:
 
-            if not debug:
-                return HTTP_INTERNAL_SERVER_ERROR
-            else:
-                # write to client
+                if str(etype) == "exceptions.IOError" \
+                   and str(evalue)[:5] == "Write":
+                    # if this is an IOError while writing to client,
+                    # it is probably better not to try to write to the cleint
+                    # even if debug is on.
+                    debug = 0
 
-                req.content_type = 'text/plain'
-
-                s = '\nMod_python error: "%s %s"\n\n' % (phase, hname)
+                # write to log
                 for e in traceback.format_exception(etype, evalue, etb):
-                    s = s + e + '\n'
+                    s = "%s %s: %s" % (phase, hname, e[:-1])
+                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR)
+                    #_apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
 
-                req.write(s)
+                if not debug:
+                    return HTTP_INTERNAL_SERVER_ERROR
+                else:
+                    # write to client
+                    req.content_type = 'text/plain'
 
-                return DONE
+                    s = '\nMod_python error: "%s %s"\n\n' % (phase, hname)
+                    for e in traceback.format_exception(etype, evalue, etb):
+                        s = s + e + '\n'
+
+                    req.write(s)
+
+                    return DONE
+            except:
+                # last try
+                traceback.print_exc()
 
         finally:
             # erase the traceback
@@ -712,6 +676,19 @@ def init():
 
     return CallBack()
 
+def allow_method(req, *methods):
+    """
+    Convenience function for dealing with req.allowed.
+    example: allow_method(M_GET, M_POST)
+    """
+
+    result = long()
+    
+    for meth in methods:
+        result |= long(1) << meth
+
+    req.allow = result
+    
 ## Some functions made public
 make_table = _apache.table
 log_error = _apache.log_error
@@ -837,8 +814,44 @@ URI_PATH = 6
 URI_QUERY = 7
 URI_FRAGMENT = 8
 
+# for req.proxyreq
+PROXYREQ_NONE = 0       # No proxy
+PROXYREQ_PROXY = 1	# Standard proxy
+PROXYREQ_REVERSE = 2	# Reverse proxy
 
+# methods for allow_method()
+M_GET = 0               # RFC 2616: HTTP
+M_PUT = 1
+M_POST = 2
+M_DELETE = 3
+M_CONNECT = 4
+M_OPTIONS = 5
+M_TRACE = 6             # RFC 2616: HTTP
+M_PATCH = 7 
+M_PROPFIND = 8          # RFC 2518: WebDAV
+M_PROPPATCH = 9         
+M_MKCOL = 10
+M_COPY = 11
+M_MOVE = 12
+M_LOCK = 13
+M_UNLOCK = 14           # RFC2518: WebDAV
+M_VERSION_CONTROL = 15  # RFC3253: WebDAV Versioning
+M_CHECKOUT = 16
+M_UNCHECKOUT = 17
+M_CHECKIN = 18
+M_UPDATE = 19
+M_LABEL = 20
+M_REPORT = 21
+M_MKWORKSPACE = 22
+M_MKACTIVITY = 23
+M_BASELINE_CONTROL = 24
+M_MERGE = 25
+M_INVALID = 26           # RFC3253: WebDAV Versioning
 
+# for req.used_path_info
+AP_REQ_ACCEPT_PATH_INFO = 0  # Accept request given path_info
+AP_REQ_REJECT_PATH_INFO = 1  # Send 404 error if path_info was given
+AP_REQ_DEFAULT_PATH_INFO = 2 # Module's choice for handling path_info
 
 
 

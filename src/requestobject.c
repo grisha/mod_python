@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.18 2002/08/03 02:44:07 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.19 2002/08/15 21:46:35 gtrubetskoy Exp $
  *
  */
 
@@ -66,6 +66,9 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     if (! result)
 	return PyErr_NoMemory();
 
+    result->dict = PyDict_New();
+    if (!result->dict)
+	return PyErr_NoMemory();
     result->request_rec = req;
     result->ob_type = &MpRequest_Type;
     result->connection = NULL;
@@ -79,7 +82,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->subprocess_env = MpTable_FromTable(req->subprocess_env);
     result->notes = MpTable_FromTable(req->notes);
     result->phase = NULL;
-    result->Request = NULL;
     result->content_type_set = 0;
     result->hlo = NULL;
     result->rbuff = NULL;
@@ -746,7 +748,7 @@ static PyObject * req_write(requestobject *self, PyObject *args)
 
 }
 
-static PyMethodDef requestobjectmethods[] = {
+static PyMethodDef request_methods[] = {
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_VARARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
@@ -765,71 +767,292 @@ static PyMethodDef requestobjectmethods[] = {
     { NULL, NULL } /* sentinel */
 };
 
+/**
+ ** getmakeobj
+ **
+ *    A getter func that creates an object as needed.
+ */
+
+static PyObject *getmakeobj(requestobject* self, void *objname) 
+{
+    char *name = (char *)objname;
+    PyObject *result = NULL;
+
+    if (strcmp(name, "connection") == 0) {
+	if (!self->connection && !self->request_rec->connection)
+	    self->connection = MpConn_FromConn(self->request_rec->connection);
+	result = self->connection;
+    }
+    else if (strcmp(name, "server") == 0) {
+	if (!self->server && !self->request_rec->server) 
+	    self->server = MpServer_FromServer(self->request_rec->server);
+	result = self->server;
+    }
+    else if (strcmp(name, "next") == 0) {
+	if (!self->next && !self->request_rec->next)
+	    self->next = MpRequest_FromRequest(self->request_rec->next);
+	result = self->next;
+    }
+    else if (strcmp(name, "prev") == 0) {
+	if (!self->prev && !self->request_rec->prev)
+	    self->prev = MpRequest_FromRequest(self->request_rec->prev);
+	result = self->prev;
+    }
+    else if (strcmp(name, "main") == 0) {
+	if (!self->main && !self->request_rec->main)
+	    self->main = MpRequest_FromRequest(self->request_rec->main);
+	result = self->main;
+    }
+
+    if (!result)
+	result = Py_None;
+
+    Py_INCREF(result);
+    return result;
+
+}
+
+/* 
+   These are offsets into the Apache request_rec structure.
+   They are accessed via getset functions.
+*/
 
 #define OFF(x) offsetof(request_rec, x)
 
-static struct memberlist request_memberlist[] = {
-    /* connection, server, next, prev, main in getattr */
-    {"connection",         T_OBJECT,    0,                         RO},
-    {"server",             T_OBJECT,    0,                         RO},
-    {"next",               T_OBJECT,    0,                         RO},
-    {"prev",               T_OBJECT,    0,                         RO},
-    {"main",               T_OBJECT,    0,                         RO},
-    {"the_request",        T_STRING,    OFF(the_request),          RO},
-    {"assbackwards",       T_INT,       OFF(assbackwards),         RO},
-    {"proxyreq",           T_INT,       OFF(proxyreq),             RO},
-    {"header_only",        T_INT,       OFF(header_only),          RO},
-    {"protocol",           T_STRING,    OFF(protocol),             RO},
-    {"proto_num",          T_INT,       OFF(proto_num),            RO},
-    {"hostname",           T_STRING,    OFF(hostname),             RO},
-    {"request_time",       T_LONG,      OFF(request_time),         RO},
-    {"status_line",        T_STRING,    OFF(status_line),          RO},
-    {"status",             T_INT,       OFF(status)                  },
-    {"method",             T_STRING,    OFF(method),               RO},
-    {"method_number",      T_INT,       OFF(method_number),        RO},
-    {"allowed",            T_INT,       OFF(allowed),              RO},
-    {"allowed_xmethods",   T_OBJECT,    0,                         RO},
-    {"allowed_methods",    T_OBJECT,    0,                         RO},
-    {"sent_bodyct",        T_INT,       OFF(sent_bodyct),          RO},
-    {"bytes_sent",         T_LONG,      OFF(bytes_sent),           RO},
-    {"mtime",              T_LONG,      OFF(mtime),                RO},
-    {"chunked",            T_INT,       OFF(chunked),              RO},
-    {"boundary",           T_STRING,    OFF(boundary),             RO},
-    {"range",              T_STRING,    OFF(range),                RO},
-    {"clength",            T_LONG,      OFF(clength),              RO},
-    {"remaining",          T_LONG,      OFF(remaining),            RO},
-    {"read_length",        T_LONG,      OFF(read_length),          RO},
-    {"read_body",          T_INT,       OFF(read_body),            RO},
-    {"read_chunked",       T_INT,       OFF(read_chunked),         RO},
-    {"expecting_100",      T_INT,       OFF(expecting_100),        RO},
-    {"headers_in",         T_OBJECT,    0,                         RO},
-    {"headers_out",        T_OBJECT,    0,                         RO},
-    {"err_headers_out",    T_OBJECT,    0,                         RO},
-    {"subprocess_env",     T_OBJECT,    0,                         RO},
-    {"notes",              T_OBJECT,    0,                         RO},
-    {"content_type",       T_STRING,    OFF(content_type)            },
-    {"_content_type_set",  T_INT,       0,                         RO},
-    {"handler",            T_STRING,    OFF(handler),              RO},
-    {"content_encoding",   T_STRING,    OFF(content_encoding),     RO},
-    {"content_languages",  T_OBJECT,                                 },
-    {"vlist_validator",    T_STRING,    OFF(vlist_validator),      RO},
-    {"user",               T_STRING,    OFF(user),                   },
-    {"ap_auth_type",       T_STRING,    OFF(ap_auth_type),         RO},
-    {"unparsed_uri",       T_STRING,    OFF(unparsed_uri),         RO},
-    {"no_cache",           T_INT,       OFF(no_cache),             RO},
-    {"no_local_copy",      T_INT,       OFF(no_local_copy),        RO},
-    {"unparsed_uri",       T_STRING,    OFF(unparsed_uri),         RO},
-    {"uri",                T_STRING,    OFF(uri),                  RO},
-    {"filename",           T_STRING,    OFF(filename),               },
-    {"path_info",          T_STRING,    OFF(path_info),            RO},
-    {"args",               T_STRING,    OFF(args),                 RO},
-    {"finfo",              T_OBJECT,    0,                         RO},
-    {"parsed_uri",         T_OBJECT,    0,                         RO},
-    {"phase",              T_OBJECT,    0,                         RO},
+static struct memberlist request_rec_mbrs[] = {
+    {"the_request",        T_STRING,  OFF(the_request)},
+    {"assbackwards",       T_INT,     OFF(assbackwards)},
+    {"proxyreq",           T_INT,     OFF(proxyreq)},
+    {"header_only",        T_INT,     OFF(header_only)},
+    {"protocol",           T_STRING,  OFF(protocol)},
+    {"proto_num",          T_INT,     OFF(proto_num)},
+    {"hostname",           T_STRING,  OFF(hostname)},
+    {"request_time",       T_LONG,    OFF(request_time)},
+    {"status_line",        T_STRING,  OFF(status_line)},
+    {"status",             T_INT,     OFF(status)},
+    {"method",             T_STRING,  OFF(method)},
+    {"method_number",      T_INT,     OFF(method_number)},
+    {"allowed",            T_LONG,    OFF(allowed)},
+    {"allowed_xmethods",   T_OBJECT,  OFF(allowed_xmethods)},
+    {"allowed_methods",    T_OBJECT,  OFF(allowed_methods)},
+    {"sent_boduct",        T_LONG,    OFF(sent_bodyct)},
+    {"bytes_sent",         T_LONG,    OFF(bytes_sent)},
+    {"mtime",              T_LONG,    OFF(mtime)},
+    {"chunked",            T_INT,     OFF(chunked)},
+    {"boundary",           T_STRING,  OFF(boundary)},
+    {"range",              T_STRING,  OFF(range)},
+    {"clength",            T_LONG,    OFF(clength)},
+    {"remaining",          T_LONG,    OFF(remaining)},
+    {"read_length",        T_LONG,    OFF(read_length)},
+    {"read_body",          T_INT,     OFF(read_body)},
+    {"read_chunked",       T_INT,     OFF(read_chunked)},
+    {"expecting_100",      T_INT,     OFF(expecting_100)},
+    {"content_type",       T_STRING,  OFF(content_type)},
+    {"handler",            T_STRING,  OFF(handler)},
+    {"content_encoding",   T_STRING,  OFF(content_encoding)},
+    {"content_languages",  T_OBJECT,  OFF(content_languages)},
+    {"vlist_validator",    T_STRING,  OFF(vlist_validator)},
+    {"user",               T_STRING,  OFF(user)},
+    {"ap_auth_type",       T_STRING,  OFF(ap_auth_type)},
+    {"no_cache",           T_INT,     OFF(no_cache)},
+    {"no_local_copy",      T_INT,     OFF(no_local_copy)},
+    {"unparsed_uri",       T_STRING,  OFF(unparsed_uri)},
+    {"uri",                T_STRING,  OFF(uri)},
+    {"filename",           T_STRING,  OFF(filename)},
+    {"canonical_filename", T_STRING,  OFF(canonical_filename)},
+    {"path_info",          T_STRING,  OFF(path_info)},
+    {"args",               T_STRING,  OFF(args)},
+    {"finfo",              T_OBJECT,  OFF(finfo)},
+    {"parsed_uri",         T_OBJECT,  OFF(parsed_uri)},
+    {"used_path_info",     T_INT,     OFF(used_path_info)},
+    {"eos_sent",           T_INT,     OFF(eos_sent)},
+    {NULL}  /* Sentinel */
+};
+
+/**
+ ** getreq_recmbr
+ **
+ *    Retrieves request_rec structure members
+ */
+
+static PyObject *getreq_recmbr(requestobject *self, void *name) 
+{
+    return PyMember_Get((char*)self->request_rec, request_rec_mbrs, 
+			(char*)name);
+}
+
+/**
+ ** setreq_recmbr
+ **
+ *    Sets request_rec structure members
+ */
+
+static int setreq_recmbr(requestobject *self, PyObject *val, void *name) 
+{
+    if (strcmp(name, "content_type") == 0) {
+	if (! PyString_Check(val)) {
+	    PyErr_SetString(PyExc_TypeError, "content_type must be a string");
+	    return -1;
+	}
+	self->request_rec->content_type = 
+	    apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+	self->content_type_set = 1;
+	return 0;
+    } 
+    else if (strcmp(name, "user") == 0) {
+	if (! PyString_Check(val)) {
+	    PyErr_SetString(PyExc_TypeError, "user must be a string");
+	    return -1;
+	}
+	self->request_rec->user = 
+	    apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+	return 0;
+    }
+    else if (strcmp(name, "filename") == 0) {
+	if (! PyString_Check(val)) {
+	    PyErr_SetString(PyExc_TypeError, "filename must be a string");
+	    return -1;
+	}
+	self->request_rec->filename = 
+	    apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+	return 0;
+    }
+    
+    return PyMember_Set((char*)self->request_rec, request_rec_mbrs, 
+			(char*)name, val);
+}
+
+/**
+ ** getreq_rec_ah
+ **
+ *    For array headers that will get converted to tuple
+ */
+
+static PyObject *getreq_rec_ah(requestobject *self, void *name) 
+{
+    const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
+    apr_array_header_t *ah = 
+	(apr_array_header_t *)(self->request_rec + md->offset);
+
+    return tuple_from_array_header(ah);
+}
+
+/**
+ ** getreq_rec_ml
+ **
+ *    For method lists that will get converted to tuple
+ */
+
+static PyObject *getreq_rec_ml(requestobject *self, void *name) 
+{
+    const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
+    ap_method_list_t *ml = 
+	(ap_method_list_t *)(self->request_rec + md->offset);
+
+    return tuple_from_method_list(ml);
+}
+
+/**
+ ** getreq_rec_fi
+ **
+ *    For file info that will get converted to tuple
+ */
+
+static PyObject *getreq_rec_fi(requestobject *self, void *name) 
+{
+    const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
+    apr_finfo_t *fi = 
+	(apr_finfo_t *)(self->request_rec + md->offset);
+
+    return tuple_from_finfo(fi);
+}
+
+/**
+ ** getreq_rec_uri
+ **
+ *    For parsed uri that will get converted to tuple
+ */
+
+static PyObject *getreq_rec_uri(requestobject *self, void *name) 
+{
+    const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
+    apr_uri_t *uri = 
+	(apr_uri_t *)(self->request_rec + md->offset);
+
+    return tuple_from_apr_uri(uri);
+}
+
+static PyGetSetDef request_getsets[] = {
+    {"connection", (getter)getmakeobj, NULL, "Connection object", "connection"},
+    {"server",     (getter)getmakeobj, NULL, "Server object", "server"},
+    {"next",       (getter)getmakeobj, NULL, "If redirected, pointer to the to request", "next"},
+    {"prev",       (getter)getmakeobj, NULL, "If redirected, pointer to the from request", "prev"},
+    {"main",       (getter)getmakeobj, NULL, "If subrequest, pointer to the main request", "main"},
+    {"the_request", (getter)getreq_recmbr, NULL, "First line of request", "the_request"},
+    {"assbackwards", (getter)getreq_recmbr, NULL, "HTTP/0.9 \"simple\" request", "assbackwards"},
+    {"proxyreq",     (getter)getreq_recmbr, NULL, "A proxy request: one of apache.PROXYREQ_* values", "proxyreq"},
+    {"header_only",  (getter)getreq_recmbr, NULL, "HEAD request, as oppsed to GET", "header_only"},
+    {"protocol",     (getter)getreq_recmbr, NULL, "Protocol as given to us, or HTTP/0.9", "protocol"},
+    {"proto_num",    (getter)getreq_recmbr, NULL, "Protocol version. 1.1 = 1001", "proto_num"},
+    {"hostname",     (getter)getreq_recmbr, NULL, "Host, as set by full URI or Host:", "hostname"},
+    {"request_time", (getter)getreq_recmbr, NULL, "When request started", "request_time"},
+    {"status_line",  (getter)getreq_recmbr, NULL, "Status line, if set by script", "status_line"},
+    {"status",       (getter)getreq_recmbr, (setter)setreq_recmbr, "Status", "status"},
+    {"method",       (getter)getreq_recmbr, NULL, "Request method", "method"},
+    {"method_number", (getter)getreq_recmbr, NULL, "Request method number, one of apache.M_*", "method_number"},
+    // XXX remember to doc apache.allow_method
+    {"allowed",      (getter)getreq_recmbr, (setter)setreq_recmbr, "Status", "allowed"},
+    {"allowed_xmethods", (getter)getreq_rec_ah, NULL, "Allowed extension methods", "allowed_xmethods"},
+    {"allowed_methods", (getter)getreq_rec_ml, NULL, "Allowed methods", "allowed_methods"},
+    {"sent_bodyct",  (getter)getreq_recmbr, NULL, "Byte count in stream for body", "sent_boduct"},
+    {"bytes_sent",   (getter)getreq_recmbr, NULL, "Bytes sent", "bytes_sent"},
+    {"mtime",        (getter)getreq_recmbr, NULL, "Time resource was last modified", "mtime"},
+    {"chunked",      (getter)getreq_recmbr, NULL, "Sending chunked transfer-coding", "chunked"},
+    {"boundary",     (getter)getreq_recmbr, NULL, "Multipart/byteranges boundary", "boundary"},
+    {"range",        (getter)getreq_recmbr, NULL, "The Range: header", "range"},
+    {"clength",      (getter)getreq_recmbr, NULL, "The \"real\" contenct length", "clength"},
+    {"remaining",    (getter)getreq_recmbr, NULL, "Bytes left to read", "remaining"},
+    {"read_length",  (getter)getreq_recmbr, NULL, "Bytes that have been read", "read_length"},
+    {"read_body",    (getter)getreq_recmbr, NULL, "How the request body should be read", "read_body"},
+    {"read_chunked", (getter)getreq_recmbr, NULL, "Reading chunked transfer-coding", "read_chunked"},
+    {"expecting_100", (getter)getreq_recmbr, NULL, "Is client waitin for a 100 response?", "expecting_100"},
+    {"content_type",  (getter)getreq_recmbr, (setter)setreq_recmbr, "Content type", "content_type"},
+    {"handler",       (getter)getreq_recmbr, NULL, "The handler string", "handler"},
+    {"content_encoding", (getter)getreq_recmbr, NULL, "How to encode the data", "content_encoding"},
+    {"content_languages", (getter)getreq_rec_ah, NULL, "Content languages", "content_languages"},
+    {"vlist_validator", (getter)getreq_recmbr, NULL, "Variant list validator (if negotiated)", "vlist_validator"},
+    {"user",          (getter)getreq_recmbr, (setter)setreq_recmbr, "If authentication check was made, the user name", "user"},
+    {"ap_auth_type",  (getter)getreq_recmbr, NULL, "If authentication check was made, auth type", "ap_auth_type"},
+    {"no_cache",      (getter)getreq_recmbr, NULL, "This response in non-cacheable", "no_cache"},
+    {"no_local_copy", (getter)getreq_recmbr, NULL, "There is no local copy of the response", "no_local_copy"},
+    {"unparsed_uri",  (getter)getreq_recmbr, NULL, "The URI without any parsing performed", "unparsed_uri"},
+    {"uri",           (getter)getreq_recmbr, NULL, "The path portion of URI", "uri"},
+    {"filename",      (getter)getreq_recmbr, NULL, "The file name on disk that this request corresponds to", "filename"},
+    {"canonical_filename", (getter)getreq_recmbr, NULL, "The true filename (req.filename is canonicalied if they dont match)", "canonical_filename"},
+    {"path_info",     (getter)getreq_recmbr, NULL, "Path_info, if any", "path_info"},
+    {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
+    {"finfo",         (getter)getreq_rec_fi, NULL, "File information", "finfo"},
+    {"parsed_uri",    (getter)getreq_recmbr, NULL, "Components of URI", "parsed_uri"},
+    {"used_path_info", (getter)getreq_recmbr, NULL, "Flag to accept or reject path_info on current request", "used_path_info"},
     /* XXX per_dir_config */
     /* XXX request_config */
     /* XXX htaccess */
     /* XXX filters and eos */
+    {"eos_sent", (getter)getreq_recmbr, NULL, "EOS bucket sent", "eos_sent"},
+    {NULL}  /* Sentinel */
+};
+
+#define OFF(x) offsetof(requestobject, x)
+
+static struct PyMemberDef request_members[] = {
+    {"headers_in",         T_OBJECT,    OFF(headers_in),        RO},
+    {"headers_out",        T_OBJECT,    OFF(headers_out),       RO},
+    {"err_headers_out",    T_OBJECT,    OFF(err_headers_out),   RO},
+    {"subprocess_env",     T_OBJECT,    OFF(subprocess_env),    RO},
+    {"notes",              T_OBJECT,    OFF(notes),             RO},
+    {"_content_type_set",  T_INT,       OFF(content_type_set),  RO},
+    {"phase",              T_OBJECT,    OFF(phase),             RO},
+    {"hlist",              T_OBJECT,    OFF(hlo),               RO},
     {NULL}  /* Sentinel */
 };
 
@@ -841,6 +1064,7 @@ static struct memberlist request_memberlist[] = {
 
 static void request_dealloc(requestobject *self)
 {  
+    Py_XDECREF(self->dict);
     Py_XDECREF(self->connection);
     Py_XDECREF(self->server);
     Py_XDECREF(self->next);
@@ -852,417 +1076,13 @@ static void request_dealloc(requestobject *self)
     Py_XDECREF(self->subprocess_env);
     Py_XDECREF(self->notes);
     Py_XDECREF(self->phase);
-    Py_XDECREF(self->Request);
     Py_XDECREF(self->hlo);
 
     free(self);
 }
 
-/**
- ** tuple_from_finfo
- **
- *  makes a tuple similar to return of os.stat() from apr_finfo_t
- *
- */
-
-static PyObject *tuple_from_finfo(apr_finfo_t f)
-{
-    PyObject *t;
-
-    if (f.filetype == APR_NOFILE) {
-	Py_INCREF(Py_None);
-	return Py_None;
-    }
-      
-    t = PyTuple_New(12);
-
-    if (f.valid & APR_FINFO_PROT) {
-	PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f.protection));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 0, Py_None);
-    }
-    if (f.valid & APR_FINFO_INODE) {
-	PyTuple_SET_ITEM(t, 1, PyInt_FromLong(f.inode));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 1, Py_None);
-    }
-    if (f.valid & APR_FINFO_DEV) {
-	PyTuple_SET_ITEM(t, 2, PyInt_FromLong(f.device));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 2, Py_None);
-    }
-    if (f.valid & APR_FINFO_NLINK) {
-	PyTuple_SET_ITEM(t, 3, PyInt_FromLong(f.nlink));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 3, Py_None);
-    }
-    if (f.valid & APR_FINFO_USER) {
-	PyTuple_SET_ITEM(t, 4, PyInt_FromLong(f.user));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 4, Py_None);
-    }
-    if (f.valid & APR_FINFO_GROUP) {
-	PyTuple_SET_ITEM(t, 5, PyInt_FromLong(f.group));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 5, Py_None);
-    }
-    if (f.valid & APR_FINFO_SIZE) {
-	PyTuple_SET_ITEM(t, 6, PyInt_FromLong(f.size));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 6, Py_None);
-    }
-    if (f.valid & APR_FINFO_ATIME) {
-	PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f.atime/1000000));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 7, Py_None);
-    }
-    if (f.valid & APR_FINFO_MTIME) {
-	PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f.mtime/1000000));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 8, Py_None);
-    }
-    if (f.valid & APR_FINFO_CTIME) {
-	PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f.ctime/10000000));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 9, Py_None);
-    }
-    if (f.fname) {
-	PyTuple_SET_ITEM(t, 10, PyString_FromString(f.fname));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 10, Py_None);
-    }
-    if (f.valid & APR_FINFO_NAME) {
-	PyTuple_SET_ITEM(t, 11, PyString_FromString(f.name));
-    } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 11, Py_None);
-    }
-    /* it'd be nice to also return the file dscriptor, 
-       f.filehand->filedes, but it's platform dependent,
-       so may be later... */
-
-    return t;
-}
-
-
-/**
- ** tuple_from_parsed_uri
- **
- *  makes a tuple from uri_components
- *
- */
-
-static PyObject *tuple_from_parsed_uri(apr_uri_t u)
-{
-    PyObject *t;
-
-    t = PyTuple_New(9);
-
-    if (u.scheme) {
-	PyTuple_SET_ITEM(t, 0, PyString_FromString(u.scheme));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 0, Py_None);
-    }
-    if (u.hostinfo) {
-	PyTuple_SET_ITEM(t, 1, PyString_FromString(u.hostinfo));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 1, Py_None);
-    }
-    if (u.user) {
-	PyTuple_SET_ITEM(t, 2, PyString_FromString(u.user));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 2, Py_None);
-    }
-    if (u.password) {
-	PyTuple_SET_ITEM(t, 3, PyString_FromString(u.password));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 3, Py_None);
-    }
-    if (u.hostname) {
-	PyTuple_SET_ITEM(t, 4, PyString_FromString(u.hostname));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 4, Py_None);
-    }
-    if (u.port_str) {
-	PyTuple_SET_ITEM(t, 5, PyInt_FromLong(u.port));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 5, Py_None);
-    }
-    if (u.path) {
-	PyTuple_SET_ITEM(t, 6, PyString_FromString(u.path));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 6, Py_None);
-    }
-    if (u.query) {
-	PyTuple_SET_ITEM(t, 7, PyString_FromString(u.query));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 7, Py_None);
-    }
-    if (u.fragment) {
-	PyTuple_SET_ITEM(t, 8, PyString_FromString(u.fragment));
-    }
-    else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 8, Py_None);
-    }
-    // XXX hostent, is_initialized, dns_*
-
-    return t;
-}
-
-/**
- ** request_getattr
- **
- *  Get request object attributes
- *
- */
-
-static PyObject *request_getattr(requestobject *self, char *name)
-{
-
-    PyObject *res;
-
-    res = Py_FindMethod(requestobjectmethods, (PyObject *)self, name);
-    if (res != NULL)
-	return res;
-    
-    PyErr_Clear();
-  
-    if (strcmp(name, "connection") == 0) {
-	  
-	if (self->connection == NULL) {
-	    if (self->request_rec->connection == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->connection = MpConn_FromConn(self->request_rec->connection);
-		Py_INCREF(self->connection);
-		return self->connection;
-	    }
-	}
-	else {
-	    Py_INCREF(self->connection);
-	    return self->connection;
-	}
-    }
-    else if (strcmp(name, "server") == 0) {
-
-	if (self->server == NULL) {
-	    if (self->request_rec->server == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    } 
-	    else {
-		self->server = MpServer_FromServer(self->request_rec->server);
-		Py_INCREF(self->server);
-		return self->server;
-	    }
-	}
-	else {
-	    Py_INCREF(self->server);
-	    return self->server;
-	}
-    }
-    else if (strcmp(name, "next") == 0) {
-
-	if (self->next == NULL) {
-	    if (self->request_rec->next == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->next = MpRequest_FromRequest(self->request_rec->next);
-		Py_INCREF(self->next);
-		return self->next;
-	    }
-	}
-	else {
-	    Py_INCREF(self->next);
-	    return self->next;
-	}
-    }
-    else if (strcmp(name, "prev") == 0) {
-
-	if (self->prev == NULL) {
-	    if (self->request_rec->prev == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->prev = MpRequest_FromRequest(self->request_rec->prev);
-		Py_INCREF(self->prev);
-		return self->prev;
-	    }
-	}
-	else {
-	    Py_INCREF(self->prev);
-	    return self->prev;
-	}
-    }
-    else if (strcmp(name, "main") == 0) {
-
-	if (self->main == NULL) {
-	    if (self->request_rec->main == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->main = MpRequest_FromRequest(self->request_rec->main);
-		Py_INCREF(self->main);
-		return self->main;
-	    }
-	}
-	else {
-	    Py_INCREF(self->main);
-	    return self->main;
-	}
-    }
-    else if (strcmp(name, "headers_in") == 0) {
-	Py_INCREF(self->headers_in);
-	return (PyObject *) self->headers_in;
-    } 
-    else if (strcmp(name, "headers_out") == 0) {
-	Py_INCREF(self->headers_out);
-	return (PyObject *) self->headers_out;
-    }
-    else if (strcmp(name, "err_headers_out") == 0) {
-	Py_INCREF(self->err_headers_out);
-	return (PyObject *) self->err_headers_out;
-    }
-    else if (strcmp(name, "subprocess_env") == 0) {
-	Py_INCREF(self->subprocess_env);
-	return (PyObject *) self->subprocess_env;
-    }
-    else if (strcmp(name, "notes") == 0) {
-	Py_INCREF(self->notes);
-	return (PyObject *) self->notes;
-    }
-    else if (strcmp(name, "allowed_xmethods") == 0) {
-	return tuple_from_array_header(self->request_rec->allowed_xmethods);
-    } 
-    else if (strcmp(name, "allowed_methods") == 0) {
-	return tuple_from_method_list(self->request_rec->allowed_methods);
-    } 
-    else if (strcmp(name, "content_languages") == 0) {
-	return tuple_from_array_header(self->request_rec->content_languages);
-    } 
-    else if (strcmp(name, "finfo") == 0) {
-	return tuple_from_finfo(self->request_rec->finfo);
-    }
-    else if (strcmp(name, "parsed_uri") == 0) {
-	return tuple_from_parsed_uri(self->request_rec->parsed_uri);
-    }
-    else if (strcmp(name, "hlist") == 0) {
-	Py_INCREF(self->hlo);
-	return (PyObject *)self->hlo;
-    }
-    else if (strcmp(name, "_content_type_set") == 0) {
-	return PyInt_FromLong(self->content_type_set);
-    }
-    else if (strcmp(name, "phase") == 0) {
-	if (self->phase == NULL) {
-	    Py_INCREF(Py_None);
-	    return Py_None;
-	}
-	else {
-	    Py_INCREF(self->phase);
-	    return self->phase;
-	}
-    }
-    else if (strcmp(name, "_Request") == 0) {
-	if (self->Request == NULL) {
-	    Py_INCREF(Py_None);
-	    return Py_None;
-	}
-	else {
-	    Py_INCREF(self->Request);
-	    return (PyObject *) self->Request;
-	}
-    }
-    else
-	return PyMember_Get((char *)self->request_rec, request_memberlist, name);
-
-}
-
-/**
- ** request_setattr
- **
- *  Set request object attributes
- *
- */
-
-static int request_setattr(requestobject *self, char *name, PyObject *value)
-{
-    if (value == NULL) {
-	PyErr_SetString(PyExc_AttributeError,
-			"can't delete request attributes");
-	return -1;
-    }
-    else if (strcmp(name, "content_type") == 0) {
-	self->request_rec->content_type = 
-	    apr_pstrdup(self->request_rec->pool, PyString_AsString(value));
-	self->content_type_set = 1;
-	return 0;
-    }
-    else if (strcmp(name, "filename") == 0) {
-	self->request_rec->filename =
-	    apr_pstrdup(self->request_rec->pool, PyString_AsString(value));
-	return 0;
-    }
-    else if (strcmp(name, "user") == 0) {
-	self->request_rec->user = 
-	    apr_pstrdup(self->request_rec->pool, PyString_AsString(value));
-	return 0;
-    }
-    else if (strcmp(name, "_Request") == 0) {
-	/* it's ok to assign None */
-	if (value == Py_None) {
-	    Py_XDECREF(self->Request);
-	    self->Request = NULL;
-	    return 0;
-	}
-	/* but anything else has to be an instance */
-	if (! PyInstance_Check(value)) {
-	    PyErr_SetString(PyExc_AttributeError,
-			    "special attribute _Request must be an instance");
-	    return -1;
-	}
-	Py_INCREF(value);
-	self->Request = value;
-	return 0;
-    }
-    else
-	return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);
-}
+static char request_doc[] =
+"Apache request_rec structure\n";
 
 PyTypeObject MpRequest_Type = {
     PyObject_HEAD_INIT(NULL)
@@ -1272,15 +1092,44 @@ PyTypeObject MpRequest_Type = {
     0,
     (destructor) request_dealloc,    /*tp_dealloc*/
     0,                               /*tp_print*/
-    (getattrfunc) request_getattr,   /*tp_getattr*/
-    (setattrfunc) request_setattr,   /*tp_setattr*/
+    0,                               /*tp_getattr*/
+    0,                               /*tp_setattr*/
     0,                               /*tp_compare*/
     0,                               /*tp_repr*/
     0,                               /*tp_as_number*/
     0,                               /*tp_as_sequence*/
     0,                               /*tp_as_mapping*/
     0,                               /*tp_hash*/
+    0,				     /* tp_call */
+    0,				     /* tp_str */
+    PyObject_GenericGetAttr,         /* tp_getattro */
+    PyObject_GenericSetAttr,	     /* tp_setattro */
+    0,				     /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT |
+    Py_TPFLAGS_BASETYPE,	     /* tp_flags */
+    request_doc,		     /* tp_doc */
+    0,	                             /* tp_traverse */
+    0,	                             /* tp_clear */
+    0,		                     /* tp_richcompare */
+    0,				     /* tp_weaklistoffset */
+    0,	                             /* tp_iter */
+    0,				     /* tp_iternext */
+    request_methods,		     /* tp_methods */
+    request_members,		     /* tp_members */
+    request_getsets,		     /* tp_getset */
+    0,				     /* tp_base */
+    0,				     /* tp_dict */
+    0,				     /* tp_descr_get */
+    0,				     /* tp_descr_set */
+    offsetof(requestobject, dict),   /* tp_dictoffset */
+    0,	                             /* tp_init */
+    0,		                     /* tp_alloc */
+    0,                               /* tp_new */
+    (destructor)request_dealloc,     /* tp_free */
 };
+
+
+
 
 
 
