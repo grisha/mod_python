@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.37 2002/11/16 02:56:12 grisha Exp $
+ * $Id: requestobject.c,v 1.38 2002/11/26 19:33:11 grisha Exp $
  *
  */
 
@@ -902,11 +902,10 @@ static struct PyMemberDef request_rec_mbrs[] = {
     {"allowed",            T_LONG,    OFF(allowed)},
     {"allowed_xmethods",   T_OBJECT,  OFF(allowed_xmethods)},
     {"allowed_methods",    T_OBJECT,  OFF(allowed_methods)},
-    {"sent_boduct",        T_LONG,    OFF(sent_bodyct)},
+    {"sent_bodyct",        T_LONG,    OFF(sent_bodyct)},
     {"bytes_sent",         T_LONG,    OFF(bytes_sent)},
     {"mtime",              T_LONG,    OFF(mtime)},
     {"chunked",            T_INT,     OFF(chunked)},
-/*    {"boundary",           T_STRING,  OFF(boundary)}, */
     {"range",              T_STRING,  OFF(range)},
     {"clength",            T_LONG,    OFF(clength)},
     {"remaining",          T_LONG,    OFF(remaining)},
@@ -1099,7 +1098,7 @@ static PyGetSetDef request_getsets[] = {
     {"allowed",      (getter)getreq_recmbr, NULL, "Status", "allowed"},
     {"allowed_xmethods", (getter)getreq_rec_ah, NULL, "Allowed extension methods", "allowed_xmethods"},
     {"allowed_methods", (getter)getreq_rec_ml, NULL, "Allowed methods", "allowed_methods"},
-    {"sent_bodyct",  (getter)getreq_recmbr_ll, NULL, "Byte count in stream for body", "sent_boduct"},
+    {"sent_bodyct",  (getter)getreq_recmbr_ll, NULL, "Byte count in stream for body", "sent_bodyct"},
     {"bytes_sent",   (getter)getreq_recmbr_ll, NULL, "Bytes sent", "bytes_sent"},
     {"mtime",        (getter)getreq_recmbr_time, NULL, "Time resource was last modified", "mtime"},
     {"chunked",      (getter)getreq_recmbr, NULL, "Sending chunked transfer-coding", "chunked"},
