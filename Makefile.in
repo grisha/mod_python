@@ -49,22 +49,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # This software is based on the original concept
- # as published in the book "Internet Programming with Python"
- # by Aaron Watters, Guido van Rossum and James C. Ahlstrom, 
- # 1996 M&T Books, ISBN: 1-55851-484-8. The book and original
- # software is Copyright 1996 by M&T Books.
- #
- # This software consists of an extension to the Apache http server.
- # More information about Apache may be found at 
- #
- # http://www.apache.org/
- #
- # More information on Python language can be found at
- #
- # http://www.python.org/
- #
- # $Id: Makefile.in,v 1.1 2000/10/09 16:17:22 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.2 2000/10/16 20:58:29 gtrubetskoy Exp $
 
 @SET_MAKE@
 INSTALL=@INSTALL@
@@ -77,7 +62,7 @@ all: @ALL@
 dso: @DSO@
 
 do_dso:
-	@cd src && $(MAKE) dso
+	@cd src && $(MAKE)
 
 no_dso:
 	@echo

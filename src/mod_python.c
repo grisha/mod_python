@@ -49,78 +49,16 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  *
- * This software is based on the original concept
- * as published in the book "Internet Programming with Python"
- * by Aaron Watters, Guido van Rossum and James C. Ahlstrom, 
- * 1996 M&T Books, ISBN: 1-55851-484-8. The book and original
- * software is Copyright 1996 by M&T Books.
- *
- * This software consists of an extension to the Apache http server.
- * More information about Apache may be found at 
- *
- * http://www.apache.org/
- *
- * More information on Python language can be found at
- *
- * http://www.python.org/
- *
- *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.33 2000/10/09 16:17:23 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.34 2000/10/16 20:58:57 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
  *
- * Apr 2000 - rename to mod_python and go apache-specific.
- * Nov 1998 - support for multiple interpreters introduced.
- * May 1998 - initial release (httpdapy).
- *
  */
 
-
-/* Apache headers */
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
-#include "http_log.h"
-
-/* Python headers */
-#include "Python.h"
-#include "structmember.h"
-
-#if defined(WIN32) && !defined(WITH_THREAD)
-#error Python threading must be enabled on Windows
-#endif
-
-#if !defined(WIN32)
-#include <sys/socket.h>
-#endif
-
-/******************************************************************
-                        Declarations
- ******************************************************************/
-
-#define VERSION_COMPONENT "mod_python/2.6"
-#define MODULENAME "mod_python.apache"
-#define INITFUNC "init"
-#define GLOBAL_INTERPRETER "global_interpreter"
-#ifdef WIN32
-#define SLASH '\\'
-#define SLASH_S "\\"
-#else
-#define SLASH '/'
-#define SLASH_S "/"
-#endif
-
-/* structure to hold interpreter data */
-typedef struct {
-    PyInterpreterState *istate;
-    PyObject *obcallback;
-} interpreterdata;
+#include "mod_python.h"
 
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
@@ -129,2165 +67,193 @@ static PyObject * interpreters = NULL;
 /* list of modules to be imported from PythonImport */
 static table *python_imports = NULL;
 
-/* pool given to us in ChildInit. We use it for 
-   server.register_cleanup() */
 pool *child_init_pool = NULL;
 
-/* some forward declarations */
-void python_decref(void *object);
-PyObject * make_obcallback();
-PyObject * tuple_from_array_header(const array_header *ah);
-
-/*********************************
-           Python things 
- *********************************/
-/*********************************
-  members of _apache module 
- *********************************/
-
-/* forward declarations */
-static PyObject * log_error(PyObject *self, PyObject *args);
-static PyObject * make_table(PyObject *self, PyObject *args);
-
-/* methods of _apache */
-static struct PyMethodDef _apache_module_methods[] = {
-  {"log_error",                 (PyCFunction)log_error,        METH_VARARGS},
-  {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
-  {NULL, NULL} /* sentinel */
-};
-
-/********************************
-          tableobject 
- ********************************/
-
-typedef struct tableobject {
-    PyObject_VAR_HEAD
-    table           *table;
-    pool            *pool;
-} tableobject;
-
-static void table_dealloc(tableobject *self);
-static PyObject * table_getattr(PyObject *self, char *name);
-static PyObject * table_repr(tableobject *self);
-static PyObject * tablegetitem(tableobject *self, PyObject *key);
-static PyObject * table_has_key(tableobject *self, PyObject *args);
-static PyObject * table_add(tableobject *self, PyObject *args);
-static PyObject * table_keys(tableobject *self);
-static int tablelength(tableobject *self);
-static int tablesetitem(tableobject *self, PyObject *key, PyObject *val);
-static int tb_setitem(tableobject *self, const char *key, const char *val);
-static tableobject * make_tableobject(table * t);
-
-static PyMappingMethods table_mapping = {
-    (inquiry)       tablelength,           /*mp_length*/
-    (binaryfunc)    tablegetitem,          /*mp_subscript*/
-    (objobjargproc) tablesetitem,          /*mp_ass_subscript*/
-};
-
-static PyTypeObject tableobjecttype = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_table",
-    sizeof(tableobject),
-    0,
-    (destructor) table_dealloc,     /*tp_dealloc*/
-    0,                              /*tp_print*/
-    (getattrfunc) table_getattr,    /*tp_getattr*/
-    0,                              /*tp_setattr*/
-    0,                              /*tp_compare*/
-    (reprfunc) table_repr,          /*tp_repr*/
-    0,                              /*tp_as_number*/
-    0,                              /*tp_as_sequence*/
-    &table_mapping,                 /*tp_as_mapping*/
-    0,                              /*tp_hash*/
-};
-
-#define is_tableobject(op) ((op)->ob_type == &tableobjecttype)
-
-static PyMethodDef tablemethods[] = {
-    {"keys",                 (PyCFunction)table_keys,    METH_VARARGS},
-    {"has_key",              (PyCFunction)table_has_key, METH_VARARGS},
-    {"add",                  (PyCFunction)table_add,     METH_VARARGS},
-    {NULL, NULL} /* sentinel */
-};
-
-/* another forward */
-tableobject * headers_in(request_rec *req);
-
-/********************************
-          arrayobject 
- ********************************/
-
-/* XXX NOTE the Array Object is experimental and isn't used anywhere
-   so far */
-
-typedef struct arrayobject {
-    PyObject_VAR_HEAD
-    array_header    *ah;
-    pool            *pool;
-} arrayobject;
-
-static arrayobject *make_arrayobject(array_header *ah);
-static void array_dealloc(arrayobject *self);
-static PyObject *array_getattr(PyObject *self, char *name);
-static PyObject *array_repr(arrayobject *self);
-static int array_length(arrayobject *self);
-static PyObject *array_item(arrayobject *self, int i); 
-static PyObject *arrayappend(arrayobject *self, PyObject *args);
-static PyObject *arrayinsert(arrayobject *self, PyObject *args);
-static PyObject *arrayextend(arrayobject *self, PyObject *args);
-static PyObject *arraypop(arrayobject *self, PyObject *args);
-static PyObject *arrayremove(arrayobject *self, PyObject *args);
-static PyObject *arrayindex(arrayobject *self, PyObject *args);
-static PyObject *arraycount(arrayobject *self, PyObject *args);
-static PyObject *arrayreverse(arrayobject *self, PyObject *args);
-static PyObject *arraysort(arrayobject *self, PyObject *args);
-
-static PySequenceMethods array_mapping = {
-    (inquiry)         array_length,      /*sq_length*/
-    NULL,
-    /*    (binaryfunc)      array_concat,*/      /*sq_concat*/
-    NULL,
-    /*    (intargfunc)      array_repeat,*/      /*sq_repeat*/
-    (intargfunc)      array_item,        /*sq_item*/
-    NULL,
-    /*    (intintargfunc)   array_slice,  */     /*sq_slice*/
-    NULL,
-    /*    (intobjargproc)   array_ass_item, */   /*sq_ass_item*/
-    NULL,
-    /*    (intintobjargproc)array_ass_slice, */  /*sq_ass_slice*/
-};
-
-static PyTypeObject arrayobjecttype = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_array",
-    sizeof(arrayobject),
-    0,
-    (destructor) array_dealloc,     /*tp_dealloc*/
-    0,                              /*tp_print*/
-    (getattrfunc) array_getattr,    /*tp_getattr*/
-    0,                              /*tp_setattr*/
-    0,                              /*tp_compare*/
-    (reprfunc) array_repr,          /*tp_repr*/
-    0,                              /*tp_as_number*/
-    &array_mapping,                 /*tp_as_sequence*/
-    0,                              /*tp_as_mapping*/
-    0,                              /*tp_hash*/
-};
-
-#define is_arrayobject(op) ((op)->ob_type == &arrayobjecttype)
-
-static PyMethodDef arraymethods[] = {
-    {"append",	(PyCFunction)arrayappend,  0},
-    {"insert",	(PyCFunction)arrayinsert,  0},
-    {"extend",  (PyCFunction)arrayextend,  METH_VARARGS},
-    {"pop",	(PyCFunction)arraypop,     METH_VARARGS},
-    {"remove",	(PyCFunction)arrayremove,  0},
-    {"index",	(PyCFunction)arrayindex,   0},
-    {"count",	(PyCFunction)arraycount,   0},
-    {"reverse",	(PyCFunction)arrayreverse, 0},
-    {"sort",	(PyCFunction)arraysort,    0},
-    {NULL, NULL}		/* sentinel */
-};
-
-/********************************
-          serverobject
- ********************************/
-
-typedef struct serverobject {
-    PyObject_HEAD
-    server_rec     *server;
-    PyObject       *next;
-} serverobject;
-
-static void server_dealloc(serverobject *self);
-static PyObject *server_register_cleanup(serverobject *self, PyObject *args);
-static PyObject *server_getattr(serverobject *self, char *name);
-
-static PyTypeObject serverobjecttype = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_server",
-    sizeof(serverobject),
-    0,
-    (destructor) server_dealloc,     /*tp_dealloc*/
-    0,                               /*tp_print*/
-    (getattrfunc) server_getattr,    /*tp_getattr*/
-    0,                               /*tp_setattr*/
-    0,                               /*tp_compare*/
-    0,                               /*tp_repr*/
-    0,                               /*tp_as_number*/
-    0,                               /*tp_as_sequence*/
-    0,                               /*tp_as_mapping*/
-    0,                               /*tp_hash*/
-};
-
-#define is_serverobject(op) ((op)->ob_type == &serverobjecttype)
-
-static PyMethodDef serverobjectmethods[] = {
-    {"register_cleanup",     (PyCFunction) server_register_cleanup,     METH_VARARGS},
-    { NULL, NULL } /* sentinel */
-};
-
-#define OFF(x) offsetof(server_rec, x)
-static struct memberlist server_memberlist[] = {
-  {"defn_name",          T_STRING,    OFF(defn_name),          RO},
-  {"defn_line_number",   T_INT,       OFF(defn_line_number),   RO},
-  {"srm_confname",       T_STRING,    OFF(srm_confname),       RO},
-  {"access_confname",    T_STRING,    OFF(access_confname),    RO},
-  {"server_admin",       T_STRING,    OFF(server_admin),       RO},
-  {"server_hostname",    T_STRING,    OFF(server_hostname),    RO},
-  {"port",               T_SHORT,     OFF(port),               RO},
-  {"error_fname",        T_STRING,    OFF(error_fname),        RO},
-  {"loglevel",           T_INT,       OFF(loglevel),           RO},
-  {"is_virtual",         T_INT,       OFF(is_virtual),         RO},
-  /* XXX implement module_config ? */
-  /* XXX implement lookup_defaults ? */
-  /* XXX implement server_addr_rec ? */
-  {"timeout",            T_INT,       OFF(timeout),            RO},
-  {"keep_alive_timeout", T_INT,       OFF(keep_alive_timeout), RO},
-  {"keep_alive_max",     T_INT,       OFF(keep_alive_max),     RO},
-  {"keep_alive",         T_INT,       OFF(keep_alive),         RO},
-  {"send_buffer_size",   T_INT,       OFF(send_buffer_size),   RO},
-  {"path",               T_STRING,    OFF(path),               RO},
-  {"pathlen",            T_INT,       OFF(pathlen),            RO},
-  {"server_uid",         T_INT,       OFF(server_uid),         RO},
-  {"server_gid",         T_INT,       OFF(server_gid),         RO},
-  {NULL}  /* Sentinel */
-};
-
-/********************************
-          connobject
- ********************************/
-
-typedef struct connobject {
-  PyObject_HEAD
-  conn_rec     *conn;
-  PyObject     *server;
-  PyObject     *base_server;
-} connobject;
-
-static void conn_dealloc(connobject *self);
-static PyObject * conn_getattr(connobject *self, char *name);
-
-static PyTypeObject connobjecttype = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_conn",
-    sizeof(connobject),
-    0,
-    (destructor) conn_dealloc,       /*tp_dealloc*/
-    0,                               /*tp_print*/
-    (getattrfunc) conn_getattr,      /*tp_getattr*/
-    0,                               /*tp_setattr*/
-    0,                               /*tp_compare*/
-    0,                               /*tp_repr*/
-    0,                               /*tp_as_number*/
-    0,                               /*tp_as_sequence*/
-    0,                               /*tp_as_mapping*/
-    0,                               /*tp_hash*/
-};
-
-#define is_connobject(op) ((op)->ob_type == &connobjecttype)
-
-#undef OFF
-#define OFF(x) offsetof(conn_rec, x)
-static struct memberlist conn_memberlist[] = {
-  {"server",             T_OBJECT                                },
-  {"base_server",        T_OBJECT                                },
-  /* XXX vhost_lookup_data? */
-  {"child_num",          T_INT,       OFF(child_num),          RO},
-  /* XXX BUFF? */
-  {"local_addr",         T_OBJECT                                },
-  {"remote_addr",        T_OBJECT                                },
-  {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
-  {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
-  {"remote_host",        T_STRING,    OFF(remote_host),        RO},
-  {"remote_logname",     T_STRING,    OFF(remote_logname),     RO},
-  {"user",               T_STRING,    OFF(user),               RO},
-  {"ap_auth_type",       T_STRING,    OFF(ap_auth_type),       RO},
-  /* XXX aborted, keepalive, keptalive, double_reverse ? */
-  {"local_ip",           T_STRING,    OFF(remote_ip),          RO},
-  {"local_host",         T_STRING,    OFF(remote_host),        RO},
-  {"keepalives",         T_INT,       OFF(keepalives),         RO},
-  {NULL}  /* Sentinel */
-};
-
-/********************************
-          requestobject 
- ********************************/
-
-typedef struct requestobject {
-    PyObject_HEAD
-    request_rec    * request_rec;
-    PyObject       * connection;
-    PyObject       * server;
-    PyObject       * next;
-    PyObject       * prev;
-    PyObject       * main;
-    tableobject    * headers_in;
-    tableobject    * headers_out;
-    tableobject    * err_headers_out;
-    tableobject    * subprocess_env;
-    tableobject    * notes;
-    int              header_sent;
-    char           * hstack;
-} requestobject;
-
-
-static void request_dealloc(requestobject *self);
-static PyObject * request_getattr(requestobject *self, char *name);
-static int request_setattr(requestobject *self, char *name, PyObject *value);
-static PyObject * req_child_terminate      (requestobject *self, PyObject *args);
-static PyObject * req_add_common_vars      (requestobject *self, PyObject *args);
-static PyObject * req_add_handler          (requestobject *self, PyObject *args);
-static PyObject * req_get_all_config       (requestobject *self, PyObject *args);
-static PyObject * req_get_all_dirs         (requestobject *self, PyObject *args);
-static PyObject * req_get_basic_auth_pw    (requestobject *self, PyObject *args);
-static PyObject * req_get_config           (requestobject *self, PyObject *args);
-static PyObject * req_get_dirs             (requestobject *self, PyObject *args);
-static PyObject * req_get_remote_host      (requestobject *self, PyObject *args);
-static PyObject * req_get_options          (requestobject *self, PyObject *args);
-static PyObject * req_read                 (requestobject *self, PyObject *args);
-static PyObject * req_register_cleanup     (requestobject *self, PyObject *args);
-static PyObject * req_send_http_header     (requestobject *self, PyObject *args);
-static PyObject * req_write                (requestobject *self, PyObject *args);
-
-static PyTypeObject requestobjecttype = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_request",
-    sizeof(requestobject),
-    0,
-    (destructor) request_dealloc,    /*tp_dealloc*/
-    0,                               /*tp_print*/
-    (getattrfunc) request_getattr,   /*tp_getattr*/
-    (setattrfunc) request_setattr,   /*tp_setattr*/
-    0,                               /*tp_compare*/
-    0,                               /*tp_repr*/
-    0,                               /*tp_as_number*/
-    0,                               /*tp_as_sequence*/
-    0,                               /*tp_as_mapping*/
-    0,                               /*tp_hash*/
-};
-
-#define is_requestobject(op) ((op)->ob_type == &requestobjecttype)
-
-static PyMethodDef requestobjectmethods[] = {
-    {"add_common_vars",      (PyCFunction) req_add_common_vars,      METH_VARARGS},
-    {"add_handler",          (PyCFunction) req_add_handler,          METH_VARARGS},
-    {"child_terminate",      (PyCFunction) req_child_terminate,      METH_VARARGS},
-    {"get_all_config",       (PyCFunction) req_get_all_config,       METH_VARARGS},
-    {"get_all_dirs",         (PyCFunction) req_get_all_dirs,         METH_VARARGS},
-    {"get_basic_auth_pw",    (PyCFunction) req_get_basic_auth_pw,    METH_VARARGS},
-    {"get_config",           (PyCFunction) req_get_config,           METH_VARARGS},
-    {"get_dirs",             (PyCFunction) req_get_dirs,             METH_VARARGS},
-    {"get_remote_host",      (PyCFunction) req_get_remote_host,      METH_VARARGS},
-    {"get_options",          (PyCFunction) req_get_options,          METH_VARARGS},
-    {"read",                 (PyCFunction) req_read,                 METH_VARARGS},
-    {"register_cleanup",     (PyCFunction) req_register_cleanup,     METH_VARARGS},
-    {"send_http_header",     (PyCFunction) req_send_http_header,     METH_VARARGS},
-    {"write",                (PyCFunction) req_write,                METH_VARARGS},
-    { NULL, NULL } /* sentinel */
-};
-
-#undef OFF
-#define OFF(x) offsetof(request_rec, x)
-static struct memberlist request_memberlist[] = {
-    /* connection, server, next, prev, main in getattr */
-    {"connection",         T_OBJECT,                                 },
-    {"server",             T_OBJECT,                                 },
-    {"next",               T_OBJECT,                                 },
-    {"prev",               T_OBJECT,                                 },
-    {"main",               T_OBJECT,                                 },
-    {"the_request",        T_STRING,    OFF(the_request),          RO},
-    {"assbackwards",       T_INT,       OFF(assbackwards),         RO},
-    {"proxyreq",           T_INT,       OFF(proxyreq),             RO},
-    {"header_only",        T_INT,       OFF(header_only),          RO},
-    {"protocol",           T_STRING,    OFF(protocol),             RO},
-    {"proto_num",          T_INT,       OFF(proto_num),            RO},
-    {"hostname",           T_STRING,    OFF(hostname),             RO},
-    {"request_time",       T_LONG,      OFF(request_time),         RO},
-    {"status_line",        T_STRING,    OFF(status_line),          RO},
-    {"status",             T_INT,       OFF(status)                  },
-    {"method",             T_STRING,    OFF(method),               RO},
-    {"method_number",      T_INT,       OFF(method_number),        RO},
-    {"allowed",            T_INT,       OFF(allowed),              RO},
-    {"sent_bodyct",        T_INT,       OFF(sent_bodyct),          RO},
-    {"bytes_sent",         T_LONG,      OFF(bytes_sent),           RO},
-    {"mtime",              T_LONG,      OFF(mtime),                RO},
-    {"chunked",            T_INT,       OFF(chunked),              RO},
-    {"byterange",          T_INT,       OFF(byterange),            RO},
-    {"boundary",           T_STRING,    OFF(boundary),             RO},
-    {"range",              T_STRING,    OFF(range),                RO},
-    {"clength",            T_LONG,      OFF(clength),              RO},
-    {"remaining",          T_LONG,      OFF(remaining),            RO},
-    {"read_length",        T_LONG,      OFF(read_length),          RO},
-    {"read_body",          T_INT,       OFF(read_body),            RO},
-    {"read_chunked",       T_INT,       OFF(read_chunked),         RO},
-    {"content_type",       T_STRING,    OFF(content_type)            },
-    {"handler",            T_STRING,    OFF(handler),              RO},
-    {"content_encoding",   T_STRING,    OFF(content_encoding),     RO},
-    {"content_language",   T_STRING,    OFF(content_language),     RO},
-    {"content_languages",  T_OBJECT,                                 },
-    {"vlist_validator",    T_STRING,    OFF(vlist_validator),      RO},
-    {"no_cache",           T_INT,       OFF(no_cache),             RO},
-    {"no_local_copy",      T_INT,       OFF(no_local_copy),        RO},
-    {"unparsed_uri",       T_STRING,    OFF(unparsed_uri),         RO},
-    {"uri",                T_STRING,    OFF(uri),                  RO},
-    {"filename",           T_STRING,    OFF(filename),               },
-    {"path_info",          T_STRING,    OFF(path_info),            RO},
-    {"args",               T_STRING,    OFF(args),                 RO},
-    /* XXX - test an array header */
-    /* XXX finfo */
-    /* XXX parsed_uri */
-    /* XXX per_dir_config */
-    /* XXX request_config */
-    /* XXX htaccess */
-    {NULL}  /* Sentinel */
-};
-
-/********************************
-   *** end of Python things *** 
- ********************************/
-
-/********************************
-          Apache things
- ********************************/
-
-/* Apache module declaration */
-module MODULE_VAR_EXPORT python_module;
-
-/* structure describing per directory configuration parameters */
-typedef struct 
-{
-    int           authoritative;
-    char         *config_dir;
-    table        *options;
-    table        *directives;
-    table        *dirs;
-} py_dir_config;
-
-/* register_cleanup info */
-typedef struct
-{
-    request_rec  *request_rec;
-    server_rec   *server_rec;
-    PyObject     *handler;
-    const char   *interpreter;
-    PyObject     *data;
-} cleanup_info;
-
-/* cleanup function */
-void python_cleanup(void *data);
-
-
-/********************************
-   *** end of Apache things *** 
- ********************************/
-
-/******************************************************************
-     ***               end of declarations                 ***
- ******************************************************************/
-
-
-/******************************************************************
-                 Python objects and their methods    
- ******************************************************************/
-
-/********************************
-         array object
-     XXX VERY EXPERIMENTAL
- ********************************/
-
-/* This is a mapping of a Python object to an Apache
- * array_header.
- *
- * The idea is to make it appear as a Python list. The main difference
- * between an array and a Python list is that arrays are typed (i.e. all
- * items must be of the same type), and in this case the type is assumed 
- * to be a character string.
- */
-
 /**
- **     make_arrayobject
+ ** make_interpreter
  **
- *      This routine creates a Python arrayobject given an Apache
- *      array_header pointer.
- *
+ *      Creates a new Python interpeter.
  */
 
-static arrayobject * make_arrayobject(array_header * ah)
+PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
 {
-  arrayobject *result;
-
-  result = PyMem_NEW(arrayobject, 1);
-  if (! result)
-      return (arrayobject *) PyErr_NoMemory();
-  
-  result->ah = ah;
-  result->ob_type = &arrayobjecttype;
-  result->pool = NULL;
-  
-  _Py_NewReference(result);
-  return result;
-}
-
-/**
- ** array_getattr
- **
- *      Gets array's attributes
- */
-
-static PyObject *array_getattr(PyObject *self, char *name)
-{
-    return Py_FindMethod(arraymethods, self, name);
-}
-
-/**
- ** array_repr
- **
- *      prints array like a list
- */
-
-static PyObject * array_repr(arrayobject *self)
-{
-    PyObject *s;
-    array_header *ah;
-    char **elts;
-    int i;
-
-    s = PyString_FromString("[");
-
-    ah = self->ah;
-    elts = (char **)ah->elts;
-
-    i = ah->nelts;
-    if (i == 0)
-	PyString_ConcatAndDel(&s, PyString_FromString("]"));
-
-    while (i--) {
-	PyString_ConcatAndDel(&s, PyString_FromString("'"));
-	PyString_ConcatAndDel(&s, PyString_FromString(elts[i]));
-	PyString_ConcatAndDel(&s, PyString_FromString("'"));
-	if (i > 0)
-	    PyString_ConcatAndDel(&s, PyString_FromString(", "));
-	else
-	    PyString_ConcatAndDel(&s, PyString_FromString("]"));
-    }
-
-    return s;
-}
-
-/**
- ** array_length
- **
- *      Number of elements in a array. Called
- *      when you do len(array) in Python.
- */
-
-static int array_length(arrayobject *self) 
-{ 
-    return self->ah->nelts;
-}
-
-/**
- ** array_item
- **
- *
- *      Returns an array item.
- */
-
-static PyObject *array_item(arrayobject *self, int i) 
-{ 
-
-    char **items;
-
-    if (i < 0 || i >= self->ah->nelts) {
-	PyErr_SetString(PyExc_IndexError, "array index out of range");
-	return NULL;
-    }
-
-    items = (char **) self->ah->elts;
-    return PyString_FromString(items[i]);
-}
-
-/**
- ** arrayappend
- **
- *
- *      Appends a string to an array.
- */
-
-static PyObject *arrayappend(arrayobject *self, PyObject *args) 
-{
+    PyThreadState *tstate;
     
-    char **item;
-    PyObject *s;
-    
-    if (!PyArg_Parse(args, "O", &s))
-	return NULL;
-    
-    if (!PyString_Check(s)) {
-	PyErr_SetString(PyExc_TypeError,
-			"array items can only be strings");
-	return NULL;
-    }
-    
-    item = ap_push_array(self->ah);
-    *item = ap_pstrdup(self->ah->pool, PyString_AS_STRING(s));
+    /* create a new interpeter */
+    tstate = Py_NewInterpreter();
 
-    Py_INCREF(Py_None);
-    return Py_None;
-}
+    if (! tstate) {
 
-/**
- ** arrayinsert
- **
- *
- *      XXX Not implemented
- */
-static PyObject *arrayinsert(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "insert not implemented");
-    return NULL;
-}
-
-/**
- ** arrayextend
- **
- *
- *      Appends another array to this one.
- *      XXX Not Implemented
- */
-
-static PyObject *arrayextend(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "extend not implemented");
-    return NULL;
-}
-
-/**
- ** arraypop
- **
- *
- *      Get an item and remove it from the list
- *      XXX Not Implemented
- */
-
-static PyObject *arraypop(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "pop not implemented");
-    return NULL;
-}
-
-/**
- ** arrayremove
- **
- *
- *      Remove an item from the array
- *      XXX Not Implemented
- */
-
-static PyObject *arrayremove(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "remove not implemented");
-    return NULL;
-}
-
-/**
- ** arrayindex
- **
- *
- *      Find an item in an array
- *      XXX Not Implemented
- */
-
-static PyObject *arrayindex(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "index not implemented");
-    return 0;
-}
-
-/**
- ** arraycount
- **
- *
- *      Count a particular item in an array
- *      XXX Not Implemented
- */
-
-static PyObject *arraycount(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "count not implemented");
-    return NULL;
-}
-
-/**
- ** arrayreverse
- **
- *
- *      Reverse the order of items in an array
- *      XXX Not Implemented
- */
-
-static PyObject *arrayreverse(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "reverse not implemented");
-    return NULL;
-}
-
-/**
- ** arraysort
- **
- *
- *      Sort items in an array
- *      XXX Not Implemented
- */
-
-static PyObject *arraysort(arrayobject *self, PyObject *args) 
-{
-    PyErr_SetString(PyExc_NotImplementedError, 
-		    "sort not implemented");
-    return NULL;
-}
-
-/**
- ** array_dealloc
- **
- *      Frees array's memory
- */
-
-static void array_dealloc(arrayobject *self)
-{  
-
-    if (self->pool) 
-	ap_destroy_pool(self->pool);
-
-    free(self);
-}
-
-/********************************
-         table object
- ********************************/
-
-/*
- * This is a mapping of a Python object to an Apache table.
- *
- * This object behaves like a dictionary. Note that the
- * underlying table can have duplicate keys, which can never
- * happen to a Python dictionary. But this is such a rare thing 
- * that I can't even think of a possible scenario or implications.
- *
- */
-
-/**
- **     make_tableobject
- **
- *      This routine creates a Python tableobject given an Apache
- *      table pointer.
- *
- */
-
-static tableobject * make_tableobject(table * t)
-{
-  tableobject *result;
-
-  result = PyMem_NEW(tableobject, 1);
-  if (! result)
-    return (tableobject *) PyErr_NoMemory();
-
-  result->table = t;
-  result->ob_type = &tableobjecttype;
-  result->pool = NULL;
-
-  _Py_NewReference(result);
-  return result;
-}
-
-
-/** 
- ** make_table
- **
- *  This returns a new object of built-in type table.
- *
- *  NOTE: The ap_table gets greated in its own pool, which lives
- *  throught the live of the tableobject. This is because this
- *  object may persist from hit to hit.
- * 
- *  make_table()
- *
- */
-
-static PyObject * make_table(PyObject *self, PyObject *args)
-{
-    tableobject *t;
-    pool *p;
-
-    p = ap_make_sub_pool(NULL);
-    
-    /* two is a wild guess */
-    t = make_tableobject(ap_make_table(p, 2));
-
-    /* remember the pointer to our own pool */
-    t->pool = p;
-
-    return (PyObject *)t;
-
-}
-
-/**
- ** table_getattr
- **
- *      Gets table's attributes
- */
-
-static PyObject * table_getattr(PyObject *self, char *name)
-{
-    return Py_FindMethod(tablemethods, self, name);
-}
-
-/**
- ** tablegetitem
- **
- *      Gets a dictionary item
- */
-
-static PyObject * tablegetitem(tableobject *self, PyObject *key)
-{
-    const char *v;
-    char *k;
-
-    k = PyString_AsString(key);
-
-    v = ap_table_get(self->table, k);
-
-    if (! v)
-    {
-	PyErr_SetObject(PyExc_KeyError, key);
-	return NULL;
-    }
-
-    return PyString_FromString(v);
-}
-
-/**
- ** table_has_key
- **
- */
-
-static PyObject * table_has_key(tableobject *self, PyObject *args)
-{
-
-    const char *val, *key;
-
-    if (! PyArg_ParseTuple(args, "s", &key))
-	return NULL;
-
-    val = ap_table_get (self->table, key);
-
-    if (val)
-	return PyInt_FromLong(1);
-    else
-	return PyInt_FromLong(0);
-}
-
-/**
- ** table_add
- **
- *     this function is equivalent of ap_table_add - 
- *     it can create duplicate entries. 
- */
-
-static PyObject * table_add(tableobject *self, PyObject *args)
-{
-
-    const char *val, *key;
-
-    if (! PyArg_ParseTuple(args, "ss", &key, &val))
-	return NULL;
-
-    ap_table_add(self->table, key, val);
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-/**
- ** tablelength
- **
- *      Number of elements in a table. Called
- *      when you do len(table) in Python.
- */
-
-static int tablelength(tableobject *self) 
-{ 
-    return ap_table_elts(self->table)->nelts;
-}
-
-/**
- ** tablesetitem
- **
- *      insert into table dictionary-style
- *      *** NOTE ***
- *      Since the underlying ap_table_set makes a *copy* of the string,
- *      there is no need to increment the reference to the Python
- *      string passed in.
- */
-
-static int tablesetitem(tableobject *self, PyObject *key, 
-			PyObject *val)
-{ 
-
-    char *k;
-
-    if (key && !PyString_Check(key)) {
-	PyErr_SetString(PyExc_TypeError,
-			"table keys must be strings");
-	return -1;
-    }
-
-    k = PyString_AsString(key);
-
-    if ((val == Py_None) || (val == NULL)) {
-	ap_table_unset(self->table, k);
+       /* couldn't create an interpreter, this is bad */
+       ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, srv,
+                     "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
+       return NULL;
     }
     else {
-	if (val && !PyString_Check(val)) {
-	    PyErr_SetString(PyExc_TypeError,
-			    "table values must be strings");
-	    return -1;
-	}
-	ap_table_set(self->table, k, PyString_AsString(val));
-    }
-    return 0;
-}
 
-/**
- ** tb_setitem
- **
- *      This is a wrapper around tablesetitem that takes
- *      char * for convenience, for internal use.
- */
-
-static int tb_setitem(tableobject *self, const char *key, const char *val) 
-{ 
-    PyObject *ps1, *ps2;
-
-    ps1 = PyString_FromString(key);
-    ps2 = PyString_FromString(val);
-
-    tablesetitem(self, ps1, ps2);
-
-    Py_DECREF(ps1);
-    Py_DECREF(ps2);
-
-    return 0;
-
-    /* prevent complier warning about function
-       never used */
-    tb_setitem(self, key, val);
-}
-
-/**
- ** table_dealloc
- **
- *      Frees table's memory
- */
-static void table_dealloc(tableobject *self)
-{  
-
-    if (self->pool) 
-	ap_destroy_pool(self->pool);
-
-    free(self);
-}
-
-/**
- ** table_repr
- **
- *      prints table like a dictionary
- */
-
-static PyObject * table_repr(tableobject *self)
-{
-    PyObject *s;
-    array_header *ah;
-    table_entry *elts;
-    int i;
-
-    s = PyString_FromString("{");
-
-    ah = ap_table_elts (self->table);
-    elts = (table_entry *) ah->elts;
-
-    i = ah->nelts;
-    if (i == 0)
-	PyString_ConcatAndDel(&s, PyString_FromString("}"));
-
-    while (i--)
-	if (elts[i].key)
-	{
-	    PyString_ConcatAndDel(&s, PyString_FromString("'"));
-	    PyString_ConcatAndDel(&s, PyString_FromString(elts[i].key));
-	    PyString_ConcatAndDel(&s, PyString_FromString("': '"));
-	    PyString_ConcatAndDel(&s, PyString_FromString(elts[i].val));
-	    PyString_ConcatAndDel(&s, PyString_FromString("'"));
-	    if (i > 0)
-		PyString_ConcatAndDel(&s, PyString_FromString(", "));
-	    else
-		PyString_ConcatAndDel(&s, PyString_FromString("}"));
-	}
-
-    return s;
-}
-
-/**
- ** table_keys
- **
- *
- *  Implements dictionary's keys() method.
- */
-
-static PyObject * table_keys(tableobject *self)
-{
-
-    PyObject *v;
-    array_header *ah;
-    table_entry *elts;
-    int i, j;
-
-    ah = ap_table_elts(self->table);
-    elts = (table_entry *) ah->elts;
-
-    v = PyList_New(ah->nelts);
-
-    for (i = 0, j = 0; i < ah->nelts; i++)
-    {
-	if (elts[i].key)
-	{
-	    PyObject *key = PyString_FromString(elts[i].key);
-	    PyList_SetItem(v, j, key);
-	    j++;
-	}
-    }
-    return v;
-}
-
-
-/**
- ** copy_table
- **
- *   Merge two tables into one. Matching key values 
- *   in second overlay the first.
- */
-
-static void copy_table(table *t1, table *t2)
-{
-
-    array_header *ah;
-    table_entry *elts;
-    int i;
-
-    ah = ap_table_elts(t2);
-    elts = (table_entry *)ah->elts;
-    i = ah->nelts;
-
-    while (i--)
-	if (elts[i].key)
-	    ap_table_set(t1, elts[i].key, elts[i].val);
-}
-
-
-/********************************
-  ***  end of table object ***
- ********************************/
-
-/********************************
-         server object
- ********************************/
-
-/*
- * This is a mapping of a Python object to an Apache server_rec.
- *
- */
-
-/**
- **     make_serverobject
- **
- *      This routine creates a Python serverobject given an Apache
- *      server_rec pointer.
- *
- */
-
-static serverobject * make_serverobject(server_rec *t)
-{
-    serverobject *result;
-
-    result = PyMem_NEW(serverobject, 1);
-    if (! result)
-	return (serverobject *) PyErr_NoMemory();
-
-    result->server = t;
-    result->ob_type = &serverobjecttype;
-    result->next = NULL;
-
-    _Py_NewReference(result);
-    return result;
-}
-
-/**
- ** server_dealloc
- **
- *
- */
-
-static void server_dealloc(serverobject *self)
-{  
-
-    Py_XDECREF(self->next);
-    free(self);
-}
-
-/**
- ** server_getattr
- **
- *  Get server object attributes
- *
- *
- */
-
-static PyObject * server_getattr(serverobject *self, char *name)
-{
-
-    PyObject *res;
-
-    res = Py_FindMethod(serverobjectmethods, (PyObject *)self, name);
-    if (res != NULL)
-	return res;
-    
-    PyErr_Clear();
-
-    if (strcmp(name, "next") == 0)
-	/* server.next serverobject is created as needed */
-	if (self->next == NULL) {
-	    if (self->server->next == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->next = (PyObject *)make_serverobject(self->server->next);
-		Py_INCREF(self->next);
-		return self->next;
-	    }
-	}
-	else {
-	    Py_INCREF(self->next);
-	    return self->next;
-	}
-
-    else if (strcmp(name, "error_log") == 0)
-	return PyInt_FromLong((long)fileno(self->server->error_log));
-  
-    else if (strcmp(name, "names") == 0) {
-	return tuple_from_array_header(self->server->names);
-    }
-    else if (strcmp(name, "wild_names") == 0) {
-	return tuple_from_array_header(self->server->wild_names);
-    }
-    else
-	return PyMember_Get((char *)self->server, server_memberlist, name);
-
-}
-
-/**
- ** server.register_cleanup(handler, data)
- **
- *    same as request.register_cleanup, except the server pool is used.
- *    the server pool gets destroyed before the child dies or when the
- *    whole process dies in multithreaded situations.
- */
-
-static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
-{
-
-    cleanup_info *ci;
-    PyObject *handler = NULL;
-    PyObject *data = NULL;
-    requestobject *req = NULL;
-
-    if (! PyArg_ParseTuple(args, "OO|O", &req, &handler, &data))
-	return NULL; 
-
-    if (! is_requestobject(req)) {
-	PyErr_SetString(PyExc_ValueError, "first argument must be a request object");
-	return NULL;
-    }
-    else if(!PyCallable_Check(handler)) {
-	PyErr_SetString(PyExc_ValueError, 
-			"second argument must be a callable object");
-	return NULL;
-    }
-    
-    ci = (cleanup_info *)malloc(sizeof(cleanup_info));
-    ci->request_rec = NULL;
-    ci->server_rec = self->server;
-    Py_INCREF(handler);
-    ci->handler = handler;
-    ci->interpreter = ap_table_get(req->request_rec->notes, "python_interpreter");
-    if (data) {
-	Py_INCREF(data);
-	ci->data = data;
-    }
-    else {
-	Py_INCREF(Py_None);
-	ci->data = Py_None;
-    }
-    
-    ap_register_cleanup(child_init_pool, ci, python_cleanup, 
-			ap_null_cleanup);
-    
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-/********************************
-  ***  end of server object ***
- ********************************/
-
-/********************************
-         conn object
- ********************************/
-
-/*
- * This is a mapping of a Python object to an Apache conn_rec.
- *
- */
-
-/**
- **     make_connobject
- **
- *      This routine creates a Python connobject given an Apache
- *      conn_rec pointer.
- *
- */
-
-static connobject * make_connobject(conn_rec *t)
-{
-    connobject *result;
-
-    result = PyMem_NEW(connobject, 1);
-    if (! result)
-	return (connobject *) PyErr_NoMemory();
-
-    result->conn = t;
-    result->ob_type = &connobjecttype;
-    result->server = NULL;
-    result->base_server = NULL;
-
-    _Py_NewReference(result);
-    return result;
-}
-
-/**
- ** conn_dealloc
- **
- *
- */
-
-static void conn_dealloc(connobject *self)
-{  
-    Py_XDECREF(self->server);
-    Py_XDECREF(self->base_server);
-    free(self);
-}
-
-/**
- ** makeipaddr
- **
- *  utility func to make an ip address
- */
-
-static PyObject *makeipaddr(struct sockaddr_in *addr)
-{
-    long x = ntohl(addr->sin_addr.s_addr);
-    char buf[100];
-    sprintf(buf, "%d.%d.%d.%d",
-	    (int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
-	    (int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
-    return PyString_FromString(buf);
-}
-
-/**
- ** makesockaddr
- **
- *  utility func to make a socket address
- */
-
-static PyObject *makesockaddr(struct sockaddr_in *addr)
-{
-    PyObject *addrobj = makeipaddr(addr);
-    PyObject *ret = NULL;
-    if (addrobj) {
-	ret = Py_BuildValue("Oi", addrobj, ntohs(addr->sin_port));
-	Py_DECREF(addrobj);
-    }
-    return ret;
-}
-
-/**
- ** conn_getattr
- **
- *  Get conn object attributes
- *
- */
-
-static PyObject * conn_getattr(connobject *self, char *name)
-{
-    if (strcmp(name, "server") == 0) {
-
-	/* server serverobject is created as needed */
-	if (self->server == NULL) {
-	    if (self->conn->server == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->server = (PyObject *)make_serverobject(self->conn->server);
-		Py_INCREF(self->server);
-		return self->server;
-	    }
-	}
-	else {
-	    Py_INCREF(self->server);
-	    return self->server;
-	}
-    }
-    else if (strcmp(name, "base_server") == 0) {
-
-	/* base_server serverobject is created as needed */
-	if (self->base_server == NULL) {
-	    if (self->conn->base_server == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->base_server = (PyObject *)make_serverobject(self->conn->base_server);
-		Py_INCREF(self->base_server);
-		return self->base_server;
-	    }
-	}
-	else {
-	    Py_INCREF(self->base_server);
-	    return self->base_server;
-	}
-    }
-    else if (strcmp(name, "local_addr") == 0) {
-	return makesockaddr(&(self->conn->local_addr));
-    }
-    else if (strcmp(name, "remote_addr") == 0) {
-	return makesockaddr(&(self->conn->remote_addr));
-    }
-    else
-	return PyMember_Get((char *)self->conn, conn_memberlist, name);
-
-}
-
-/********************************
-  ***  end of conn object ***
- ********************************/
-
-/********************************
-         request object
- ********************************/
-
-/*
- * This is a mapping of a Python object to an Apache request_rec.
- *
- */
-
-/**
- **     make_requestobject
- **
- *      This routine creates a Python requestobject given an Apache
- *      request_rec pointer.
- *
- */
-
-static requestobject * make_requestobject(request_rec *req)
-{
-    requestobject *result;
-
-    result = PyMem_NEW(requestobject, 1);
-    if (! result)
-	return (requestobject *) PyErr_NoMemory();
-
-    result->request_rec = req;
-    result->ob_type = &requestobjecttype;
-    result->connection = NULL;
-    result->server = NULL;
-    result->next = NULL;
-    result->prev = NULL;
-    result->main = NULL;
-    result->headers_in = make_tableobject(req->headers_in);
-    result->headers_out = make_tableobject(req->headers_out);
-    result->err_headers_out = make_tableobject(req->err_headers_out);
-    result->subprocess_env = make_tableobject(req->subprocess_env);
-    result->notes = make_tableobject(req->notes);
-    result->header_sent = 0;
-    result->hstack = NULL;
-
-    _Py_NewReference(result);
-    ap_register_cleanup(req->pool, (PyObject *)result, python_decref, 
-			ap_null_cleanup);
-
-    return result;
-}
-
-/**
- ** request_dealloc
- **
- *
- */
-
-static void request_dealloc(requestobject *self)
-{  
-    Py_XDECREF(self->connection);
-    Py_XDECREF(self->server);
-    Py_XDECREF(self->next);
-    Py_XDECREF(self->prev);
-    Py_XDECREF(self->main);
-    Py_XDECREF(self->headers_in);
-    Py_XDECREF(self->headers_out);
-    Py_XDECREF(self->err_headers_out);
-    Py_XDECREF(self->subprocess_env);
-    Py_XDECREF(self->notes);
-
-    free(self);
-}
-
-/**
- ** request_getattr
- **
- *  Get request object attributes
- *
- */
-
-static PyObject * request_getattr(requestobject *self, char *name)
-{
-
-    PyObject *res;
-
-    res = Py_FindMethod(requestobjectmethods, (PyObject *)self, name);
-    if (res != NULL)
-	return res;
-    
-    PyErr_Clear();
-  
-    if (strcmp(name, "connection") == 0) {
-	  
-	if (self->connection == NULL) {
-	    if (self->request_rec->connection == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->connection = (PyObject *)make_connobject(self->request_rec->connection);
-		Py_INCREF(self->connection);
-		return self->connection;
-	    }
-	}
-	else {
-	    Py_INCREF(self->connection);
-	    return self->connection;
-	}
-    }
-    else if (strcmp(name, "server") == 0) {
-
-	if (self->server == NULL) {
-	    if (self->request_rec->server == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    } 
-	    else {
-		self->server = (PyObject *)make_serverobject(self->request_rec->server);
-		Py_INCREF(self->server);
-		return self->server;
-	    }
-	}
-	else {
-	    Py_INCREF(self->server);
-	    return self->server;
-	}
-    }
-    else if (strcmp(name, "next") == 0) {
-
-	if (self->next == NULL) {
-	    if (self->request_rec->next == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->next = (PyObject *)make_requestobject(self->request_rec->next);
-		Py_INCREF(self->next);
-		return self->next;
-	    }
-	}
-	else {
-	    Py_INCREF(self->next);
-	    return self->next;
-	}
-    }
-    else if (strcmp(name, "prev") == 0) {
-
-	if (self->prev == NULL) {
-	    if (self->request_rec->prev == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->prev = (PyObject *)make_requestobject(self->request_rec->prev);
-		Py_INCREF(self->prev);
-		return self->prev;
-	    }
-	}
-	else {
-	    Py_INCREF(self->prev);
-	    return self->prev;
-	}
-    }
-    else if (strcmp(name, "main") == 0) {
-
-	if (self->main == NULL) {
-	    if (self->request_rec->main == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->main = (PyObject *)make_requestobject(self->request_rec->main);
-		Py_INCREF(self->main);
-		return self->main;
-	    }
-	}
-	else {
-	    Py_INCREF(self->main);
-	    return self->main;
-	}
-    }
-    else if (strcmp(name, "headers_in") == 0) {
-	Py_INCREF(self->headers_in);
-	return (PyObject *) self->headers_in;
-    } 
-    else if (strcmp(name, "headers_out") == 0) {
-	Py_INCREF(self->headers_out);
-	return (PyObject *) self->headers_out;
-    }
-    else if (strcmp(name, "err_headers_out") == 0) {
-	Py_INCREF(self->err_headers_out);
-	return (PyObject *) self->err_headers_out;
-    }
-    else if (strcmp(name, "subprocess_env") == 0) {
-	Py_INCREF(self->subprocess_env);
-	return (PyObject *) self->subprocess_env;
-    }
-    else if (strcmp(name, "notes") == 0) {
-	Py_INCREF(self->notes);
-	return (PyObject *) self->notes;
-    }
-    else if (strcmp(name, "content_languages") == 0) {
-	return tuple_from_array_header(self->request_rec->content_languages);
-    } 
-    else if (strcmp(name, "hstack") == 0) {
-	return PyString_FromString(self->hstack);
-    }
-    else
-	return PyMember_Get((char *)self->request_rec, request_memberlist, name);
-
-}
-
-/**
- ** request_setattr
- **
- *  Set request object attributes
- *
- */
-
-static int request_setattr(requestobject *self, char *name, PyObject *value)
-{
-    if (value == NULL) {
-	PyErr_SetString(PyExc_AttributeError,
-			"can't delete request attributes");
-	return -1;
-    }
-    else if (strcmp(name, "content_type") == 0) {
-	self->request_rec->content_type = 
-	    ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
-	return 0;
-    }
-    else if (strcmp(name, "filename") == 0) {
-	self->request_rec->filename =
-	    ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
-	return 0;
-    }
-    else if (strcmp(name, "hstack") == 0) {
-	self->hstack = ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
-	return 0;
-    }
-    else
-	return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);
-}
-
-/**
- ** request.send_http_header(request self)
- **
- *      sends headers, same as ap_send_http_header
- */
-
-static PyObject * req_send_http_header(requestobject *self, PyObject *args)
-{
-
-    if (! self->header_sent) {
-	ap_send_http_header(self->request_rec);
-	self->header_sent = 1;
-    }
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-/**
- ** request.child_terminate(request self)
- **
- *    terminates a child process
- */
-
-static PyObject * req_child_terminate(requestobject *self, PyObject *args)
-{
-#ifndef MULTITHREAD
-    ap_child_terminate(self->request_rec);
+#ifdef WITH_THREAD
+        /* release the thread state */
+        PyThreadState_Swap(NULL); 
 #endif
-    Py_INCREF(Py_None);
-    return Py_None;
+        /* Strictly speaking we don't need that tstate created
+	 * by Py_NewInterpreter but is preferable to waste it than re-write
+	 * a cousin to Py_NewInterpreter 
+	 * XXX (maybe we can destroy it?)
+	 */
+        return tstate->interp;
+    }
+    
 }
 
 /**
- ** request.register_cleanup(handler, data)
+ ** get_interpreter_data
  **
- *    registers a cleanup at request pool destruction time. 
- *    optional data argument will be passed to the cleanup function.
+ *      Get interpreter given its name. 
+ *      NOTE: Lock must be acquired prior to entering this function.
  */
 
-static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
+interpreterdata *get_interpreter_data(const char *name, server_rec *srv)
 {
-    cleanup_info *ci;
-    PyObject *handler = NULL;
-    PyObject *data = NULL;
+    PyObject *p;
+    interpreterdata *idata = NULL;
+    
+    if (! name)
+	name = GLOBAL_INTERPRETER;
 
-    if (! PyArg_ParseTuple(args, "O|O", &handler, &data))
-	return NULL;  /* bad args */
-
-    ci = (cleanup_info *)malloc(sizeof(cleanup_info));
-    ci->request_rec = self->request_rec;
-    ci->server_rec = self->request_rec->server;
-    if (PyCallable_Check(handler)) {
-	Py_INCREF(handler);
-	ci->handler = handler;
-	ci->interpreter = ap_table_get(self->request_rec->notes, "python_interpreter");
-	if (data) {
-	    Py_INCREF(data);
-	    ci->data = data;
-	}
-	else {
-	    Py_INCREF(Py_None);
-	    ci->data = Py_None;
+    p = PyDict_GetItemString(interpreters, (char *)name);
+    if (!p)
+    {
+        PyInterpreterState *istate = make_interpreter(name, srv);
+	if (istate) {
+	    idata = (interpreterdata *)malloc(sizeof(interpreterdata));
+	    idata->istate = istate;
+	    /* obcallback will be created on first use */
+	    idata->obcallback = NULL; 
+	    p = PyCObject_FromVoidPtr((void *) idata, NULL);
+	    PyDict_SetItemString(interpreters, (char *)name, p);
 	}
     }
     else {
-	PyErr_SetString(PyExc_ValueError, 
-			"first argument must be a callable object");
-	free(ci);
-	return NULL;
+	idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
     }
-    
-    ap_register_cleanup(self->request_rec->pool, ci, python_cleanup, 
-			ap_null_cleanup);
 
-    Py_INCREF(Py_None);
-    return Py_None;
-
+    return idata;
 }
 
-/**
- ** request.get_basic_auth_pw(request self)
- **
- *    get basic authentication password,
- *    similar to ap_get_basic_auth_pw
- */
-
-static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
-{
-    const char *pw;
-    request_rec *req;
-    
-    req = self->request_rec;
-
-    if (! ap_get_basic_auth_pw(req, &pw))
-	return PyString_FromString(pw);
-    else {
-	Py_INCREF(Py_None);
-	return Py_None;
-    }
-
-}
 
 /**
- ** request.write(request self, string what)
+ ** python_cleanup
  **
- *      write output to the client
+ *     This function gets called for clean ups registered
+ *     with register_cleanup(). Clean ups registered via
+ *     PythonCleanupHandler run in python_cleanup_handler()
+ *     below.
  */
 
-static PyObject * req_write(requestobject *self, PyObject *args)
+void python_cleanup(void *data)
 {
-    int len;
-    int rc;
-    char *buff;
+    interpreterdata *idata;
 
-    if (! PyArg_ParseTuple(args, "s#", &buff, &len))
-	return NULL;  /* bad args */
+#ifdef WITH_THREAD
+    PyThreadState *tstate;
+#endif
+    cleanup_info *ci = (cleanup_info *)data;
 
-    Py_BEGIN_ALLOW_THREADS
-    ap_rwrite(buff, len, self->request_rec);
-    rc = ap_rflush(self->request_rec);
-    Py_END_ALLOW_THREADS
-    if (rc == EOF) {
-	PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
-	return NULL;
-    }
+#ifdef WITH_THREAD  
+    /* acquire lock (to protect the interpreters dictionary) */
+    PyEval_AcquireLock();
+#endif
 
+    /* get/create interpreter */
+    if (ci->request_rec)
+	idata = get_interpreter_data(ci->interpreter, ci->request_rec->server);
+    else
+	idata = get_interpreter_data(ci->interpreter, ci->server_rec);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+#ifdef WITH_THREAD
+    /* release the lock */
+    PyEval_ReleaseLock();
+#endif
 
-}
-
-/**
- ** request.read(request self, int bytes)
- **
- *     Reads stuff like POST requests from the client
- *     (based on the old net_read)
- */
-
-static PyObject * req_read(requestobject *self, PyObject *args)
-{
-
-    int len, rc, bytes_read, chunk_len;
-    char *buffer;
-    PyObject *result;
-
-    if (! PyArg_ParseTuple(args, "i", &len)) 
-	return NULL;
-
-    if (len == 0) {
-	return PyString_FromString("");
-    }
-    else if (len < 0) {
-	PyErr_SetString(PyExc_ValueError, "must have positive integer parameter");
-	return NULL;
-    }
-
-    /* is this the first read? */
-    if (! self->request_rec->read_length) {
-	/* then do some initial setting up */
-	rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
-	if(rc != OK) {
-	    PyErr_SetObject(PyExc_IOError, PyInt_FromLong(rc));
-	    return NULL;
-	}
-
-	if (! ap_should_client_block(self->request_rec)) {
-	    /* client has nothing to send */
-	    Py_INCREF(Py_None);
-	    return Py_None;
-	}
-    }
-
-    result = PyString_FromStringAndSize(NULL, len);
-
-    /* possibly no more memory */
-    if (result == NULL) 
-	return NULL;
-
-    /* set timeout */
-    ap_soft_timeout("mod_python_read", self->request_rec);
-
-    /* read it in */
-    buffer = PyString_AS_STRING((PyStringObject *) result);
-    Py_BEGIN_ALLOW_THREADS
-    chunk_len = ap_get_client_block(self->request_rec, buffer, len);
-    Py_END_ALLOW_THREADS
-    bytes_read = chunk_len;
-
-    /* if this is a "short read", try reading more */
-    while ((bytes_read < len) && (chunk_len != 0)) {
-	Py_BEGIN_ALLOW_THREADS
-	chunk_len = ap_get_client_block(self->request_rec, 
-					buffer+bytes_read, len-bytes_read);
-	Py_END_ALLOW_THREADS
-	ap_reset_timeout(self->request_rec);
-	if (chunk_len == -1) {
-	    ap_kill_timeout(self->request_rec);
-	    PyErr_SetObject(PyExc_IOError, 
-			    PyString_FromString("Client read error (Timeout?)"));
-	    return NULL;
-	}
+    if (!idata) {
+	if (ci->request_rec)
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+			  "python_cleanup: get_interpreter_data returned NULL!");
 	else
-	    bytes_read += chunk_len;
-    }
-
-    ap_kill_timeout(self->request_rec);
-
-    /* resize if necessary */
-    if (bytes_read < len) 
-	if(_PyString_Resize(&result, bytes_read))
-	    return NULL;
-
-    return result;
-}
-
-/**
- ** valid_handler()
- **
- *  utility func - makes sure a handler is valid
- */
-
-static int valid_handler(const char *h)
-{
-    if ((strcmp(h, "PythonHandler") != 0) &&
-	(strcmp(h, "PythonAuthenHandler") != 0) &&
-	(strcmp(h, "PythonPostReadRequestHandler") != 0) &&
-	(strcmp(h, "PythonTransHandler") != 0) &&
-	(strcmp(h, "PythonHeaderParserHandler") != 0) &&
-	(strcmp(h, "PythonAccessHandler") != 0) &&
-	(strcmp(h, "PythonAuthzHandler") != 0) &&
-	(strcmp(h, "PythonTypeHandler") != 0) &&
-	(strcmp(h, "PythonFixupHandler") != 0) &&
-	(strcmp(h, "PythonLogHandler") != 0) &&
-	(strcmp(h, "PythonInitHandler") != 0))
-	return 0;
-    else
-	return 1;
-}
-
-/**
- ** request.get_config(request self)
- **
- *     Returns the config directives set through Python* apache directives.
- *     except for PythonOption, which you get via get_options
- */
-
-static PyObject * req_get_config(requestobject *self, PyObject *args)
-{
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-    return (PyObject *)make_tableobject(conf->directives);
-}
-
-/**
- ** request.get_all_config(request self)
- **
- *  returns get_config + all the handlers added by req.add_handler
- */
-
-static PyObject * req_get_all_config(requestobject *self, PyObject *args)
-{
-    table *all;
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-
-    all = ap_copy_table(self->request_rec->pool, conf->directives);
-
-    if (ap_table_get(self->request_rec->notes, "py_more_directives")) {
-
-	array_header *ah = ap_table_elts(self->request_rec->notes);
-	table_entry *elts = (table_entry *)ah->elts;
-	int i = ah->nelts;
-
-	while (i--) {
-	    if (elts[i].key) {
-		if (valid_handler(elts[i].key)) {
-		
-		    /* if exists - append, otherwise add */
-		    const char *val = ap_table_get(all, elts[i].key);
-		    if (val) {
-			ap_table_set(all, elts[i].key, 
-				     ap_pstrcat(self->request_rec->pool,
-						val, " ", elts[i].val,
-						NULL));
-		    }
-		    else {
-			ap_table_set(all, elts[i].key, elts[i].val);
-		    }
-		}
-	    }
-	}
-    }
-    return (PyObject *)make_tableobject(all);
-}
-
-/**
- ** request.get_all_dirs(request self)
- **
- *  returns get_dirs + all the dirs added by req.add_handler
- */
-
-static PyObject * req_get_all_dirs(requestobject *self, PyObject *args)
-{
-    table *all;
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-
-    all = ap_copy_table(self->request_rec->pool, conf->dirs);
-
-    if (ap_table_get(self->request_rec->notes, "py_more_directives")) {
-
-	array_header *ah = ap_table_elts(self->request_rec->notes);
-	table_entry *elts = (table_entry *)ah->elts;
-	int i = ah->nelts;
-
-	while (i--) {
-	    if (elts[i].key) {
-		
-		/* chop off _dir */
-		char *s = ap_pstrdup(self->request_rec->pool, elts[i].key);
-		if (valid_handler(s)) {
-		    
-		    s[strlen(s)-4] = 0;
-		    ap_table_set(all, s, elts[i].val);
-		}
-	    }
-	}
-    }
-    return (PyObject *)make_tableobject(all);
-}
-
-/**
- ** request.get_remote_host(request self, [int type])
- **
- *    An interface to the ap_get_remote_host function.
- */
-
-static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
-{
-
-    int type = REMOTE_NAME;
-    const char *host;
-
-    if (! PyArg_ParseTuple(args, "|i", &type)) 
-	return NULL;
-    
-    host = ap_get_remote_host(self->request_rec->connection, 
-			      self->request_rec->per_dir_config, type);
-
-    if (! host) {
-	Py_INCREF(Py_None);
-	return Py_None;
-    }
-    else
-	return PyString_FromString(host);
-}
-
-/**
- ** request.get_options(request self)
- **
- */
-
-static PyObject * req_get_options(requestobject *self, PyObject *args)
-{
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-    return (PyObject *)make_tableobject(conf->options);
-}
-
-/**
- ** request.get_config(request self)
- **
- *  Returns a table keyed by directives with the last path in which the
- *  directive was encountered.
- */
-
-static PyObject * req_get_dirs(requestobject *self, PyObject *args)
-{
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
-    return (PyObject *)make_tableobject(conf->dirs);
-}
-
-/**
- ** request.add_common_vars(reqeust self)
- **
- *     Interface to ap_add_common_vars. Adds a bunch of CGI
- *     environment variables.
- *
- */
-
-static PyObject * req_add_common_vars(requestobject *self, PyObject *args)
-{
-
-    ap_add_common_vars(self->request_rec);
-
-    Py_INCREF(Py_None);
-    return Py_None;
-
-}
-
-/**
- ** request.add_handler(request self, string handler, string function)
- **
- *     Allows to add another handler to the handler list.
- *
- * The dynamic handler mechanism works like this: we have
- * the original config, which gets build via the standard Apache
- * config functions. The calls to add_handler() slap new values into
- * req->notes. At handler execution time, prior to calling into python, 
- * but after the requestobject has been created/obtained, a concatenation 
- * of values of conf->directives+req->notes for the handler currently
- * being executed is placed in req->hstack. Inside Python, in Dispatch(),
- * handlers will be chopped from the begining of the string as they
- * get executed. Add_handler is also smart enough to append to
- * req->hstack if the handler being added is the same as the one 
- * being currently executed.
- */
-
-static PyObject *req_add_handler(requestobject *self, PyObject *args)
-{
-    char *handler;
-    char *function;
-    const char *dir = NULL;
-    const char *currhand;
-
-    if (! PyArg_ParseTuple(args, "ss|s", &handler, &function, &dir)) 
-        return NULL;
-
-    if (! valid_handler(handler)) {
-	PyErr_SetString(PyExc_IndexError, 
-			ap_psprintf(self->request_rec->pool,
-				   "Invalid handler: %s", handler));
-	return NULL;
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
+			 "python_cleanup: get_interpreter_data returned NULL!");
+	Py_DECREF(ci->handler);
+	Py_XDECREF(ci->data);
+	free(ci);
+        return;
     }
     
-    /* which handler are we processing? */
-    currhand = ap_table_get(self->request_rec->notes, "python_handler");
+#ifdef WITH_THREAD  
+    /* create thread state and acquire lock */
+    tstate = PyThreadState_New(idata->istate);
+    PyEval_AcquireThread(tstate);
+#endif
 
-    if (strcmp(currhand, handler) == 0) {
+    /* 
+     * Call the cleanup function.
+     */
+    if (! PyObject_CallFunction(ci->handler, "O", ci->data)) {
+	PyObject *ptype;
+	PyObject *pvalue;
+	PyObject *ptb;
+	PyObject *handler;
+	PyObject *stype;
+	PyObject *svalue;
 
-	/* if it's the same as what's being added, then just append to hstack */
-	self->hstack = ap_pstrcat(self->request_rec->pool, self->hstack, 
-				  function, NULL);
-        
-	if (dir) 
-            ap_table_set(self->request_rec->notes, 
-			 ap_pstrcat(self->request_rec->pool, handler, "_dir", NULL), 
-			 dir);
-    }
-    else {
+	PyErr_Fetch(&ptype, &pvalue, &ptb);
+	handler = PyObject_Str(ci->handler);
+	stype = PyObject_Str(ptype);
+	svalue = PyObject_Str(pvalue);
 
-	const char *existing;
+	Py_DECREF(ptype);
+	Py_DECREF(pvalue);
+	Py_DECREF(ptb);
 
-	/* is there a handler like this in the notes already? */
-	existing = ap_table_get(self->request_rec->notes, handler);
-
-	if (existing) {
-
-	    /* append the function to the list using the request pool */
-	    ap_table_set(self->request_rec->notes, handler, 
-			 ap_pstrcat(self->request_rec->pool, existing, " ", 
-				    function, NULL));
-
-	    if (dir) {
-		char *s = ap_pstrcat(self->request_rec->pool, handler, "_dir", NULL);
-		ap_table_set(self->request_rec->notes, s, dir);
-	    }
-
+	if (ci->request_rec) {
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+			  "python_cleanup: Error calling cleanup object %s", 
+			  PyString_AsString(handler));
+	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+			  "    %s: %s", PyString_AsString(stype), 
+			  PyString_AsString(svalue));
 	}
 	else {
-
-	    char *s;
-
-	    /* a completely new handler */
-	    ap_table_set(self->request_rec->notes, handler, function);
-
-	    if (! dir) {
-
-		/*
-		 * If no directory was explicitely specified, the new handler will 
-		 * have the same directory associated with it as the handler 
-		 * currently being processed.
-		 */
-
-		py_dir_config *conf;
-
-		/* get config */
-		conf = (py_dir_config *) ap_get_module_config(
-		    self->request_rec->per_dir_config, &python_module);
-        
-		/* what's the directory for this handler? */
-		dir = ap_table_get(conf->dirs, currhand);
-
-		/*
-		 * make a note that the handler's been added. 
-		 * req_get_all_* rely on this to be faster
-		 */
-		ap_table_set(self->request_rec->notes, "py_more_directives", "1");
-
-	    }
-	    s = ap_pstrcat(self->request_rec->pool, handler, "_dir", NULL);
-	    ap_table_set(self->request_rec->notes, s, dir);
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
+			 "python_cleanup: Error calling cleanup object %s", 
+			 PyString_AsString(handler));
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
+			  "    %s: %s", PyString_AsString(stype), 
+			  PyString_AsString(svalue));
 	}
+
+	Py_DECREF(handler);
+	Py_DECREF(stype);
+	Py_DECREF(svalue);
     }
-    
-    Py_INCREF(Py_None);
-    return Py_None;
+     
+#ifdef WITH_THREAD
+    /* release the lock and destroy tstate*/
+    /* XXX Do not use 
+     * . PyEval_ReleaseThread(tstate); 
+     * . PyThreadState_Delete(tstate);
+     * because PyThreadState_delete should be done under 
+     * interpreter lock to work around a bug in 1.5.2 (see patch to pystate.c 2.8->2.9) 
+     */
+    PyThreadState_Swap(NULL);
+    PyThreadState_Delete(tstate);
+    PyEval_ReleaseLock();
+#endif
+
+    Py_DECREF(ci->handler);
+    Py_DECREF(ci->data);
+    free(ci);
+    return;
 }
-
-/********************************
-  ***  end of request object ***
- ********************************/
-
-/******************************************************************
-   ***        end of Python objects and their methods        ***
- ******************************************************************/
-
-
-/******************************************************************
-               functions called by Apache or Python     
- ******************************************************************/
-
-/**
- ** python_decref
- ** 
- *   This function is used with ap_register_cleanup to destroy
- *   python objects when a certain pool is destroyed.
- */
-
-void python_decref(void *object)
-{
-    Py_XDECREF((PyObject *) object);
-}
-
 
 /**
  ** python_init()
@@ -2299,6 +265,10 @@ void python_init(server_rec *s, pool *p)
 {
 
     char buff[255];
+
+    /* pool given to us in ChildInit. We use it for 
+       server.register_cleanup() */
+    pool *child_init_pool = NULL;
 
     /* mod_python version */
     ap_add_version_component(VERSION_COMPONENT);
@@ -2312,10 +282,10 @@ void python_init(server_rec *s, pool *p)
     {
 
 	/* initialize types */
-	tableobjecttype.ob_type = &PyType_Type;
-	serverobjecttype.ob_type = &PyType_Type;
-	connobjecttype.ob_type = &PyType_Type;
-	requestobjecttype.ob_type = &PyType_Type;
+	/* MpTable_Type.ob_type = &PyType_Type; */
+/* 	MpServer_Type.ob_type = &PyType_Type; */
+/* 	MpConn_Type.ob_type = &PyType_Type; */
+/* 	MpRequest_Type.ob_type = &PyType_Type; */
 
 	/* initialze the interpreter */
 	Py_Initialize();
@@ -2372,34 +342,26 @@ static void *python_create_dir_config(pool *p, char *dir)
 }
 
 /**
- ** tuple_from_array_header
+ ** copy_table
  **
- *   Given an array header return a tuple. The array elements
- *   assumed to be strings.
+ *   Merge two tables into one. Matching key values 
+ *   in second overlay the first.
  */
 
-PyObject * tuple_from_array_header(const array_header *ah)
+void copy_table(table *t1, table *t2)
 {
 
-    PyObject *t;
+    array_header *ah;
+    table_entry *elts;
     int i;
-    char **s;
 
-    if (ah == NULL)
-    {
-	Py_INCREF(Py_None);
-	return Py_None;
-    }
-    else
-    {
-	t = PyTuple_New(ah->nelts);
+    ah = ap_table_elts(t2);
+    elts = (table_entry *)ah->elts;
+    i = ah->nelts;
 
-	s = (char **) ah->elts;
-	for (i = 0; i < ah->nelts; i++)
-	    PyTuple_SetItem(t, i, PyString_FromString(s[i]));
-	
-	return t;
-    }
+    while (i--)
+	if (elts[i].key)
+	    ap_table_set(t1, elts[i].key, elts[i].val);
 }
 
 /**
@@ -2486,77 +448,6 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
 
 
 /**
- ** make_interpreter
- **
- *      Creates a new Python interpeter.
- */
-
-PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
-{
-    PyThreadState *tstate;
-    
-    /* create a new interpeter */
-    tstate = Py_NewInterpreter();
-
-    if (! tstate) {
-
-       /* couldn't create an interpreter, this is bad */
-       ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, srv,
-                     "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
-       return NULL;
-    }
-    else {
-
-#ifdef WITH_THREAD
-        /* release the thread state */
-        PyThreadState_Swap(NULL); 
-#endif
-        /* Strictly speaking we don't need that tstate created
-	 * by Py_NewInterpreter but is preferable to waste it than re-write
-	 * a cousin to Py_NewInterpreter 
-	 * XXX (maybe we can destroy it?)
-	 */
-        return tstate->interp;
-    }
-    
-}
-
-/**
- ** get_interpreter_data
- **
- *      Get interpreter given its name. 
- *      NOTE: Lock must be acquired prior to entering this function.
- */
-
-interpreterdata *get_interpreter_data(const char *name, server_rec *srv)
-{
-    PyObject *p;
-    interpreterdata *idata = NULL;
-    
-    if (! name)
-	name = GLOBAL_INTERPRETER;
-
-    p = PyDict_GetItemString(interpreters, (char *)name);
-    if (!p)
-    {
-        PyInterpreterState *istate = make_interpreter(name, srv);
-	if (istate) {
-	    idata = (interpreterdata *)malloc(sizeof(interpreterdata));
-	    idata->istate = istate;
-	    /* obcallback will be created on first use */
-	    idata->obcallback = NULL; 
-	    p = PyCObject_FromVoidPtr((void *) idata, NULL);
-	    PyDict_SetItemString(interpreters, (char *)name, p);
-	}
-    }
-    else {
-	idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
-    }
-
-    return idata;
-}
-
-/**
  ** make_obcallback
  **
  *      This function instantiates an obCallBack object. 
@@ -2575,7 +466,8 @@ PyObject * make_obcallback()
      * >>> import _apache 
      * will not give an error.
      */
-    Py_InitModule("_apache", _apache_module_methods);
+    /* Py_InitModule("_apache", _apache_module_methods); */
+    init_apache();
 
     /* Now execute the equivalent of
      * >>> import <module>
@@ -2594,47 +486,6 @@ PyObject * make_obcallback()
     
     return obCallBack;
 
-}
-
-/** 
- ** log_error
- **
- *  A wrpapper to ap_log_error
- * 
- *  log_error(string message, int level, server server)
- *
- */
-
-static PyObject * log_error(PyObject *self, PyObject *args)
-{
-
-    int level = 0;
-    char *message = NULL;
-    serverobject *server = NULL;
-    server_rec *serv_rec;
-
-    if (! PyArg_ParseTuple(args, "z|iO", &message, &level, &server)) 
-	return NULL; /* error */
-
-    if (message) {
-
-	if (! level) 
-	    level = APLOG_NOERRNO|APLOG_ERR;
-      
-	if (!server)
-	    serv_rec = NULL;
-	else {
-	    if (! is_serverobject(server)) {
-		PyErr_BadArgument();
-		return NULL;
-	    }
-	    serv_rec = server->server;
-	}
-	ap_log_error(APLOG_MARK, level, serv_rec, "%s", message);
-    }
-
-    Py_INCREF(Py_None);
-    return Py_None;
 }
 
 /**
@@ -2671,7 +522,7 @@ static requestobject *get_request_object(request_rec *req)
 	    Py_BEGIN_ALLOW_THREADS;
 	    ap_add_cgi_vars(req);
 	    Py_END_ALLOW_THREADS;
-	    request_obj = make_requestobject(req);
+	    request_obj = (requestobject *)MpRequest_FromRequest(req);
 
 	    /* put the slash back in */
 	    req->path_info[i - 1] = SLASH; 
@@ -2682,7 +533,7 @@ static requestobject *get_request_object(request_rec *req)
 	    Py_BEGIN_ALLOW_THREADS;
 	    ap_add_cgi_vars(req);
 	    Py_END_ALLOW_THREADS;
-	    request_obj = make_requestobject(req);
+	    request_obj = (requestobject *)MpRequest_FromRequest(req);
 	}
 	
 	/* store the pointer to this object in notes */
@@ -2933,120 +784,6 @@ static int python_handler(request_rec *req, char *handler)
     /* return the translated result (or default result) to the Server. */
     return result;
 
-}
-
-/**
- ** python_cleanup
- **
- *     This function gets called for clean ups registered
- *     with register_cleanup(). Clean ups registered via
- *     PythonCleanupHandler run in python_cleanup_handler()
- *     below.
- */
-
-void python_cleanup(void *data)
-{
-    interpreterdata *idata;
-
-#ifdef WITH_THREAD
-    PyThreadState *tstate;
-#endif
-    cleanup_info *ci = (cleanup_info *)data;
-
-#ifdef WITH_THREAD  
-    /* acquire lock (to protect the interpreters dictionary) */
-    PyEval_AcquireLock();
-#endif
-
-    /* get/create interpreter */
-    if (ci->request_rec)
-	idata = get_interpreter_data(ci->interpreter, ci->request_rec->server);
-    else
-	idata = get_interpreter_data(ci->interpreter, ci->server_rec);
-
-#ifdef WITH_THREAD
-    /* release the lock */
-    PyEval_ReleaseLock();
-#endif
-
-    if (!idata) {
-	if (ci->request_rec)
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
-			  "python_cleanup: get_interpreter_data returned NULL!");
-	else
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
-			 "python_cleanup: get_interpreter_data returned NULL!");
-	Py_DECREF(ci->handler);
-	Py_XDECREF(ci->data);
-	free(ci);
-        return;
-    }
-    
-#ifdef WITH_THREAD  
-    /* create thread state and acquire lock */
-    tstate = PyThreadState_New(idata->istate);
-    PyEval_AcquireThread(tstate);
-#endif
-
-    /* 
-     * Call the cleanup function.
-     */
-    if (! PyObject_CallFunction(ci->handler, "O", ci->data)) {
-	PyObject *ptype;
-	PyObject *pvalue;
-	PyObject *ptb;
-	PyObject *handler;
-	PyObject *stype;
-	PyObject *svalue;
-
-	PyErr_Fetch(&ptype, &pvalue, &ptb);
-	handler = PyObject_Str(ci->handler);
-	stype = PyObject_Str(ptype);
-	svalue = PyObject_Str(pvalue);
-
-	Py_DECREF(ptype);
-	Py_DECREF(pvalue);
-	Py_DECREF(ptb);
-
-	if (ci->request_rec) {
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
-			  "python_cleanup: Error calling cleanup object %s", 
-			  PyString_AsString(handler));
-	    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
-			  "    %s: %s", PyString_AsString(stype), 
-			  PyString_AsString(svalue));
-	}
-	else {
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
-			 "python_cleanup: Error calling cleanup object %s", 
-			 PyString_AsString(handler));
-	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->server_rec,
-			  "    %s: %s", PyString_AsString(stype), 
-			  PyString_AsString(svalue));
-	}
-
-	Py_DECREF(handler);
-	Py_DECREF(stype);
-	Py_DECREF(svalue);
-    }
-     
-#ifdef WITH_THREAD
-    /* release the lock and destroy tstate*/
-    /* XXX Do not use 
-     * . PyEval_ReleaseThread(tstate); 
-     * . PyThreadState_Delete(tstate);
-     * because PyThreadState_delete should be done under 
-     * interpreter lock to work around a bug in 1.5.2 (see patch to pystate.c 2.8->2.9) 
-     */
-    PyThreadState_Swap(NULL);
-    PyThreadState_Delete(tstate);
-    PyEval_ReleaseLock();
-#endif
-
-    Py_DECREF(ci->handler);
-    Py_DECREF(ci->data);
-    free(ci);
-    return;
 }
 
 /**
@@ -3687,16 +1424,6 @@ static int PythonTypeHandler(request_rec *req) {
 }
 
 
-
-/******************************************************************
- *       *** end of functions called by Apache or Python ***    
- ******************************************************************/
-
-
-/******************************************************************
- *                Apache module stuff 
- ******************************************************************/
-
 /* content handlers */
 static handler_rec python_handlers[] = 
 {
@@ -3909,9 +1636,7 @@ module python_module =
   PythonPostReadRequestHandler   /* [1] post read_request handling */
 };
 
-/******************************************************************
- * LE FIN
- ******************************************************************/
+
 
 
 
