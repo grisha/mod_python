@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.107 2003/10/22 19:57:04 grisha Exp $
+ * $Id: mod_python.c,v 1.108 2003/10/27 21:45:49 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -418,8 +418,17 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
             }
         }
         else {
+
+            /*XXX As of httpd 2.0.4, the below should be just
+              a call to unixd_set_global_mutex_perms(mutex[n]); and
+              nothing else... For now, while 2.0.48 isn't commonplace yet,
+              this ugly code should be here */
+
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
-            chown(fname, unixd_config.user_id, -1);
+            if  (!geteuid()) {
+                chown(fname, unixd_config.user_id, -1);
+                unixd_set_global_mutex_perms(mutex[n]);
+            }
 #endif
         }
     }
