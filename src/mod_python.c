@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.77 2002/09/18 20:13:37 grisha Exp $
+ * $Id: mod_python.c,v 1.78 2002/09/24 16:01:28 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1135,6 +1135,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
                                                  fh->handler, fh->dir);
+
     Py_INCREF(request_obj);
     filter->request_obj = request_obj;
 
@@ -1501,7 +1502,7 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
     /* register the filter NOTE - this only works so long as the
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
-    ap_register_input_filter(name, python_input_filter, NULL, AP_FTYPE_CONNECTION);
+    frec = ap_register_input_filter(name, python_input_filter, NULL, AP_FTYPE_CONNECTION);
  
     conf = (py_config *) mconfig;
 
@@ -1518,23 +1519,24 @@ static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig,
                                                 const char *handler, const char *name) {
     py_config *conf;
     py_handler *fh;
+    ap_filter_rec_t *frec;
  
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
 
+    /* register the filter NOTE - this only works so long as the
+       directive is only allowed in the main config. For .htaccess we
+       would have to make sure not to duplicate this */
+    frec = ap_register_output_filter(name, python_output_filter, NULL, AP_FTYPE_RESOURCE);
+ 
     conf = (py_config *) mconfig;
     
     fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
     fh->handler = (char *)handler;
     fh->dir = conf->config_dir;
 
-    apr_hash_set(conf->out_filters, name, APR_HASH_KEY_STRING, fh);
+    apr_hash_set(conf->out_filters, frec->name, APR_HASH_KEY_STRING, fh);
 
-    /* register the filter NOTE - this only works so long as the
-       directive is only allowed in the main config. For .htaccess we
-       would have to make sure not to duplicate this */
-    ap_register_output_filter(name, python_output_filter, NULL, AP_FTYPE_RESOURCE);
- 
     return NULL;
 }
 

@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.31 2002/09/15 23:45:35 grisha Exp $
+ * $Id: requestobject.c,v 1.32 2002/09/24 16:01:28 grisha Exp $
  *
  */
 
@@ -756,6 +756,26 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
 
 static PyObject * req_send_http_header(requestobject *self)
 {
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** request.set_content_length(request self, long content_length)
+ **
+ *      write output to the client
+ */
+
+static PyObject * req_set_content_length(requestobject *self, PyObject *args)
+{
+    long len;
+
+    if (! PyArg_ParseTuple(args, "l", &len))
+        return NULL;  /* bad args */
+
+    ap_set_content_length(self->request_rec, len);
+
+    Py_INCREF(Py_None);
     return Py_None;
 }
 
@@ -788,7 +808,20 @@ static PyObject * req_write(requestobject *self, PyObject *args)
 
 }
 
+//XXX segfault generator
+static char* req_segfault(requestobject *self)
+{
+
+    char *x = 1;
+
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, self->request_rec, "about to segfault...");
+
+    *x = 'x';
+    return x;
+}
+
 static PyMethodDef request_methods[] = {
+    {"segfault",       (PyCFunction) req_segfault,       METH_NOARGS},
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
@@ -805,6 +838,7 @@ static PyMethodDef request_methods[] = {
     {"readlines",             (PyCFunction) req_readlines,             METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
     {"send_http_header",      (PyCFunction) req_send_http_header,      METH_NOARGS},
+    {"set_content_length",    (PyCFunction) req_set_content_length,    METH_VARARGS},
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
@@ -967,6 +1001,20 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
 }
 
 /**
+ ** getreq_recmbr_time
+ **
+ *    Retrieves apr_time_t request_rec members
+ */
+
+static PyObject *getreq_recmbr_time(requestobject *self, void *name) 
+{
+    PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
+    char *addr = (char *)self->request_rec + md->offset;
+    apr_time_t time = *(apr_time_t*)addr;
+    return PyFloat_FromDouble(time*0.000001);
+}
+
+/**
  ** getreq_rec_ah
  **
  *    For array headers that will get converted to tuple
@@ -974,7 +1022,7 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
 
 static PyObject *getreq_rec_ah(requestobject *self, void *name) 
 {
-    const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
+    const PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
     apr_array_header_t *ah = 
         (apr_array_header_t *)((void *)self->request_rec + md->offset);
 
@@ -1038,7 +1086,7 @@ static PyGetSetDef request_getsets[] = {
     {"protocol",     (getter)getreq_recmbr, NULL, "Protocol as given to us, or HTTP/0.9", "protocol"},
     {"proto_num",    (getter)getreq_recmbr, NULL, "Protocol version. 1.1 = 1001", "proto_num"},
     {"hostname",     (getter)getreq_recmbr, NULL, "Host, as set by full URI or Host:", "hostname"},
-    {"request_time", (getter)getreq_recmbr, NULL, "When request started", "request_time"},
+    {"request_time", (getter)getreq_recmbr_time, NULL, "When request started", "request_time"},
     {"status_line",  (getter)getreq_recmbr, NULL, "Status line, if set by script", "status_line"},
     {"status",       (getter)getreq_recmbr, (setter)setreq_recmbr, "Status", "status"},
     {"method",       (getter)getreq_recmbr, NULL, "Request method", "method"},
@@ -1048,7 +1096,7 @@ static PyGetSetDef request_getsets[] = {
     {"allowed_methods", (getter)getreq_rec_ml, NULL, "Allowed methods", "allowed_methods"},
     {"sent_bodyct",  (getter)getreq_recmbr, NULL, "Byte count in stream for body", "sent_boduct"},
     {"bytes_sent",   (getter)getreq_recmbr, NULL, "Bytes sent", "bytes_sent"},
-    {"mtime",        (getter)getreq_recmbr, NULL, "Time resource was last modified", "mtime"},
+    {"mtime",        (getter)getreq_recmbr_time, NULL, "Time resource was last modified", "mtime"},
     {"chunked",      (getter)getreq_recmbr, NULL, "Sending chunked transfer-coding", "chunked"},
     {"boundary",     (getter)getreq_recmbr, NULL, "Multipart/byteranges boundary", "boundary"},
     {"range",        (getter)getreq_recmbr, NULL, "The Range: header", "range"},

@@ -318,7 +318,9 @@ APLOG_NOERRNO
 \var{server} is a reference to a \member{req.server} object. If
 \var{server} is not specified, then the error will be logged to the
 default error log, otherwise it will be written to the error log for
-the appropriate virtual server.
+the appropriate virtual server. When \var{server} is not specified,
+the setting of LogLevel does not apply, the LogLevel is dictated by
+an httpd compile-time default, usually \code{warn}.
 
 If you have a reference to a request object available, consider using
 \method{req.log_error} intead, it will prepend request-specific
@@ -366,7 +368,8 @@ M_INVALID
 
 \begin{funcdesc}{config_tree}{}
 Returns the server-level configuration tree. This tree does not
-include directives from .htaccess files.
+include directives from .htaccess files. This is a \emph{copy} of
+the tree, modifying it has no effect on the actual configuration.
 \end{funcdesc}
 
 \begin{funcdesc}{server_root}{}
@@ -481,6 +484,10 @@ handler code.
 
 \var{methods} is a sequence of strings. If \var{reset} is 1, then
 the list of methods is first cleared.
+\end{methoddesc}
+
+\begin{methoddesc}[request]{document_root}{}
+Returns DocumentRoot setting.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{get_basic_auth_pw}{}
@@ -612,6 +619,13 @@ it's possible that it will not be executed.
 
 \begin{methoddesc}[request]{write}{string}
 Writes \var{string} directly to the client, then flushes the buffer. 
+\end{methoddesc}
+
+\begin{methoddesc}[request]{set_content_length}{len}
+Sets the value of \member{req.clength} and the "Conent-Length" header
+to len. Note that after the headers have been sent out (which happens
+just before the first byte of the body is written, i.e. first call to
+\member{req.write()}), calling the method is meaningless.
 \end{methoddesc}
 
 \subsubsection{Request Members\label{pyapi-mprequest-mem}}
@@ -821,13 +835,6 @@ The phase currently being being processed, e.g. "PythonHandler".
 \begin{memberdesc}[request]{interpreter}
 The name of the subinterpreter under which we're running.
 \emph{(Read-Only)}
-\end{memberdesc}
-
-\begin{memberdesc}[request]{notes}
-A \code{table} object that could be used to store miscellaneous
-general purpose info that lives for as long as the request lives. If
-you need to pass data between handlers, it's better to simply add
-members to the request object than to use \member{notes}.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{content_type}
