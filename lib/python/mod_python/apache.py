@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.8 2000/05/29 00:00:15 grisha Exp $
+  $Id: apache.py,v 1.9 2000/05/29 16:55:11 grisha Exp $
 
 """
 
@@ -24,50 +24,31 @@ class CallBack:
     A generic callback object.
     """
 
-    def resolve_object(self, module_name, object_str):
+    def resolve_object(self, module, object_str):
         """
         This function traverses the objects separated by .
-        (period) to find the last one we're looking for.
+        (period) to find the last one we're looking for:
 
-        The rules are:
-        1. try the object directly,
-           failing that
-        2. from left to right, find objects, if it is
-           a class, instantiate it passing the request
-           as single argument
+           From left to right, find objects, if it is
+           an unbound method of a class, instantiate the
+           class passing the request as single argument
         """
 
-        # to bring the module in the local scope, we need to
-        # import it again, this shouldn't have any significant
-        # performance impact, since it's already imported
+        obj = module
+        
+        for obj_str in  string.split(object_str, '.'):
 
-        exec "import " + module_name
-
-        try:
-            obj = eval("%s.%s" % (module_name, object_str))
+            parent = obj
+            obj = getattr(obj, obj_str)
+            
             if hasattr(obj, "im_self") and not obj.im_self:
                 # this is an unbound method, its class
-                # needs to be insantiated
-                raise AttributeError, obj.__name__
-            else:
-                # we found our object
-                return obj
+                # needs to be instantiated
+                instance = parent(self.req)
+                obj = getattr(instance, obj_str)
+                
+        return obj
 
-        except AttributeError, attr:
-            _apache.log_error(object_str)
-            # try to instantiate attr before attr in error
-            list = string.split(object_str, '.')
-
-            i = list.index(str(attr))
-            klass = eval(string.join([module_name] + list[:i], "."))
-
-            # is this a class?
-            if type(klass) == types.ClassType:
-                obj = klass()
-                return eval("obj." + string.join(list[i:], "."))
-            else:
-                raise "ResolveError", "Couldn't resolve object '%s' in module '%s'." % \
-                      (object_str, module_name)
 
     def Dispatch(self, req, htype):
         """
@@ -103,7 +84,7 @@ class CallBack:
                 module = import_module(module_name, req)
 
                 # find the object
-                object = self.resolve_object(module_name, object_str)
+                object = self.resolve_object(module, object_str)
 
                 # call the object
                 result = object(req)
@@ -430,23 +411,16 @@ def setup_cgi(req):
     with restore_nocgi().
     """
 
-    osenv = os.environ
-
     # save env
-    env = eval(`osenv`)
+    env = os.environ.copy()
     
     si = sys.stdin
     so = sys.stdout
 
     env = build_cgi_env(req)
-    # the environment dictionary cannot be replace
-    # because some other parts of python already hold
-    # a reference to it. it must be edited "by hand"
-
-    #for k in osenv.keys():
-    #    del osenv[k]
+ 
     for k in env.keys():
-        osenv[k] = env[k]
+        os.environ[k] = env[k]
 
     sys.stdout = CGIStdout(req)
     sys.stdin = CGIStdin(req)
@@ -461,28 +435,18 @@ def restore_nocgi(env, si, so):
     osenv = os.environ
 
     # restore env
-    #for k in osenv.keys():
-    #    del osenv[k]
-    #for k in env.keys():
-    #        osenv[k] = env[k]
+    for k in osenv.keys():
+        del osenv[k]
+    for k in env.keys():
+        osenv[k] = env[k]
 
     sys.stdout = si
     sys.stdin = so
-
-
 
 def init():
     """ 
         This function is called by the server at startup time
     """
-
-    # create a callback object
-    # obCallBack = CallBack()
-
-    ## import _apache
-
-    # "give it back" to the server
-    # _apache.SetCallBack(obCallBack)
 
     return CallBack()
 
