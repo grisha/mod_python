@@ -86,8 +86,16 @@ ps:	$(MPFILES)
 
 html:	$(MPFILES)
 	$(MKHOWTO) --html modpython.tex
-	mkdir -p icons
-	cp $(PYTHON_SRC)/Doc/html/icons/* icons/
+	mkdir -p modpython/icons
+	cp $(PYTHON_SRC)/Doc/html/icons/* modpython/icons/
+	rm modpython/modpython.how
+# the iconserver option of mkhowto is broken since it writes
+# it to the end if the init_file where they aren't useful anymore,
+# so we work around it:
+	for f in `find modpython`; do \
+	  cat $$f | sed s/\.\.\\/icons/icons/g > $${f}2; \
+	  mv $${f}2 $$f; \
+	done
 
 world:	ps pdf html tarballs
 
@@ -165,7 +173,6 @@ distclean:  clobber
 
 # HTML in the doc directory
 dist: version html
-	rm modpython/modpython.how
 	rm -rf ../doc
 	mv modpython ../doc
 
