@@ -1286,8 +1286,6 @@ echo "$ac_t""$PyEXEC_INSTALLDIR" 1>&6
 PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 
 # set python std library variable
-echo $ac_n "checking what libraries Python was linked with""... $ac_c" 1>&6
-echo "configure:1291: checking what libraries Python was linked with" >&5
 
 
 PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
@@ -1295,6 +1293,62 @@ PyLIBPL=${PyLIBP}/config
 PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
 PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
 PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
+echo $ac_n "checking for Py_NewInterpreter in -lpython${PyVERSION}""... $ac_c" 1>&6
+echo "configure:1302: checking for Py_NewInterpreter in -lpython${PyVERSION}" >&5
+ac_lib_var=`echo python${PyVERSION}'_'Py_NewInterpreter | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lpython${PyVERSION}  ${PyLIBS} ${PyMODLIBS}   $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 1310 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char Py_NewInterpreter();
+
+int main() {
+Py_NewInterpreter()
+; return 0; }
+EOF
+if { (eval echo configure:1321: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+   PyPYTHONLIBS="-lpython${PyVERSION}" 
+else
+  echo "$ac_t""no" 1>&6
+ LDFLAGS="$save_LDFLAGS"
+               if test -f ${PyLIBPL}/libpython${PyVERSION}.a; then
+                  PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+               else
+                  { echo "configure: error: Can not link to python" 1>&2; exit 1; }
+               fi
+              
+fi
+
+LIBS="$save_LIBS"
+
+# (actually this check already just happened above)
+echo $ac_n "checking what libraries Python was linked with""... $ac_c" 1>&6
+echo "configure:1352: checking what libraries Python was linked with" >&5 
 PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
  
 ## XXX this is a small work around for a weird RedHat problem
@@ -1307,7 +1361,7 @@ LIBS="${LIBS} ${PY_LIBS}"
 echo "$ac_t""$PY_LIBS" 1>&6
 
 echo $ac_n "checking linker flags used to link Python""... $ac_c" 1>&6
-echo "configure:1311: checking linker flags used to link Python" >&5
+echo "configure:1365: checking linker flags used to link Python" >&5
 
 PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
 PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
@@ -1316,7 +1370,7 @@ LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 echo "$ac_t""$PY_LDFLAGS" 1>&6
 
 echo $ac_n "checking where Python include files are""... $ac_c" 1>&6
-echo "configure:1320: checking where Python include files are" >&5
+echo "configure:1374: checking where Python include files are" >&5
 
 PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
