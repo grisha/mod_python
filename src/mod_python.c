@@ -568,8 +568,8 @@ static void *python_create_dir_config(apr_pool_t *p, char *dir)
     py_config *conf = python_create_config(p);
 
     /* make sure directory ends with a slash */
-    if (dir && (dir[strlen(dir) - 1] != SLASH))
-        conf->config_dir = apr_pstrcat(p, dir, SLASH_S, NULL);
+    if (dir && (dir[strlen(dir) - 1] != '/'))
+        conf->config_dir = apr_pstrcat(p, dir, "/", NULL);
     else
         conf->config_dir = apr_pstrdup(p, dir);
 
@@ -816,7 +816,7 @@ static requestobject *get_request_object(request_rec *req, const char *interp_na
     }
     else {
 /*         if ((req->path_info) &&  */
-/*             (req->path_info[strlen(req->path_info) - 1] == SLASH)) */
+/*             (req->path_info[strlen(req->path_info) - 1] == '/')) */
 /*         { */
 /*             int i; */
 /*             i = strlen(req->path_info); */
@@ -831,7 +831,7 @@ static requestobject *get_request_object(request_rec *req, const char *interp_na
 /*             if (!request_obj) return NULL; */
 
 /*             /\* put the slash back in *\/ */
-/*             req->path_info[i - 1] = SLASH;  */
+/*             req->path_info[i - 1] = '/';  */
 /*             req->path_info[i] = 0; */
 
 /*             /\* and also make PATH_INFO == req->subprocess_env *\/ */
@@ -897,10 +897,21 @@ static const char *select_interp_name(request_rec *req, conn_rec *con, py_config
         if ((s = apr_table_get(conf->directives, "PythonInterpPerDirectory"))) {
             
             /* base interpreter on directory where the file is found */
-            if (req && ap_is_directory(req->pool, req->filename))
-                return ap_make_dirstr_parent(req->pool, 
-                                             apr_pstrcat(req->pool, req->filename, 
-                                                         SLASH_S, NULL ));
+            if (req && ap_is_directory(req->pool, req->filename)) {
+                /** XXX I suppose that if req->filename is a directory, there already
+                    is a trailing slash in req->filename. This is due to the fact
+                    that Apache redirect any request from /directory to /directory/.
+                    That's why the tests below are commented out, they should be useless.
+                **/
+                /* if (req->filename[strlen(req->filename)-1]=='/') { */
+                    return ap_make_dirstr_parent(req->pool, req->filename);
+                /* }
+                else {
+                    return ap_make_dirstr_parent(req->pool, 
+                                                apr_pstrcat(req->pool, req->filename, 
+                                                            "/", NULL ));
+                } */
+            }
             else {
                 if (req && req->filename)
                     return ap_make_dirstr_parent(req->pool, req->filename);

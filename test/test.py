@@ -732,11 +732,50 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing interpreter per directive"
 
+        interpreter_name = DOCUMENT_ROOT.replace('\\','/')+'/'
+
         rsp = self.vhost_get("test_interpreter_per_directive")
+        if (rsp != interpreter_name):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_interpreter_per_directive",'/subdir/foo.py')
+        if (rsp != interpreter_name):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_interpreter_per_directive",'/subdir/')
+        if (rsp != interpreter_name):
+            self.fail(`rsp`)
+
+    def test_interpreter_per_directory_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_interpreter_per_directory"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  PythonInterpPerDirectory('On'),
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::interpreter"),
+                                  PythonDebug("On")),
+                        )
+
+        return str(c)
+
+    def test_interpreter_per_directory(self):
+
+        print "\n  * Testing interpreter per directory"
 
         interpreter_name = DOCUMENT_ROOT.replace('\\','/')+'/'
-        
+
+        rsp = self.vhost_get("test_interpreter_per_directory")
         if (rsp != interpreter_name):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_interpreter_per_directory",'/subdir/foo.py')
+        if (rsp != interpreter_name+'subdir/'):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_interpreter_per_directory",'/subdir/')
+        if (rsp != interpreter_name+'subdir/'):
             self.fail(`rsp`)
 
     def test_util_fieldstorage_conf(self):
@@ -1155,9 +1194,10 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_Cookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_MarshalCookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Session_Session"))
+        perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
+        perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
-        perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)
         self.startHttpd()

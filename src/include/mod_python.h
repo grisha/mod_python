@@ -91,13 +91,7 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define MAIN_INTERPRETER "main_interpreter"
-#ifdef WIN32
-#define SLASH '\\'
-#define SLASH_S "\\"
-#else
-#define SLASH '/'
-#define SLASH_S "/"
-#endif
+
 /* used in python_directive_handler */
 #define SILENT 0
 #define NOTSILENT 1
