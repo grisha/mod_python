@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.47 2001/04/10 23:24:40 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.48 2001/04/11 02:29:48 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -480,23 +480,18 @@ PyObject * make_obcallback()
  ** get_request_object
  **
  *      This creates or retrieves a previously created request object.
- *      The pointer to request object is stored in req->notes.
+ *      The pointer to request object is stored in req->request_config.
  */
 
 static requestobject *get_request_object(request_rec *req)
 {
     requestobject *request_obj;
-    char *s;
-    char s2[40];
     PyThreadState *_save;
 
     /* see if there is a request object already */
-    /* XXX there must be a cleaner way to do this, atol is slow? */
-    /* since tables only understand strings, we need to do some conversion */
-    
-    s = (char *) ap_table_get(req->notes, "python_request_ptr");
-    if (s) {
-	request_obj = (requestobject *) atol(s);
+    request_obj = (requestobject *) ap_get_module_config(req->request_config,
+							 &python_module);
+    if (request_obj) {
 	return request_obj;
     }
     else {
@@ -527,11 +522,9 @@ static requestobject *get_request_object(request_rec *req)
 	    PyEval_RestoreThread(_save);
 	    request_obj = (requestobject *)MpRequest_FromRequest(req);
 	}
-	
-	/* store the pointer to this object in notes */
-	/* XXX this is not good... */
-	sprintf(s2, "%ld", (long) request_obj);
-	ap_table_set(req->notes, "python_request_ptr", s2);
+
+	/* store the pointer to this object in request_config */
+	ap_set_module_config(req->request_config, &python_module, request_obj);
 	return request_obj;
     }
 }

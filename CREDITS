@@ -23,6 +23,9 @@ James Gessling <jgessling@etrade.com>
 Mads Kiilerich <mads@kiilerich.com> 
 	[RH rpm]
 
+Miguel Marques <miguel@yorku.ca>
+	[use of req->request_config instead of atol hack]
+
 Sean Reifschneider <jafo-rpms@tummy.com> 
 	[RH rpm]
 
