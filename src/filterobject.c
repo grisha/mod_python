@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.14 2002/09/24 16:01:28 grisha Exp $
+ * $Id: filterobject.c,v 1.15 2002/10/01 22:04:54 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -191,7 +191,8 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     bytes_read = 0;
 
     while ((bytes_read < len || len == -1) && 
-           !(APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b))) {
+           !(APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b) ||
+             b == APR_BRIGADE_SENTINEL(self->bb_in))) {
 
 	const char *data;
 	apr_size_t size;
@@ -361,7 +362,6 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
 {
 
     conn_rec *c = self->request_obj->request_rec->connection;
-    apr_status_t rc;
 
     /* does the output brigade exist? */
     if (!self->bb_out) {
@@ -373,10 +373,10 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
 			    apr_bucket_flush_create(c->bucket_alloc));
 
     Py_BEGIN_ALLOW_THREADS;
-    rc = ap_pass_brigade(self->f->next, self->bb_out);
+    self->rc = ap_pass_brigade(self->f->next, self->bb_out);
     Py_END_ALLOW_THREADS;
 
-    if(rc != APR_SUCCESS) { 
+    if(self->rc != APR_SUCCESS) { 
 	PyErr_SetString(PyExc_IOError, "Flush failed.");
 	return NULL;
     }
@@ -410,7 +410,7 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
 	
         if (! self->is_input) {
             Py_BEGIN_ALLOW_THREADS;
-            ap_pass_brigade(self->f->next, self->bb_out);
+            self->rc = ap_pass_brigade(self->f->next, self->bb_out);
             Py_END_ALLOW_THREADS;
             self->bb_out = NULL;
         }
