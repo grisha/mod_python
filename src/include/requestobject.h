@@ -57,7 +57,7 @@
  *
  * requestobject.h
  *
- * $Id: requestobject.h,v 1.13 2002/11/08 00:15:11 gstein Exp $
+ * $Id: requestobject.h,v 1.14 2002/12/18 20:47:02 grisha Exp $
  *
  */
 
@@ -82,6 +82,7 @@ extern "C" {
 	PyObject       * subprocess_env;
 	PyObject       * notes;
 	PyObject       * phase;
+        char           * extension;   /* for | .ext syntax */
 	char           * interpreter; 
 	int              content_type_set;
 	hlistobject    * hlo;

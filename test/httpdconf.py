@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: httpdconf.py,v 1.4 2002/10/12 20:02:02 grisha Exp $
+ # $Id: httpdconf.py,v 1.5 2002/12/18 20:47:02 grisha Exp $
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
@@ -110,6 +110,10 @@ class ContainerTag:
         s += i + "</%s>\n" % self.tag
 
         return s
+
+class AddHandler(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
 
 class AddOutputFilter(Directive):
     def __init__(self, val):

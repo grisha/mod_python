@@ -137,6 +137,8 @@ def handler(req):
     #   AddHandler directive. Everything else will be considered
     #   a package.module rather than module.suffix
     exts = req.get_addhandler_exts()
+    if req.extension:  # this exists if we're running in a | .ext handler
+        exts += req.extension[1:] 
     if exts:
         suffixes = exts.strip().split()
         exp = "\\." + "$|\\.".join(suffixes)

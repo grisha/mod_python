@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.85 2002/11/15 15:25:07 grisha Exp $
+ * $Id: mod_python.c,v 1.86 2002/12/18 20:47:02 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -840,13 +840,19 @@ static int python_handler(request_rec *req, char *phase)
 
     /* is there an hlist entry, i.e. a handler? */
     /* try with extension */
-    if (ext)
+    if (ext) {
         hle = (hl_entry *)apr_hash_get(conf->hlists, 
                                        apr_pstrcat(req->pool, phase, ext, NULL),
                                        APR_HASH_KEY_STRING);
+    }
+
     /* try without extension if we don't match */
     if (!hle) {
         hle = (hl_entry *)apr_hash_get(conf->hlists, phase, APR_HASH_KEY_STRING);
+
+        /* also blank out ext since we didn't succeed with it. this is tested
+           further below */
+        ext = NULL;
     }
     
     req_conf = (py_req_config *) ap_get_module_config(req->request_config,
@@ -872,6 +878,10 @@ static int python_handler(request_rec *req, char *phase)
     
     /* create/acquire request object */
     request_obj = get_request_object(req, interp_name, phase);
+
+    /* remember the extension if any. used by publisher */
+    if (ext) 
+        request_obj->extension = apr_pstrdup(req->pool, ext);
 
     /* create a hahdler list object */
     request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);

@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.22 2002/12/17 20:44:04 grisha Exp $
+ # $Id: test.py,v 1.23 2002/12/18 20:47:02 grisha Exp $
  #
 
 """
@@ -717,11 +717,36 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_internal(self):
 
-        print "\n  * Testing internally"
+        print "\n  * Testing internally (status messages go to error_log)"
 
         rsp = self.vhost_get("test_internal")
         if (rsp[-7:] != "test ok"):
             self.fail("Some tests failed, see error_log")
+
+    def test_pipe_ext_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_pipe_ext"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("mod_python.publisher | .py"),
+                                  PythonHandler("tests::simplehandler"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_pipe_ext(self):
+
+        print "\n  * Testing | .ext syntax"
+
+        rsp = self.vhost_get("test_pipe_ext", path="/tests.py/pipe_ext")
+        if (rsp[-8:] != "pipe ext"):
+            self.fail("test failed")
+
+        rsp = self.vhost_get("test_pipe_ext", path="/tests/anything")
+        if (rsp[-7:] != "test ok"):
+            self.fail("test failed")
+        
 
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
@@ -766,6 +791,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
         perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_import"))
+        perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)

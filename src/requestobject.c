@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.39 2002/11/26 20:48:20 grisha Exp $
+ * $Id: requestobject.c,v 1.40 2002/12/18 20:47:02 grisha Exp $
  *
  */
 
@@ -95,6 +95,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->subprocess_env = MpTable_FromTable(req->subprocess_env);
     result->notes = MpTable_FromTable(req->notes);
     result->phase = NULL;
+    result->extension = NULL;
     result->interpreter = NULL;
     result->content_type_set = 0;
     result->hlo = NULL;
@@ -318,10 +319,8 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
 
     if (exts) 
         return PyString_FromString(exts);
-    else {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
+    else
+        return PyString_FromString("");
 }
 
 /**
@@ -1154,6 +1153,7 @@ static struct PyMemberDef request_members[] = {
     {"notes",              T_OBJECT,    OFF(notes),             RO},
     {"_content_type_set",  T_INT,       OFF(content_type_set),  RO},
     {"phase",              T_OBJECT,    OFF(phase),             RO},
+    {"extension",          T_STRING,    OFF(extension),         RO},
     {"interpreter",        T_STRING,    OFF(interpreter),       RO},
     {"hlist",              T_OBJECT,    OFF(hlo),               RO},
     {NULL}  /* Sentinel */
