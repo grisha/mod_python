@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.69 2003/05/30 04:37:09 grisha Exp $
+ # $Id: apache.py,v 1.70 2003/07/12 02:40:45 grisha Exp $
 
 import sys
 import traceback
@@ -764,7 +764,7 @@ def restore_nocgi(sav_env, si, so):
     for k in osenv.keys():
         del osenv[k]
     for k in sav_env:
-        osenv[k] = env[k]
+        osenv[k] = sav_env[k]
 
     sys.stdout = si
     sys.stdin = so
