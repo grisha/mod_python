@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.42 2002/12/30 20:25:15 grisha Exp $
+ * $Id: requestobject.c,v 1.43 2002/12/31 15:03:36 grisha Exp $
  *
  */
 
@@ -960,7 +960,9 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             PyErr_SetString(PyExc_TypeError, "content_type must be a string");
             return -1;
         }
-        ap_set_content_type(self->request_rec, PyString_AsString(val));
+        ap_set_content_type(self->request_rec, 
+                            apr_pstrdup(self->request_rec->pool,
+                                        PyString_AsString(val)));
         self->content_type_set = 1;
         return 0;
     } 
