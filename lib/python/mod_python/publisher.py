@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.7 2001/01/20 03:11:24 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.8 2001/01/22 05:14:12 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -128,16 +128,13 @@ def handler(req):
     module = apache.import_module(module_name, _req, [path])
 
     # does it have an __auth__?
-    auth_realm = process_auth(req, module)
+    realm, user, passwd = process_auth(req, module)
 
     # resolve the object ('traverse')
     try:
-        object = resolve_object(req, module, func_path, auth_realm)
+        object = resolve_object(req, module, func_path, realm, user, passwd)
     except AttributeError:
         raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
-
-    # does it have an __auth__?
-    process_auth(req, object)
 
     # not callable, a class or an aunbound method
     if not callable(object) or \
@@ -192,53 +189,97 @@ def handler(req):
     else:
         return apache.HTTP_INTERNAL_SERVER_ERROR
 
-def process_auth(req, object, realm=None):
+def process_auth(req, object, realm="unknown", user=None, passwd=None):
 
-    __auth__ = None
+    found_auth, found_access = 0, 0
+
+    # because ap_get_basic insists on making sure that AuthName and
+    # AuthType directives are specified and refuses to do anything
+    # otherwise (which is technically speaking a good thing), we
+    # have to do base64 decoding ourselves.
+    #
+    # to avoid needless header parsing, user and password are parsed
+    # once and the are received as arguments
+    if not user and req.headers_in.has_key("Authorization"):
+        try:
+            s = req.headers_in["Authorization"][6:]
+            s = base64.decodestring(s)
+            user, passwd = string.split(s, ":")
+        except:
+            raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
+
+    if hasattr(object, "__auth_realm__"):
+        realm = object.__auth_realm__
 
     if type(object) == type(process_auth):
         # functions are a bit tricky
+
         if hasattr(object, "func_code"):
-            consts = object.func_code.co_consts
-            for const in consts:
-                if hasattr(const, "co_name"):
-                    if const.co_name == "__auth__":
-                        __auth__ = new.function(const, globals())
-                        break
+            func_code = object.func_code
 
-    elif hasattr(object, "__auth__"):
-        
-        __auth__ = object.__auth__
+            if "__auth__" in func_code.co_names:
+                i = list(func_code.co_names).index("__auth__")
+                __auth__ = func_code.co_consts[i+1]
+                if hasattr(__auth__, "co_name"):
+                    __auth__ = new.function(__auth__, globals())
+                found_auth = 1
 
-    if __auth__:
+            if "__access__" in func_code.co_names:
+                # first check the constant names
+                i = list(func_code.co_names).index("__access__")
+                __access__ = func_code.co_consts[i+1]
+                if hasattr(__access__, "co_name"):
+                    __access__ = new.function(__access__, globals())
+                found_access = 1
 
-        # because ap_get_basic insists on making sure that AuthName and
-        # AuthType directives are specified and refuses to do anything
-        # otherwise (which is technically speaking a good thing), we
-        # have to do base64 decoding ourselves.
-        if not req.headers_in.has_key("Authorization"):
-            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED
-        else:
-            try:
-                s = req.headers_in["Authorization"][6:]
-                s = base64.decodestring(s)
-                user, passwd = string.split(s, ":")
-            except:
-                raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
+            if "__auth_realm__" in func_code.co_names:
+                i = list(func_code.co_names).index("__auth_realm__")
+                realm = func_code.co_consts[i+1]
 
-        if hasattr(object, "__auth_realm__"):
-            realm = object.__auth_realm__
-            
-        rc = __auth__(req, user, passwd)
-        if not rc:
-            if realm:
-                s = 'Basic realm = "%s"' % realm
-                req.err_headers_out["WWW-Authenticate"] = s
+    else:
+        if hasattr(object, "__auth__"):
+            __auth__ = object.__auth__
+            found_auth = 1
+        if hasattr(object, "__access__"):
+            __access__ = object.__access__
+            found_access = 1
+
+    if found_auth:
+
+        if not user:
+            s = 'Basic realm = "%s"' % realm
+            req.err_headers_out["WWW-Authenticate"] = s
             raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED    
 
-    return realm
+        if callable(__auth__):
+            rc = __auth__(req, user, passwd)
+        else:
+            if type(__auth__) == type({}): # dictionary
+                rc = __auth__.has_key(user) and __auth__[user] == passwd
+            else:
+                rc = __auth__
+            
+        if not rc:
+            s = 'Basic realm = "%s"' % realm
+            req.err_headers_out["WWW-Authenticate"] = s
+            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED    
 
-def resolve_object(req, obj, object_str, auth_realm=None):
+    if found_access:
+
+        if callable(__access__):
+            rc = __access__(req, user)
+        else:
+            if type(__access__) in (type([]), type(())):
+                rc = user in __access__
+            else:
+                rc = __access__
+
+        if not rc:
+            raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+
+    return realm, user, passwd
+
+def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     """
     This function traverses the objects separated by .
     (period) to find the last one we're looking for.
@@ -251,7 +292,8 @@ def resolve_object(req, obj, object_str, auth_realm=None):
         if type(obj) == type(apache):
             raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
 
-        auth_realm = process_auth(req, obj, auth_realm)
+        realm, user, passwd = process_auth(req, obj, realm,
+                                           user, passwd)
 
     return obj
 

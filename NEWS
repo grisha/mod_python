@@ -1,3 +1,6 @@
+Jan 21 2000 -	The Publisher handler __auth__ can now be a dictionary or.
+		a const. There is also new __access__, which can be a list.
+
 Jan 19 2000 -	Added req._content_type_set flag which is set to 1 when
 		a value is assigned to content_type from Python. This way
 		the publisher handler can know if it's been purposely set
