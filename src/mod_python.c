@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.76 2002/09/14 02:19:58 grisha Exp $
+ * $Id: mod_python.c,v 1.77 2002/09/18 20:13:37 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -825,11 +825,12 @@ static int python_handler(request_rec *req, char *phase)
 
     /* is there an hlist entry, i.e. a handler? */
     /* try with extension */
-    hle = (hl_entry *)apr_hash_get(conf->hlists, 
-                                   apr_pstrcat(req->pool, phase, ext, NULL),
-                                   APR_HASH_KEY_STRING);
+    if (ext)
+        hle = (hl_entry *)apr_hash_get(conf->hlists, 
+                                       apr_pstrcat(req->pool, phase, ext, NULL),
+                                       APR_HASH_KEY_STRING);
+    /* try without extension if we don't match */
     if (!hle) {
-        /* try without extension */
         hle = (hl_entry *)apr_hash_get(conf->hlists, phase, APR_HASH_KEY_STRING);
     }
     
