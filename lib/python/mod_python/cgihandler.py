@@ -1,7 +1,7 @@
 """
  (C) Gregory Trubetskoy, 1998 <grisha@ispol.com>
 
- $Id: cgihandler.py,v 1.4 2000/06/11 19:36:43 grisha Exp $
+ $Id: cgihandler.py,v 1.5 2000/06/25 20:04:05 gtrubetskoy Exp $
 
  This file is part of mod_python. See COPYRIGHT file for details.
 
@@ -10,10 +10,13 @@
 import apache
 import imp
 import os
+
+# if threads are not available
+# create a functionless lock object
 try:
     import threading
     _lock = threading.Lock()
-except ImportError:
+except (ImportError, AttributeError):
     class DummyLock:
         def acquire(self):
             pass

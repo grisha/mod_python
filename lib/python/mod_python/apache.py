@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.11 2000/06/23 20:29:44 gtrubetskoy Exp $
+  $Id: apache.py,v 1.12 2000/06/25 20:04:05 gtrubetskoy Exp $
 
 """
 
@@ -83,7 +83,9 @@ class CallBack:
                 # add the direcotry to pythonpath if
                 # not there yet, or pythonpath specified
                 if config.has_key("PythonPath"):
-                    sys.path = eval(config["PythonPath"])
+                    newpath = eval(config["PythonPath"])
+                    if sys.path != newpath:
+                        sys.path = newpath
                 else:
                     dir = req.get_dirs()[htype]
                     if dir not in sys.path:
@@ -185,8 +187,6 @@ def import_module(module_name, req=None):
     autoreload is on, then the module will be reloaded
     if it has changed since the last import.
     """
-
-    print sys.path
 
     # get the options
     autoreload, debug = 1, None
