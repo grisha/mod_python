@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.24 2003/01/24 21:41:09 grisha Exp $
+ # $Id: tests.py,v 1.25 2003/02/12 16:10:13 grisha Exp $
  #
 
 # mod_python tests
@@ -646,6 +646,13 @@ def cleanup(data):
     # for req_register_cleanup above
 
     data.log_error(data.cleanup_data)
+
+def req_headers_out(req):
+
+    req.headers_out["X-Test-Header"] = "test ok"
+    req.write("test ok")
+
+    return apache.OK
 
 def srv_register_cleanup(req):
 
