@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.18 2003/08/13 17:21:32 grisha Exp $
+ # $Id: psp.py,v 1.19 2003/08/14 15:24:42 grisha Exp $
 
 from mod_python import apache, Session, util, _psp
 import _apache
@@ -226,7 +226,10 @@ class PSPInterface:
 
         return util.apply_fs_data(object, self._form,
                                   req=self._req)
-        
+
+    def redirect(self, location, permanent=0):
+
+        util.redirect(self._req, location, permanent)
 
 def run_psp(req):
 

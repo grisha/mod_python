@@ -305,6 +305,30 @@ The object passed in \code{psp} is an instance of \class{PSPInstance}.
     This method will call the callable object \var{object}, passing form
     data as keyword arguments, and return the result.
   \end{methoddesc}
+
+  \begin{methoddesc}[PSPInstance]{redirect}{location\optional{, permanent=0}}
+    This method will redirect the browser to location
+    \var{location}. If \var{permanent} is true, then
+    \constant{MOVED_PERMANENTLY} will be sent (as opposed to
+    \constant{MOVED_TEMPORARILY}).
+
+    \begin{notice}
+      Redirection can only happen before any data is sent to the
+      client, therefore the Python code block calling this method must
+      be at the very beginning of the page. Otherwise an
+      \exception{IOError} exception will be raised.
+    \end{notice}
+
+    Example:
+    \begin{verbatim}
+<\%
+
+# note that the '<' above is the first byte of the page!
+psp.redirect('http://www.modpython.org')
+\%>
+    \end{verbatim}
+  \end{methoddesc}
+
 \end{classdesc}
 
 If \code{PythonDebug} server configuration is \code{On}, then by

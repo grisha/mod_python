@@ -54,13 +54,14 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: util.py,v 1.16 2003/08/12 19:19:43 grisha Exp $
+ # $Id: util.py,v 1.17 2003/08/14 15:24:42 grisha Exp $
 
 import _apache
 import apache
 import StringIO
 
 from types import *
+from exceptions import *
 
 parse_qs = _apache.parse_qs
 parse_qsl = _apache.parse_qsl
@@ -372,3 +373,27 @@ def apply_fs_data(object, fs, **args):
                 del args[name]
 
     return object(**args)
+
+def redirect(req, location, permanent=0, text=None):
+    """
+    A convenience function to provide redirection
+    """
+
+    if req.sent_bodyct:
+        raise IOError, "Cannot redirect after headers have already been sent."
+
+    req.err_headers_out["Location"] = location
+    if permanent:
+        req.status = apache.HTTP_MOVED_PERMANENTLY
+    else:
+        req.status = apache.HTTP_MOVED_TEMPORARILY
+
+    if text is None:
+        req.write('<p>The document has moved' 
+                  ' <a href="%s">here</a></p>\n'
+                  % location)
+    else:
+        req.write(text)
+
+    raise apache.SERVER_RETURN, apache.OK
+
