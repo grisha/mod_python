@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.52 2003/09/10 02:11:22 grisha Exp $
+ * $Id: requestobject.c,v 1.53 2003/10/08 03:48:17 grisha Exp $
  *
  */
 
@@ -775,6 +775,48 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.requires(self)
+ **
+ *     Interface to ap_requires()
+ */
+
+static PyObject * req_requires(requestobject *self)
+{
+
+    /* This function returns everything specified after the "requires"
+       as is, without any attempts to parse/organize because
+       "requires" args only need to be grokable by mod_auth if it is
+       authoritative. When AuthAuthoritative is off, anything can
+       follow requires, e.g. "requires role terminator".
+    */
+
+    const apr_array_header_t *reqs_arr = ap_requires(self->request_rec);
+    require_line *reqs;
+    int i, ti = 0;
+
+    PyObject *result;
+
+    if (!reqs_arr) {
+        return Py_BuildValue("()");
+    }
+
+    result = PyTuple_New(reqs_arr->nelts);
+
+    reqs = (require_line *) reqs_arr->elts;
+
+    for (i = 0; i < reqs_arr->nelts; ++i) {
+        if (reqs[i].method_mask & (AP_METHOD_BIT << self->request_rec->method_number)) {
+            PyTuple_SetItem(result, ti++, 
+                            PyString_FromString(reqs[i].requirement));
+        }
+    }
+
+    _PyTuple_Resize(&result, ti);
+
+    return result;
+}
+
+/**
  ** request.send_http_header(request self)
  **
  *      this is a noop, just so we don't break old scripts
@@ -902,6 +944,7 @@ static PyMethodDef request_methods[] = {
     {"readline",              (PyCFunction) req_readline,              METH_VARARGS},
     {"readlines",             (PyCFunction) req_readlines,             METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
+    {"requires",              (PyCFunction) req_requires,              METH_NOARGS},
     {"send_http_header",      (PyCFunction) req_send_http_header,      METH_NOARGS},
     {"sendfile",              (PyCFunction) req_sendfile,              METH_VARARGS},
     {"set_content_length",    (PyCFunction) req_set_content_length,    METH_VARARGS},

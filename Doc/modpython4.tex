@@ -656,6 +656,20 @@ else:
   use the \function{apache.log_error} function.
 \end{methoddesc}
 
+\begin{methoddesc}[request]{requires}{}
+
+  Returns a tuple of strings of arguments to \code{require} directive.
+  
+  For example, with the following apache configuration:
+  \begin{verbatim}
+AuthType Basic
+require user joe
+require valid-user
+  \end{verbatim}
+  \method{requires()} would return \code{('user joe', 'valid-user')}.
+
+\end{methoddesc}
+
 \begin{methoddesc}[request]{read}{\optional{len}}
 
   Reads at most \var{len} bytes directly from the client, returning a
