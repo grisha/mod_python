@@ -69,7 +69,7 @@ def email(req, name, email, comment):
     # make sure the user provided all the parameters
     if not (name and email and comment):
         return "A required parameter is missing, \
-	       please go back and correct the error"
+               please go back and correct the error"
 
     # create the message text
     msg = """\

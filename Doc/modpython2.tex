@@ -75,7 +75,7 @@ autoconf stuff, \program{./configure} does the following:
   \longprogramopt{with-apxs} option, e.g.:
 
   \begin{verbatim}
-    $ ./configure --with-apxs=/usr/local/apache/bin/apxs 	
+    $ ./configure --with-apxs=/usr/local/apache/bin/apxs        
   \end{verbatim}
   %$ keep emacs happy
 
@@ -201,8 +201,8 @@ autoconf stuff, \program{./configure} does the following:
   \begin{verbatim}
     <Directory /some/directory/htdocs/test> 
         AddHandler mod_python .py
-	PythonHandler mptest 
-	PythonDebug On 
+        PythonHandler mptest 
+        PythonDebug On 
     </Directory>
   \end{verbatim}
 
@@ -224,7 +224,7 @@ autoconf stuff, \program{./configure} does the following:
 
     def handler(req):
         req.write("Hello World!")
-	return apache.OK 
+        return apache.OK 
   \end{verbatim}
 
 \item
