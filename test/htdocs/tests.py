@@ -143,14 +143,16 @@ def postreadrequest(req):
 
 def outputfilter(filter):
 
-    apache.log_error("filter: " + str(filter))
-
     s = filter.read()
-    a = 1/0
-    filter.write("test ok")
+    filter.write(s.upper())
 
     return apache.OK
 
+def simplehandler(req):
+
+    req.write("test ok")
+
+    return apache.OK
 
 def _test_table():
 

@@ -44,7 +44,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.7 2002/08/15 21:46:35 gtrubetskoy Exp $
+ * $Id: filterobject.c,v 1.8 2002/08/24 02:13:47 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -176,7 +176,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     bytes_read = 0;
 
     while ((bytes_read < len || len == -1) && 
-           !APR_BUCKET_IS_EOS(b)) {
+           !(APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b))) {
 
 	const char *data;
 	apr_size_t size;
