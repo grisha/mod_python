@@ -1,3 +1,6 @@
+Sep  4 2000 -   Added req.register_cleanup(). Still need server.register_cleanup(),
+		as well as a PythonCleanupHandler.
+
 Sep  2 2000 -   Added PythonInterpPerServer directive. Fixed a bug relating
 		to ap_add_version_component.
 

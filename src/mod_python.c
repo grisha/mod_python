@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.27 2000/09/04 15:54:56 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.28 2000/09/04 19:21:20 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -105,6 +105,7 @@
 #define VERSION_COMPONENT "mod_python/2.5"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
+#define GLOBAL_INTERPRETER "global_interpreter"
 #ifdef WIN32
 #define SLASH '\\'
 #define SLASH_S "\\"
@@ -437,6 +438,7 @@ static PyObject * req_get_dirs             (requestobject *self, PyObject *args)
 static PyObject * req_get_remote_host      (requestobject *self, PyObject *args);
 static PyObject * req_get_options          (requestobject *self, PyObject *args);
 static PyObject * req_read                 (requestobject *self, PyObject *args);
+static PyObject * req_register_cleanup     (requestobject *self, PyObject *args);
 static PyObject * req_send_http_header     (requestobject *self, PyObject *args);
 static PyObject * req_write                (requestobject *self, PyObject *args);
 
@@ -472,6 +474,7 @@ static PyMethodDef requestobjectmethods[] = {
     {"get_remote_host",      (PyCFunction) req_get_remote_host,      METH_VARARGS},
     {"get_options",          (PyCFunction) req_get_options,          METH_VARARGS},
     {"read",                 (PyCFunction) req_read,                 METH_VARARGS},
+    {"register_cleanup",     (PyCFunction) req_register_cleanup,     METH_VARARGS},
     {"send_http_header",     (PyCFunction) req_send_http_header,     METH_VARARGS},
     {"write",                (PyCFunction) req_write,                METH_VARARGS},
     { NULL, NULL } /* sentinel */
@@ -553,6 +556,19 @@ typedef struct
     table        *directives;
     table        *dirs;
 } py_dir_config;
+
+/* register_cleanup info */
+typedef struct
+{
+    request_rec  *request_rec;
+    PyObject     *handler;
+    const char   *interpreter;
+    PyObject     *data;
+} cleanup_info;
+
+/* cleanup function */
+void python_cleanup(void *data);
+
 
 /********************************
    *** end of Apache things *** 
@@ -1688,6 +1704,52 @@ static PyObject * req_child_terminate(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.register_cleanup(handler, data)
+ **
+ *    registers a cleanup at request pool destruction time. 
+ *    optional data argument will be passed to the cleanup function.
+ */
+
+static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
+{
+    cleanup_info *ci;
+    PyObject *handler = NULL;
+    PyObject *data = NULL;
+
+    if (! PyArg_ParseTuple(args, "O|O", &handler, &data))
+	return NULL;  /* bad args */
+
+    ci = (cleanup_info *)malloc(sizeof(cleanup_info));
+    ci->request_rec = self->request_rec;
+    if (PyCallable_Check(handler)) {
+	Py_INCREF(handler);
+	ci->handler = handler;
+	ci->interpreter = ap_table_get(self->request_rec->notes, "python_interpreter");
+	if (data) {
+	    Py_INCREF(data);
+	    ci->data = data;
+	}
+	else {
+	    Py_INCREF(Py_None);
+	    ci->data = Py_None;
+	}
+    }
+    else {
+	PyErr_SetString(PyExc_ValueError, 
+			"first argument must be a callable object");
+	free(ci);
+	return NULL;
+    }
+    
+    ap_register_cleanup(self->request_rec->pool, ci, python_cleanup, 
+			ap_null_cleanup);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+
+}
+
+/**
  ** request.get_basic_auth_pw(request self)
  **
  *    get basic authentication password,
@@ -2395,7 +2457,7 @@ interpreterdata *get_interpreter_data(const char *name, server_rec *srv)
     interpreterdata *idata = NULL;
     
     if (! name)
-	name = "global_interpreter";
+	name = GLOBAL_INTERPRETER;
 
     p = PyDict_GetItemString(interpreters, (char *)name);
     if (!p)
@@ -2675,6 +2737,15 @@ static int python_handler(request_rec *req, char *handler)
 	    return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
+
+    /* 
+     * make a note of which subinterpreter we're running under.
+     * this information is used by register_cleanup()
+     */
+    if (interpreter)
+	ap_table_set(req->notes, "python_interpreter", interpreter);
+    else
+	ap_table_set(req->notes, "python_interpreter", GLOBAL_INTERPRETER);
     
     /* create/acquire request object */
     request_obj = get_request_object(req);
@@ -2773,6 +2844,100 @@ static int python_handler(request_rec *req, char *handler)
     /* return the translated result (or default result) to the Server. */
     return result;
 
+}
+
+/**
+ ** python_cleanup
+ **
+ *     This function gets called for registered cleanups
+ */
+
+void python_cleanup(void *data)
+{
+    interpreterdata *idata;
+
+#ifdef WITH_THREAD
+    PyThreadState *tstate;
+#endif
+    cleanup_info *ci = (cleanup_info *)data;
+
+#ifdef WITH_THREAD  
+    /* acquire lock (to protect the interpreters dictionary) */
+    PyEval_AcquireLock();
+#endif
+
+    /* get/create interpreter */
+    idata = get_interpreter_data(ci->interpreter, ci->request_rec->server);
+
+#ifdef WITH_THREAD
+    /* release the lock */
+    PyEval_ReleaseLock();
+#endif
+
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+		      "python_cleanup: get_interpreter_data returned NULL!");
+	Py_DECREF(ci->handler);
+	Py_DECREF(ci->data);
+	free(ci);
+        return;
+    }
+    
+#ifdef WITH_THREAD  
+    /* create thread state and acquire lock */
+    tstate = PyThreadState_New(idata->istate);
+    PyEval_AcquireThread(tstate);
+#endif
+
+    /* 
+     * Call the cleanup function.
+     */
+    if (! PyObject_CallFunction(ci->handler, "O", ci->data)) {
+	PyObject *ptype;
+	PyObject *pvalue;
+	PyObject *ptb;
+	PyObject *handler;
+	PyObject *stype;
+	PyObject *svalue;
+
+	PyErr_Fetch(&ptype, &pvalue, &ptb);
+	handler = PyObject_Str(ci->handler);
+	stype = PyObject_Str(ptype);
+	svalue = PyObject_Str(pvalue);
+
+	Py_DECREF(ptype);
+	Py_DECREF(pvalue);
+	Py_DECREF(ptb);
+
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+		      "python_cleanup: Error calling cleanup object %s", 
+		      PyString_AsString(handler));
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, ci->request_rec,
+		      "    %s: %s", PyString_AsString(stype), 
+		      PyString_AsString(svalue));
+
+	Py_DECREF(handler);
+	Py_DECREF(stype);
+	Py_DECREF(svalue);
+    }
+     
+#ifdef WITH_THREAD
+    /* release the lock and destroy tstate*/
+    /* XXX Do not use 
+     * . PyEval_ReleaseThread(tstate); 
+     * . PyThreadState_Delete(tstate);
+     * because PyThreadState_delete should be done under 
+     * interpreter lock to work around a bug in 1.5.2 (see patch to pystate.c 2.8->2.9) 
+     */
+    PyThreadState_Swap(NULL);
+    PyThreadState_Delete(tstate);
+    PyEval_ReleaseLock();
+#endif
+
+    Py_DECREF(ci->handler);
+    Py_DECREF(ci->data);
+    free(ci);
+    return;
 }
 
 /**
