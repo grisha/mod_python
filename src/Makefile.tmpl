@@ -1,0 +1,11 @@
+LIB=libmod_python.$(LIBEXT)
+
+all: lib
+
+lib: $(LIB)
+
+clean:
+	rm -f $(LIB)
+
+distclean: clean
+	rm -f Makefile

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: installation.html,v 1.10 2000/10/03 02:07:39 gtrubetskoy Exp $ -->
+<!-- $Id: installation.html,v 1.11 2000/10/09 16:17:22 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -246,15 +246,20 @@ Then:
 
 	<li> Add the following Apache directives, which can appear in either the 
 	  main server configuration file, or <code>.htaccess</code>. If you
-	are going to be using the <code>.htaccess</code> file, make
+	are going to be using the <code>.htaccess</code> file, you will not
+	  need the &lt;Directory&gt; tag below, and you will need to make
 	sure the <code>AllowOverride</code> directive applicable to this
 	directory has at least <code>FileInfo</code> specified.  The
 	default is <code>None</code>, which will not work.
-	  <pre>
-      AddHandler python-program .py
-      PythonHandler mptest
-      PythonDebug On</pre>
 
+	  <pre>
+      &lt;Directory /some/directory/htdocs/test&gt;
+          AddHandler python-program .py
+          PythonHandler mptest
+          PythonDebug On
+      &lt;/Directory&gt;</pre>
+	  (Substitute /some/directory above for somethng applicable to your system,
+           usually your Apache server root)
 	<li> At this time, if you made changes to the main configuration file, 
 	  you will need to restart Apache in order for the changes to take effect.
 
@@ -307,7 +312,7 @@ Then:
     <hr>
 <!-- Created: Wed May 10 09:06:54 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon Sep 25 18:03:04 EDT 2000
+Last modified: Thu Oct  5 18:52:25 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
