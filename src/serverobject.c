@@ -44,7 +44,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.8 2001/09/09 00:25:37 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.9 2002/06/03 14:31:15 gtrubetskoy Exp $
  *
  */
 
@@ -241,7 +241,7 @@ static PyObject * server_getattr(serverobject *self, char *name)
 	return PyInt_FromLong((long)ap_my_generation);
     }
     else if (strcmp(name, "restart_time") == 0) {
-	return PyInt_FromLong((long)ap_restart_time);
+      return PyInt_FromLong((long)ap_scoreboard_image->global->restart_time);
     }
     else
 	return PyMember_Get((char *)self->server, server_memberlist, name);

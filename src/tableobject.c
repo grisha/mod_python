@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.8 2001/11/28 05:31:48 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.9 2002/06/03 14:31:15 gtrubetskoy Exp $
  *
  */
 
@@ -196,7 +196,7 @@ static PyObject * table_keys(tableobject *self)
 {
 
     PyObject *v;
-    apr_array_header_t *ah;
+    const apr_array_header_t *ah;
     apr_table_entry_t *elts;
     int i, j;
 
@@ -303,7 +303,7 @@ static PyObject * table_getattr(PyObject *self, char *name)
 static PyObject * table_repr(tableobject *self)
 {
     PyObject *s;
-    apr_array_header_t *ah;
+    const apr_array_header_t *ah;
     apr_table_entry_t *elts;
     int i;
 

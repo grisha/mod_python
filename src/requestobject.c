@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.15 2001/11/28 05:31:48 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.16 2002/06/03 14:31:15 gtrubetskoy Exp $
  *
  */
 
@@ -268,7 +268,7 @@ static PyObject *req_get_all_config(requestobject *self, PyObject *args)
 
     if (apr_table_get(self->request_rec->notes, "py_more_directives")) {
 
-	apr_array_header_t *ah = apr_table_elts(self->request_rec->notes);
+	const apr_array_header_t *ah = apr_table_elts(self->request_rec->notes);
 	apr_table_entry_t *elts = (apr_table_entry_t *)ah->elts;
 	int i = ah->nelts;
 
@@ -280,9 +280,9 @@ static PyObject *req_get_all_config(requestobject *self, PyObject *args)
 		    const char *val = apr_table_get(all, elts[i].key);
 		    if (val) {
 			apr_table_set(all, elts[i].key, 
-				     apr_pstrcat(self->request_rec->pool,
-						val, " ", elts[i].val,
-						NULL));
+				      apr_pstrcat(self->request_rec->pool,
+						  val, " ", elts[i].val,
+						  NULL));
 		    }
 		    else {
 			apr_table_set(all, elts[i].key, elts[i].val);
@@ -417,7 +417,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
 	    PyObject *val = PyInt_FromLong(rc);
 	    if (val == NULL)
 		return NULL;
-	    PyErr_SetObject(Mp_ServerReturn, val);
+	    PyErr_SetObject(get_ServerReturn(), val);
 	    Py_DECREF(val);
 	    return NULL;
 	}
@@ -510,7 +510,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 	    PyObject *val = PyInt_FromLong(rc);
 	    if (val == NULL)
 		return NULL;
-	    PyErr_SetObject(Mp_ServerReturn, val);
+	    PyErr_SetObject(get_ServerReturn(), val);
 	    Py_DECREF(val);
 	    return NULL;
 	}
