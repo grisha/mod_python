@@ -351,7 +351,25 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
     py_config *conf =
         (py_config *) ap_get_module_config(self->request_rec->per_dir_config, 
                                            &python_module);
-    return MpTable_FromTable(conf->options);
+    apr_table_t* table = conf->options;
+
+    int i;
+    apr_array_header_t* ah = apr_table_elts(table);
+    apr_table_entry_t* elts = ah->elts;
+
+    /*
+     * We remove the empty values, since they cannot have been defined
+     * by the directive.
+     */
+    for(i=0;i<ah->nelts;i++,elts++) {
+        if(strlen(elts->val)==0) {
+            apr_table_unset(table,elts->key);
+        }
+    }
+
+    /* XXX shouldn't we free the apr_array_header_t* ah ? */
+
+    return MpTable_FromTable(table);
 }
 
 /**

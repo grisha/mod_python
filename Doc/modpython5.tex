@@ -651,7 +651,7 @@ Enables Python optimization. Same as the Python \programopt{-O} option.
 \index{PythonOption}
 
 \strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
-PythonOption key value \\
+PythonOption key [value] \\
 \citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
 \citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
@@ -662,7 +662,8 @@ mod_python.c
 Assigns a key value pair to a table that can be later retrieved by the
 \code{req.get_options()} function. This is useful to pass information
 between the apache configuration files (\file{httpd.conf},
-\file{.htaccess}, etc) and the Python programs.
+\file{.htaccess}, etc) and the Python programs. If the value is omitted or empty (\code{""}),
+then the key is removed from the local configuration.
 
 \subsection{PythonPath\label{dir-other-pp}}
 \index{PythonPath}

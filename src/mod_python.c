@@ -1545,12 +1545,15 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
         apr_table_set(conf->options, key, val);
     }
     else {
-    	/** XXX This doesn't work, unfortunately */
-        apr_table_unset(conf->options, key);
+    	/** We don't remove the value, but set it
+    	    to an empty string. There is possibility
+    	    of colliding with an actual value, since
+    	    an entry string precisely means 'remove the value' */
+        apr_table_set(conf->options, key, "");
 
         conf = ap_get_module_config(cmd->server->module_config,
                                     &python_module);
-        apr_table_unset(conf->options, key);
+        apr_table_set(conf->options, key, "");
     }
 
     return NULL;
