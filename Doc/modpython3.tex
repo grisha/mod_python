@@ -1,16 +1,16 @@
 \chapter{Tutorial\label{tutorial}}
 
 \begin{flushright}
-\emph{So how can I make this work?}
+  \emph{So how can I make this work?}
 \end{flushright}
 
 \emph{This is a quick guide to getting started with mod_python 
-programming once you have it installed. This is \textbf{not} an
-installation manual!}
+  programming once you have it installed. This is \textbf{not} an
+  installation manual!}
 
 \emph{It is also highly recommended to read (at least the top part of)
-Section \ref{pythonapi}, \citetitle[pythonapi.html]{Python API} after
-completing this tutorial.}
+  Section \ref{pythonapi}, \citetitle[pythonapi.html]{Python API} after
+  completing this tutorial.}
 
 \section{A Quick Start with the Publisher Handler\label{tut-pub}}
 
@@ -21,13 +21,13 @@ and what a handler actually is follows on in the later sections of the
 tutorial.
 
 The \code{publisher} handler is provided as one of the standard
-mod_python handlers. To get the publisher handler working,
-you will need the following lines in your config:
+mod_python handlers. To get the publisher handler working, you will
+need the following lines in your config:
 
 \begin{verbatim}
-AddHandler python-program .py
-PythonHandler mod_python.publisher
-PythonDebug On
+  AddHandler python-program .py
+  PythonHandler mod_python.publisher
+  PythonDebug On
 \end{verbatim}
 
 The following example will demonstrate a simple feedback form. The
@@ -40,70 +40,70 @@ user. This simple application consists of two files:
 Here is the html for the form:
 
 \begin{verbatim}
-<html>
+  <html>
   Please provide feedback below:
   <p>                           
   <form action="form.py/email" method="POST">
 
-    Name: <input type="text" name="name"><br>
-    Email: <input type="text" name="email"><br>
-    Comment: <textarea name="comment" rows=4 cols=20></textarea><br>
-    <input type="submit">
+  Name: <input type="text" name="name"><br>
+  Email: <input type="text" name="email"><br>
+  Comment: <textarea name="comment" rows=4 cols=20></textarea><br>
+  <input type="submit">
 
   </form>
-</html>  
+  </html>  
 \end{verbatim}
 
 Note the \code{action} element of the \code{<form>} tag points to
-\code{form.py/email}. We are going to create a file called \filenq{form.py},
-like this:
+\code{form.py/email}. We are going to create a file called
+\filenq{form.py}, like this:
 
 \begin{verbatim}
-import smtplib
+  import smtplib
 
-WEBMASTER = "webmaster"   # webmaster e-mail
-SMTP_SERVER = "localhost" # your SMTP server
+  WEBMASTER = "webmaster"   # webmaster e-mail
+  SMTP_SERVER = "localhost" # your SMTP server
 
-def email(req, name, email, comment):
+  def email(req, name, email, comment):
 
-    # make sure the user provided all the parameters
-    if not (name and email and comment):
-        return "A required parameter is missing, \
-please go back and correct the error"
+  # make sure the user provided all the parameters
+  if not (name and email and comment):
+  return "A required parameter is missing, \
+  please go back and correct the error"
 
-    # create the message text
-    msg = """\
-From: %s                                                                                                                                           
-Subject: feedback
-To: %s
+  # create the message text
+  msg = """\
+  From: %s                                                                                                                                           
+  Subject: feedback
+  To: %s
 
-I have the following comment:
+  I have the following comment:
 
-%s
+  %s
 
-Thank You,
+  Thank You,
 
-%s                                                                                                                                                 
+  %s                                                                                                                                                 
 
-""" % (email, WEBMASTER, comment, name)
+  """ % (email, WEBMASTER, comment, name)
 
-    # send it out
-    conn = smtplib.SMTP(SMTP_SERVER)
-    conn.sendmail(email, [WEBMASTER], msg)
-    conn.quit()
+  # send it out
+  conn = smtplib.SMTP(SMTP_SERVER)
+  conn.sendmail(email, [WEBMASTER], msg)
+  conn.quit()
 
-    # provide feedback to the user
-    s = """\
-<html>
+  # provide feedback to the user
+  s = """\
+  <html>
 
-Dear %s,<br>                                                                                                                                       
+  Dear %s,<br>                                                                                                                                       
 
-Thank You for your kind comments, we
-will get back to you shortly.
+  Thank You for your kind comments, we
+  will get back to you shortly.
 
-</html>""" % name
+  </html>""" % name
 
-    return s
+  return s
 \end{verbatim}
 
 When the user clicks the Submit button, the publisher handler will
@@ -121,7 +121,7 @@ function.
 Even though the Publisher handler simplifies mod_python programming a
 grat deal, all the power of mod_python is still available to this
 program, since it has access to the request object. You can do all the
-same things you can do with a "native" mod_python handler, e.g. set
+same things you can do with a ``native'' mod_python handler, e.g. set
 custom headers via \code{req.headers_out}, return errors by raising
 \exception{apache.SERVER_ERROR} exceptions, write or read directly to
 and from the client via \method{req.write()} and \method{req.read()},
@@ -173,11 +173,11 @@ handlers, refer to Section \ref{directives},
 
 Let's pretend we have the following configuration: 
 \begin{verbatim}
-<Directory /mywebdir>
-    AddHandler python-program .py
-    PythonHandler myscript
-    PythonDebug On
-</Directory>
+  <Directory /mywebdir>
+  AddHandler python-program .py
+  PythonHandler myscript
+  PythonDebug On
+  </Directory>
 \end{verbatim}
 
 \strong{NB:} \filenq{/mywebdir} is an absolute physical path. 
@@ -187,14 +187,14 @@ forward slashes for backslashes) \file{/mywedir/myscript.py} that looks like
 this:
 
 \begin{verbatim}
-    from mod_python import apache
+  from mod_python import apache
 
-    def handler(req):
+  def handler(req):
 
-        req.content_type = "text/plain"
-        req.write("Hello World!")
+  req.content_type = "text/plain"
+  req.write("Hello World!")
 
-        return apache.OK
+  return apache.OK
 \end{verbatim}    
 
 Here is what's going to happen: The \code{AddHandler} directive tells
@@ -206,98 +206,99 @@ tells mod_python to process the generic handler using the
 mod_python in case of an Python error to send error output to the
 client (in addition to the logs), very useful during development.
 
-When a request comes in, Apache starts stepping through its
-request processing phases calling handlers in mod_python. The
-mod_python handlers check whether a directive for that handler was
-specified in the configuration. (Remember, it acts as a dispatcher.)
-In our example, no action will be taken by mod_python for
-all handlers except for the generic handler. When we get to the
-generic handler, mod_python will notice \samp{PythonHandler
-myscript} directive and do the following:
+When a request comes in, Apache starts stepping through its request
+processing phases calling handlers in mod_python. The mod_python
+handlers check whether a directive for that handler was specified in
+the configuration. (Remember, it acts as a dispatcher.)  In our
+example, no action will be taken by mod_python for all handlers except
+for the generic handler. When we get to the generic handler,
+mod_python will notice \samp{PythonHandler myscript} directive and do
+the following:
 
 \begin{enumerate}
 
 \item
-If not already done, prepend the directory in which the
-\code{PythonHandler} directive was found to \code{sys.path}.
+  If not already done, prepend the directory in which the
+  \code{PythonHandler} directive was found to \code{sys.path}.
 
 \item
-Attempt to import a module by name \code{myscript}. (Note that if
-\code{myscript} was in a subdirectory of the directory where
-\code{PythonHandler} was specified, then the import would not work
-because said subdirectory would not be in the \code{sys.path}. One way
-around this is to use package notation, e.g. \samp{PythonHandler
-subdir.myscript}.)
+  Attempt to import a module by name \code{myscript}. (Note that if
+  \code{myscript} was in a subdirectory of the directory where
+  \code{PythonHandler} was specified, then the import would not work
+  because said subdirectory would not be in the \code{sys.path}. One
+  way around this is to use package notation, e.g. \samp{PythonHandler
+  subdir.myscript}.)
 
 \item 
-Look for a function called \code{handler} in \code{myscript}.
+  Look for a function called \code{handler} in \code{myscript}.
 
 \item
-Call the function, passing it a request object. (More on what a
-request object is later)
+  Call the function, passing it a request object. (More on what a
+  request object is later)
 
 \item
-At this point we're inside the script: 
+  At this point we're inside the script: 
 
-\begin{itemize}
+  \begin{itemize}
 
-\item
-\begin{verbatim}
-from mod_python import apache
-\end{verbatim}
+  \item
+    \begin{verbatim}
+      from mod_python import apache
+    \end{verbatim}
 
-This imports the apache module which provides us the interface to
-Apache. With a few rare exceptions, every mod_python program will have
-this line.
+    This imports the apache module which provides us the interface to
+    Apache. With a few rare exceptions, every mod_python program will have
+    this line.
 
-\item
-\begin{verbatim}
-def handler(req):
-\end{verbatim}
+  \item
+    \begin{verbatim}
+      def handler(req):
+    \end{verbatim}
 
-\index{handler} This is our \dfn{handler} function declaration. It is
-called \code{"handler"} because mod_python takes the name of the
-directive, converts it to lower case and removes the word
-\code{"python"}. Thus \code{"PythonHandler"} becomes
-\code{"handler"}. You could name it something else, and specify it
-explicitly in the directive using \samp{::}. For example, if the
-handler function was called \samp{spam}, then the directive would be
-\samp{PythonHandler myscript::spam}.
+    \index{handler} This is our \dfn{handler} function declaration. It
+    is called \samp{handler} because mod_python takes the name of the
+    directive, converts it to lower case and removes the word
+    \samp{python}. Thus \samp{PythonHandler} becomes
+    \samp{handler}. You could name it something else, and specify it
+    explicitly in the directive using \samp{::}. For example, if the
+    handler function was called \samp{spam}, then the directive would
+    be \samp{PythonHandler myscript::spam}.
 
-Note that a handler must take one argument - the request object. The
-request object is an object that provides all of the information about
-this particular request - such as the IP of client, the headers, the
-URI, etc. The communication back to the client is also done via the
-request object, i.e. there is no "response" object.
+    Note that a handler must take one argument - the request
+    object. The request object is an object that provides all of the
+    information about this particular request - such as the IP of
+    client, the headers, the URI, etc. The communication back to the
+    client is also done via the request object, i.e. there is no
+    ``response'' object.
 
-\item
-\begin{verbatim}
-    req.content_type = "text/plain"
-\end{verbatim}
+  \item
+    \begin{verbatim}
+      req.content_type = "text/plain"
+    \end{verbatim}
 
-This sets the content type to \code{"text/plain"}. The default is usually
-\code{"text/html"}, but since our handler doesn't produce any html,
-\code{"text/plain"} is more appropriate.
+    This sets the content type to \samp{text/plain}. The default is usually
+    \samp{text/html}, but since our handler doesn't produce any html,
+    \samp{text/plain} is more appropriate.
 
-\item
-\begin{verbatim}
-    req.write("Hello World!")
-\end{verbatim}
+  \item
+    \begin{verbatim}
+      req.write("Hello World!")
+    \end{verbatim}
 
-This writes the \code{"Hello World!"} string to the client. (Did I really
-have to explain this one?)
+    This writes the \samp{Hello World!} string to the client. (Did I really
+    have to explain this one?)
 
-\item
-\begin{verbatim}
-    return apache.OK
-\end{verbatim}
+  \item
+    \begin{verbatim}
+      return apache.OK
+    \end{verbatim}
 
-This tells Apache that everything went OK and that the request has
-been processed. If things did not go OK, that line could be return
-\constant{apache.HTTP_INTERNAL_SERVER_ERROR} or return
-\constant{apache.HTTP_FORBIDDEN}. When things do not go OK, Apache
-will log the error and generate an error message for the client.
-\end{itemize}
+    This tells Apache that everything went OK and that the request has
+    been processed. If things did not go OK, that line could be return
+    \constant{apache.HTTP_INTERNAL_SERVER_ERROR} or return
+    \constant{apache.HTTP_FORBIDDEN}. When things do not go OK, Apache
+    will log the error and generate an error message for the client.
+  \end{itemize}
 \end{enumerate}
 
 \strong{Some food for thought:} If you were paying attention, you
@@ -310,10 +311,10 @@ above configuration, \samp{http://myserver/mywebdir/myscript.py} and
 \samp{http://myserver/mywebdir/montypython.py} would give the exact
 same result. The important thing to understand here is that a handler
 augments the server behaviour when processing a specific type of file,
-not an individual file. 
+not an individual file.
 
 \emph{At this point, if you didn't understand the above paragraph, go
-back and read it again, until you do.}
+  back and read it again, until you do.}
 
 \section{Now something More Complicated - Authentication\label{tut-more-complicated}}
 
@@ -321,19 +322,19 @@ Now that you know how to write a primitive handler, let's try
 something more complicated.
 
 Let's say we want to password-protect this directory. We want the
-login to be "spam", and the password to be "eggs".
+login to be \samp{spam}, and the password to be \samp{eggs}.
 
-First, we need to tell Apache to call our \emph{authentication} handler when
-authentication is needed. We do this by adding the
+First, we need to tell Apache to call our \emph{authentication}
+handler when authentication is needed. We do this by adding the
 \code{PythonAuthenHandler}. So now our config looks like this:
 
 \begin{verbatim}
-<Directory /mywebdir>
-    AddHandler python-program .py
-    PythonHandler myscript
-    PythonAuthenHandler myscript
-    PythonDebug On
-</Directory>
+  <Directory /mywebdir>
+  AddHandler python-program .py
+  PythonHandler myscript
+  PythonAuthenHandler myscript
+  PythonDebug On
+  </Directory>
 \end{verbatim}
 
 Notice that the same script is specified for two different
@@ -346,33 +347,34 @@ Apache stuff, so we're not going to go into details here). Our config
 looks like this now:
 
 \begin{verbatim}
-<Directory /mywebdir>
-    AddHandler python-program .py
-    PythonHandler myscript
-    PythonAuthenHandler myscript
-    PythonDebug On
-    AuthType Basic
-    AuthName "Restricted Area"
-    require valid-user
-</Directory>
+  <Directory /mywebdir>
+  AddHandler python-program .py
+  PythonHandler myscript
+  PythonAuthenHandler myscript
+  PythonDebug On
+  AuthType Basic
+  AuthName "Restricted Area"
+  require valid-user
+  </Directory>
 \end{verbatim}          
 
 Now we need to write an authentication handler function in
-\file{myscript.py}. A basic authentication handler would look like this:
+\file{myscript.py}. A basic authentication handler would look like
+this:
 
 \begin{verbatim}
 
-from mod_python import apache
+  from mod_python import apache
 
-def authenhandler(req):
+  def authenhandler(req):
 
-    user = req.user
-    pw = req.get_basic_auth_pw()
+  user = req.user
+  pw = req.get_basic_auth_pw()
 
-    if user == "spam" and pw == "eggs":
-        return apache.OK
-    else:
-        return apache.HTTP_UNAUTHORIZED
+  if user == "spam" and pw == "eggs":
+  return apache.OK
+  else:
+  return apache.HTTP_UNAUTHORIZED
 \end{verbatim}  
 
 Let's look at this line by line: 
@@ -380,53 +382,54 @@ Let's look at this line by line:
 \begin{itemize}
 
 \item
-\begin{verbatim}
-def authenhandler(req):
-\end{verbatim}
+  \begin{verbatim}
+    def authenhandler(req):
+  \end{verbatim}
 
-This is the handler function declaration. This one is called
-\code{authenhandler} because, as we already described above, mod_python takes
-the name of the directive (\code{PythonAuthenHandler}), drops the word
-"Python" and converts it lower case.
+  This is the handler function declaration. This one is called
+  \code{authenhandler} because, as we already described above,
+  mod_python takes the name of the directive
+  (\code{PythonAuthenHandler}), drops the word \samp{Python} and converts
+  it lower case.
 
 \item
-\begin{verbatim}
+  \begin{verbatim}
     user = req.user
-\end{verbatim}
-                  
-This is how you obtain the username that the user entered. 
+  \end{verbatim}
+  
+  This is how you obtain the username that the user entered. 
 
 \item
-\begin{verbatim}
+  \begin{verbatim}
     pw = req.get_basic_auth_pw()
-\end{verbatim}
-                  
-This is how we obtain the password. The basic HTTP authentication
-transmits the password in base64 encoded form to make it a little bit
-less obvious. This function decodes the password and returns it as a
-string.
+  \end{verbatim}
+  
+  This is how we obtain the password. The basic HTTP authentication
+  transmits the password in base64 encoded form to make it a little
+  bit less obvious. This function decodes the password and returns it
+  as a string.
 
 \item
-\begin{verbatim}
+  \begin{verbatim}
     if user == "spam" and pw == "eggs":
-        return apache.OK
-\end{verbatim}
+    return apache.OK
+  \end{verbatim}
 
-We compare the values provided by the user, and if they are what we
-were expecting, we tell Apache to go ahead and proceed by returning
-\constant{apache.OK}. Apache will then consider this phase of the
-request complete, and proceed to the next phase. (Which in this case
-would be \function{handler()} if it's a \code{.py} file).
+  We compare the values provided by the user, and if they are what we
+  were expecting, we tell Apache to go ahead and proceed by returning
+  \constant{apache.OK}. Apache will then consider this phase of the
+  request complete, and proceed to the next phase. (Which in this case
+  would be \function{handler()} if it's a \code{.py} file).
 
 \item
-\begin{verbatim}
+  \begin{verbatim}
     else:
-        return apache.HTTP_UNAUTHORIZED 
-\end{verbatim}
+    return apache.HTTP_UNAUTHORIZED 
+  \end{verbatim}
 
-Else, we tell Apache to return \constant{HTTP_UNAUTHORIZED} to the
-client, which usually causes the browser to pop a dialog box asking
-for username and password.
+  Else, we tell Apache to return \constant{HTTP_UNAUTHORIZED} to the
+  client, which usually causes the browser to pop a dialog box asking
+  for username and password.
 
 \end{itemize}
 

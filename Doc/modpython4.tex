@@ -50,7 +50,7 @@ running by peeking at \member{req.interpreter}.
 
 \begin{seealso}
   \seetitle[http://www.python.org/doc/current/api/api.html]
-	{Python C Language API}{Python C Language API}
+	   {Python C Language API}{Python C Language API}
 \end{seealso}
 
 \section{Overview of a Request Handler\label{pyapi-handler}}
@@ -73,68 +73,68 @@ Every handler can return:
 \begin{itemize}
 
 \item
-\constant{apache.OK}, meaning this phase of the request was handled by this 
-handler and no errors occurred. 
+  \constant{apache.OK}, meaning this phase of the request was handled by this 
+  handler and no errors occurred. 
 
 \item
-\constant{apache.DECLINED}, meaning this handler has not handled this
-phase of the request to completion and Apache needs to look for
-another handler in subsequent modules.
- 
+  \constant{apache.DECLINED}, meaning this handler has not handled this
+  phase of the request to completion and Apache needs to look for
+  another handler in subsequent modules.
+  
 \item
-\constant{apache.\emph{HTTP_ERROR}}, meaning an HTTP error occurred. 
-\var{HTTP_ERROR} can be any of the following:
+  \constant{apache.\emph{HTTP_ERROR}}, meaning an HTTP error occurred. 
+  \var{HTTP_ERROR} can be any of the following:
 
-\begin{verbatim}
-HTTP_CONTINUE                     = 100
-HTTP_SWITCHING_PROTOCOLS          = 101
-HTTP_PROCESSING                   = 102
-HTTP_OK                           = 200
-HTTP_CREATED                      = 201
-HTTP_ACCEPTED                     = 202
-HTTP_NON_AUTHORITATIVE            = 203
-HTTP_NO_CONTENT                   = 204
-HTTP_RESET_CONTENT                = 205
-HTTP_PARTIAL_CONTENT              = 206
-HTTP_MULTI_STATUS                 = 207
-HTTP_MULTIPLE_CHOICES             = 300
-HTTP_MOVED_PERMANENTLY            = 301
-HTTP_MOVED_TEMPORARILY            = 302
-HTTP_SEE_OTHER                    = 303
-HTTP_NOT_MODIFIED                 = 304
-HTTP_USE_PROXY                    = 305
-HTTP_TEMPORARY_REDIRECT           = 307
-HTTP_BAD_REQUEST                  = 400
-HTTP_UNAUTHORIZED                 = 401
-HTTP_PAYMENT_REQUIRED             = 402
-HTTP_FORBIDDEN                    = 403
-HTTP_NOT_FOUND                    = 404
-HTTP_METHOD_NOT_ALLOWED           = 405
-HTTP_NOT_ACCEPTABLE               = 406
-HTTP_PROXY_AUTHENTICATION_REQUIRED= 407
-HTTP_REQUEST_TIME_OUT             = 408
-HTTP_CONFLICT                     = 409
-HTTP_GONE                         = 410
-HTTP_LENGTH_REQUIRED              = 411
-HTTP_PRECONDITION_FAILED          = 412
-HTTP_REQUEST_ENTITY_TOO_LARGE     = 413
-HTTP_REQUEST_URI_TOO_LARGE        = 414
-HTTP_UNSUPPORTED_MEDIA_TYPE       = 415
-HTTP_RANGE_NOT_SATISFIABLE        = 416
-HTTP_EXPECTATION_FAILED           = 417
-HTTP_UNPROCESSABLE_ENTITY         = 422
-HTTP_LOCKED                       = 423
-HTTP_FAILED_DEPENDENCY            = 424
-HTTP_INTERNAL_SERVER_ERROR        = 500
-HTTP_NOT_IMPLEMENTED              = 501
-HTTP_BAD_GATEWAY                  = 502
-HTTP_SERVICE_UNAVAILABLE          = 503
-HTTP_GATEWAY_TIME_OUT             = 504
-HTTP_VERSION_NOT_SUPPORTED        = 505
-HTTP_VARIANT_ALSO_VARIES          = 506
-HTTP_INSUFFICIENT_STORAGE         = 507
-HTTP_NOT_EXTENDED                 = 510
-\end{verbatim}                      
+  \begin{verbatim}
+    HTTP_CONTINUE                     = 100
+    HTTP_SWITCHING_PROTOCOLS          = 101
+    HTTP_PROCESSING                   = 102
+    HTTP_OK                           = 200
+    HTTP_CREATED                      = 201
+    HTTP_ACCEPTED                     = 202
+    HTTP_NON_AUTHORITATIVE            = 203
+    HTTP_NO_CONTENT                   = 204
+    HTTP_RESET_CONTENT                = 205
+    HTTP_PARTIAL_CONTENT              = 206
+    HTTP_MULTI_STATUS                 = 207
+    HTTP_MULTIPLE_CHOICES             = 300
+    HTTP_MOVED_PERMANENTLY            = 301
+    HTTP_MOVED_TEMPORARILY            = 302
+    HTTP_SEE_OTHER                    = 303
+    HTTP_NOT_MODIFIED                 = 304
+    HTTP_USE_PROXY                    = 305
+    HTTP_TEMPORARY_REDIRECT           = 307
+    HTTP_BAD_REQUEST                  = 400
+    HTTP_UNAUTHORIZED                 = 401
+    HTTP_PAYMENT_REQUIRED             = 402
+    HTTP_FORBIDDEN                    = 403
+    HTTP_NOT_FOUND                    = 404
+    HTTP_METHOD_NOT_ALLOWED           = 405
+    HTTP_NOT_ACCEPTABLE               = 406
+    HTTP_PROXY_AUTHENTICATION_REQUIRED= 407
+    HTTP_REQUEST_TIME_OUT             = 408
+    HTTP_CONFLICT                     = 409
+    HTTP_GONE                         = 410
+    HTTP_LENGTH_REQUIRED              = 411
+    HTTP_PRECONDITION_FAILED          = 412
+    HTTP_REQUEST_ENTITY_TOO_LARGE     = 413
+    HTTP_REQUEST_URI_TOO_LARGE        = 414
+    HTTP_UNSUPPORTED_MEDIA_TYPE       = 415
+    HTTP_RANGE_NOT_SATISFIABLE        = 416
+    HTTP_EXPECTATION_FAILED           = 417
+    HTTP_UNPROCESSABLE_ENTITY         = 422
+    HTTP_LOCKED                       = 423
+    HTTP_FAILED_DEPENDENCY            = 424
+    HTTP_INTERNAL_SERVER_ERROR        = 500
+    HTTP_NOT_IMPLEMENTED              = 501
+    HTTP_BAD_GATEWAY                  = 502
+    HTTP_SERVICE_UNAVAILABLE          = 503
+    HTTP_GATEWAY_TIME_OUT             = 504
+    HTTP_VERSION_NOT_SUPPORTED        = 505
+    HTTP_VARIANT_ALSO_VARIES          = 506
+    HTTP_INSUFFICIENT_STORAGE         = 507
+    HTTP_NOT_EXTENDED                 = 510
+  \end{verbatim}                      
 
 \end{itemize}
 
@@ -144,29 +144,31 @@ exception, and providing an HTTP error code as the exception value,
 e.g.
 
 \begin{verbatim}
-raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+  raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 \end{verbatim}
-              
+
 Handlers can send content to the client using the \method{req.write()}
 method. 
 
 Client data, such as POST requests, can be read by using the
 \method{req.read()} function.
 
-\strong{NOTE:} The directory of the Apache \code{Python*Handler} 
-directive in effect is prepended to the \code{sys.path}. If the
-directive was specified in a server config file outside any
-\code{<Directory>}, then the directory is unknown and not prepended.
+\begin{notice}
+  The directory of the Apache \code{Python*Handler} 
+  directive in effect is prepended to the \code{sys.path}. If the
+  directive was specified in a server config file outside any
+  \code{<Directory>}, then the directory is unknown and not prepended.
+\end{notice}
 
 An example of a minimalistic handler might be: 
 
 \begin{verbatim}
-from mod_python import apache
+  from mod_python import apache
 
-def requesthandler(req):
-    req.content_type = "text/plain"
-    req.write("Hello World!")
-    return apache.OK
+  def requesthandler(req):
+  req.content_type = "text/plain"
+  req.write("Hello World!")
+  return apache.OK
 \end{verbatim}
 
 \section{Overview of a Filter Handler\label{pyapi-filter}}
@@ -210,17 +212,17 @@ And here is what the code for the \file{capitalize.py} might look
 like:
 
 \begin{verbatim}
-from mod_python import apache
+  from mod_python import apache
 
-def outputfilter(filter):
+  def outputfilter(filter):
 
-    s = filter.read()
-    while s:
-        filter.write(s.upper())
-        s = filter.read()
+  s = filter.read()
+  while s:
+  filter.write(s.upper())
+  s = filter.read()
 
-    if s is None:
-        filter.close()
+  if s is None:
+  filter.close()
 
 \end{verbatim}
 
@@ -257,20 +259,20 @@ example of a simple echo server:
 
 Apache configuration:
 \begin{verbatim}
-    PythonConnectionHandler echo
+  PythonConnectionHandler echo
 \end{verbatim}
 
 Contents of \filenq{echo.py} file:
 
 \begin{verbatim}
-from mod_python import apache
+  from mod_python import apache
 
-def connectionhandler(conn):
+  def connectionhandler(conn):
 
-    while 1:
-        conn.write(conn.readline())
+  while 1:
+  conn.write(conn.readline())
 
-    return apache.OK
+  return apache.OK
 \end{verbatim}
 
 \section{\module{apache} -- Access to Apache Internals.}
@@ -294,7 +296,7 @@ mod_python.
 It is best imported like this:
 
 \begin{verbatim}
-from mod_python import apache
+  from mod_python import apache
 \end{verbatim}
 
 \module{mod_python.apache} module defines the following functions and
@@ -304,128 +306,128 @@ objects. For a more in-depth look at Apache internals, see the
 \subsection{Functions\label{pyapi-apmeth}}
 
 \begin{funcdesc}{log_error}{message\optional{, level, server}}
-An interface to the Apache
-\citetitle[http://dev.apache.org/apidoc/apidoc_ap_log_error.html]{ap_log_error()}
-function. \var{message} is a string with the error message, \var{level} is
-one of the following flags constants:
+  An interface to the Apache
+  \citetitle[http://dev.apache.org/apidoc/apidoc_ap_log_error.html]{ap_log_error()}
+  function. \var{message} is a string with the error message, \var{level} is
+  one of the following flags constants:
 
-\begin{verbatim}
-APLOG_EMERG
-APLOG_ALERT
-APLOG_CRIT
-APLOG_ERR
-APLOG_WARNING
-APLOG_NOTICE
-APLOG_INFO
-APLOG_DEBUG
-APLOG_NOERRNO
-\end{verbatim}            
-      
-\var{server} is a reference to a \member{req.server} object. If
-\var{server} is not specified, then the error will be logged to the
-default error log, otherwise it will be written to the error log for
-the appropriate virtual server. When \var{server} is not specified,
-the setting of LogLevel does not apply, the LogLevel is dictated by
-an httpd compile-time default, usually \code{warn}.
+  \begin{verbatim}
+    APLOG_EMERG
+    APLOG_ALERT
+    APLOG_CRIT
+    APLOG_ERR
+    APLOG_WARNING
+    APLOG_NOTICE
+    APLOG_INFO
+    APLOG_DEBUG
+    APLOG_NOERRNO
+  \end{verbatim}            
+  
+  \var{server} is a reference to a \member{req.server} object. If
+  \var{server} is not specified, then the error will be logged to the
+  default error log, otherwise it will be written to the error log for
+  the appropriate virtual server. When \var{server} is not specified,
+  the setting of LogLevel does not apply, the LogLevel is dictated by
+  an httpd compile-time default, usually \code{warn}.
 
-If you have a reference to a request object available, consider using
-\method{req.log_error} intead, it will prepend request-specific
-information such as the source IP of the request to the log entry.
+  If you have a reference to a request object available, consider using
+  \method{req.log_error} intead, it will prepend request-specific
+  information such as the source IP of the request to the log entry.
 \end{funcdesc}
 
 \begin{funcdesc}{allow_methods}{\optional{*args}}
-A convenience function to set values in \member{req.allowed}.
-\member{req.allowed} is a bitmask that is used to construct the
-"Allow:" header. It should be set before returning a
-\code{HTTP_NOT_IMPLEMENTED} error.
+  A convenience function to set values in \member{req.allowed}.
+  \member{req.allowed} is a bitmask that is used to construct the
+  \samp{Allow:} header. It should be set before returning a
+  \code{HTTP_NOT_IMPLEMENTED} error.
 
-Arguments can be one or more of the following:
-\begin{verbatim}
-M_GET
-M_PUT
-M_POST
-M_DELETE
-M_CONNECT
-M_OPTIONS
-M_TRACE
-M_PATCH
-M_PROPFIND
-M_PROPPATCH
-M_MKCOL
-M_COPY
-M_MOVE
-M_LOCK
-M_UNLOCK
-M_VERSION_CONTROL
-M_CHECKOUT
-M_UNCHECKOUT
-M_CHECKIN
-M_UPDATE
-M_LABEL
-M_REPORT
-M_MKWORKSPACE
-M_MKACTIVITY
-M_BASELINE_CONTROL
-M_MERGE
-M_INVALID
-\end{verbatim}
+  Arguments can be one or more of the following:
+  \begin{verbatim}
+    M_GET
+    M_PUT
+    M_POST
+    M_DELETE
+    M_CONNECT
+    M_OPTIONS
+    M_TRACE
+    M_PATCH
+    M_PROPFIND
+    M_PROPPATCH
+    M_MKCOL
+    M_COPY
+    M_MOVE
+    M_LOCK
+    M_UNLOCK
+    M_VERSION_CONTROL
+    M_CHECKOUT
+    M_UNCHECKOUT
+    M_CHECKIN
+    M_UPDATE
+    M_LABEL
+    M_REPORT
+    M_MKWORKSPACE
+    M_MKACTIVITY
+    M_BASELINE_CONTROL
+    M_MERGE
+    M_INVALID
+  \end{verbatim}
 
 \end{funcdesc}
 
 \begin{funcdesc}{config_tree}{}
-Returns the server-level configuration tree. This tree does not
-include directives from .htaccess files. This is a \emph{copy} of
-the tree, modifying it has no effect on the actual configuration.
+  Returns the server-level configuration tree. This tree does not
+  include directives from .htaccess files. This is a \emph{copy} of
+  the tree, modifying it has no effect on the actual configuration.
 \end{funcdesc}
 
 \begin{funcdesc}{server_root}{}
-Returns the value of ServerRoot.
+  Returns the value of ServerRoot.
 \end{funcdesc}
 
 \begin{funcdesc}{make_table}{} 
-This function is obsolete and is an alias to \class{table} (see below).
+  This function is obsolete and is an alias to \class{table} (see below).
 \end{funcdesc}
 
 \subsection{Table Object (mp_table)\obindex{table}\label{pyapi-mptable}}
 
 \index{table}
 \begin{classdesc}{table}{\optional{mapping-or-sequence}}
-Returns a new empty object of type \code{mp_table}. See Section
-\ref{pyapi-mptable} for description of the table object. The
-\var{mapping-or-sequence} will be used to provide initial values for
-the table.  
+  Returns a new empty object of type \code{mp_table}. See Section
+  \ref{pyapi-mptable} for description of the table object. The
+  \var{mapping-or-sequence} will be used to provide initial values for
+  the table.  
 
-The table object is a wrapper around the Apache APR table. The table
-object behaves very much like a dictionary (including the Python 2.2
-features such as support of the \code{in} operator, etc.), with the 
-following differences:
+  The table object is a wrapper around the Apache APR table. The table
+  object behaves very much like a dictionary (including the Python 2.2
+  features such as support of the \code{in} operator, etc.), with the 
+  following differences:
 
-\begin{itemize}
-\item
-Both keys and values must be strings.
-\item
-Key lookups are case-insensitive.
-\item
-Duplicate keys are allowed (see \method{add()} below). When there is
-more than one value for a key, a subscript opration returns a list.
-\end{itemize}
+  \begin{itemize}
+  \item
+    Both keys and values must be strings.
+  \item
+    Key lookups are case-insensitive.
+  \item
+    Duplicate keys are allowed (see \method{add()} below). When there is
+    more than one value for a key, a subscript opration returns a list.
+  \end{itemize}
 
-Much of the information that Apache uses is stored in tables. For
-example, \member{req.headers_in} and \member{req.headers_out}.
+  Much of the information that Apache uses is stored in tables. For
+  example, \member{req.headers_in} and \member{req.headers_out}.
 
-All the tables that mod_python provides inside the request
-object are actual mappings to the Apache structures, so changing the
-Python table also changes the underlying Apache table.
+  All the tables that mod_python provides inside the request
+  object are actual mappings to the Apache structures, so changing the
+  Python table also changes the underlying Apache table.
 
-In addition to normal dictionary-like behavior, the table object also
-has the following method:
+  In addition to normal dictionary-like behavior, the table object also
+  has the following method:
 
-\begin{methoddesc}[table]{add}{key, val}
-\function{add()} allows for creating duplicate keys, which is useful 
-when multiple headers, such as \code{Set-Cookie:} are required.
-\end{methoddesc}
+  \begin{methoddesc}[table]{add}{key, val}
+    \function{add()} allows for creating duplicate keys, which is useful 
+    when multiple headers, such as \code{Set-Cookie:} are required.
+  \end{methoddesc}
 
-\versionadded{3.0}
+  \versionadded{3.0}
 \end{classdesc}
 
 \subsection{Request Object\index{request}\label{pyapi-mprequest}}
@@ -440,527 +442,528 @@ between handlers.
 \subsubsection{Request Methods\label{pyapi-mprequest-meth}}
 
 \begin{methoddesc}[request]{add_common_vars}{}
-Calls the Apache \cfunction{ap_add_common_vars()} function. After a
-call to this method, \member{req.subprocess_env} will contain a
-lot of CGI information.
+  Calls the Apache \cfunction{ap_add_common_vars()} function. After a
+  call to this method, \member{req.subprocess_env} will contain a
+  lot of CGI information.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{add_handler}{htype, handler\optional{, dir}}
 
-Allows dynamic handler registration. \var{htype} is a string
-containing the name of any of the apache request (but not filter or
-connection) handler directives,
-e.g. \samp{PythonHandler}. \var{handler} is a string containing the
-name of the module and the handler function.  Optional \var{dir} is a
-string containing the name of the directory to be added to the
-pythonpath. If no directory is specified, then, if there is already a
-handler of the same type specified, its directory is inherited,
-otherwise the directory of the presently executing handler is used.
-                  
-A handler added this way only persists throughout the life of the
-request. It is possible to register more handlers while inside the
-handler of the same type. One has to be careful as to not to create an
-infinite loop this way.
+  Allows dynamic handler registration. \var{htype} is a string
+  containing the name of any of the apache request (but not filter or
+  connection) handler directives,
+  e.g. \samp{PythonHandler}. \var{handler} is a string containing the
+  name of the module and the handler function.  Optional \var{dir} is
+  a string containing the name of the directory to be added to the
+  pythonpath. If no directory is specified, then, if there is already
+  a handler of the same type specified, its directory is inherited,
+  otherwise the directory of the presently executing handler is used.
+  
+  A handler added this way only persists throughout the life of the
+  request. It is possible to register more handlers while inside the
+  handler of the same type. One has to be careful as to not to create
+  an infinite loop this way.
 
-Dynamic handler registration is a useful technique that allows the
-code to dynamically decide what will happen next. A typical example
-might be a \code{PythonAuthenHandler} that will assign different
-\code{PythonHandlers} based on the authorization level, something like:
+  Dynamic handler registration is a useful technique that allows the
+  code to dynamically decide what will happen next. A typical example
+  might be a \code{PythonAuthenHandler} that will assign different
+  \code{PythonHandlers} based on the authorization level, something
+  like:
 
-\begin{verbatim}
-if manager:
+  \begin{verbatim}
+    if manager:
     req.add_handler("PythonHandler", "menu::admin")
-else:
+    else:
     req.add_handler("PythonHandler", "menu::basic")
-\end{verbatim}                              
+  \end{verbatim}                              
 
-Note: There is no checking being done on the validity of the handler
-name. If you pass this function an invalid handler it will simply be
-ignored.
+  \begin{notice}
+    There is no checking being done on the validity of the handler
+    name. If you pass this function an invalid handler it will simply be
+    ignored.
+  \end{notice}
 \end{methoddesc}
 
 \begin{methoddesc}[request]{allow_methods}{methods\optional{, reset}}
-Adds methods to the \member{req.allowed_methods} list. This list
-will be passed in \code{Allowed:} header if
-\constant{HTTP_METHOD_NOT_ALLOWED} or \constant{HTTP_NOT_IMPLEMENTED}
-is returned to the client. Note that Apache doesn't do anything to
-restrict the methods, this list is only used to construct the
-header. The actual method-restricting logic has to be provided in the
-handler code.
+  Adds methods to the \member{req.allowed_methods} list. This list
+  will be passed in \code{Allowed:} header if
+  \constant{HTTP_METHOD_NOT_ALLOWED} or \constant{HTTP_NOT_IMPLEMENTED}
+  is returned to the client. Note that Apache doesn't do anything to
+  restrict the methods, this list is only used to construct the
+  header. The actual method-restricting logic has to be provided in the
+  handler code.
 
-\var{methods} is a sequence of strings. If \var{reset} is 1, then
-the list of methods is first cleared.
+  \var{methods} is a sequence of strings. If \var{reset} is 1, then
+  the list of methods is first cleared.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{document_root}{}
-Returns DocumentRoot setting.
+  Returns DocumentRoot setting.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{get_basic_auth_pw}{}
-Returns a string containing the password when Basic authentication is
-used.
+  Returns a string containing the password when Basic authentication is
+  used.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{get_config}{}
-Returns a reference to the table object containing the mod_python
-configuration in effect for this request except for
-\code{Python*Handler} and \code{PythonOption} (The latter can be
-obtained via \method{req.get_options()}. The table has directives as
-keys, and their values, if any, as values.
+  Returns a reference to the table object containing the mod_python
+  configuration in effect for this request except for
+  \code{Python*Handler} and \code{PythonOption} (The latter can be
+  obtained via \method{req.get_options()}. The table has directives as
+  keys, and their values, if any, as values.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{get_remote_host}{\optional{type, str_is_ip}}
 
-This method is used to determine remote client's DNS name or IP
-number. The first call to this function may entail a DNS look up, but
-subsequent calls will use the cached result from the first call.
+  This method is used to determine remote client's DNS name or IP
+  number. The first call to this function may entail a DNS look up, but
+  subsequent calls will use the cached result from the first call.
 
-The optional \var{type} argument can specify the following: 
+  The optional \var{type} argument can specify the following: 
 
-\begin{itemize}
+  \begin{itemize}
 
-\item
-\code{apache.REMOTE_HOST} Look up the DNS name. Return None if Apache
-directive \code{HostNameLookups} is \code{off} or the hostname cannot
-be determined.
+  \item
+    \code{apache.REMOTE_HOST} Look up the DNS name. Return None if Apache
+    directive \code{HostNameLookups} is \code{off} or the hostname cannot
+    be determined.
 
-\item                  
-\code{apache.REMOTE_NAME} \emph{(Default)} Return the DNS name if
-possible, or the IP (as a string in dotted decimal notation)
-otherwise.
+  \item                  
+    \code{apache.REMOTE_NAME} \emph{(Default)} Return the DNS name if
+    possible, or the IP (as a string in dotted decimal notation)
+    otherwise.
 
-\item
-\code{apache.REMOTE_NOLOOKUP} Don't perform a DNS lookup, return an
-IP. Note: if a lookup was performed prior to this call, then the
-cached host name is returned.
+  \item
+    \code{apache.REMOTE_NOLOOKUP} Don't perform a DNS lookup, return an
+    IP. Note: if a lookup was performed prior to this call, then the
+    cached host name is returned.
 
-\item
-\code{apache.REMOTE_DOUBLE_REV} Force a double-reverse lookup. On 
-failure, return None.
+  \item
+    \code{apache.REMOTE_DOUBLE_REV} Force a double-reverse lookup. On 
+    failure, return None.
 
-\end{itemize}
+  \end{itemize}
 
-If \var{str_is_ip} is \code{None} or unspecified, then the return
-value is a string representing the DNS name or IP address.
+  If \var{str_is_ip} is \code{None} or unspecified, then the return
+  value is a string representing the DNS name or IP address.
 
-If the optional \var{str_is_ip} argument is not \code{None}, then the
-return value is an \code{(address, str_is_ip)} tuple, where \var{str_is_ip}
-is non-zero if \code{address} is an IP address string.
+  If the optional \var{str_is_ip} argument is not \code{None}, then the
+  return value is an \code{(address, str_is_ip)} tuple, where \var{str_is_ip}
+  is non-zero if \code{address} is an IP address string.
 
-On failure, \code{None} is returned.
+  On failure, \code{None} is returned.
 
 \end{methoddesc}
 
 \begin{methoddesc}[request]{get_options}{}
-Returns a reference to the table object containing the options set by
-the \code{PythonOption} directives.
+  Returns a reference to the table object containing the options set by
+  the \code{PythonOption} directives.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{internal_redirect}{new_uri}
-Internally redirects the request to the \var{new_uri}. \var{new_uri}
-must be a string.
+  Internally redirects the request to the \var{new_uri}. \var{new_uri}
+  must be a string.
 
-The httpd server handles internal redirection by creating a new
-request object and processing all request phases. Within an internal
-redirect, \code{req.prev} will contain a reference to a request object
-from which it was redirected.
+  The httpd server handles internal redirection by creating a new
+  request object and processing all request phases. Within an internal
+  redirect, \code{req.prev} will contain a reference to a request
+  object from which it was redirected.
 
 \end{methoddesc}
 
 \begin{methoddesc}[request]{read}{\optional{len}}
 
-Reads at most \var{len} bytes directly from the client, returning a
-string with the data read. If the \var{len} argument is negative or
-ommitted, reads all data given by the client.
+  Reads at most \var{len} bytes directly from the client, returning a
+  string with the data read. If the \var{len} argument is negative or
+  ommitted, reads all data given by the client.
 
-This function is affected by the \code{Timeout} Apache configuration
-directive. The read will be aborted and an \exception{IOError} raised
-if the \code{Timeout} is reached while reading client data.
+  This function is affected by the \code{Timeout} Apache configuration
+  directive. The read will be aborted and an \exception{IOError}
+  raised if the \code{Timeout} is reached while reading client data.
 
-This function relies on the client providing the \code{Content-length}
-header. Absense of the \code{Content-length} header will be treated as
-if \code{Content-length: 0} was supplied.
+  This function relies on the client providing the \code{Content-length}
+  header. Absense of the \code{Content-length} header will be treated as
+  if \code{Content-length: 0} was supplied.
 
-Incorrect \code{Content-length} may cause the function to try to read
-more data than available, which will make the function block until a
-\code{Timeout} is reached.
+  Incorrect \code{Content-length} may cause the function to try to read
+  more data than available, which will make the function block until a
+  \code{Timeout} is reached.
 
 \end{methoddesc}
 
 \begin{methoddesc}[request]{readline}{\optional{len}}
-Like \function{read()} but reads until end of line. 
-                  
-Note that in accordance with the HTTP specification, most clients will
-be terminating lines with "\textbackslash r\textbackslash n" rather
-than simply "\textbackslash n".
+  Like \function{read()} but reads until end of line. 
+  
+  \begin{notice}
+    In accordance with the HTTP specification, most clients will
+    be terminating lines with \samp{\e r\e n} rather
+    than simply \samp{\e n}.
+  \end{notice}
 
 \end{methoddesc}
 
 \begin{methoddesc}[request]{readlines}{\optional{sizehint}}
-Reads all or up to \var{sizehint} bytes of lines using
-\method{readline} and returns a list of the lines read.
+  Reads all or up to \var{sizehint} bytes of lines using
+  \method{readline} and returns a list of the lines read.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{register_cleanup}{callable\optional{, data}}
 
-Registers a cleanup. Argument \var{callable} can be any callable
-object, the optional argument \var{data} can be any object (default is
-\code{None}). At the very end of the request, just before the actual
-request record is destroyed by Apache, \var{callable} will be called
-with one argument, \var{data}.
+  Registers a cleanup. Argument \var{callable} can be any callable
+  object, the optional argument \var{data} can be any object (default is
+  \code{None}). At the very end of the request, just before the actual
+  request record is destroyed by Apache, \var{callable} will be called
+  with one argument, \var{data}.
 
-It is OK to pass the request object as data, but keep in mind that
-when the cleanup is executed, the request processing is already
-complete, so doing things like writing to the client is completely
-pointless. 
+  It is OK to pass the request object as data, but keep in mind that
+  when the cleanup is executed, the request processing is already
+  complete, so doing things like writing to the client is completely
+  pointless. 
 
-If errors are encountered during cleanup processing, they should be in
-error log, but otherwise will not affect request processing in any
-way, which makes cleanup bugs sometimes hard to spot.
+  If errors are encountered during cleanup processing, they should be in
+  error log, but otherwise will not affect request processing in any
+  way, which makes cleanup bugs sometimes hard to spot.
 
-If the server is shut down before the cleanup had a chance to run,
-it's possible that it will not be executed.
+  If the server is shut down before the cleanup had a chance to run,
+  it's possible that it will not be executed.
 
 \end{methoddesc}
 
 \begin{methoddesc}[request]{sendfile}{path\optional{, offset, len}}
-Sends \var{len} bytes of file \var{path} directly to the client,
-starting at offset \var{offset} using the server's internal
-API. \var{offset} defaults to 0, and \var{len} defaults to -1 (send
-the entire file). 
+  Sends \var{len} bytes of file \var{path} directly to the client,
+  starting at offset \var{offset} using the server's internal
+  API. \var{offset} defaults to 0, and \var{len} defaults to -1 (send
+  the entire file). 
 
-This function provides the most efficient way to send a file to the
-client.
+  This function provides the most efficient way to send a file to the
+  client.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{write}{string}
-Writes \var{string} directly to the client, then flushes the buffer. 
+  Writes \var{string} directly to the client, then flushes the buffer. 
 \end{methoddesc}
 
 \begin{methoddesc}[request]{set_content_length}{len}
-Sets the value of \member{req.clength} and the "Conent-Length" header
-to len. Note that after the headers have been sent out (which happens
-just before the first byte of the body is written, i.e. first call to
-\member{req.write()}), calling the method is meaningless.
+  Sets the value of \member{req.clength} and the \samp{Conent-Length}
+  header to len. Note that after the headers have been sent out (which
+  happens just before the first byte of the body is written,
+  i.e. first call to \member{req.write()}), calling the method is
+  meaningless.
 \end{methoddesc}
 
 \subsubsection{Request Members\label{pyapi-mprequest-mem}}
 
 \begin{memberdesc}[request]{connection}
-A \code{connection} object associated with this request. See
-Connection Object below for details.
-\emph{(Read-Only)}
+  A \code{connection} object associated with this request. See
+  Connection Object below for details.
+  \emph{(Read-Only)}
 \end{memberdesc}
 
 \begin{memberdesc}[request]{server}
-A server object associate with this request. See Server Object below
-for details.
-\emph{(Read-Only})
+  A server object associate with this request. See Server Object below
+  for details.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{next}
-If this is an internal redirect, the request object we redirect to. 
-\emph{(Read-Only})
+  If this is an internal redirect, the request object we redirect to. 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{prev}
-If this is an internal redirect, the request object we redirect from.
-\emph{(Read-Only})
+  If this is an internal redirect, the request object we redirect from.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{main}
-If this is a sub-request, pointer to the main request. 
-\emph{(Read-Only})
+  If this is a sub-request, pointer to the main request. 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{the_request}
-String containing the first line of the request.
-\emph{(Read-Only})
+  String containing the first line of the request.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{assbackwards}
-Is this an HTTP/0.9 "simple" request? 
-\emph{(Read-Only})
+  Is this an HTTP/0.9 ``simple'' request? 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{proxyreq}
-A proxy request: one of \constant{apache.PROXYREQ_*} values.
-\emph{(Read-Only})
+  A proxy request: one of \constant{apache.PROXYREQ_*} values.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{header_only}
-A boolean value indicating HEAD request, as opposed to GET. 
-\emph{(Read-Only})
+  A boolean value indicating HEAD request, as opposed to GET. 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{protocol}
-Protocol, as given by the client, or "HTTP/0.9". Same as CGI \envvar{SERVER_PROTOCOL}.
-\emph{(Read-Only})
+  Protocol, as given by the client, or \samp{HTTP/0.9}. Same as CGI \envvar{SERVER_PROTOCOL}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{proto_num}
-Integer. Number version of protocol; 1.1 = 1001 
-\emph{(Read-Only})
+  Integer. Number version of protocol; 1.1 = 1001 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{hostname}
-String. Host, as set by full URI or Host: header.
-\emph{(Read-Only})
+  String. Host, as set by full URI or Host: header.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{request_time}
-A long integer. When request started.
-\emph{(Read-Only})
+  A long integer. When request started.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{status_line}
-Status line. E.g. "200 OK". 
-\emph{(Read-Only})
+  Status line. E.g. \samp{200 OK}. 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{status}
-Status. One of \constant{apache.HTTP_*} values.
+  Status. One of \constant{apache.HTTP_*} values.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{method}
-A string containing the method - 'GET', 'HEAD', 'POST', etc.
-Same as CGI \envvar{REQUEST_METHOD}.
-\emph{(Read-Only})
+  A string containing the method - 'GET', 'HEAD', 'POST', etc.
+  Same as CGI \envvar{REQUEST_METHOD}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{method_number}
-Integer containg the method number.
-\emph{(Read-Only})
+  Integer containg the method number.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{allowed}
-Integer. A bitvector of the allowed methods. Used to construct the
-Allowed: header when responding with
-\constant{HTTP_METHOD_NOT_ALLOWED} or
-\constant{HTTP_NOT_IMPLEMENTED}. This field is for Apache's internal
-use, to set the Allowed: methods use \method{req.allow_methods()}
-method, described in section \ref{pyapi-mprequest-meth}. 
-\emph{(Read-Only})
+  Integer. A bitvector of the allowed methods. Used to construct the
+  Allowed: header when responding with
+  \constant{HTTP_METHOD_NOT_ALLOWED} or
+  \constant{HTTP_NOT_IMPLEMENTED}. This field is for Apache's internal
+  use, to set the Allowed: methods use \method{req.allow_methods()}
+  method, described in section \ref{pyapi-mprequest-meth}. 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{allowed_xmethods}
-Tuple. Allowed extension methods.
-\emph{(Read-Only})
+  Tuple. Allowed extension methods.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{allowed_methods}
-Tuple. List of allowed methods. Used in relation with
-\constant{METHOD_NOT_ALLOWED}. This member can be modified via \method{req.allow_methods()} 
-described in section \ref{pyapi-mprequest-meth}.
-\emph{(Read-Only})
+  Tuple. List of allowed methods. Used in relation with
+  \constant{METHOD_NOT_ALLOWED}. This member can be modified via \method{req.allow_methods()} 
+  described in section \ref{pyapi-mprequest-meth}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{sent_bodyct}
-Integer. Byte count in stream is for body. (?)
-\emph{(Read-Only})
+  Integer. Byte count in stream is for body. (?)
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{bytes_sent}
-Long integer. Number of bytes sent.
-\emph{(Read-Only})
+  Long integer. Number of bytes sent.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{mtime}
-Long integer. Time the resource was last modified.
-\emph{(Read-Only})
+  Long integer. Time the resource was last modified.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{chunked}
-Boolean value indicating when sending chunked transfer-coding.
-\emph{(Read-Only})
+  Boolean value indicating when sending chunked transfer-coding.
+  \emph{(Read-Only})
 \end{memberdesc}
 
-%\begin{memberdesc}[request]{boundary}
-%String. Multipart/byteranges boundary.
-%\emph{(Read-Only})
-%\end{memberdesc}
-
 \begin{memberdesc}[request]{range}
-String. The \code{Range:} header.
-\emph{(Read-Only})
+  String. The \code{Range:} header.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{clength}
-Long integer. The "real" content length.
-\emph{(Read-Only})
+  Long integer. The ``real'' content length.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{remaining}
-Long integer. Bytes left to read. (Only makes sense inside a read
-operation.)
-\emph{(Read-Only})
+  Long integer. Bytes left to read. (Only makes sense inside a read
+  operation.)
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{read_length}
-Long integer. Number of bytes read.
-\emph{(Read-Only})
+  Long integer. Number of bytes read.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{read_body}
-Integer. How the request body should be read.
-\emph{(Read-Only})
+  Integer. How the request body should be read.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{read_chunked}
-Boolean. Read chunked transfer coding.
-\emph{(Read-Only})
+  Boolean. Read chunked transfer coding.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{expecting_100}
-Boolean. Is client waiting for a 100 (\constant{HTTP_CONTINUE}) response.
-\emph{(Read-Only})
+  Boolean. Is client waiting for a 100 (\constant{HTTP_CONTINUE}) response.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{headers_in}
-A table object containing headers sent by the client.
+  A table object containing headers sent by the client.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{headers_out}
-A \code{table} object representing the headers to be sent to the
-client. 
+  A \code{table} object representing the headers to be sent to the
+  client. 
 \end{memberdesc}
 
 \begin{memberdesc}[request]{err_headers_out}
-These headers get send with the error response, instead of
-headers_out.
+  These headers get send with the error response, instead of
+  headers_out.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{subprocess_env}
-A \code{table} object containing environment information typically usable for CGI.
-You may have to call \member{req.add_common_vars()} first to fill in the information
-you need.
+  A \code{table} object containing environment information typically usable for CGI.
+  You may have to call \member{req.add_common_vars()} first to fill in the information
+  you need.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{notes}
-A \code{table} object that could be used to store miscellaneous
-general purpose info that lives for as long as the request lives. If
-you need to pass data between handlers, it's better to simply add
-members to the request object than to use \member{notes}.
+  A \code{table} object that could be used to store miscellaneous
+  general purpose info that lives for as long as the request lives. If
+  you need to pass data between handlers, it's better to simply add
+  members to the request object than to use \member{notes}.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{phase}
-The phase currently being being processed, e.g. "PythonHandler".
-\emph{(Read-Only)}
+  The phase currently being being processed, e.g. \samp{PythonHandler}.
+  \emph{(Read-Only)}
 \end{memberdesc}
 
 \begin{memberdesc}[request]{interpreter}
-The name of the subinterpreter under which we're running.
-\emph{(Read-Only)}
+  The name of the subinterpreter under which we're running.
+  \emph{(Read-Only)}
 \end{memberdesc}
 
 \begin{memberdesc}[request]{content_type}
-String. The content type. Mod_python maintains an internal flag
-(\member{req._content_type_set}) to keep track of whether
-\member{content_type} was set manually from within Python. The
-publisher handler uses this flag in the following way: when
-\member{content_type} isn't explicitely set, it attempts to guess the
-content type by examining the first few bytes of the output.
+  String. The content type. Mod_python maintains an internal flag
+  (\member{req._content_type_set}) to keep track of whether
+  \member{content_type} was set manually from within Python. The
+  publisher handler uses this flag in the following way: when
+  \member{content_type} isn't explicitely set, it attempts to guess the
+  content type by examining the first few bytes of the output.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{handler}
-The name of the handler currently being processed. This is the handler
-set by mod_mime, not the mod_python handler. In most cases it will be
-"python-program". \emph{(Read-Only})
+  The name of the handler currently being processed. This is the handler
+  set by mod_mime, not the mod_python handler. In most cases it will be
+  "\samp{python-program}. \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{content_encoding}
-String. Content encoding.
-\emph{(Read-Only})
+  String. Content encoding.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{vlist_validator}
-Integer. Variant list validator (if negotiated).
-\emph{(Read-Only})
+  Integer. Variant list validator (if negotiated).
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{user}
-If an authentication check is made, this will hold the user
-name. Same as CGI \envvar{REMOTE_USER}.
-\emph{(Read-Only})
+  If an authentication check is made, this will hold the user
+  name. Same as CGI \envvar{REMOTE_USER}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{ap_auth_type}
-Authentication type. Same as CGI \envvar{AUTH_TYPE}.
-\emph{(Read-Only})
+  Authentication type. Same as CGI \envvar{AUTH_TYPE}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{no_cache}
-Boolean. No cache if true.
-\emph{(Read-Only})
+  Boolean. No cache if true.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{no_local_copy}
-Boolean. No local copy exists.
-\emph{(Read-Only})
+  Boolean. No local copy exists.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{unparsed_uri}
-The URI without any parsing performed.
-\emph{(Read-Only})
+  The URI without any parsing performed.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{uri}
-The path portion of the URI.
-\emph{(Read-Only})
+  The path portion of the URI.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{filename}
-String. File name being requested.
+  String. File name being requested.
 \end{memberdesc}
 
 \begin{memberdesc}[request]{canonical_filename}
-String. The true filename (\member{req.filename} is canonicalized if
-they dont match).  \emph{(Read-Only)}
+  String. The true filename (\member{req.filename} is canonicalized if
+  they dont match).  \emph{(Read-Only)}
 \end{memberdesc}
 
 \begin{memberdesc}[request]{path_info}
-String. What follows after the file name, but is before query args, if
-anything. Same as CGI \envvar{PATH_INFO}.
-\emph{(Read-Only})
+  String. What follows after the file name, but is before query args, if
+  anything. Same as CGI \envvar{PATH_INFO}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{args}
-String. Same as CGI \envvar{QUERY_ARGS}.
-\emph{(Read-Only})
+  String. Same as CGI \envvar{QUERY_ARGS}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{finfo}
-Tuple. A file information structure, analogous to POSIX stat,
-describing the file pointed to by the URI.  \code{(mode, ino,
-dev, nlink, uid, gid, size, atime, mtime, ctime, fname,
-name)}. The \code{apache} module defines a set of \constant{FINFO_*}
-constants that should be used to access elements of this
-tuple. Example:
-\begin{verbatim}
-fname = req.finfo[apache.FINFO_FNAME]
-\end{verbatim}
-\emph{(Read-Only})
+  Tuple. A file information structure, analogous to POSIX stat,
+  describing the file pointed to by the URI.  \code{(mode, ino,
+    dev, nlink, uid, gid, size, atime, mtime, ctime, fname,
+    name)}. The \code{apache} module defines a set of \constant{FINFO_*}
+  constants that should be used to access elements of this
+  tuple. Example:
+  \begin{verbatim}
+    fname = req.finfo[apache.FINFO_FNAME]
+  \end{verbatim}
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{parsed_uri}
-Tuple. The URI broken down into pieces.
-\code{(scheme, hostinfo, user, password, hostname, port, path, query, fragment)}. 
-The \code{apache} module defines a set of \constant{URI_*} constants that
-should be used to access elements of this tuple. Example:
-\begin{verbatim}
-fname = req.parsed_uri[apache.URI_PATH]
-\end{verbatim}
-\emph{(Read-Only})
+  Tuple. The URI broken down into pieces.
+  \code{(scheme, hostinfo, user, password, hostname, port, path, query, fragment)}. 
+  The \code{apache} module defines a set of \constant{URI_*} constants that
+  should be used to access elements of this tuple. Example:
+  \begin{verbatim}
+    fname = req.parsed_uri[apache.URI_PATH]
+  \end{verbatim}
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{used_path_info}
-Flag to accept or reject path_info on current request.
-\emph{(Read-Only})
+  Flag to accept or reject path_info on current request.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{eos_sent}
-Boolean. EOS bucket sent.
-\emph{(Read-Only})
+  Boolean. EOS bucket sent.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \subsection{Connection Object (mp_conn)\obindex{connection}\label{pyapi-mpconn}}
@@ -971,105 +974,105 @@ structure.
 \subsubsection{Connection Methods\label{pyapi-mpconn-meth}}
 
 \begin{methoddesc}[connection]{read}{length}
-Reads \var{length} bytes from the connection. The read blocks
-indefinitely until length bytes has been read. If length is -1, keep
-reading until the socket is closed from the other end (This is known
-as \code{EXHAUSTIVE} mode in the http server code).
+  Reads \var{length} bytes from the connection. The read blocks
+  indefinitely until length bytes has been read. If length is -1, keep
+  reading until the socket is closed from the other end (This is known
+  as \code{EXHAUSTIVE} mode in the http server code).
 
-This method should only be used inside \emph{Connection Handlers}.
+  This method should only be used inside \emph{Connection Handlers}.
 
 \end{methoddesc}
 
 \begin{methoddesc}[connection]{readline}{\optional{length}}
 
-Reads a line from the connection or up to \var{length} bytes.
+  Reads a line from the connection or up to \var{length} bytes.
 
-This method should only be used inside \emph{Connection Handlers}.
+  This method should only be used inside \emph{Connection Handlers}.
 
 \end{methoddesc}
 
 \begin{methoddesc}[connection]{write}{string}
 
-Writes \var{string} to the client.
+  Writes \var{string} to the client.
 
-This method should only be used inside \emph{Connection Handlers}.
+  This method should only be used inside \emph{Connection Handlers}.
 
 \end{methoddesc}
 
 \subsubsection{Connection Members\label{pyapi-mpconn-mem}}
 
 \begin{memberdesc}[connection]{base_server}
-A \code{server} object for the physical vhost that this connection came in
-through.
-\emph{(Read-Only})
+  A \code{server} object for the physical vhost that this connection came in
+  through.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{local_addr}
-The (address, port) tuple for the server.
-\emph{(Read-Only})
+  The (address, port) tuple for the server.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{remote_addr}
-The (address, port) tuple for the client.
-\emph{(Read-Only})
+  The (address, port) tuple for the client.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{remote_ip}
-String with the IP of the client. Same as CGI \envvar{REMOTE_ADDR}.
-\emph{(Read-Only})
+  String with the IP of the client. Same as CGI \envvar{REMOTE_ADDR}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{remote_host}
-String. The DNS name of the remote client. None if DNS has not been
-checked, "" (empty string) if no name found. Same as CGI \envvar{REMOTE_HOST}.
-\emph{(Read-Only})
+  String. The DNS name of the remote client. None if DNS has not been
+  checked, \code{""} (empty string) if no name found. Same as CGI \envvar{REMOTE_HOST}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{remote_logname}
-Remote name if using RFC1413 (ident). Same as CGI \envvar{REMOTE_IDENT}.
-\emph{(Read-Only})
+  Remote name if using RFC1413 (ident). Same as CGI \envvar{REMOTE_IDENT}.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{aborted}
-Boolean. True is the connection is aborted.
-\emph{(Read-Only})
+  Boolean. True is the connection is aborted.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{keepalive}
-Integer. 1 means the connection will be kept for the next request, 0 means
-"undecided", -1 means fatal error.
-\emph{(Read-Only})
+  Integer. 1 means the connection will be kept for the next request, 0 means
+  ``undecided'', -1 means ``fatal error''.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{double_reverse}
-Ingeter. 1 means double reverse DNS lookup has been performed, 0 means
-not yet, -1 means yes and it failed.
-\emph{(Read-Only})
+  Ingeter. 1 means double reverse DNS lookup has been performed, 0 means
+  not yet, -1 means yes and it failed.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{keepalives}
-The number of times this connection has been used. (?)
-\emph{(Read-Only})
+  The number of times this connection has been used. (?)
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{local_ip}
-String with the IP of the server.
-\emph{(Read-Only})
+  String with the IP of the server.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{local_host}
-DNS name of the server.
-\emph{(Read-Only})
+  DNS name of the server.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{id}
-Long. A unique connection id.
-\emph{(Read-Only})
+  Long. A unique connection id.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{notes}
-A \code{table} object containing miscellaneous general purpose info that lives for
-as long as the connection lives. 
+  A \code{table} object containing miscellaneous general purpose info that lives for
+  as long as the connection lives. 
 \end{memberdesc}
 
 \subsection{Filter Object (mp_filter)\obindex{filter}\label{pyapi-mpfilt}}
@@ -1081,67 +1084,67 @@ information to adjacent filters in the filter stack.
 \subsubsection{Filter Methods\label{pyapi-mpfilt-meth}}
 
 \begin{methoddesc}[filter]{pass_on}{}
-Passes all data throught the filter without any processing.
+  Passes all data throught the filter without any processing.
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{read}{\optional{length}}
-Reads at most \var{len} bytes from the next filter, returning a string
-with the data read or None if End Of Stream (EOS) has been reached. A
-filter \emph{must} be closed once the EOS has been encountered.
+  Reads at most \var{len} bytes from the next filter, returning a string
+  with the data read or None if End Of Stream (EOS) has been reached. A
+  filter \emph{must} be closed once the EOS has been encountered.
 
-If the \var{len} argument is negative or ommitted, reads all data
-currently available.
+  If the \var{len} argument is negative or ommitted, reads all data
+  currently available.
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{readline}{\optional{length}}
-Reads a line from the next filter or up to \var{length} bytes.
+  Reads a line from the next filter or up to \var{length} bytes.
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{write}{string}
-Writes \var{string} to the next filter.
+  Writes \var{string} to the next filter.
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{flush}{}
-Flushes the output by sending a FLUSH bucket.
+  Flushes the output by sending a FLUSH bucket.
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{close}{}
-Closes the filter and sends an EOS bucket. Any further IO operations on
-this filter will throw an exception.
+  Closes the filter and sends an EOS bucket. Any further IO operations on
+  this filter will throw an exception.
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{disable}{}
-Tells mod_python to ignore the provided handler and just pass the data
-on. Used internally by mod_python to print traceback from exceptions
-encountered in filter handlers to avoid an infinite loop.
+  Tells mod_python to ignore the provided handler and just pass the data
+  on. Used internally by mod_python to print traceback from exceptions
+  encountered in filter handlers to avoid an infinite loop.
 \end{methoddesc}
 
 \subsubsection{Filter Members\label{pyapi-mpfilt-mem}}
 
 \begin{memberdesc}[filter]{closed}
-A boolean value indicating whether a filter is closed.
-\emph{(Read-Only})
+  A boolean value indicating whether a filter is closed.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[filter]{name}
-String. The name under which this filter is registered.
-\emph{(Read-Only})
+  String. The name under which this filter is registered.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[filter]{req}
-A reference to the request object.
-\emph{(Read-Only})
+  A reference to the request object.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[filter]{is_input}
-Boolean. True if this is an input filter.
-\emph{(Read-Only})
+  Boolean. True if this is an input filter.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[filter]{handler}
-String. The name of the Python handler for this filter as specified in
-the configuration. 
-\emph{(Read-Only})
+  String. The name of the Python handler for this filter as specified in
+  the configuration. 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \subsection{Server Object (mp_server)\obindex{server}\label{pyapi-mpserver}}
@@ -1153,103 +1156,103 @@ server) serving the request.
 \subsubsection{Server Methods\label{pyapi-mpsrv-meth}}
 
 \begin{methoddesc}[server]{get_options}{}
-Similar to \code{req.get_options()}, but returns a config pointed to
-by \code{server->module_config} Apache config vector. 
+  Similar to \code{req.get_options()}, but returns a config pointed to
+  by \code{server->module_config} Apache config vector. 
 \end{methoddesc}
 
 \begin{methoddesc}[server]{register_cleanup}{request, callable\optional{, data}}
-Registers a cleanup. Very similar to \function{req.register_cleanup()}, except
-this cleanup will be executed at child termination time. This function
-requires one extra argument - the request object.
+  Registers a cleanup. Very similar to \function{req.register_cleanup()}, except
+  this cleanup will be executed at child termination time. This function
+  requires one extra argument - the request object.
 \end{methoddesc}
 
 \subsubsection{Server Members\label{pyapi-mpsrv-mem}}
 
 \begin{memberdesc}[server]{defn_name}
-String. The name of the configuration file where the server definition
-was found.
-\emph{(Read-Only})
+  String. The name of the configuration file where the server definition
+  was found.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{defn_line_number}
-Integer. Line number in the config file where the server definition is
-found.
-\emph{(Read-Only})
+  Integer. Line number in the config file where the server definition is
+  found.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{server_admin}
-Value of the \code{ServerAdmin} directive. 
-\emph{(Read-Only})
+  Value of the \code{ServerAdmin} directive. 
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{server_hostname}
-Value of the \code{ServerName} directive. Same as CGI \envvar{SERVER_NAME}.\emph{(Read-Only})
+  Value of the \code{ServerName} directive. Same as CGI \envvar{SERVER_NAME}.\emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{port}
-Integer. TCP/IP port number. Same as CGI \envvar{SERVER_PORT}.
-\emph{This member appears to be 0 on Apache 2.0, look at req.connection.local_addr instead}
-\emph{(Read-Only})
+  Integer. TCP/IP port number. Same as CGI \envvar{SERVER_PORT}.
+  \emph{This member appears to be 0 on Apache 2.0, look at req.connection.local_addr instead}
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{error_fname}
-The name of the error log file for this server, if any.
-\emph{(Read-Only})
+  The name of the error log file for this server, if any.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{loglevel}
-Integer. Logging level.
-\emph{(Read-Only})
+  Integer. Logging level.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{is_virtual}
-Boolean. True if this is a virtual server.
-\emph{(Read-Only})
+  Boolean. True if this is a virtual server.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{timeout}
-Integer. Value of the \code{Timeout} directive.
-\emph{(Read-Only})
+  Integer. Value of the \code{Timeout} directive.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{keep_alive_timeout}
-Integer. Keepalive timeout.
-\emph{(Read-Only})
+  Integer. Keepalive timeout.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{keep_alive_max}
-Maximum number of requests per keepalive.
-\emph{(Read-Only})
+  Maximum number of requests per keepalive.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{keep_alive}
-Use persistent connections?
-\emph{(Read-Only})
+  Use persistent connections?
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{path}
-String. Path for \code{ServerPath}
-\emph{(Read-Only})
+  String. Path for \code{ServerPath}
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{pathlen}
-Integer. Path length.
-\emph{(Read-Only})
+  Integer. Path length.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{limit_req_line}
-Integer. Limit on size of the HTTP request line.
-\emph{(Read-Only})
+  Integer. Limit on size of the HTTP request line.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{limit_req_fieldsize}
-Integer. Limit on size of any request header field.
-\emph{(Read-Only})
+  Integer. Limit on size of any request header field.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[server]{limit_req_fields}
-Integer. Limit on number of request header fields.
-\emph{(Read-Only})
+  Integer. Limit on number of request header fields.
+  \emph{(Read-Only})
 \end{memberdesc}
 
 \section{\module{util} -- Miscellaneous Utilities\label{pyapi-util}}
@@ -1266,13 +1269,13 @@ information.
 
 The recommended way of using this module is:
 \begin{verbatim}
-from mod_python import util
+  from mod_python import util
 \end{verbatim}
 
 \begin{seealso}
   \seetitle[http://CGI-Spec.Golux.Com/]
-	{Common Gateway Interface RFC Project Page}
-	{for detailed information on the CGI specification}
+	   {Common Gateway Interface RFC Project Page}
+	   {for detailed information on the CGI specification}
 \end{seealso}
 
 \subsection{FieldStorage class\label{pyapi-util-fstor}}
@@ -1282,160 +1285,166 @@ class. This class is similar to the standard library module
 \module{cgi} \class{FieldStorage}.
 
 \begin{classdesc}{FieldStorage}{req\optional{, keep_blank_values, strict_parsing}}
-This class provides uniform access to HTML form data submitted by the
-client.  \var{req} is an instance of the mod_python request object.
+  This class provides uniform access to HTML form data submitted by the
+  client.  \var{req} is an instance of the mod_python request object.
 
-The optional argument \var{keep_blank_values} is a flag indicating
-whether blank values in URL encoded form data should be treated as
-blank strings. The default is false, which means that blank values are
-ignored as if they were not included.
+  The optional argument \var{keep_blank_values} is a flag indicating
+  whether blank values in URL encoded form data should be treated as
+  blank strings. The default is false, which means that blank values are
+  ignored as if they were not included.
 
-The optional argument \var{strict_parsing} is not yet implemented.
+  The optional argument \var{strict_parsing} is not yet implemented.
 
-During initialization, \class{FieldStorage} class reads all of the
-data provided by the client. Since all data provided by the client is
-consumed at this point, there should be no more than one
-\class{FieldStorage} class instantiated per signle request, nor should
-you make any attempts to read client data before or after
-instantiating a \class{FieldStorage}.
+  During initialization, \class{FieldStorage} class reads all of the
+  data provided by the client. Since all data provided by the client is
+  consumed at this point, there should be no more than one
+  \class{FieldStorage} class instantiated per signle request, nor should
+  you make any attempts to read client data before or after
+  instantiating a \class{FieldStorage}.
 
-The data read from the client is then parsed into separate fields and
-packaged in \class{Field} objects, one per field. For HTML form inputs
-of type \code{file}, a temporary file is created that can later be
-accessed via the \member{file} attribute of a \class{Field} object.
+  The data read from the client is then parsed into separate fields and
+  packaged in \class{Field} objects, one per field. For HTML form inputs
+  of type \code{file}, a temporary file is created that can later be
+  accessed via the \member{file} attribute of a \class{Field} object.
 
-The \class{FieldStorage} class has a mapping object interface, i.e. it
-can be treated like a dictionary. When used as a mapping, the keys are
-form input names, and the returned dictionary value can be:
+  The \class{FieldStorage} class has a mapping object interface, i.e. it
+  can be treated like a dictionary. When used as a mapping, the keys are
+  form input names, and the returned dictionary value can be:
 
-\begin{itemize}
-\item
-An instance of \class{StringField}, containing the form input
-value. This is only when there is a single value corresponding to the
-input name. \class{StringField} is a subclass of \class{str} which
-provides the additional \member{value} attribute for compatibility
-with standard library \module{cgi} module.
-\item
-An instances of a \class{Field} class, if the input is a file upload.
-\item
-A list of \class{StringField} and/or \class{Field} objects. This is
-when multiple values exist, such as for a \code{<select>} HTML form
-element.
-\end{itemize}
+  \begin{itemize}
+  \item
+    An instance of \class{StringField}, containing the form input
+    value. This is only when there is a single value corresponding to the
+    input name. \class{StringField} is a subclass of \class{str} which
+    provides the additional \member{value} attribute for compatibility
+    with standard library \module{cgi} module.
+  \item
+    An instances of a \class{Field} class, if the input is a file upload.
+  \item
+    A list of \class{StringField} and/or \class{Field} objects. This is
+    when multiple values exist, such as for a \code{<select>} HTML form
+    element.
+  \end{itemize}
 
-Note that unlike the standard library \module{cgi} module
-\class{FieldStorage} class, a \class{Field} object is returned
-\emph{only} when it is a file upload. In all other cases an instance
-the return is an instance of \class{StringField}, which is a subclass
-of \class{str}. This means that you do not need to use the
-\member{.value} attribute to access values of fields in most cases.
+  \begin{notice}
+    Unlike the standard library \module{cgi} module
+    \class{FieldStorage} class, a \class{Field} object is returned
+    \emph{only} when it is a file upload. In all other cases an instance
+    the return is an instance of \class{StringField}, which is a subclass
+    of \class{str}. This means that you do not need to use the
+    \member{.value} attribute to access values of fields in most cases.
+  \end{notice}
 
-In addition to standard mapping object methods, \class{FieldStorage} objects
-have the following attributes:
+  In addition to standard mapping object methods, \class{FieldStorage} objects
+  have the following attributes:
 
-\begin{memberdesc}{list}
-This is a list of \class{Field} objects, one for each input. Multiple
-inputs with the same name will have multiple elements in this list.
-\end{memberdesc}
+  \begin{memberdesc}{list}
+    This is a list of \class{Field} objects, one for each input. Multiple
+    inputs with the same name will have multiple elements in this list.
+  \end{memberdesc}
 
 \end{classdesc}
 
 \subsection{Field class\label{pyapi-util-fstor-fld}}
 
 \begin{classdesc}{Field}{}
-This class is used internally by \class{FieldStorage} and is not
-meant to be instantiated by the user. Each instance of a \class{Field}
-class represents an HTML Form input.
+  This class is used internally by \class{FieldStorage} and is not
+  meant to be instantiated by the user. Each instance of a \class{Field}
+  class represents an HTML Form input.
 
-\class{Field} instances have the following attributes:
+  \class{Field} instances have the following attributes:
 
-\begin{memberdesc}{name}
-The input name.
-\end{memberdesc}
+  \begin{memberdesc}{name}
+    The input name.
+  \end{memberdesc}
 
-\begin{memberdesc}{value}
-The input value. This attribute can be used to read data from a file
-upload as well, but one has to excercise caution when dealing with
-large files since when accessed via \member{value}, the whole file is
-read into memory.
-\end{memberdesc}
+  \begin{memberdesc}{value}
+    The input value. This attribute can be used to read data from a file
+    upload as well, but one has to excercise caution when dealing with
+    large files since when accessed via \member{value}, the whole file is
+    read into memory.
+  \end{memberdesc}
 
-\begin{memberdesc}{file}
-This is a file object. For file uploads it points to a temporary file.
-For simple values, it is a \class{StringIO} object, so you can read
-simple string values via this attribute instead of using the \member{value}
-attribute as well.
-\end{memberdesc}
+  \begin{memberdesc}{file}
+    This is a file object. For file uploads it points to a temporary file.
+    For simple values, it is a \class{StringIO} object, so you can read
+    simple string values via this attribute instead of using the \member{value}
+    attribute as well.
+  \end{memberdesc}
 
-\begin{memberdesc}{filename}
-The name of the file as provided by the client.
-\end{memberdesc}
+  \begin{memberdesc}{filename}
+    The name of the file as provided by the client.
+  \end{memberdesc}
 
-\begin{memberdesc}{type}
-The content-type for this input as provided by the client.
-\end{memberdesc}
+  \begin{memberdesc}{type}
+    The content-type for this input as provided by the client.
+  \end{memberdesc}
 
-\begin{memberdesc}{type_opyions}
-This is what follows the actual content type in the \code{content-type}
-header provided by the client, if anything. This is a dictionary.
-\end{memberdesc}
+  \begin{memberdesc}{type_opyions}
+    This is what follows the actual content type in the \code{content-type}
+    header provided by the client, if anything. This is a dictionary.
+  \end{memberdesc}
 
-\begin{memberdesc}{disposition}
-The value of the first part of the \code{content-disposition} header.
-\end{memberdesc}
+  \begin{memberdesc}{disposition}
+    The value of the first part of the \code{content-disposition} header.
+  \end{memberdesc}
 
-\begin{memberdesc}{disposition_options}
-The second part (if any) of the \code{content-disposition} header in
-the form of a dictionary.
-\end{memberdesc}
+  \begin{memberdesc}{disposition_options}
+    The second part (if any) of the \code{content-disposition} header in
+    the form of a dictionary.
+  \end{memberdesc}
 
-\begin{seealso}
-\seerfc{1867}{Form-based File Upload in HTML}{for a description of 
-form-based file uploads}
-\end{seealso}
+  \begin{seealso}
+    \seerfc{1867}{Form-based File Upload in HTML}{for a description of 
+      form-based file uploads}
+  \end{seealso}
 \end{classdesc}
 
 \subsection{Other functions\label{pyapi-util-funcs}}
 
 \begin{funcdesc}{parse_qs}{qs\optional{, keep_blank_values, strict_parsing}}
 
-This functnion is functionally equivalent to the standard library
-\module{cgi} \function{parse_qs}, except that it is written in C and is
-much faster. 
+  This functnion is functionally equivalent to the standard library
+  \module{cgi} \function{parse_qs}, except that it is written in C and is
+  much faster. 
 
-Parse a query string given as a string argument (data of type
-\mimetype{application/x-www-form-urlencoded}).  Data are
-returned as a dictionary.  The dictionary keys are the unique query
-variable names and the values are lists of values for each name.
+  Parse a query string given as a string argument (data of type
+  \mimetype{application/x-www-form-urlencoded}).  Data are
+  returned as a dictionary.  The dictionary keys are the unique query
+  variable names and the values are lists of values for each name.
 
-The optional argument \var{keep_blank_values} is a flag indicating
-whether blank values in URL encoded queries should be treated as blank
-strings.  A true value indicates that blanks should be retained as
-blank strings.  The default false value indicates that blank values
-are to be ignored and treated as if they were not included.
+  The optional argument \var{keep_blank_values} is a flag indicating
+  whether blank values in URL encoded queries should be treated as blank
+  strings.  A true value indicates that blanks should be retained as
+  blank strings.  The default false value indicates that blank values
+  are to be ignored and treated as if they were not included.
 
-\strong{Note:} The \var{strict_parsing} argument is not yet implemented.
+  \begin{notice}
+    The \var{strict_parsing} argument is not yet implemented.
+  \end{notice}
 
 \end{funcdesc}
 
 
 \begin{funcdesc}{parse_qsl}{qs\optional{, keep_blank_values, strict_parsing}}
 
-This functnion is functionally equivalent to the standard library
-\module{cgi} \function{parse_qsl}, except that it is written in C and is
-much faster. 
+  This functnion is functionally equivalent to the standard library
+  \module{cgi} \function{parse_qsl}, except that it is written in C and is
+  much faster. 
 
-Parse a query string given as a string argument (data of type
-\mimetype{application/x-www-form-urlencoded}).  Data are
-returned as a list of name, value pairs.
+  Parse a query string given as a string argument (data of type
+  \mimetype{application/x-www-form-urlencoded}).  Data are
+  returned as a list of name, value pairs.
 
-The optional argument \var{keep_blank_values} is a flag indicating
-whether blank values in URL encoded queries should be treated as blank
-strings.  A true value indicates that blanks should be retained as
-blank strings.  The default false value indicates that blank values
-are to be ignored and treated as if they were not included.
+  The optional argument \var{keep_blank_values} is a flag indicating
+  whether blank values in URL encoded queries should be treated as blank
+  strings.  A true value indicates that blanks should be retained as
+  blank strings.  The default false value indicates that blank values
+  are to be ignored and treated as if they were not included.
 
-\strong{Note:} The \var{strict_parsing} argument is not yet implemented.
+  \begin{notice}
+    The \var{strict_parsing} argument is not yet implemented.
+  \end{notice}
 
 \end{funcdesc}
 
@@ -1448,38 +1457,42 @@ The \module{Cookie} module provides convenient ways for creating,
 parsing, sending and receiving HTTP Cookies, as defined in the
 specification published by Netscape.
 
-Note that even though there are official IETF RFC's describing
-HTTP State Management Mechanism using cookies, the de facto standard
-supported by most browsers is the original Netscape specification.
-Further, true compliance with IETF standards is actually incompatible
-with many popular browsers, even those that claim to be RFC-compliant.
-
-Therefore, this module supports the current common practice, and is not
-fully RFC compliant.
+\begin{notice}
+  Even though there are official IETF RFC's describing HTTP State
+  Management Mechanism using cookies, the de facto standard supported by
+  most browsers is the original Netscape specification.  Further, true
+  compliance with IETF standards is actually incompatible with many
+  popular browsers, even those that claim to be RFC-compliant.
+  Therefore, this module supports the current common practice, and is
+  not fully RFC compliant.
+\end{notice}
 
 \begin{seealso}
   \seetitle[http://wp.netscape.com/newsref/std/cookie_spec.html]
-	{Persistent Client State - HTTP Cookies}{for the original Netscape specification.}
-  \seerfc{2109}{HTTP State Management Mechanism}{for the first IETF RFC on Cookies.}
-  \seerfc{2964}{Use of HTTP State Management}{for guidelines on using Cookies.}
-  \seerfc{2965}{HTTP State Management Mechanism}{for the latest IETF standard.}
-  \seetitle[http://arxiv.org/abs/cs.SE/0105018]
-	{HTTP Cookies: Standards, Privacy, and Politics}{by David M. Kristol for an 
-         excellent overview
-         of the complications surrounding standardization of Cookies.}
+	   {Persistent Client State - HTTP Cookies}{for the original Netscape specification.}
+	   \seerfc{2109}{HTTP State Management Mechanism}{for the first RFC on Cookies.}
+	   \seerfc{2964}{Use of HTTP State Management}{for guidelines on using Cookies.}
+	   \seerfc{2965}{HTTP State Management Mechanism}{for the latest IETF standard.}
+	   \seetitle[http://arxiv.org/abs/cs.SE/0105018]
+		    {HTTP Cookies: Standards, Privacy, and Politics}{by David M. Kristol for an 
+		      excellent overview
+		      of the issues surrounding standardization of Cookies.}
 \end{seealso}
 
 \subsection{Cookie classes\label{pyapi-cookie-classes}}
 
 \begin{classdesc}{Cookie}{name, value\optional{, attributes}}
 
-This class is used to construct a single cookie named \var{name}
-and having \var{value} as the value. Additionally, any of the 
-attributes defined in the Netscape specification and RFC2109 can by
-supplied as keyword arguments.
+  This class is used to construct a single cookie named \var{name}
+  and having \var{value} as the value. Additionally, any of the 
+  attributes defined in the Netscape specification and RFC2109 can by
+  supplied as keyword arguments.
 
-Note that in the Standard Python Library Cookie module, this type
-of object is referred to as a Morsel.
+  \begin{notice}
+    Unlike the Python Standard Library Cookie classes, this
+    class represents a single cookie (referred to as \dfn{Morsel} in
+    Python Standard Library).
+  \end{notice}
 
 \end{classdesc}
 
@@ -1504,36 +1517,37 @@ stand-alone command-line programs.
 
 \subsection{PSP Syntax\label{pyapi-psp-syntax}}
 
-Inside the document, Python \dfn{code} needs to be surrounded by "<\%"
-and "\%>". Python \dfn{expressions} are enclosed in "<\%=" and
-"\%>".
+Inside the document, Python \dfn{code} needs to be surrounded by
+\samp{<\%} and \samp{\%>}. Python \dfn{expressions} are enclosed in
+\samp{<\%=} and \samp{\%>}.
 
 Here is a primitive PSP page that demonstrated use of both code and
 expression embedded in an HTML document:
 
 \begin{verbatim}
-<html>
-<%
-import time
-%>
-Hello world, the time is: <%=time.strftime("%Y-%m-%d, %H:%M:%S")%>
-</html>
+  <html>
+  <%
+  import time
+  %>
+  Hello world, the time is: <%=time.strftime("%Y-%m-%d, %H:%M:%S")%>
+  </html>
 \end{verbatim}
 
-The PSP parser would convert the above page into the following Python code:
+Internally, the PSP parser would translate the above page into the
+following Python code:
 
 \begin{verbatim}
-req.write("""<html>
-""")
-import time
-req.write("""
-Hello world, the time is: """); req.write(str(time.strftime("%Y-%m-%d, %H:%M:%S"))); req.write("""
-</html>
-""")
+  req.write("""<html>
+  """)
+  import time
+  req.write("""
+  Hello world, the time is: """); req.write(str(time.strftime("%Y-%m-%d, %H:%M:%S"))); req.write("""
+  </html>
+  """)
 \end{verbatim}
 
 This code, when executed inside a handler would result in a page
-displaying words "Hello world, the time is: " followed by current time.
+displaying words \samp{Hello world, the time is: } followed by current time.
 
 Python code can be used to output parts of the page conditionally or
 in loops. Blocks are denoted from within Python code by
@@ -1543,54 +1557,54 @@ document or more Python code.
 
 Here is an example:
 \begin{verbatim}
-<html>
-<%
-for n in range(3):
-    # This indent will persist
-%>
- <p>This paragraph will be 
-repeated 3 times.</p>
-<%
-# This line will cause the block to end
-%>
-This line will only be shown once.<br>
-</html>
+  <html>
+  <%
+  for n in range(3):
+  # This indent will persist
+  %>
+  <p>This paragraph will be 
+  repeated 3 times.</p>
+  <%
+  # This line will cause the block to end
+  %>
+  This line will only be shown once.<br>
+  </html>
 \end{verbatim}
 
-The above will be converted to the following Python code:
+The above will be internally translated to the following Python code:
 
 \begin{verbatim}
-req.write("""<html>
-""")
-for n in range(3):
-    # This indent will persist
-    req.write("""
- <p>This paragraph will be
-repeated 3 times.</p>
-""")
-# This line will cause the block to end
-req.write("""
-This line will only be shown once.<br>
-</html>
-""")
+  req.write("""<html>
+  """)
+  for n in range(3):
+  # This indent will persist
+  req.write("""
+  <p>This paragraph will be
+  repeated 3 times.</p>
+  """)
+  # This line will cause the block to end
+  req.write("""
+  This line will only be shown once.<br>
+  </html>
+  """)
 \end{verbatim}
 
 The parser is also smart enough to figure out the indent if the last
-line of Python ends with ":" (colon). Considering this, and that the
-indent is reset when a newline is encountered inside <\% \%>, the
+line of Python ends with \samp{:} (colon). Considering this, and that the
+indent is reset when a newline is encountered inside \samp{<\% \%>}, the
 above page can be written as:
 
 \begin{verbatim}
-<html>
-<%
-for n in range(3):
-%>
- <p>This paragraph will be 
-repeated 3 times.</p>
-<%
-%>
-This line will only be shown once.<br>
-</html>
+  <html>
+  <%
+  for n in range(3):
+  %>
+  <p>This paragraph will be 
+  repeated 3 times.</p>
+  <%
+  %>
+  This line will only be shown once.<br>
+  </html>
 \end{verbatim}
 
 However, the above code can be confusing, thus having descriptive
@@ -1600,15 +1614,15 @@ comments denoting blocks is highly recommended as a good practice.
 
 \begin{funcdesc}{parse}{filename}
 
-This function will open file named \var{filename}, read and parse its
-content and return a string of resulting Python code.
+  This function will open file named \var{filename}, read and parse its
+  content and return a string of resulting Python code.
 
 \end{funcdesc}
 
 \begin{funcdesc}{parsestring}{string}
 
-This function will parse contents of \var{string} and return a string
-of resulting Python code.
+  This function will parse contents of \var{string} and return a string
+  of resulting Python code.
 
 \end{funcdesc}
 
