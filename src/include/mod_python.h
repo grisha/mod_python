@@ -69,7 +69,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.h,v 1.2 2000/10/18 20:01:29 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.3 2000/10/18 22:56:48 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -101,6 +101,9 @@
 #if !defined(WIN32)
 #include <sys/socket.h>
 #endif
+
+/* _apache initialization function */
+void init_apache();
 
 /* pool given to us in ChildInit. We use it for 
    server.register_cleanup() */
