@@ -20,7 +20,7 @@ Python library location) will be deleted from sys.modules thereby
 forcing Python to load them again next time the CGI script imports
 them.
 
-If you do not want the above behaviour, edit the \file{cgihandler.py}
+If you do not want the above behavior, edit the \file{cgihandler.py}
 file and comment out the code delimited by \#\#\#.
 
 In my tests, the cgihandler was leaking some memory when processing a
