@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: httpdconf.py,v 1.3 2002/10/12 05:41:31 grisha Exp $
+ # $Id: httpdconf.py,v 1.4 2002/10/12 20:02:02 grisha Exp $
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
@@ -204,6 +204,14 @@ class PythonDebug(Directive):
         Directive.__init__(self, self.__class__.__name__, val)
 
 class PythonHandler(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class PythonPostReadRequestHandler(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class PythonTransHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 

@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.15 2002/10/12 05:41:31 grisha Exp $
+ # $Id: test.py,v 1.16 2002/10/12 20:02:02 grisha Exp $
  #
 
 """
@@ -601,7 +601,7 @@ class PerRequestTestCase(unittest.TestCase):
                         DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("python-program"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
-                        PythonHandler("tests::postreadrequest"),
+                        PythonPostReadRequestHandler("tests::postreadrequest"),
                         PythonDebug("On"))
         return str(c)
 
@@ -611,6 +611,25 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = self.vhost_get("test_postreadrequest")
 
         if (rsp != "test ok"):
+            self.fail("test failed")
+            
+    def test_trans_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_trans"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        SetHandler("python-program"),
+                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonTransHandler("tests::trans"),
+                        PythonDebug("On"))
+        return str(c)
+
+    def test_trans(self):
+
+        print "\n  * Testing TransHandler"
+        rsp = self.vhost_get("test_trans")
+
+        if (rsp[3:5] != "=="): # first line in tests.py
             self.fail("test failed")
             
     def test_import_conf(self):
@@ -742,6 +761,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
         perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
+        perRequestSuite.addTest(PerRequestTestCase("test_trans"))
         perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
         perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_import"))
