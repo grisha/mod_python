@@ -54,9 +54,9 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.19 2003/08/14 15:24:42 grisha Exp $
+ # $Id: psp.py,v 1.20 2003/08/28 18:49:14 grisha Exp $
 
-from mod_python import apache, Session, util, _psp
+import apache, Session, util, _psp
 import _apache
 
 import sys

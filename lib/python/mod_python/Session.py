@@ -54,9 +54,9 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py,v 1.7 2003/08/21 18:22:22 grisha Exp $
+ # $Id: Session.py,v 1.8 2003/08/28 18:49:14 grisha Exp $
 
-from mod_python import apache, Cookie
+import apache, Cookie
 import _apache
 
 import os

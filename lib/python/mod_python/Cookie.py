@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.9 2003/08/01 01:53:13 grisha Exp $
+ # $Id: Cookie.py,v 1.10 2003/08/28 18:49:14 grisha Exp $
 
 """
 
@@ -85,7 +85,7 @@ import hmac
 import marshal
 import base64
 
-from mod_python import apache
+import apache
 
 class CookieError(Exception):
     pass
