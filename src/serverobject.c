@@ -44,7 +44,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.9 2002/06/03 14:31:15 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.10 2002/08/19 18:21:32 gtrubetskoy Exp $
  *
  */
 
@@ -120,7 +120,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     ci->server_rec = self->server;
     Py_INCREF(handler);
     ci->handler = handler;
-    ci->interpreter = apr_table_get(req->request_rec->notes, "python_interpreter");
+    ci->interpreter = req->interpreter;
     if (data) {
 	Py_INCREF(data);
 	ci->data = data;

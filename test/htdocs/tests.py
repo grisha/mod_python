@@ -70,8 +70,12 @@ def req_get_basic_auth_pw(req):
 
     return apache.OK
 
-def req_get_config(req):
+def req_document_root(req):
 
+    req.write(req.document_root())
+    return apache.OK
+
+def req_get_config(req):
 
     if req.get_config() == apache.table({"PythonDebug":"1"}) and \
        req.get_options() == apache.table({"secret":"sauce"}):

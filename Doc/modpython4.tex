@@ -45,6 +45,9 @@ conventions.
 Once created, a subinterpreter will be reused for subsequent requests.
 It is never destroyed and exists until the Apache process dies.
 
+You can find out the name of the interpreter under which you're
+running by peeking at \member{req.interpreter}.
+
 \begin{seealso}
   \seetitle[http://www.python.org/doc/current/api/api.html]
 	{Python C Language API}{Python C Language API}
@@ -309,13 +312,11 @@ when multiple headers, such as \code{Set-Cookie:} are required.
 \subsection{Request Object\index{Request}\label{pyapi-mprequest}}
 
 The request object is a Python mapping to the Apache
-\code{request_rec} structure.
+\code{request_rec} structure. When a handler is invoked, it is always
+passed a single argument - the request object. 
 
 You can dynamically assign attributes to it as a way to communicate
 between handlers.
-
-When a handler is invoked, it is always passed a single argument - the
-request object.
 
 \subsubsection{Request Methods\label{pyapi-mprequest-meth}}
 
@@ -463,8 +464,8 @@ than simply "\textbackslash n".
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{readlines}{\optional{sizehint}}
-Reads all or up to \var{sizehint} lines using \method{readline} and
-returns a list of the lines read.
+Reads all or up to \var{sizehint} bytes of lines using
+\method{readline} and returns a list of the lines read.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{register_cleanup}{callable\optional{, data}}
@@ -532,6 +533,11 @@ Is this an HTTP/0.9 "simple" request?
 \emph{(Read-Only})
 \end{memberdesc}
 
+\begin{memberdesc}[Request]{proxyreq}
+A proxy request: one of \constant{apache.PROXYREQ_*} values.
+\emph{(Read-Only})
+\end{memberdesc}
+
 \begin{memberdesc}[Request]{header_only}
 A boolean value indicating HEAD request, as opposed to GET. 
 \emph{(Read-Only})
@@ -547,6 +553,11 @@ Integer. Number version of protocol; 1.1 = 1001
 \emph{(Read-Only})
 \end{memberdesc}
 
+\begin{memberdesc}[Request]{hostname}
+String. Host, as set by full URI or Host: header.
+\emph{(Read-Only})
+\end{memberdesc}
+
 \begin{memberdesc}[Request]{request_time}
 A long integer. When request started.
 \emph{(Read-Only})
@@ -555,6 +566,10 @@ A long integer. When request started.
 \begin{memberdesc}[Request]{status_line}
 Status line. E.g. "200 OK". 
 \emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{status}
+Status. One of \constant{apache.HTTP_*} values.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{method}
@@ -569,8 +584,12 @@ Integer containg the method number.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{allowed}
-Integer. A bitvector of the allowed methods. Used in relation with
-\constant{METHOD_NOT_ALLOWED}.
+Integer. A bitvector of the allowed methods. Used to construct the
+Allowed: header when responding with
+\constant{HTTP_METHOD_NOT_ALLOWED} or
+\constant{HTTP_NOT_IMPLEMENTED}. This field is for Apache's internal
+use, to set the Allowed: methods use \method{req.allow_methods()}
+method, described in section \ref{pyapi-mprequest-meth}. 
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -581,12 +600,12 @@ Tuple. Allowed extension methods.
 
 \begin{memberdesc}[Request]{allowed_methods}
 Tuple. List of allowed methods. Used in relation with
-\constant{METHOD_NOT_ALLOWED}. This member can be modified via \method{Request.allow_methods} 
+\constant{METHOD_NOT_ALLOWED}. This member can be modified via \method{req.allow_methods()} 
 described in section \ref{pyapi-mprequest-meth}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{sent_body}
+\begin{memberdesc}[Request]{sent_bodyct}
 Integer. Byte count in stream is for body. (?)
 \emph{(Read-Only})
 \end{memberdesc}
@@ -601,6 +620,11 @@ Long integer. Time the resource was last modified.
 \emph{(Read-Only})
 \end{memberdesc}
 
+\begin{memberdesc}[Request]{chunked}
+Boolean value indicating when sending chunked transfer-coding.
+\emph{(Read-Only})
+\end{memberdesc}
+
 \begin{memberdesc}[Request]{boundary}
 String. Multipart/byteranges boundary.
 \emph{(Read-Only})
@@ -612,8 +636,7 @@ String. The \code{Range:} header.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{clength}
-Long integer. The "real" content length. (I.e. can only be used after
-the content's been read?)
+Long integer. The "real" content length.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -659,30 +682,47 @@ headers_out.
 
 \begin{memberdesc}[Request]{subprocess_env}
 A \code{table} object containing environment information typically usable for CGI.
-You may have to call \member{Request.add_common_vars} first to fill in the information
+You may have to call \member{req.add_common_vars()} first to fill in the information
 you need.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{notes}
-A \code{table} object containing miscellaneous general purpose info that lives for
-as long as the request lives. Used internally by mod_python. If you need to pass
-data between handlers, it's better to simply add members to the request
-object than to use \member{notes}.
+A \code{table} object that could be used to store miscellaneous
+general purpose info that lives for as long as the request lives. If
+you need to pass data between handlers, it's better to simply add
+members to the request object than to use \member{notes}.
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{phase}
+The phase currently being being processed, e.g. "PythonHandler".
+\emph{(Read-Only)}
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{interpreter}
+The name of the subinterpreter under which we're running.
+\emph{(Read-Only)}
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{notes}
+A \code{table} object that could be used to store miscellaneous
+general purpose info that lives for as long as the request lives. If
+you need to pass data between handlers, it's better to simply add
+members to the request object than to use \member{notes}.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{content_type}
 String. The content type. Mod_python maintains an internal flag
 (\member{Request._content_type_set}) to keep track of whether
 \member{content_type} was set manually from within Python. The
-publisher handler uses this flag; when \member{content_type} isn't
-set, it attempts to guess the content type by examining the
-first few bytes of the output.
+publisher handler uses this flag in the following way: when
+\member{content_type} isn't explicitely set, it attempts to guess the
+content type by examining the first few bytes of the output.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{handler}
-The hame of the handler currently being processed. In all cases with
-mod_python, this should be "python-program".
-\emph{(Read-Only})
+The name of the handler currently being processed. This is the handler
+set by mod_mime, not the mod_python handler. In most cases it will be
+"python-program". \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{content_encoding}
@@ -717,7 +757,7 @@ Boolean. No local copy exists.
 \end{memberdesc}
 
 \begin{memberdesc}[Request]{unparsed_uri}
-The URL without any parsing performed.
+The URI without any parsing performed.
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -730,9 +770,32 @@ The path portion of the URI.
 String. File name being requested.
 \end{memberdesc}
 
+\begin{memberdesc}[Request]{canonical_filename}
+String. The true filename (\member{req.filename} is canonicalized if
+they dont match).  \empth{(Read-Only)}
+\end{memberdesc}
+
 \begin{memberdesc}[Request]{path_info}
 String. What follows after the file name, but is before query args, if
 anything. Same as CGI \envvar{PATH_INFO}.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{args}
+String. Same as CGI \envvar{QUERY_ARGS}.
+\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[Request]{finfo}
+Tuple. A file information structure, analogous to POSIX stat,
+describing the file pointed to by the URI.  \code{(mode, ino,
+dev, nlink, uid, gid, size, atime, mtime, ctime, fname,
+name)}. The \code{apache} module defines a set of \constant{FINFO_*}
+constants that should be used to access elements of this
+tuple. Example:
+\begin{verbatim}
+fname = req.finfo[apache.FINFO_FNAME]
+\end{verbatim}
 \emph{(Read-Only})
 \end{memberdesc}
 
@@ -747,19 +810,13 @@ fname = req.parsed_uri[apache.URI_PATH]
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{finfo}
-Tuple. A file information structure, analogous to POSIX stat, describing the file pointed to
-by the URI.
-\code{(valid, protection, user, group, inode, device, nlink, size, csize, atime, mtime, ctime, fname, name)}. The \code{apache} module defines a set of \constant{FINFO_*} constants that
-should be used to access elements of this tuple. Example:
-\begin{verbatim}
-fname = req.finfo[apache.FINFO_FNAME]
-\end{verbatim}
+\begin{memberdesc}[Request]{used_path_info}
+Flag to accept or reject path_info on current request.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{args}
-String. Same as CGI \envvar{QUERY_ARGS}.
+\begin{memberdesc}[Request]{eos_sent}
+Boolean. EOS bucket sent.
 \emph{(Read-Only})
 \end{memberdesc}
 

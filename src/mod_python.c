@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.64 2002/08/15 21:46:35 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.65 2002/08/19 18:21:32 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -829,17 +829,18 @@ static int python_handler(request_rec *req, char *phase)
         }
     }
 
+    /* create/acquire request object */
+    request_obj = get_request_object(req);
+
     /* 
      * make a note of which subinterpreter we're running under.
      * this information is used by register_cleanup()
      */
-    if (interpreter)
-	apr_table_set(req->notes, "python_interpreter", interpreter);
-    else
-	apr_table_set(req->notes, "python_interpreter", MAIN_INTERPRETER);
     
-    /* create/acquire request object */
-    request_obj = get_request_object(req);
+    if (interpreter)
+	request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
+    else
+	request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
 
     /* make a note of which phase we are in right now */
     Py_XDECREF(request_obj->phase);
@@ -1097,17 +1098,18 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
         }
     }
 
+    /* create/acquire request object */
+    request_obj = get_request_object(req);
+
     /* 
      * make a note of which subinterpreter we're running under.
      * this information is used by register_cleanup()
      */
-    if (interpreter)
-	apr_table_set(req->notes, "python_interpreter", interpreter);
-    else
-	apr_table_set(req->notes, "python_interpreter", MAIN_INTERPRETER);
     
-    /* create/acquire request object */
-    request_obj = get_request_object(req);
+    if (interpreter)
+	request_obj->interpreter = apr_pstrdup(req->pool, interpreter);
+    else
+	request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
 
     /* the name of python function to call */
     if (is_input)

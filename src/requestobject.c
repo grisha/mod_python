@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.22 2002/08/19 14:18:11 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.23 2002/08/19 18:21:32 gtrubetskoy Exp $
  *
  */
 
@@ -82,6 +82,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->subprocess_env = MpTable_FromTable(req->subprocess_env);
     result->notes = MpTable_FromTable(req->notes);
     result->phase = NULL;
+    result->interpreter = NULL;
     result->content_type_set = 0;
     result->hlo = NULL;
     result->rbuff = NULL;
@@ -252,50 +253,17 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
     return Py_None;
 }
 
-
 /**
- ** request.get_all_config(request self)
+ ** request.document_root(self)
  **
- *  returns get_config + all the handlers added by req.add_handler
+ *  ap_docuement_root wrapper
  */
 
-// GT HERE - this is broken, it needs to get stuff from hlist.
-
-static PyObject *req_get_all_config(requestobject *self, PyObject *args)
+static PyObject *req_document_root(requestobject *self)
 {
-    apr_table_t *all;
-    py_dir_config *conf =
-	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
-					       &python_module);
 
-    all = apr_table_copy(self->request_rec->pool, conf->directives);
-
-    if (apr_table_get(self->request_rec->notes, "py_more_directives")) {
-
-	const apr_array_header_t *ah = apr_table_elts(self->request_rec->notes);
-	apr_table_entry_t *elts = (apr_table_entry_t *)ah->elts;
-	int i = ah->nelts;
-
-	while (i--) {
-	    if (elts[i].key) {
-		if (valid_phase(elts[i].key)) {
-		
-		    /* if exists - append, otherwise add */
-		    const char *val = apr_table_get(all, elts[i].key);
-		    if (val) {
-			apr_table_set(all, elts[i].key, 
-				      apr_pstrcat(self->request_rec->pool,
-						  val, " ", elts[i].val,
-						  NULL));
-		    }
-		    else {
-			apr_table_set(all, elts[i].key, elts[i].val);
-		    }
-		}
-	    }
-	}
-    }
-    return MpTable_FromTable(all);
+    return PyString_FromString(ap_document_root(self->request_rec));
+    
 }
 
 /**
@@ -722,7 +690,7 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
     if (PyCallable_Check(handler)) {
 	Py_INCREF(handler);
 	ci->handler = handler;
-	ci->interpreter = apr_table_get(self->request_rec->notes, "python_interpreter");
+	ci->interpreter = self->interpreter;
 	if (data) {
 	    Py_INCREF(data);
 	    ci->data = data;
@@ -791,7 +759,7 @@ static PyMethodDef request_methods[] = {
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_VARARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
-    {"get_all_config",        (PyCFunction) req_get_all_config,        METH_VARARGS},
+    {"document_root",         (PyCFunction) req_document_root,         METH_VARARGS},
     {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_VARARGS},
     {"get_addhandler_exts",   (PyCFunction) req_get_addhandler_exts,   METH_VARARGS},
     {"get_config",            (PyCFunction) req_get_config,            METH_VARARGS},
@@ -1040,8 +1008,7 @@ static PyGetSetDef request_getsets[] = {
     {"status",       (getter)getreq_recmbr, (setter)setreq_recmbr, "Status", "status"},
     {"method",       (getter)getreq_recmbr, NULL, "Request method", "method"},
     {"method_number", (getter)getreq_recmbr, NULL, "Request method number, one of apache.M_*", "method_number"},
-    // XXX remember to doc apache.allow_method
-    {"allowed",      (getter)getreq_recmbr, (setter)setreq_recmbr, "Status", "allowed"},
+    {"allowed",      (getter)getreq_recmbr, NULL, "Status", "allowed"},
     {"allowed_xmethods", (getter)getreq_rec_ah, NULL, "Allowed extension methods", "allowed_xmethods"},
     {"allowed_methods", (getter)getreq_rec_ml, NULL, "Allowed methods", "allowed_methods"},
     {"sent_bodyct",  (getter)getreq_recmbr, NULL, "Byte count in stream for body", "sent_boduct"},
@@ -1067,8 +1034,8 @@ static PyGetSetDef request_getsets[] = {
     {"no_local_copy", (getter)getreq_recmbr, NULL, "There is no local copy of the response", "no_local_copy"},
     {"unparsed_uri",  (getter)getreq_recmbr, NULL, "The URI without any parsing performed", "unparsed_uri"},
     {"uri",           (getter)getreq_recmbr, NULL, "The path portion of URI", "uri"},
-    {"filename",      (getter)getreq_recmbr, NULL, "The file name on disk that this request corresponds to", "filename"},
-    {"canonical_filename", (getter)getreq_recmbr, NULL, "The true filename (req.filename is canonicalied if they dont match)", "canonical_filename"},
+    {"filename",      (getter)getreq_recmbr, (setter)setreq_recmbr, "The file name on disk that this request corresponds to", "filename"},
+    {"canonical_filename", (getter)getreq_recmbr, NULL, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
     {"path_info",     (getter)getreq_recmbr, NULL, "Path_info, if any", "path_info"},
     {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
     {"finfo",         (getter)getreq_rec_fi, NULL, "File information", "finfo"},
@@ -1092,6 +1059,7 @@ static struct PyMemberDef request_members[] = {
     {"notes",              T_OBJECT,    OFF(notes),             RO},
     {"_content_type_set",  T_INT,       OFF(content_type_set),  RO},
     {"phase",              T_OBJECT,    OFF(phase),             RO},
+    {"interpreter",        T_STRING,    OFF(interpreter),       RO},
     {"hlist",              T_OBJECT,    OFF(hlo),               RO},
     {NULL}  /* Sentinel */
 };
