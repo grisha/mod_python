@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.11 2003/08/05 19:28:26 grisha Exp $
+ # $Id: psp.py,v 1.12 2003/08/06 20:03:29 grisha Exp $
 
 # this trick lets us be used outside apache
 try:
@@ -207,16 +207,9 @@ def run_psp(req):
 
     session = None
     if "session" in code.co_names:
-
-        if opts.has_key("PSPSessionDbm"):
-            fname = opts["PSPSessionDbm"]
-        else:
-            fname = os.path.join(tempdir, "psp_sess.dbm")
-        
-        session = Session.Session(req, fname)
+        session = Session.Session(req)
 
     try:
-
         # give it it's own locals
         exec code in globals(), {"req":req, "session":session}
 

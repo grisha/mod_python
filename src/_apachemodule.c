@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.24 2003/08/05 20:38:00 grisha Exp $
+ * $Id: _apachemodule.c,v 1.25 2003/08/06 20:03:29 grisha Exp $
  *
  */
 
@@ -387,11 +387,10 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
     PyObject *key;
     server_rec *s;
     py_global_config *glb;
-    int hash;
-    int index;
+    int index = -1;
     apr_status_t rv;
 
-    if (! PyArg_ParseTuple(args, "OO", &server, &key)) 
+    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index)) 
         return NULL;
 
     if (!  MpServer_Check(server)) {
@@ -405,34 +404,38 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
 			  s->process->pool);
     
-    hash = PyObject_Hash(key);
-    if (hash == -1) {
-	return NULL;
-    }
-    else {
-	hash = abs(hash) + 1;
-    }
+    if (index == -1) {
 
-    /* we make sure that index is never 0 unless
-     * explicitely requested. This way 0 is reserved for
-     * special needs (probably dbm access locking, see
-     * Session.py)
-     */
+        int hash = PyObject_Hash(key);
+        if (hash == -1) {
+            return NULL;
+        }
+        else {
+            hash = abs(hash);
+        }
 
-    if (hash == 0) {
-	index = 0;
-    }
-    else {
+        /* note that this will never result in 0,
+         * which is reserved for things like dbm
+         * locking (see Session.py)
+         */
+        
 	index = (hash % (glb->nlocks-1)+1);
     }
-    
-    if ((rv = apr_global_mutex_lock(glb->g_locks[index])) != APR_SUCCESS) {
+
+/*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
+/* 		 "_global_lock at index %d from pid %d", index, getpid()); */
+    Py_BEGIN_ALLOW_THREADS
+    rv = apr_global_mutex_lock(glb->g_locks[index]);        
+    Py_END_ALLOW_THREADS                               
+    if (rv != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
                      "Failed to acquire global mutex lock at index %d", index);
 	PyErr_SetString(PyExc_ValueError,
 			"Failed to acquire global mutex lock");
         return NULL;
     }
+/*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
+/* 		 "_global_lock DONE at index %d from pid %d", index, getpid()); */
 	
     Py_INCREF(Py_None);
     return Py_None;
@@ -451,11 +454,10 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
     PyObject *key;
     server_rec *s;
     py_global_config *glb;
-    int hash;
-    int index;
+    int index = -1;
     apr_status_t rv;
 
-    if (! PyArg_ParseTuple(args, "OO", &server, &key)) 
+    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index)) 
         return NULL;
 
     if (!  MpServer_Check(server)) {
@@ -469,21 +471,26 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
 			  s->process->pool);
     
-    hash = PyObject_Hash(key);
-    if (hash == -1) {
-	return NULL;
-    }
-    else {
-	hash = abs(hash) + 1;
-    }
-    
-    if (hash == 0) {
-	index = 0;
-    }
-    else {
+    if (index == -1) {
+
+        int hash = PyObject_Hash(key);
+        if (hash == -1) {
+            return NULL;
+        }
+        else {
+            hash = abs(hash);
+        }
+
+        /* note that this will never result in 0,
+         * which is reserved for things like dbm
+         * locking (see Session.py)
+         */
+        
 	index = (hash % (glb->nlocks-1)+1);
     }
     
+/*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
+/*                      "_global_unlock at index %d from pid %d", index, getpid()); */
     if ((rv = apr_global_mutex_unlock(glb->g_locks[index])) != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
                      "Failed to release global mutex lock at index %d", index);
