@@ -1,3 +1,6 @@
+Apr  6 2000 -   Missing _eprintf() on Solaris/gcc workaround added. I
+		wonder if this applies to other OS's?
+
 Apr  5 2000 -	A couple doc fixes.
 
 Feb 10 2000 -   Fixed the dissapearing / in PATH_INFO.

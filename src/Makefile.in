@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.7 2000/12/06 03:05:37 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.8 2001/04/07 05:43:21 gtrubetskoy Exp $
 
 CC=@CC@
 RANLIB=@RANLIB@
@@ -62,7 +62,7 @@ OBJS=		mod_python.o \
 		tableobject.o \
 		util.o \
 		serverobject.o \
-		connobject.o
+		connobject.o @EPRINTF_HACK@
 
 SRCS=		mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
 		serverobject.c connobject.c
@@ -105,6 +105,11 @@ depend:
 
 clean:
 	rm -f $(OBJS) core libpython.a mod_python.so *~
+
+# this is a hack to help avoid a gcc/solaris problem
+# python uses assert() which needs _eprintf()
+_eprintf.o:
+	ar -x `gcc -print-libgcc-file-name` _eprintf.o
 
 mod_python.o: mod_python.c
 _apachemodule.o: _apachemodule.c

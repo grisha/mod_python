@@ -42,7 +42,7 @@
  # ====================================================================
  #
 
-dnl $Id: configure.in,v 1.9 2000/12/06 03:05:37 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.10 2001/04/07 05:43:21 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -114,6 +114,7 @@ fi
 
 # if apxs was still not found, then no DSO
 AC_SUBST(LIBEXECDIR)
+AC_SUBST(EPRINTF_HACK)
 if test -z "$APXS"; then
   AC_MSG_WARN([**** apxs was not found, DSO compilation will not be available.])
   AC_MSG_WARN([**** You can use --with-apxs to specify where your apxs is.])
@@ -132,6 +133,16 @@ else
   AC_MSG_CHECKING([for Apache include directory])
   AP_INCLUDES="-I`${APXS} -q INCLUDEDIR`"
   AC_MSG_RESULT($AP_INCLUDES)
+
+  dnl Small hack to work around _eprintf.o problem on Solaris
+  if test "`uname`" = "SunOS"; then
+    AC_MSG_CHECKING([for gcc on Solaris possible missing _eprintf problem])
+    if test "$CC" = "gcc"; then
+      EPRINTF_HACK="_eprintf.o"
+    fi
+    AC_MSG_RESULT("done")
+  fi
+
 fi
 
 # check for --with-apache
