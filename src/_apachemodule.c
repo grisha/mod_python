@@ -18,7 +18,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.29 2004/02/16 19:47:27 grisha Exp $
+ * $Id$
  *
  */
 

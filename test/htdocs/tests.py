@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.36 2004/02/23 17:37:16 grisha Exp $
+ # $Id$
  #
 
 # mod_python tests

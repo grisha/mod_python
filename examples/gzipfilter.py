@@ -1,4 +1,4 @@
-# $Id: gzipfilter.py,v 1.1 2002/10/04 21:31:05 grisha Exp $
+# $Id$
 #
 # Usage:
 #   <Directory /where/ever>

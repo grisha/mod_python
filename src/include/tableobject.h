@@ -24,7 +24,7 @@ extern "C" {
  *
  * tableobject.h
  *
- * $Id: tableobject.h,v 1.9 2004/02/16 19:47:28 grisha Exp $
+ * $Id$
  *
  */
 

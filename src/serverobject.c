@@ -18,7 +18,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.23 2004/07/26 23:28:04 grisha Exp $
+ * $Id$
  *
  */
 

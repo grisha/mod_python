@@ -18,7 +18,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.57 2004/02/16 19:47:27 grisha Exp $
+ * $Id$
  *
  */
 

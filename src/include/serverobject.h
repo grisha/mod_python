@@ -24,7 +24,7 @@ extern "C" {
  *
  * serverobject.h
  *
- * $Id: serverobject.h,v 1.7 2004/02/16 19:47:28 grisha Exp $
+ * $Id$
  *
  */
 

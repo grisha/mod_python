@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: cgihandler.py,v 1.13 2004/02/16 19:47:27 grisha Exp $
+ # $Id$
 
 import apache
 import imp

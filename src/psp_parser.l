@@ -14,7 +14,7 @@
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
  *
- * $Id: psp_parser.l,v 1.21 2004/07/23 14:01:30 grisha Exp $
+ * $Id$
  *
  * This file originally written by Sterling Hughes.
  * 

@@ -14,7 +14,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: win32_postinstall.py,v 1.7 2004/04/30 19:38:46 grisha Exp $
+ # $Id$
  #
  # this script runs at the end of windows install
 

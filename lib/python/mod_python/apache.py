@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.83 2004/06/30 13:52:00 grisha Exp $
+ # $Id$
 
 import sys
 import traceback

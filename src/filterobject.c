@@ -18,7 +18,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.28 2004/04/30 19:21:07 grisha Exp $
+ * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.
