@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.20 2002/08/23 19:45:41 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.21 2002/09/07 02:08:46 gtrubetskoy Exp $
  *
  */
 
@@ -1085,8 +1085,6 @@ PyTypeObject MpTable_Type = {
     table_new,                          /* tp_new */
     (destructor)table_dealloc,          /* tp_free */
 };
-
-// GT HERE - iterator
 
 /* Table iterator type */
 

@@ -1,6 +1,6 @@
 \chapter{Apache Configuration Directives\label{directives}}
 
-\section{Handlers\label{dir-handlers}}
+\section{Request Handlers\label{dir-handlers}}
 
 \subsection{Python*Handler Directive Syntax\label{dir-handlers-syn}}
 \index{Python*Handler Syntax}
@@ -62,13 +62,13 @@ from mod_python resulting in a modest performance gain.
 \subsection{PythonPostReadRequestHandler\label{dir-handlers-prrh}}
 \index{PythonPostReadRequestHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This handler is called after the request has been read but before any
@@ -94,13 +94,13 @@ which phases are processed by Apache.
 \subsection{PythonTransHandler\label{dir-handlers-th}}
 \index{PythonTransHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This handler gives allows for an opportunity to translate the URI into
@@ -118,13 +118,13 @@ main interpreter.
 \subsection{PythonHeaderParserHandler\label{dir-handlers-hph}}
 \index{PythonHeaderParserHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This handler is called to give the module a chance to look at the
@@ -134,13 +134,13 @@ processing sequence.
 \subsection{PythonInitHandler\label{dir-handlers-pih}}
 \index{PythonInitHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This handler is the first handler called in the request processing
@@ -158,13 +158,13 @@ alias to \code{PostReadRequestHandler}. When specified inside directory
 \subsection{PythonAccessHandler\label{dir-handlers-ach}}
 \index{PythonAccessHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This routine is called to check for any module-specific restrictions
@@ -177,13 +177,13 @@ that access is not allowed.
 \subsection{PythonAuthenHandler\label{dir-handlers-auh}}
 \index{PythonAuthenHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This routine is called to check the authentication information sent
@@ -223,13 +223,13 @@ authentication information unless \code{req.get_basic_auth_pw()} is called.
 \subsection{PythonAuthzHandler\label{dir-handlers-auh}}
 \index{PythonAuthzHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This handler runs after AuthenHandler and is intended for checking
@@ -239,13 +239,13 @@ often than not it is done right in the AuthenHandler.
 \subsection{PythonTypeHandler\label{dir-handlers-tph}}
 \index{PythonTypeHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This routine is called to determine and/or set the various document
@@ -255,13 +255,13 @@ language, et cetera.
 \subsection{PythonFixupHandler\label{dir-handlers-fuh}}
 \index{PythonFixupHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This routine is called to perform any module-specific fixing of header
@@ -270,13 +270,13 @@ fields, et cetera. It is invoked just before any content-handler.
 \subsection{PythonHandler\label{dir-handlers-ph}}
 \index{PythonHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This is the main request handler. 99.99% of your applications will
@@ -285,13 +285,13 @@ only provide this one handler.
 \subsection{PythonLogHandler\label{dir-handlers-plh}}
 \index{PythonLogHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This routine is called to perform any module-specific logging
@@ -300,13 +300,13 @@ activities.
 \subsection{PythonCleanupHandler\label{dir-handlers-pch}}
 \index{PythonCleanupHandler}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 \emph{Python*Handler Syntax}\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 This is the very last handler, called just before the request object
@@ -327,16 +327,16 @@ handler.
 Cleanups registered with this directive will execute \emph{after} cleanups
 registered with \code{req.register_cleanup()}.
 
-\section{Other Directives\label{dir-other}}
+\section{Filters\label{dir-filter}}
 
-\subsection{PythonInputFilter\label{dir-other-if}}
+\subsection{PythonInputFilter\label{dir-filter-if}}
 \index{PythonInputFilter}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonInputFilter handler name\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Registers an input filter \var{handler} under name
@@ -348,14 +348,14 @@ in all caps.
 
 To activate the filter, use the \code{AddInputFilter} directive.
 
-\subsection{PythonOutputFilter\label{dir-other-if}}
+\subsection{PythonOutputFilter\label{dir-filter-of}}
 \index{PythonOutputFilter}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonOutputFilter handler name\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Registers an output filter \var{handler} under name
@@ -367,38 +367,62 @@ in all caps.
 
 To activate the filter, use the \code{AddOutputFilter} directive.
 
+\section{Connection Handler\label{dir-conn}}
+
+\subsection{PythonConnectionHandler\label{dir-conn-ch}}
+\index{PythonConnectionHandler}
+
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
+PythonConnectionHandler handler\\
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
+server config\\
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
+mod_python.c
+
+Specifies that the connection should be handled with \var{handler}
+connection handler. \var{Handler} will be passed a single argument -
+the connection object.
+
+\var{Handler} is a module name optionally followed \code{::} and a
+callable object name. If callable object name is omited, it will
+default to "connectionhandler".
+
+\section{Other Directives\label{dir-other}}
+
 \subsection{PythonEnablePdb\label{dir-other-epd}}
 \index{PythonEnablePdb}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonEnablePdb \{On, Off\} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Default]{Default:}
 PythonEnablePdb Off\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 When On, mod_python will execute the handler functions within the
 Python debugger pdb using the \code{pdb.runcall()} function.
 
-Because pdb is an interactive tool, start httpd with the -DONE_PROCESS option
-when using this directive.
+Because pdb is an interactive tool, start httpd from the command line
+with the -DONE_PROCESS option when using this directive. As soon as
+your handler code is entered, you will see a Pdb prompt allowing you
+to step through the code and examine variables.
 
 \subsection{PythonDebug\label{dir-other-pd}}
 \index{PythonDebug}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonDebug \{On, Off\} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Default]{Default:}
 PythonDebug Off\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Normally, the traceback output resulting from uncaught Python errors
@@ -415,11 +439,11 @@ information.
 \subsection{PythonImport\label{dir-other-pi}}
 \index{PythonImport}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonImport \emph{module} ... \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 directory\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Tells the server to import the Python module module at process
@@ -447,15 +471,15 @@ See also Multiple Interpreters.
 \subsection{PythonInterpPerDirectory\label{dir-other-ipd}}
 \index{PythonInterpPerDirectory}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonInterpPerDirectory \{On, Off\} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Default]{Default:}
 PythonInterpPerDirectory Off\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Instructs mod_python to name subinterpreters using the directory of
@@ -489,15 +513,15 @@ unfortunately there is no way around this.
 \subsection{PythonInterpPerDirective\label{dir-other-ipdv}}
 \index{PythonPythonInterpPerDirective}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonInterpPerDirective \{On, Off\} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Default]{Default:}
 PythonInterpPerDirective Off\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Instructs mod_python to name subinterpreters using the directory in
@@ -522,13 +546,13 @@ one for each directive.
 \subsection{PythonInterpreter\label{dir-other-pi}}
 \index{PythonInterpreter}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonInterpreter name \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Forces mod_python to use interpreter named \emph{name}, overriding the
@@ -549,13 +573,13 @@ subinterpreter.
 \subsection{PythonHandlerModule\label{dir-other-phm}}
 \index{PythonHandlerModule}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonHandlerModule module \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 PythonHandlerModule can be used an alternative to Python*Handler
@@ -578,15 +602,15 @@ PythonHandlerModule mymodule
 \subsection{PythonAutoReload\label{dir-other-par}}
 \index{PythonAutoReload}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonAutoReload \{On, Off\} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Default]{Default:}
 PythonAutoReload On\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 If set to Off, instructs mod_python not to check the modification date
@@ -605,13 +629,13 @@ small performance gain.
 \subsection{PythonOptimize\label{dir-other-pomz}}
 \index{PythonOptimize}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonOptimize \{On, Off\} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Default]{Default:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Default]{Default:}
 PythonOptimize Off\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Enables Python optimization. Same as the Python \programopt{-O} option.
@@ -619,13 +643,13 @@ Enables Python optimization. Same as the Python \programopt{-O} option.
 \subsection{PythonOption\label{dir-other-po}}
 \index{PythonOption}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonOption key value \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 Assigns a key value pair to a table that can be later retrieved by the
@@ -636,13 +660,13 @@ between the apache configuration files (\file{httpd.conf},
 \subsection{PythonPath\label{dir-other-pp}}
 \index{PythonPath}
 
-\strong{\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Syntax]{Syntax:}}
+\strong{\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Syntax]{Syntax:}}
 PythonPath \emph{path} \\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Context]{Context:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Context]{Context:}
 server config, virtual host, directory, htaccess\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Override]{Override:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Override]{Override:}
 not None\\
-\citetitle[http://www.apache.org/docs/mod/directive-dict.html#Module]{Module:}
+\citetitle[http://httpd.apache.org/docs-2.0/mod/directive-dict.html#Module]{Module:}
 mod_python.c
 
 PythonPath directive sets the PythonPath. The path must be specified

@@ -53,7 +53,8 @@ running by peeking at \member{req.interpreter}.
 	{Python C Language API}{Python C Language API}
 \end{seealso}
 
-\section{Overview of a Handler\label{pyapi-handler}}
+\section{Overview of a Request Handler\label{pyapi-handler}}
+\indexii{request}{handler}
 
 A \dfn{handler} is a function that processes a particular phase of a
 request. Apache processes requests in phases - read the request,
@@ -169,7 +170,7 @@ def requesthandler(req):
 \end{verbatim}
 
 \section{Overview of a Filter Handler\label{pyapi-filter}}
-\index{filter}
+\indexii{filter}{handler}
 
 A \dfn{filter handler} is a function that can alter the input or the
 output of the server. There are two kinds of filters - \dfn{input} and
@@ -181,9 +182,10 @@ that only the body of HTTP request or response can be filtered. Apache
 provides support for connection-level filters, which will be supported
 in the future.
 
-A filter handler receives a filter object as its argument. The request
-object is available as well via \code{filter.req}, but all writing and
-reading should be done via the filter's object read and write methods.
+A filter handler receives a \emph{filter} object as its argument. The
+request object is available as well via \code{filter.req}, but all
+writing and reading should be done via the filter's object read and
+write methods.
 
 Similarly to a phase handler, a filter handler must return one of the
 status return codes.
@@ -211,6 +213,48 @@ def outputfilter(filter):
     filter.write(filter.read().upper())
     return apache.OK
 
+\end{verbatim}
+
+When writing filters, keep in mind that a filter will be called any
+time anything upstream requests an IO operation, and the filter has no
+control over the amount of data passed through it and no notion of
+where in the request processing it is called. For example, within a
+single request, a filter may be called once or five times, and there
+is no way for the filter to know beforehand that the request is over
+and which of calls is last or first for this request.
+
+For more information on filters, see
+\citetitle[http://httpd.apache.org/docs-2.0/developer/filters.html]{http://httpd.apache.org/docs-2.0/developer/filters.html}.
+
+\section{Overview of a Connection Handler\label{pyapi-conn}}
+\indexii{connection}{handler}
+
+A \dfn{connection handler} handles the connection, starting almost
+immediately from the point the TCP connection to the server was
+made. 
+
+Unlike HTTP handlers, connection handlers receive a \emph{connection}
+object as an argument.
+
+Connection handlers can be used to implement protocols new. Here is an
+example of a simple echo server:
+
+Apache configuration:
+\begin{verbatim}
+    PythonConnectionHandler echo
+\end{verbatim}
+
+Contents of \filenq{echo.py} file:
+
+\begin{verbatim}
+from mod_python import apache
+
+def connectionhandler(conn):
+
+    while 1:
+        conn.write(conn.readline())
+
+    return apache.OK
 \end{verbatim}
 
 \section{\module{apache} -- Access to Apache Internals.}
@@ -259,7 +303,7 @@ APLOG_DEBUG
 APLOG_NOERRNO
 \end{verbatim}            
       
-\var{server} is a reference to a \member{Request.server} object. If
+\var{server} is a reference to a \member{req.server} object. If
 \var{server} is not specified, then the error will be logged to the
 default error log, otherwise it will be written to the error log for
 the appropriate virtual server.
@@ -354,7 +398,7 @@ when multiple headers, such as \code{Set-Cookie:} are required.
 \versionadded{3.0}
 \end{classdesc}
 
-\subsection{Request Object\index{Request}\label{pyapi-mprequest}}
+\subsection{Request Object\index{request}\label{pyapi-mprequest}}
 
 The request object is a Python mapping to the Apache
 \code{request_rec} structure. When a handler is invoked, it is always
@@ -365,13 +409,13 @@ between handlers.
 
 \subsubsection{Request Methods\label{pyapi-mprequest-meth}}
 
-\begin{methoddesc}[Request]{add_common_vars}{}
+\begin{methoddesc}[request]{add_common_vars}{}
 Calls the Apache \cfunction{ap_add_common_vars()} function. After a
-call to this method, \member{Request.subprocess_env} will contain a
+call to this method, \member{req.subprocess_env} will contain a
 lot of CGI information.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{add_handler}{htype, handler\optional{, dir}}
+\begin{methoddesc}[request]{add_handler}{htype, handler\optional{, dir}}
 
 Allows dynamic handler registration. \var{htype} is a string
 containing the name of any of the apache \code{Python*Handler}
@@ -405,8 +449,8 @@ name. If you pass this function an invalid handler it will simply be
 ignored.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{allow_methods}{methods\optional{, reset}}
-Adds methods to the \member{Request.allowed_methods} list. This list
+\begin{methoddesc}[request]{allow_methods}{methods\optional{, reset}}
+Adds methods to the \member{req.allowed_methods} list. This list
 will be passed in \code{Allowed:} header if
 \constant{HTTP_METHOD_NOT_ALLOWED} or \constant{HTTP_NOT_IMPLEMENTED}
 is returned to the client. Note that Apache doesn't do anything to
@@ -418,12 +462,12 @@ handler code.
 the list of methods is first cleared.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{get_basic_auth_pw}{}
+\begin{methoddesc}[request]{get_basic_auth_pw}{}
 Returns a string containing the password when Basic authentication is
 used.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{get_config}{}
+\begin{methoddesc}[request]{get_config}{}
 Returns a reference to the table object containing the mod_python
 configuration in effect for this request except for
 \code{Python*Handler} and \code{PythonOption} (The latter can be
@@ -431,7 +475,7 @@ obtained via \method{req.get_options()}. The table has directives as
 keys, and their values, if any, as values.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{get_remote_host}{\optional{type, str_is_ip}}
+\begin{methoddesc}[request]{get_remote_host}{\optional{type, str_is_ip}}
 
 This method is used to determine remote client's DNS name or IP
 number. The first call to this function may entail a DNS look up, but
@@ -473,12 +517,12 @@ On failure, \code{None} is returned.
 
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{get_options}{}
+\begin{methoddesc}[request]{get_options}{}
 Returns a reference to the table object containing the options set by
 the \code{PythonOption} directives.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{internal_redirect}{new_uri}
+\begin{methoddesc}[request]{internal_redirect}{new_uri}
 Internally redirects the request to the \var{new_uri}. \var{new_uri}
 must be a string.
 
@@ -489,7 +533,7 @@ from which it was redirected.
 
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{read}{\optional{len}}
+\begin{methoddesc}[request]{read}{\optional{len}}
 
 Reads at most \var{len} bytes directly from the client, returning a
 string with the data read. If the \var{len} argument is negative or
@@ -509,7 +553,7 @@ more data than available, which will make the function block until a
 
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{readline}{\optional{len}}
+\begin{methoddesc}[request]{readline}{\optional{len}}
 Like \function{read()} but reads until end of line. 
                   
 Note that in accordance with the HTTP specification, most clients will
@@ -518,12 +562,12 @@ than simply "\textbackslash n".
 
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{readlines}{\optional{sizehint}}
+\begin{methoddesc}[request]{readlines}{\optional{sizehint}}
 Reads all or up to \var{sizehint} bytes of lines using
 \method{readline} and returns a list of the lines read.
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{register_cleanup}{callable\optional{, data}}
+\begin{methoddesc}[request]{register_cleanup}{callable\optional{, data}}
 
 Registers a cleanup. Argument \var{callable} can be any callable
 object, the optional argument \var{data} can be any object (default is
@@ -545,100 +589,100 @@ it's possible that it will not be executed.
 
 \end{methoddesc}
 
-\begin{methoddesc}[Request]{write}{string}
+\begin{methoddesc}[request]{write}{string}
 Writes \var{string} directly to the client, then flushes the buffer. 
 \end{methoddesc}
 
 \subsubsection{Request Members\label{pyapi-mprequest-mem}}
 
-\begin{memberdesc}[Request]{connection}
+\begin{memberdesc}[request]{connection}
 A \code{connection} object associated with this request. See
 Connection Object below for details.
 \emph{(Read-Only)}
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{server}
+\begin{memberdesc}[request]{server}
 A server object associate with this request. See Server Object below
 for details.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{next}
+\begin{memberdesc}[request]{next}
 If this is an internal redirect, the request object we redirect to. 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{prev}
+\begin{memberdesc}[request]{prev}
 If this is an internal redirect, the request object we redirect from.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{main}
+\begin{memberdesc}[request]{main}
 If this is a sub-request, pointer to the main request. 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{the_request}
+\begin{memberdesc}[request]{the_request}
 String containing the first line of the request.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{assbackwards}
+\begin{memberdesc}[request]{assbackwards}
 Is this an HTTP/0.9 "simple" request? 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{proxyreq}
+\begin{memberdesc}[request]{proxyreq}
 A proxy request: one of \constant{apache.PROXYREQ_*} values.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{header_only}
+\begin{memberdesc}[request]{header_only}
 A boolean value indicating HEAD request, as opposed to GET. 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{protocol}
+\begin{memberdesc}[request]{protocol}
 Protocol, as given by the client, or "HTTP/0.9". Same as CGI \envvar{SERVER_PROTOCOL}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{proto_num}
+\begin{memberdesc}[request]{proto_num}
 Integer. Number version of protocol; 1.1 = 1001 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{hostname}
+\begin{memberdesc}[request]{hostname}
 String. Host, as set by full URI or Host: header.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{request_time}
+\begin{memberdesc}[request]{request_time}
 A long integer. When request started.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{status_line}
+\begin{memberdesc}[request]{status_line}
 Status line. E.g. "200 OK". 
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{status}
+\begin{memberdesc}[request]{status}
 Status. One of \constant{apache.HTTP_*} values.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{method}
+\begin{memberdesc}[request]{method}
 A string containing the method - 'GET', 'HEAD', 'POST', etc.
 Same as CGI \envvar{REQUEST_METHOD}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{method_number}
+\begin{memberdesc}[request]{method_number}
 Integer containg the method number.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{allowed}
+\begin{memberdesc}[request]{allowed}
 Integer. A bitvector of the allowed methods. Used to construct the
 Allowed: header when responding with
 \constant{HTTP_METHOD_NOT_ALLOWED} or
@@ -648,200 +692,200 @@ method, described in section \ref{pyapi-mprequest-meth}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{allowed_xmethods}
+\begin{memberdesc}[request]{allowed_xmethods}
 Tuple. Allowed extension methods.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{allowed_methods}
+\begin{memberdesc}[request]{allowed_methods}
 Tuple. List of allowed methods. Used in relation with
 \constant{METHOD_NOT_ALLOWED}. This member can be modified via \method{req.allow_methods()} 
 described in section \ref{pyapi-mprequest-meth}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{sent_bodyct}
+\begin{memberdesc}[request]{sent_bodyct}
 Integer. Byte count in stream is for body. (?)
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{bytes_sent}
+\begin{memberdesc}[request]{bytes_sent}
 Long integer. Number of bytes sent.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{mtime}
+\begin{memberdesc}[request]{mtime}
 Long integer. Time the resource was last modified.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{chunked}
+\begin{memberdesc}[request]{chunked}
 Boolean value indicating when sending chunked transfer-coding.
 \emph{(Read-Only})
 \end{memberdesc}
 
-%\begin{memberdesc}[Request]{boundary}
+%\begin{memberdesc}[request]{boundary}
 %String. Multipart/byteranges boundary.
 %\emph{(Read-Only})
 %\end{memberdesc}
 
-\begin{memberdesc}[Request]{range}
+\begin{memberdesc}[request]{range}
 String. The \code{Range:} header.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{clength}
+\begin{memberdesc}[request]{clength}
 Long integer. The "real" content length.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{remaining}
+\begin{memberdesc}[request]{remaining}
 Long integer. Bytes left to read. (Only makes sense inside a read
 operation.)
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{read_length}
+\begin{memberdesc}[request]{read_length}
 Long integer. Number of bytes read.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{read_body}
+\begin{memberdesc}[request]{read_body}
 Integer. How the request body should be read.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{read_chunked}
+\begin{memberdesc}[request]{read_chunked}
 Boolean. Read chunked transfer coding.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{expecting_100}
+\begin{memberdesc}[request]{expecting_100}
 Boolean. Is client waiting for a 100 (\constant{HTTP_CONTINUE}) response.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{headers_in}
+\begin{memberdesc}[request]{headers_in}
 A table object containing headers sent by the client.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{headers_out}
+\begin{memberdesc}[request]{headers_out}
 A \code{table} object representing the headers to be sent to the
 client. 
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{err_headers_out}
+\begin{memberdesc}[request]{err_headers_out}
 These headers get send with the error response, instead of
 headers_out.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{subprocess_env}
+\begin{memberdesc}[request]{subprocess_env}
 A \code{table} object containing environment information typically usable for CGI.
 You may have to call \member{req.add_common_vars()} first to fill in the information
 you need.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{notes}
+\begin{memberdesc}[request]{notes}
 A \code{table} object that could be used to store miscellaneous
 general purpose info that lives for as long as the request lives. If
 you need to pass data between handlers, it's better to simply add
 members to the request object than to use \member{notes}.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{phase}
+\begin{memberdesc}[request]{phase}
 The phase currently being being processed, e.g. "PythonHandler".
 \emph{(Read-Only)}
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{interpreter}
+\begin{memberdesc}[request]{interpreter}
 The name of the subinterpreter under which we're running.
 \emph{(Read-Only)}
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{notes}
+\begin{memberdesc}[request]{notes}
 A \code{table} object that could be used to store miscellaneous
 general purpose info that lives for as long as the request lives. If
 you need to pass data between handlers, it's better to simply add
 members to the request object than to use \member{notes}.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{content_type}
+\begin{memberdesc}[request]{content_type}
 String. The content type. Mod_python maintains an internal flag
-(\member{Request._content_type_set}) to keep track of whether
+(\member{req._content_type_set}) to keep track of whether
 \member{content_type} was set manually from within Python. The
 publisher handler uses this flag in the following way: when
 \member{content_type} isn't explicitely set, it attempts to guess the
 content type by examining the first few bytes of the output.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{handler}
+\begin{memberdesc}[request]{handler}
 The name of the handler currently being processed. This is the handler
 set by mod_mime, not the mod_python handler. In most cases it will be
 "python-program". \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{content_encoding}
+\begin{memberdesc}[request]{content_encoding}
 String. Content encoding.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{vlist_validator}
+\begin{memberdesc}[request]{vlist_validator}
 Integer. Variant list validator (if negotiated).
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{user}
+\begin{memberdesc}[request]{user}
 If an authentication check is made, this will hold the user
 name. Same as CGI \envvar{REMOTE_USER}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{ap_auth_type}
+\begin{memberdesc}[request]{ap_auth_type}
 Authentication type. Same as CGI \envvar{AUTH_TYPE}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{no_cache}
+\begin{memberdesc}[request]{no_cache}
 Boolean. No cache if true.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{no_local_copy}
+\begin{memberdesc}[request]{no_local_copy}
 Boolean. No local copy exists.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{unparsed_uri}
+\begin{memberdesc}[request]{unparsed_uri}
 The URI without any parsing performed.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{uri}
+\begin{memberdesc}[request]{uri}
 The path portion of the URI.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{filename}
+\begin{memberdesc}[request]{filename}
 String. File name being requested.
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{canonical_filename}
+\begin{memberdesc}[request]{canonical_filename}
 String. The true filename (\member{req.filename} is canonicalized if
 they dont match).  \emph{(Read-Only)}
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{path_info}
+\begin{memberdesc}[request]{path_info}
 String. What follows after the file name, but is before query args, if
 anything. Same as CGI \envvar{PATH_INFO}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{args}
+\begin{memberdesc}[request]{args}
 String. Same as CGI \envvar{QUERY_ARGS}.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{finfo}
+\begin{memberdesc}[request]{finfo}
 Tuple. A file information structure, analogous to POSIX stat,
 describing the file pointed to by the URI.  \code{(mode, ino,
 dev, nlink, uid, gid, size, atime, mtime, ctime, fname,
@@ -854,7 +898,7 @@ fname = req.finfo[apache.FINFO_FNAME]
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{parsed_uri}
+\begin{memberdesc}[request]{parsed_uri}
 Tuple. The URI broken down into pieces.
 \code{(scheme, hostinfo, user, password, hostname, port, path, query, fragment)}. 
 The \code{apache} module defines a set of \constant{URI_*} constants that
@@ -865,12 +909,12 @@ fname = req.parsed_uri[apache.URI_PATH]
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{used_path_info}
+\begin{memberdesc}[request]{used_path_info}
 Flag to accept or reject path_info on current request.
 \emph{(Read-Only})
 \end{memberdesc}
 
-\begin{memberdesc}[Request]{eos_sent}
+\begin{memberdesc}[request]{eos_sent}
 Boolean. EOS bucket sent.
 \emph{(Read-Only})
 \end{memberdesc}
@@ -879,6 +923,34 @@ Boolean. EOS bucket sent.
 
 The connection object is a Python mapping to the Apache conn_rec
 structure.
+
+\subsubsection{Connection Memthods\label{pyapi-mpconn-meth}}
+
+\begin{methoddesc}[connection]{read}{length}
+Reads \var{length} bytes from the connection. The read blocks
+indefinitely until length bytes has been read. If length is -1, keep
+reading until the socket is closed from the other end (This is known
+as \code{EXHAUSTIVE} mode in the http server code).
+
+This method should only be used inside \emph{Connection Handlers}.
+
+\end{methoddesc}
+
+\begin{methoddesc}[connection]{readline}{\optional{length}}
+
+Reads a line from the connection or up to \var{length} bytes.
+
+This method should only be used inside \emph{Connection Handlers}.
+
+\end{methoddesc}
+
+\begin{methoddesc}[connection]{write}{string}
+
+Writes \var{string} to the client.
+
+This method should only be used inside \emph{Connection Handlers}.
+
+\end{methoddesc}
 
 \subsubsection{Connection Members\label{pyapi-mpconn-mem}}
 
@@ -969,6 +1041,11 @@ structure. The server structure describes the server (possibly virtual
 server) serving the request.
 
 \subsubsection{Server Methods\label{pyapi-mpsrv-meth}}
+
+\begin{methoddesc}[server]{get_options}{}
+Similar to \code{req.get_options()}, but returns a config pointed to
+by \code{server->module_config} Apache config vector. 
+\end{methoddesc}
 
 \begin{methoddesc}[server]{register_cleanup}{request, callable\optional{, data}}
 Registers a cleanup. Very similar to \function{req.register_cleanup()}, except
