@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.51 2001/05/25 03:27:31 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.52 2001/05/28 20:00:41 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -330,13 +330,13 @@ static void *python_create_dir_config(pool *p, char *dir)
 }
 
 /**
- ** copy_table
+ ** mp_copy_table
  **
  *   Merge two tables into one. Matching key values 
  *   in second overlay the first.
  */
 
-void copy_table(table *t1, table *t2)
+void mp_copy_table(table *t1, table *t2)
 {
 
     array_header *ah;
@@ -378,9 +378,9 @@ static void *python_merge_dir_config(pool *p, void *cc, void *nc)
     merged_conf->authoritative = current_conf->authoritative;
     merged_conf->config_dir = ap_pstrdup(p, current_conf->config_dir);
 
-    copy_table(merged_conf->directives, current_conf->directives);
-    copy_table(merged_conf->dirs, current_conf->dirs);
-    copy_table(merged_conf->options, current_conf->options);
+    mp_copy_table(merged_conf->directives, current_conf->directives);
+    mp_copy_table(merged_conf->dirs, current_conf->dirs);
+    mp_copy_table(merged_conf->options, current_conf->options);
 
 
     /** copy new **/
@@ -390,9 +390,9 @@ static void *python_merge_dir_config(pool *p, void *cc, void *nc)
     if (new_conf->config_dir)
 	merged_conf->config_dir = ap_pstrdup(p, new_conf->config_dir);
 
-    copy_table(merged_conf->directives, new_conf->directives);
-    copy_table(merged_conf->dirs, new_conf->dirs);
-    copy_table(merged_conf->options, new_conf->options);
+    mp_copy_table(merged_conf->directives, new_conf->directives);
+    mp_copy_table(merged_conf->dirs, new_conf->dirs);
+    mp_copy_table(merged_conf->options, new_conf->options);
 
     return (void *) merged_conf;
 }

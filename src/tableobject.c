@@ -44,7 +44,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.5 2000/12/18 19:50:03 gtrubetskoy Exp $
+ * $Id: tableobject.c,v 1.6 2001/05/28 20:00:41 gtrubetskoy Exp $
  *
  */
 
@@ -238,13 +238,13 @@ static PyObject * table_has_key(tableobject *self, PyObject *args)
 }
 
 /**
- ** table_add
+ ** mp_table_add
  **
  *     this function is equivalent of ap_table_add - 
  *     it can create duplicate entries. 
  */
 
-static PyObject * table_add(tableobject *self, PyObject *args)
+static PyObject * mp_table_add(tableobject *self, PyObject *args)
 {
 
     const char *val, *key;
@@ -263,7 +263,7 @@ static PyObject * table_add(tableobject *self, PyObject *args)
 static PyMethodDef tablemethods[] = {
     {"keys",                 (PyCFunction)table_keys,    METH_VARARGS},
     {"has_key",              (PyCFunction)table_has_key, METH_VARARGS},
-    {"add",                  (PyCFunction)table_add,     METH_VARARGS},
+    {"add",                  (PyCFunction)mp_table_add,  METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

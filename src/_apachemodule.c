@@ -44,22 +44,22 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.8 2001/04/08 04:54:20 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.9 2001/05/28 20:00:41 gtrubetskoy Exp $
  *
  */
 
 #include "mod_python.h"
 
 /** 
- ** log_error
+ ** mp_log_error
  **
  *  A wrpapper to ap_log_error
  * 
- *  log_error(string message, int level, server server)
+ *  mp_log_error(string message, int level, server server)
  *
  */
 
-static PyObject * log_error(PyObject *self, PyObject *args)
+static PyObject * mp_log_error(PyObject *self, PyObject *args)
 {
 
     int level = 0;
@@ -92,15 +92,15 @@ static PyObject * log_error(PyObject *self, PyObject *args)
 }
 
 /** 
- ** make_table
+ ** mp_make_table
  **
  *  This returns a new object of built-in type table.
  *
- *  make_table()
+ *  mp_make_table()
  *
  */
 
-static PyObject * make_table(PyObject *self, PyObject *args)
+static PyObject * mp_make_table(PyObject *self, PyObject *args)
 {
     return MpTable_New();
 }
@@ -352,8 +352,8 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
 
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
-    {"log_error",                 (PyCFunction)log_error,        METH_VARARGS},
-    {"make_table",                (PyCFunction)make_table,       METH_VARARGS},
+    {"log_error",                 (PyCFunction)mp_log_error,     METH_VARARGS},
+    {"make_table",                (PyCFunction)mp_make_table,    METH_VARARGS},
     {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
     {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
     {NULL, NULL} /* sentinel */
