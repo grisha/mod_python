@@ -21,7 +21,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.40 2004/02/16 19:47:28 grisha Exp $
+ * $Id: mod_python.h,v 1.41 2004/07/23 14:05:03 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -50,7 +50,7 @@
 #endif
 
 /* Python headers */
-/* this gets rid of some comile warnings */
+/* this gets rid of some compile warnings */
 #if defined(_POSIX_THREADS)
 #undef _POSIX_THREADS
 #endif
