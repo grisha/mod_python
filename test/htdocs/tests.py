@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.16 2002/10/14 21:16:05 grisha Exp $
+ # $Id: tests.py,v 1.17 2002/10/14 21:18:24 grisha Exp $
  #
 
 # mod_python tests
@@ -512,7 +512,7 @@ def postreadrequest(req):
 
 def trans(req):
 
-    #req.filename = req.document_root()+"/tests.py"
+    req.filename = req.document_root()+"/tests.py"
 
     return apache.OK
 
