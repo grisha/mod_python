@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.13 2000/07/04 17:43:02 gtrubetskoy Exp $
+  $Id: apache.py,v 1.14 2000/07/28 18:47:36 gtrubetskoy Exp $
 
 """
 
@@ -12,6 +12,7 @@ import string
 import traceback
 import time
 import os
+import pdb
 import stat
 import imp
 import types
@@ -61,13 +62,31 @@ class CallBack:
         return obj
 
 
+    class Stacker:
+
+        def __init__(self, config):
+            self.config = config
+
+        def pop(self, htype):
+            handlers = string.split(self.config[htype])
+            if not handlers:
+                return None
+            else:
+                self.config[htype] = string.join(handlers[1:], " ")
+                return handlers[0]
+
+        def push(self, htype, handler):
+            self.config[htype] = self.config[htype] + " " + handler
+            
+        
+
     def Dispatch(self, req, htype):
         """
         This is the handler dispatcher.
         """
 
         # be cautious
-        result = HTTP_INTERNAL_SERVER_ERROR
+        result, handler = HTTP_INTERNAL_SERVER_ERROR, ""
 
         # request
         self.req = req
@@ -77,10 +96,14 @@ class CallBack:
         debug = config.has_key("PythonDebug")
 
         try:
-            # cycle through the handlers
-            handlers = string.split(config[htype])
 
-            for handler in handlers:
+            # cycle through the handlers
+            stack = self.Stacker(config)
+            while 1:
+
+                handler = stack.pop(htype)
+                if not handler:
+                    break
 
                 # split module::handler
                 l = string.split(handler, '::', 1)
@@ -116,7 +139,11 @@ class CallBack:
                 object = self.resolve_object(module, object_str)
 
                 # call the object
-                result = object(req)
+                if config.has_key("PythonEnablePdb"):
+                    if config["PythonEnablePdb"]:
+                        result = pdb.runcall(object, req)
+                else:
+                    result = object(req)
 
                 # stop cycling through handlers
                 if result != OK:
@@ -164,9 +191,11 @@ class CallBack:
 	when using Python interactively to the browser
 	"""
 
+        print 8
+
         try:
             req = self.req
-
+            print 5
             if str(etype) == "exceptions.IOError" \
                and str(evalue)[:5] == "Write":
                 # if this is an IOError while writing to client,
@@ -392,10 +421,14 @@ class CGIStdout(NullIO):
 
         if not self.headers_sent:
             self.headers = self.headers + s
-            ss = string.split(self.headers, '\n\n', 1)
+            # first try RFC-compliant CRLF
+            ss = string.split(self.headers, '\r\n\r\n', 1)
             if len(ss) < 2:
-                # headers not over yet
-                pass
+                # Second try with \n\n
+                ss = string.split(self.headers, '\n\n', 1)
+                if len(ss) < 2:
+                    # headers not over yet
+                    pass
             else:
                 # headers done, process them
                 string.replace(ss[0], '\r\n', '\n')

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.9 2000/07/04 17:43:02 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.10 2000/07/28 18:47:36 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -13,14 +13,6 @@
     <hr>
 
     <ul>
-      <li><a href="#PythonDebug">PythonDebug</a>
-      <li><a href="#PythonImport">PythonImport</a>
-      <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
-      <li><a href="#PythonInterpreter">PythonInterpreter</a>
-      <li><a href="#PythonNoReload">PythonNoReload</a>
-      <li><a href="#PythonOption">PythonOption</a>
-      <li><a href="#PythonPath">PythonPath</a>
-	<br><br>
       <a href="#Handlers">Handlers</a>
 	<br><br>
       <li><a href="#HandlerSyntax">Python*Handler Syntax</a>
@@ -34,9 +26,310 @@
       <li><a href="#PythonFixupHandler">PythonFixupHandler</a>
       <li><a href="#PythonHandler">PythonHandler</a>
       <li><a href="#PythonLogHandler">PythonLogHandler</a>
+	<br><br>
+	<a href="#other">Other Directives</a>
+	<br><br>
+      <li><a href="#PythonEnablePdb">PythonEnablePdb</a>
+      <li><a href="#PythonDebug">PythonDebug</a>
+      <li><a href="#PythonImport">PythonImport</a>
+      <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
+      <li><a href="#PythonInterpreter">PythonInterpreter</a>
+      <li><a href="#PythonNoReload">PythonNoReload</a>
+      <li><a href="#PythonOption">PythonOption</a>
+      <li><a href="#PythonPath">PythonPath</a>
     </ul>
-    <hr>
     <p>
+<hr>
+    <a name="Handlers"><h1>Handlers</h1></a>
+<hr>
+
+      <a name="HandlerSyntax">
+	<h2>Python*Handler Directive Syntax</h2>
+	All <b>Python*Handler</b> directives have the following syntax:
+	
+      <pre>Python*Handler <em>handler [handler] ...</em></pre>
+      
+      Where <em>handler</em> is a callable object (e.g. a function) that accepts a
+      single argument - <em>request</em> object. 
+    <p>
+      Multiple handlers can be specified on a sinlge line, in which case they will be
+      called sequentially, from left to right. Same handler directives can be specified
+      multiple times as well, with the same result - all hanlders listed will be 
+      executed sequentially, from first to last. If any handler in the sequence returns
+      a value other than <code>apache.OK</code>, then execution of all subsequent
+      handlers is aborted.
+    <p>
+	A <em>handler</em> has the following syntax:
+      <pre><em>module[::object] [module::[object]] ...</em></pre>
+      
+      Where <em>module</em> can be a full module name (package dot notation is
+      accepted), and the optional <em>object</em> is the name of an object inside the
+      module. 
+      <p>
+	<em>Object</em> can also contain dots, in which case it will be resolved
+	from left to right. During resolution, if mod_python encounters an object of
+	type &lt;class&gt;, it will try instantiate it passing it a single argument, a
+	request object.
+      <p>
+	If no <em>object</em> is specified, then it will default to the directive
+	of the handler, all lower case, with the word "Python" removed. E.g. the
+	default <em>object</em> for <code>PythonAuthenHandler</code> would be 
+	<code>authenhandler</code>.
+      <p>
+	Example: <pre>PythonAuthzHandler mypackage.mymodule::checkallowed</pre>
+      <p>
+        For more information on handlers, see 
+        <a href="pythonapi.html#handler">Overview of a Handler</a>.
+      <p>
+	Side note: The &quot;::&quot; was chosen for performance reasons. In order
+	for Python to use objects inside modules, the modules first need to be imported.
+	However, if the separator were simply a &quot;.&quot;, it would involve a much
+	more complex process of sequentially evaluating every word to determine whether
+	it is a package, module, class etc. Using the (admittedly un-Python-like) 
+	&quot;::&quot; takes the time consuming work of figuring out where the 
+	module ends and the object inside of it begins away from mod_python resulting
+	in a modest performance gain..
+      <p>
+
+      </a>
+
+    <hr>
+
+<h2><a name="PythonPostReadRequestHandler">PythonPostReadRequestHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+      This routine is called after the request has been read but before any
+      other phases have been processed.  This is useful to make decisions
+      based upon the input header fields.
+    <p>
+      <em>NOTE:</em> At the time when this phase of the request is
+      being processed, the URI has not been translated into a path
+      name, therefore this directive will never be executed by Apache
+      if specified within &lt;Directory&gt;, &lt;Location&gt;,
+      &lt; File&gt; directives or in an .htaccess file. The only place
+      this can be specified is the main configuration file, and the code for
+      it will execute in the global interpreter.
+<hr>
+<h2><a name="PythonTransHandler">PythonTransHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine gives allows for an opportunity to translate the
+      URI into an actual filename, before the server's default rules 
+      (Alias directives and the like) are followed.
+    <p>
+      <em>NOTE:</em> At the time when this phase of the request is
+      being processed, the URI has not been translated into a path
+      name, therefore this directive will never be executed by Apache
+      if specified within &lt;Directory&gt;, &lt;Location&gt;,
+      &lt; File&gt; directives or in an .htaccess file. The only place
+      this can be specified is the main configuration file, and the code for
+      it will execute in the global interpreter.
+    <hr>
+<h2><a name="PythonHeaderParserHandler">PythonHeaderParserHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+    <a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+      This handler is called to give the module a chance to look at the request
+      headers and take any appropriate specific actions early in the processing
+      sequence.
+<hr>
+<h2><a name="PythonAccessHandler">PythonAccessHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine is called to check for any module-specific restrictions placed
+      upon the requested resource.
+    <p>
+      For example, this can be used to restrict access by IP number. To do so,
+      you would return HTTP_FORBIDDEN or some such to indicate that access is not
+      allowed.
+<hr>
+<h2><a name="PythonAuthenHandler">PythonAuthenHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine is called to check the authentication information sent with
+      the request (such as looking up the user in a database and verifying that
+      the [encrypted] password sent matches the one in the database).
+    <p>
+      To obtain the username, use <code>req.connection.user</code>. To obtain
+      the password entered by the user, use the <code>req.get_basic_auth_pw()</code>
+      function.
+    <p>
+      A return of <code>apache.OK</code> means the authentication succeeded. A
+      return of <code>apache.HTTP_UNAUTHORIZED</code> with most browser will 
+      bring up the password dialog box again. A return of 
+      <code>apache.HTTP_FORBIDDEN</code> will usually show the error on the
+      browser and not bring up the password dialog again. <code>HTTP_FORBIDDEN</code>
+      should be used when authentication succeeded, but the user is not permitted to
+      access a particular URL.
+    <p>
+      An example authentication handler might look like this:
+      <pre>
+    def authenhandler(req):
+
+        user = req.connection.user     
+        pw = req.get_basic_auth_pw()
+        if user == "spam" and pw == "eggs":
+            return apache.OK
+        else:
+            return apache.HTTP_UNAUTHORIZED
+    </pre>
+
+<hr>
+<h2><a name="PythonAuthzHandler">PythonAuthzHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+    
+    <p>
+      This routine is called to check to see if the resource being requested
+      requires authorization.
+<hr>
+<h2><a name="PythonTypeHandler">PythonTypeHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      This routine is called to determine and/or set the various document type
+      information bits, like Content-type (via r->content_type), language, et
+      cetera.
+<hr>
+<h2><a name="PythonFixupHandler">PythonFixupHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This routine is called to perform any module-specific fixing of header
+      fields, et cetera.  It is invoked just before any content-handler.
+<hr>
+<h2><a name="PythonHandler">PythonHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This is the main request handler. 99.99% of your applications will only
+      provide this one handler. 
+
+<hr>
+<h2><a name="PythonLogHandler">PythonLogHandler</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> <code>None</code><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+      
+    <p>
+      This routine is called to perform any module-specific logging activities
+      over and above the normal server things.
+<p>
+<hr>
+    <a name="other"><h1>Other Directives</h1></a>
+<hr>
+
+<h2><a name="PythonEnablePdb">PythonEnablePdb</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonEnablePdb {On, Off}<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> PythonEnablePdb Off<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+    <p>
+      When On, mod_python will execute the handler functions within the 
+      Python debugger pdb using the <code>pdb.runcall()</code> function.
+    <p>
+      Because pdb is an interactive tool, start httpd with the -X option 
+      when using this directive.
+
+<hr>
 <h2><a name="PythonDebug">PythonDebug</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> PythonDebug {On, Off}<br>
@@ -225,252 +518,10 @@ Note that this directive should not be used as a
 security measure since the Python path is easily manipulated from
 within the scripts.
 
-<hr>
-    <a name="Handlers"><h1>Handlers</h1></a>
-<hr>
-
-      <a name="HandlerSyntax">
-	<h2>Python*Handler Directive Syntax</h2>
-	All <b>Python*Handler</b> directives have the following syntax:
-	
-      <pre>Python*Handler <em>handler [handler] ...</em></pre>
-      
-      Where <em>handler</em> is a callable object (e.g. a function) that accepts a
-      single argument - <em>request</em> object. Multiple handlers can be specified,
-      in which case they will be called sequentially, from left to right.
-      <p>
-	A <em>handler</em> has the following syntax:
-      <pre><em>module[::object] [module::[object]] ...</em></pre>
-      
-      Where <em>module</em> can be a full module name (package dot notation is
-      accepted), and the optional <em>object</em> is the name of an object inside the
-      module. 
-      <p>
-	<em>Object</em> can also contain dots, in which case it will be resolved
-	from left to right. During resolution, if mod_python encounters an object of
-	type &lt;class&gt;, it will try instantiate it passing it a single argument, a
-	request object.
-      <p>
-	If no <em>object</em> is specified, then it will default to the directive
-	of the handler, all lower case, with the word "Python" removed. E.g. the
-	default <em>object</em> for <code>PythonAuthenHandler</code> would be 
-	<code>authenhandler</code>.
-      <p>
-	Example: <pre>PythonAuthzHandler mypackage.mymodule::checkallowed</pre>
-      <p>
-	Side note: The &quot;::&quot; was chosen for performance reasons. In order
-	for Python to use objects inside modules, the modules first need to be imported.
-	However, if the separator were simply a &quot;.&quot;, it would involve a much
-	more complex process of sequentially evaluating every word to determine whether
-	it is a package, module, class etc. Using the (admittedly un-Python-like) 
-	&quot;::&quot; takes the time consuming work of figuring out where the 
-	module ends and the object inside of it begins away from mod_python resulting
-	in a modest performance gain..
-      <p>
-
-      </a>
-
-    <hr>
-
-<h2><a name="PythonPostReadRequestHandler">PythonPostReadRequestHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-
-<p>
-      This routine is called after the request has been read but before any
-      other phases have been processed.  This is useful to make decisions
-      based upon the input header fields.
-<hr>
-<h2><a name="PythonTransHandler">PythonTransHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-
-    <p>
-      This routine gives allows for an opportunity to translate the
-      URI into an actual filename, before the server's default rules 
-      (Alias directives and the like) are followed.
-    <hr>
-<h2><a name="PythonHeaderParserHandler">PythonHeaderParserHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-    <a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-
-<p>
-      This handler is called to give the module a chance to look at the request
-      headers and take any appropriate specific actions early in the processing
-      sequence.
-<hr>
-<h2><a name="PythonAccessHandler">PythonAccessHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-
-    <p>
-      This routine is called to check for any module-specific restrictions placed
-      upon the requested resource.
-    <p>
-      For example, this can be used to restrict access by IP number. To do so,
-      you would return HTTP_FORBIDDEN or some such to indicate that access is not
-      allowed.
-<hr>
-<h2><a name="PythonAuthenHandler">PythonAuthenHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-
-    <p>
-      This routine is called to check the authentication information sent with
-      the request (such as looking up the user in a database and verifying that
-      the [encrypted] password sent matches the one in the database).
-    <p>
-      To obtain the username, use <code>req.connection.user</code>. To obtain
-      the password entered by the user, use the <code>req.get_basic_auth_pw()</code>
-      function.
-    <p>
-      A return of <code>apache.OK</code> means the authentication succeeded. A
-      return of <code>apache.HTTP_UNAUTHORIZED</code> with most browser will 
-      bring up the password dialog box again. A return of 
-      <code>apache.HTTP_FORBIDDEN</code> will usually show the error on the
-      browser and not bring up the password dialog again. <code>HTTP_FORBIDDEN</code>
-      should be used when authentication succeeded, but the user is not permitted to
-      access a particular URL.
-    <p>
-      An example authentication handler might look like this:
-      <pre>
-    def authenhandler(req):
-
-        user = req.connection.user     
-        pw = req.get_basic_auth_pw()
-        if user == "spam" and pw == "eggs":
-            return apache.OK
-        else:
-            return apache.HTTP_UNAUTHORIZED
-    </pre>
-
-<hr>
-<h2><a name="PythonAuthzHandler">PythonAuthzHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-    
-    <p>
-      This routine is called to check to see if the resource being requested
-      requires authorization.
-<hr>
-<h2><a name="PythonTypeHandler">PythonTypeHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-
-    <p>
-      This routine is called to determine and/or set the various document type
-      information bits, like Content-type (via r->content_type), language, et
-      cetera.
-<hr>
-<h2><a name="PythonFixupHandler">PythonFixupHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-      
-    <p>
-      This routine is called to perform any module-specific fixing of header
-      fields, et cetera.  It is invoked just before any content-handler.
-<hr>
-<h2><a name="PythonHandler">PythonHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-      
-    <p>
-      This is the main request handler. 99.99% of your applications will only
-      provide this one handler. 
-
-<hr>
-<h2><a name="PythonLogHandler">PythonLogHandler</a></h2>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
-<strong>Syntax:</strong></a> <a href="#HandlerSyntax"><em>Python*Handler syntax</em></a><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
-<strong>Default:</strong></A> <code>None</code><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
-<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
-<strong>Override:</strong></a> not None<br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
-<strong>Module:</strong></a> mod_python.c
-      
-    <p>
-      This routine is called to perform any module-specific logging activities
-      over and above the normal server things.
-
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Tue Jul  4 13:14:39 EDT 2000
+Last modified: Tue Jul 18 18:15:27 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: installation.html,v 1.7 2000/05/26 19:51:18 grisha Exp $ -->
+<!-- $Id: installation.html,v 1.8 2000/07/28 18:47:36 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -60,7 +60,7 @@ The installation involves the following steps:
 	  (xxx is the version number): 
 	  <pre>
     $ gunzip mod_python-xxx.tgz
-    $ tar xzvf mod_python-xxx.tar
+    $ tar xvf mod_python-xxx.tar
 	  </pre>
 	  
 	<li>Copy the directory lib/python/mod_python to some place in 
@@ -246,14 +246,16 @@ The installation involves the following steps:
 	default is <code>None</code>, which will not work.
 	  <pre>
       AddHandler python-program .py
-      PythonHandler test
+      PythonHandler mptest
       PythonDebug </pre>
 
 	<li> At this time, if you made changes to the main configuration file, 
 	  you will need to restart Apache in order for the changes to take effect.
 
-	<li> Edit <code>test.py</code> file in the <code>htdocs/test</code> 
-	  directory so that is has the following lines:
+	<li> Edit <code>mptest.py</code> file in the <code>htdocs/test</code> 
+	  directory so that is has the following lines <em>(Be careful when
+	    cutting and pasting from your browser, you may end up with incorrect
+	    indentation and a syntax error)</em>:
 	  <pre>
       from mod_python import apache
 
@@ -262,7 +264,7 @@ The installation involves the following steps:
           req.write("Hello World!")
           return apache.OK </pre>
 
-	<li> Point your browser to the URL referring to the test.py, you should
+	<li> Point your browser to the URL referring to the mptest.py, you should
 	  see "Hellow World!". If you didn't - refer to the troubleshooting step
 	  next.
       </ul>
@@ -299,7 +301,7 @@ The installation involves the following steps:
     <hr>
 <!-- Created: Wed May 10 09:06:54 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Mon May 22 19:02:46 EDT 2000
+Last modified: Wed Jul 19 16:08:47 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
