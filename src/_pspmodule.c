@@ -54,7 +54,7 @@
  *
  * This file originally written by Stering Hughes
  * 
- * $Id: _pspmodule.c,v 1.1 2003/05/29 14:15:47 grisha Exp $
+ * $Id: _pspmodule.c,v 1.2 2003/05/29 20:52:25 grisha Exp $
  *
  * See accompanying documentation and source code comments for
  * details.
@@ -66,7 +66,9 @@
 #include "psp_string.h"
 #include "_pspmodule.h"
 #include "Python.h"
-//#include "mod_python.h"
+
+/* calm down compile warning from psp_flex.h*/
+static int yy_init_globals (yyscan_t yyscanner ) {return 0;};
 
 static psp_parser_t *psp_parser_init(void)
 {
@@ -78,6 +80,7 @@ static psp_parser_t *psp_parser_init(void)
     memset(&parser->whitespace, 0, sizeof(psp_string));
     parser->is_psp_echo = 0;
     parser->after_colon = 0;
+    parser->seen_newline = 0;
 
     return parser;
 }
@@ -95,16 +98,27 @@ static void psp_parser_cleanup(psp_parser_t *parser)
     free(parser);
 }
 
-static char *psp_parser_gen_pycode(psp_parser_t *parser, char *filename)
-{ 
+static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
+{
+    PyObject *code;
+    char     *filename;
+    psp_parser_t  *parser;
     yyscan_t scanner;
     FILE *f;
     
-    f = fopen(filename, "rb");
-    if (f == NULL) {
+    if (!PyArg_ParseTuple(argv, "s", &filename)) {
         return NULL;
     }
     
+    f = fopen(filename, "rb");
+    
+    if (f == NULL) {
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
+        return NULL;
+    }
+
+    parser = psp_parser_init();
+
     yylex_init(&scanner);
     yyset_in(f, scanner);
     yyset_extra(parser, scanner);
@@ -114,32 +128,46 @@ static char *psp_parser_gen_pycode(psp_parser_t *parser, char *filename)
     fclose(f);
 
     psp_string_0(&parser->pycode);
+    code = PyString_FromString(parser->pycode.blob);
 
-    return parser->pycode.blob;
+    psp_parser_cleanup(parser);
+    
+    return code; 
 }
 
-static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
+static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
 {
     PyObject *code;
-    char     *filename;
+    PyObject *str;
+    yyscan_t scanner;
     psp_parser_t  *parser;
-    
-    if (!PyArg_ParseTuple(argv, "s", &filename)) {
+    YY_BUFFER_STATE bs;
+
+    if (!PyArg_ParseTuple(argv, "S", &str)) {
         return NULL;
     }
-    
+
     parser = psp_parser_init();
-    code  = psp_parser_gen_pycode(parser, filename);
-    if (code) {
-        code = PyString_FromString(code);
-    }
+    yylex_init(&scanner);
+    yyset_extra(parser, scanner);
+
+    bs = yy_scan_string(PyString_AsString(str), scanner);
+    yylex(scanner);
+
+    yy_delete_buffer(bs, scanner);
+    yylex_destroy(scanner);
+    
+    psp_string_0(&parser->pycode);
+    code = PyString_FromString(parser->pycode.blob);
+
     psp_parser_cleanup(parser);
     
     return code; 
 }
 
 struct PyMethodDef _psp_module_methods[] = {
-    {"parse", (PyCFunction) _psp_module_parse, METH_VARARGS},
+    {"parse",       (PyCFunction) _psp_module_parse,       METH_VARARGS},
+    {"parsestring", (PyCFunction) _psp_module_parsestring, METH_VARARGS},
     {NULL, NULL}
 };
 

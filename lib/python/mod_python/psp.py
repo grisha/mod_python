@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.4 2003/05/29 14:15:47 grisha Exp $
+ # $Id: psp.py,v 1.5 2003/05/29 20:52:25 grisha Exp $
 
 from mod_python import apache
 import sys
@@ -62,15 +62,19 @@ import _psp
 
 def parse(filename):
 
-        return _psp.parse(req.filename)
+    return _psp.parse(req.filename)
+
+def parsestring(str):
+
+    return _psp.parsestring(str)
 
 def handler(req):
 
-	source = _psp.parse(req.filename)
+    source = _psp.parse(req.filename)
 
-        code = compile(source, req.filename, "exec")
+    code = compile(source, req.filename, "exec")
 
-        # give it it's own locals
-        exec code in globals(), {"req":req}
+    # give it it's own locals
+    exec code in globals(), {"req":req}
 
-	return mod_python.apache.OK
+    return mod_python.apache.OK
