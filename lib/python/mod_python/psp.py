@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.21 2003/09/02 20:44:19 grisha Exp $
+ # $Id: psp.py,v 1.22 2003/09/05 15:04:44 grisha Exp $
 
 import apache, Session, util, _psp
 import _apache
@@ -72,15 +72,15 @@ dbm_types = {}
 
 tempdir = tempfile.gettempdir()
 
-def parse(filename, dir=None):
-    if dir:
-        return _psp.parse(filename, dir)
+def path_split(filename):
+
+    dir, fname = os.path.split(filename)
+    if os.name == "nt":
+        dir += "\\"
     else:
-        return _psp.parse(filename)
+        dir += "/"
 
-def parsestring(str):
-
-    return _psp.parsestring(str)
+    return dir, fname
 
 def code2str(c):
 
@@ -94,194 +94,218 @@ def str2code(s):
 
     return new.code(*marshal.loads(s))
 
-def load_file(dir, fname, dbmcache=None, srv=None):
-
-    """ In addition to dbmcache, this function will check for
-    existence of a file with same name, but ending with c and load it
-    instead. The c file contains already compiled code (see code2str
-    above). My crude tests showed that mileage varies greatly as to
-    what the actual speedup would be, but on average for files that
-    are mostly strings and not a lot of Python it was 1.5 - 3
-    times. The good news is that this means that the PSP lexer and the
-    Python parser are *very* fast, so compiling PSP pages is only
-    necessary in extreme cases. """
-
-    smtime = 0
-    cmtime = 0
-
-    filename = os.path.join(dir, fname)
-
-    if os.path.isfile(filename):
-        smtime = os.path.getmtime(filename)
-
-    if dbmcache:
-        cached = dbm_cache_get(srv, dbmcache, filename, smtime)
-        if cached:
-            return cached
-
-    cached = memcache.get(filename, smtime)
-    if cached:
-        return cached
-
-    name, ext = os.path.splitext(filename)
-
-    cext = ext[:-1] + "c"
-    cname = name + cext
-    
-    if os.path.isfile(name + cext):
-        cmtime = os.path.getmtime(cname)
-
-        if cmtime >= smtime:
-            # we've got a code file!
-            code = str2code(open(name + cext).read())
-
-            return code
-
-    source = _psp.parse(fname, dir)
-    code = compile(source, filename, "exec")
-
-    if dbmcache:
-        dbm_cache_store(srv, dbmcache, filename, smtime, code)
-    else:
-        memcache.store(filename, smtime, code)
-
-    return code
-
-def path_split(filename):
-
-    dir, fname = os.path.split(filename)
-    if os.name == "nt":
-        dir += "\\"
-    else:
-        dir += "/"
-
-    return dir, fname
-
-def display_code(req):
-    """
-    Display a niceliy HTML-formatted side-by-side of
-    what PSP generated next to orinial code
-    """
-
-    dir, fname = path_split(req.filename[:-1])
-
-    source = open(req.filename[:-1]).read().splitlines()
-    pycode = _psp.parse(fname, dir).splitlines()
-
-    source = [s.rstrip() for s in source]
-    pycode = [s.rstrip() for s in pycode]
-
-    req.write("<table>\n<tr>")
-    for s in ("", "&nbsp;PSP-produced Python Code:",
-              "&nbsp;%s:" % req.filename[:-1]):
-        req.write("<td><tt>%s</tt></td>" % s)
-    req.write("</tr>\n")
-
-    n = 1
-    for line in pycode:
-        req.write("<tr>")
-        left = escape(line).replace("\t", " "*4).replace(" ", "&nbsp;")
-        if len(source) < n:
-            right = ""
-        else:
-            right = escape(source[n-1]).replace("\t", " "*4).replace(" ", "&nbsp;")
-        for s in ("%d.&nbsp;" % n,
-                  "<font color=blue>%s</font>" % left,
-                  "&nbsp;<font color=green>%s</font>" % right):
-            req.write("<td><tt>%s</tt></td>" % s)
-        req.write("</tr>\n")
-                      
-        n += 1
-    req.write("</table>\n")
-
-    return apache.OK
-
 class PSPInterface:
 
-    def __init__(self, req, dir, fname, dbmcache, session, form):
-        self._req = req
-        self._dir = dir
-        self._fname = fname
-        self._dbmcache = dbmcache
-        self._session = session
-        self._form = form
-        self._error_page = None
+    def __init__(self, req, filename, form):
+        self.req = req
+        self.filename = filename
+        self.error_page = None
+        self.form = form
 
     def set_error_page(self, page):
         if page and page[0] == '/':
-            # absolute relative to document root
-            self._error_page = load_file(self._req.document_root(), page,
-                                         self._dbmcache,
-                                         srv=self._req.server)
+            # relative to document root
+            self.error_page = PSP(self.req, self.req.document_root() + page)
         else:
             # relative to same dir we're in
-            self._error_page = load_file(self._dir, page, self._dbmcache,
-                                         srv=self._req.server)
+            dir = path_split(self.filename)[0]
+            self.error_page = PSP(self.req, dir + page)
 
     def apply_data(self, object):
 
-        if not self._form:
-            self._form = util.FieldStorage(self._req,
-                                           keep_blank_values=1)
+        if not self.form:
+            self.form = util.FieldStorage(self.req, keep_blank_values=1)
 
-        return util.apply_fs_data(object, self._form,
-                                  req=self._req)
+        return util.apply_fs_data(object, self.form, req=self.req)
 
     def redirect(self, location, permanent=0):
 
-        util.redirect(self._req, location, permanent)
+        util.redirect(self.req, location, permanent)
 
-def run_psp(req):
+class PSP:
 
+    code = None
     dbmcache = None
-    opts = req.get_options()
-    if opts.has_key("PSPDbmCache"):
-        dbmcache = opts["PSPDbmCache"]
 
-    dir, fname = path_split(req.filename)
+    def __init__(self, req, filename=None, string=None):
 
-    if not fname:
-        # this is a directory
-        return apache.DECLINED
+        if (string and filename):
+            raise ValueError, "Must specify either filename or string"
 
-    code = load_file(dir, fname, dbmcache, srv=req.server)
+        self.req = req
 
-    session = None
-    if "session" in code.co_names:
-        session = Session.Session(req)
+        if not filename and not string:
+            filename = req.filename
 
-    form = None
-    if "form" in code.co_names:
-        form = util.FieldStorage(req, keep_blank_values=1)
+        self.filename, self.string = filename, string
 
-    psp = PSPInterface(req, dir, fname, dbmcache, session, form)
+        if filename:
+            self.load_from_file()
+        else:
 
-    try:
+            cached = strcache.get(string)
+            if cached:
+                self.code = cached
+            else:
+                self.code = _psp.parsestring(string)
+                strcache.store(string)
+
+    def cache_get(self, filename, mtime):
+
+        opts = self.req.get_options()
+        if opts.has_key("PSPDbmCache"):
+            self.dbmcache = opts["PSPDbmCache"]
+
+        if self.dbmcache:
+            cached = dbm_cache_get(self.req.server, self.dbmcache,
+                                   filename, mtime)
+            if cached:
+                return cached
+
+        cached = mem_fcache.get(filename, mtime)
+        if cached:
+            return cached
+
+    def cache_store(self, filename, mtime, code):
+
+        if self.dbmcache:
+            dbm_cache_store(self.req.server, self.dbmcache,
+                            filename, mtime, code)
+        else:
+            mem_fcache.store(filename, mtime, code)
+
+    def cfile_get(self, filename, mtime):
+
+        # check for a file ending with 'c' (precompiled file)
+        name, ext = os.path.splitext(filename)
+        cname = name + ext[:-1] + 'c'
+
+        if os.path.isfile(cname):
+            cmtime = os.path.getmtime(cname)
+
+            if cmtime >= mtime:
+                return str2code(open(cname).read())
+
+    def load_from_file(self):
+
+        filename = self.filename
+
+        if not os.path.isfile(filename):
+            raise ValueError, "%s is not a file" % filename
+
+        mtime = os.path.getmtime(filename)
+
+        # check cache
+        code = self.cache_get(filename, mtime)
+
+        # check for precompiled file
+        if not code:
+            code = self.cfile_get(filename, mtime)
+
+        # finally parse and compile
+        if not code:
+            dir, fname = path_split(self.filename)
+            source = _psp.parse(fname, dir)
+            code = compile(source, filename, "exec")
+
+        # store in cache
+        self.cache_store(filename, mtime, code)
+
+        self.code = code
+
+    def run(self, vars={}):
+
+        code, req = self.code, self.req
+
+        # does this code use session?
+        session = None
+        if "session" in code.co_names:
+            session = Session.Session(req)
+
+        # does this code use form?
+        form = None
+        if "form" in code.co_names:
+            form = util.FieldStorage(req, keep_blank_values=1)
+
+        # create psp interface object
+        psp = PSPInterface(req, self.filename, form)
+
         try:
             global_scope = globals().copy()
             global_scope.update({"req":req, "session":session,
                                  "form":form, "psp":psp})
-            exec code in global_scope
+            global_scope.update(vars)
+            try:
+                exec code in global_scope
 
-            # the mere instantiation of a session changes it
-            # (access time), so it *always* has to be saved
+                # the mere instantiation of a session changes it
+                # (access time), so it *always* has to be saved
+                if session:
+                    session.save()
+            except:
+                et, ev, etb = sys.exc_info()
+                if psp.error_page:
+                    # run error page
+                    psp.error_page.run({"exception": (et, ev, etb)})
+                else:
+                    raise et, ev, etb
+        finally:
             if session:
-                session.save()
-        except:
-            et, ev, etb = sys.exc_info()
-            if psp._error_page:
-                # run error page
-                exec psp._error_page in globals(), {"req":req, "session":session,
-                                                    "form":form, "psp":psp,
-                                                    "exception": (et, ev, etb)}
+                    session.unlock()
+
+    def display_code(self):
+        """
+        Display a niceliy HTML-formatted side-by-side of
+        what PSP generated next to orinial code.
+        """
+
+        req, filename = self.req, self.filename
+
+        # Because of caching, source code is most often not
+        # available in this object, so we read it here
+        # (instead of trying to get it in __init__ somewhere)
+
+        dir, fname = path_split(filename)
+
+        source = open(filename).read().splitlines()
+        pycode = _psp.parse(fname, dir).splitlines()
+
+        source = [s.rstrip() for s in source]
+        pycode = [s.rstrip() for s in pycode]
+
+        req.write("<table>\n<tr>")
+        for s in ("", "&nbsp;PSP-produced Python Code:",
+                  "&nbsp;%s:" % filename):
+            req.write("<td><tt>%s</tt></td>" % s)
+        req.write("</tr>\n")
+
+        n = 1
+        for line in pycode:
+            req.write("<tr>")
+            left = escape(line).replace("\t", " "*4).replace(" ", "&nbsp;")
+            if len(source) < n:
+                right = ""
             else:
-                # pass it on
-                raise et, ev, etb
-    finally:
-        if session:
-                session.unlock()
-        
-    return apache.OK
+                right = escape(source[n-1]).replace("\t", " "*4).replace(" ", "&nbsp;")
+            for s in ("%d.&nbsp;" % n,
+                      "<font color=blue>%s</font>" % left,
+                      "&nbsp;<font color=green>%s</font>" % right):
+                req.write("<td><tt>%s</tt></td>" % s)
+            req.write("</tr>\n")
+
+            n += 1
+        req.write("</table>\n")
+
+
+def parse(filename, dir=None):
+    if dir:
+        return _psp.parse(filename, dir)
+    else:
+        return _psp.parse(filename)
+
+def parsestring(str):
+
+    return _psp.parsestring(str)
 
 def handler(req):
 
@@ -291,9 +315,13 @@ def handler(req):
     debug = debug = int(config.get("PythonDebug", 0))
 
     if debug and req.filename[-1] == "_":
-        return display_code(req)
+        p = PSP(req, req.filename[:-1])
+        p.display_code()
     else:
-        return run_psp(req)
+        p = PSP(req)
+        p.run()
+
+    return apache.OK
 
 def dbm_cache_type(dbmfile):
 
@@ -341,11 +369,39 @@ def dbm_cache_get(srv, dbmfile, filename, mtime):
         except: pass
         _apache._global_unlock(srv, "pspcache")
 
-class MemCache:
+
+class HitsCache:
 
     def __init__(self, size=512):
         self.cache = {}
         self.size = size
+
+    def store(self, key, val):
+        self.cache[key] = (1, val)
+        if len(self.cache) > self.size:
+            self.clean()
+
+    def get(self, key):
+        if self.cache.has_key(key):
+            hist, val = self.cache[key]
+            self.cache[key] = (hits+1, code)
+            return val
+        else:
+            return None
+
+    def clean(self):
+        
+        byhits = [(n[1], n[0]) for n in self.cache.items()]
+        byhits.sort()
+
+        # delete enough least hit entries to make cache 75% full
+        for item in byhits[:len(self.cache)-int(self.size*.75)]:
+            val, key = item
+            del self.cache[key]
+
+mem_scache = HitsCache()
+
+class FileCache(HitsCache):
 
     def store(self, filename, mtime, code):
         self.cache[filename] = (1, mtime, code)
@@ -364,14 +420,5 @@ class MemCache:
         except KeyError:
             return None
 
-    def clean(self):
-        
-        byhits = [(n[1], n[0]) for n in self.cache.items()]
-        byhits.sort()
+mem_fcache = FileCache()
 
-        # delete enough least hit entries to make cache 75% full
-        for item in byhits[:len(self.cache)-int(self.size*.75)]:
-            entry, filename = item
-            del self.cache[filename]
-
-memcache = MemCache()
