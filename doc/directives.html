@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.10 2000/07/28 18:47:36 gtrubetskoy Exp $ -->
+<!-- $Id: directives.html,v 1.11 2000/08/16 18:49:32 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -35,6 +35,7 @@
       <li><a href="#PythonInterpPerDirectory">PythonInterpPerDirectory</a>
       <li><a href="#PythonInterpreter">PythonInterpreter</a>
       <li><a href="#PythonNoReload">PythonNoReload</a>
+      <li><a href="#PythonOptimize">PythonOptimize</a>
       <li><a href="#PythonOption">PythonOption</a>
       <li><a href="#PythonPath">PythonPath</a>
     </ul>
@@ -465,6 +466,23 @@ not change, it will save some processing time and give a small
 performance gain.
 
 <hr>
+<h2><a name="PythonOptimize">PythonOptimize</a></h2>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
+<strong>Syntax:</strong></a> PythonOptimize {On, Off}<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Default" rel="Help">
+<strong>Default:</strong></A> PythonOptimize Off<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel="Help">
+<strong>Context:</strong></a> server config, virtual host, directory, htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel="Help">
+<strong>Override:</strong></a> not None<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Module" rel="Help">
+<strong>Module:</strong></a> mod_python.c
+
+<p>
+Set the equivalent of the -O command-line flag on the interpreter. With this
+options set, the interprer will create .pyo files instead of .pyc.
+
+<hr>
 <h2><a name="PythonOption">PythonOption</a></h2>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel="Help">
 <strong>Syntax:</strong></a> PythonOption key value<br>
@@ -521,7 +539,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Tue Jul 18 18:15:27 EDT 2000
+Last modified: Wed Aug 16 12:51:10 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

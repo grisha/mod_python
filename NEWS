@@ -1,4 +1,9 @@
 
+Aug 16 2000 -   Added Dr. Timochouk's PythonOptimize directive patch.
+
+Aug 15 2000 -   Extensive improvements to req.read() prompted by Dr. Timochouk's
+		patches.
+
 Aug 10 2000 -	Documentation change - get_basic_auth_pw must be called before
 		using connection.user.
 

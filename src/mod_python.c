@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.22 2000/08/10 13:26:35 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.23 2000/08/16 18:49:33 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -81,6 +81,7 @@
 /* Apache headers */
 #include "httpd.h"
 #include "http_config.h"
+#include "http_main.h"
 #include "http_protocol.h"
 #include "util_script.h"
 #include "http_log.h"
@@ -1666,9 +1667,11 @@ static PyObject * req_write(requestobject *self, PyObject *args)
 static PyObject * req_read(requestobject *self, PyObject *args)
 {
 
-    int len, rc, bytes_read;
+    int len, rc, bytes_read, chunk_len;
     char *buffer;
     PyObject *result;
+
+    /* GT STOPPED HERE - test timeout, then add PythonOptimize patch */
 
 
     if (! PyArg_ParseTuple(args, "i", &len)) 
@@ -1704,9 +1707,30 @@ static PyObject * req_read(requestobject *self, PyObject *args)
     if (result == NULL) 
 	return NULL;
 
+    /* set timeout */
+    ap_soft_timeout("mod_python_read", self->request_rec);
+
     /* read it in */
     buffer = PyString_AS_STRING((PyStringObject *) result);
-    bytes_read = ap_get_client_block(self->request_rec, buffer, len);
+    chunk_len = ap_get_client_block(self->request_rec, buffer, len);
+    bytes_read = chunk_len;
+
+    /* if this is a "short read", try reading more */
+    while ((bytes_read < len) && (chunk_len != 0)) {
+	chunk_len = ap_get_client_block(self->request_rec, 
+					buffer+bytes_read, len-bytes_read);
+	ap_reset_timeout(self->request_rec);
+	if (chunk_len == -1) {
+	    ap_kill_timeout(self->request_rec);
+	    PyErr_SetObject(PyExc_IOError, 
+			    PyString_FromString("Client read error (Timeout?)"));
+	    return NULL;
+	}
+	else
+	    bytes_read += chunk_len;
+    }
+
+    ap_kill_timeout(self->request_rec);
 
     /* resize if necessary */
     if (bytes_read < len) 
@@ -2637,7 +2661,6 @@ static const char *directive_PythonNoReload(cmd_parms *cmd,
 }
 
 /**
- ** directive_PythonOption
  **
  *       This function is called every time PythonOption directive
  *       is encountered. It sticks the option into a table containing
@@ -2655,6 +2678,19 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
 
     return NULL;
 
+}
+
+/**
+ ** directive_PythonOptimize
+ **
+ *      This function called whenever PythonOptimize directive
+ *      is encountered.
+ */
+static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
+					    int val) {
+    if ((val) && (Py_OptimizeFlag != 2))
+	Py_OptimizeFlag = 2;
+    return NULL;
 }
 
 /**
@@ -2967,7 +3003,15 @@ command_rec python_commands[] =
 	"Do not reload already imported modules if they changed."
     },
     {
-	"PythonOption",                                   
+	"PythonOptimize",
+	directive_PythonOptimize,         
+	NULL,                                
+	OR_ALL,                         
+	FLAG,                               
+	"Set the equivalent of the -O command-line flag on the interpreter."
+    },
+    {
+	"PythonOption",
 	directive_PythonOption,                           
 	NULL, 
 	OR_ALL,                                      
