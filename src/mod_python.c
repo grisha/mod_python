@@ -3,7 +3,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.4 2000/05/08 23:24:52 grisha Exp $
+ * $Id: mod_python.c,v 1.5 2000/05/11 22:54:39 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details. See COPYRIGHT file for Copyright. 
@@ -1091,7 +1091,7 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
     }
     else if (strcmp(name, "content_type") == 0) {
 	self->request_rec->content_type = PyString_AS_STRING(value);
-	return NULL;
+	return 0;
     }
     return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);
 }
@@ -2087,7 +2087,7 @@ static int python_handler(request_rec *req, char *handler)
 		 * global interpreter.
 		 */
 		s = ap_table_get(conf->dirs, handler);
-		if (strcmp(s, "") == NULL)
+		if (strcmp(s, "") == 0)
 		    interpreter = NULL;
 		else
 		    interpreter = s;
@@ -2181,6 +2181,17 @@ static int python_handler(request_rec *req, char *handler)
 	}
 	else {
 	    result = PyInt_AsLong(resultobject);
+
+	    /* authen handlers need one more thing
+	     * if authentication failed and this handler is not
+	     * authoritative, let the others handle it
+	     */
+	    if (strcmp(handler, "PythonAuthenHandler") == 0) {
+		if ((result == HTTP_UNAUTHORIZED) && 
+		    (! conf->authoritative))
+		    result = DECLINED;
+	    }
+
 	}
     } 
 
@@ -2205,17 +2216,6 @@ static int python_handler(request_rec *req, char *handler)
      * of the handle. If the req->status or return code is a weird number that the 
      * server doesn't know, it will default to 500 Internal Server Error.
      */
-
-    /* if error status was specified, result is OK and no
-     * content provided by the script, have Apache provide
-     * error content 
-     */
-
-    /* if ((req->status) && (req->status != 200) 
-      && (req->bytes_sent == 0) && (result == OK)) {
-      result = req->status;
-	  req->status = 200;
-	  } */
 
     if (debug) printf("python_handler(): result %d, req->status %d, req->status_line is %s, bytes_sent %ld\n", 
 		      result, req->status, req->status_line, req->bytes_sent);

@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!-- $id$ -->
+
+<html>
+  <head>
+    <title>CGI Handler</title>
+  </head>
+
+  <body bgcolor=white>
+    <h1>CGI Handler</h1>
+
+    CGI handler is a handler that emulates the CGI environment under mod_python.
+    
+    <p>
+      To use it, simply add this to your .htaccess file:
+      <pre>
+         SetHandler python-program
+         PythonRequestHandler cgihandler
+    </pre>
+    <p>
+      <h3>CGI is not exactly the same as cgihandler</h3>
+    <p>
+      The cgihandler reloads the module for every hit. However, the modules imported
+      by the main module do not get reloaded. This is good for performance, but if
+      your CGI scripts relied on this functionality, they will be broken.
+    <p>
+      In my tests, the cgihandler was leaking some memory. I haven't been
+      able to figure out why, I suspect it has something to do with having to reload
+      the same module a lot.
+    
+    <hr>
+<!-- Created: Wed May 10 15:17:29 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Thu May 11 18:28:03 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>

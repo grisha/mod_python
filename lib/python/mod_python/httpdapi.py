@@ -1,6 +1,8 @@
 """
      (C) Gregory Trubetskoy <grisha@ispol.com> May 1998, Nov 1998, Apr 2000
 
+     $Id: httpdapi.py,v 1.3 2000/05/11 22:54:39 grisha Exp $
+
      Httpdapy handler module.
 """
 
@@ -66,7 +68,7 @@ Status = {
     "505" : PROTOCOL_VERSION_NOT_SUPPORTED
     }
 
-def Service(req):
+def handler(req, auth=None):
     """ 
     """
 
@@ -105,26 +107,41 @@ def Service(req):
         else:
             debug = 0
             
-        if opt.has_key("handler"):
-            module_name = opt["handler"]
-
-        # cd into the uri directory
-        if os.path.isdir(filename):
-            os.chdir(filename)
+        if auth:
+            module_name = opt["authhandler"]
         else:
-            os.chdir(filename[:slash])
+            if opt.has_key("handler"):
+                module_name = opt["handler"]
 
+            # cd into the uri directory
+            if os.path.isdir(filename):
+                os.chdir(filename)
+            else:
+                os.chdir(filename[:slash])
+                    
         # import the module
         module = apache.import_module(module_name, req)
 
         # instantiate the handler class
-        Class = module.RequestHandler
+        if auth:
+            Class = module.AuthHandler
+        else:
+            Class = module.RequestHandler
+
+        # backward compatibility objects - pb, sn, rq
+        pb = NSAPI_ParameterBlock(req)
+        rq = NSAPI_Request(req)
+        sn = NSAPI_Session(req)
 
         # construct and return an instance of the handler class
-        handler = Class(req)
+        handler = Class(pb, sn, rq)
+        handler.__req__ = req
 
         # do it
-        result = handler.Handle(debug=debug)
+        if auth:
+            result = handler.Handle()
+        else:
+            result = handler.Handle(debug=debug)
 
     except apache.SERVER_RETURN, value:
         # SERVER_RETURN indicates a non-local abort from below
@@ -138,6 +155,12 @@ def Service(req):
 
     return result
 
+def authenhandler(req):
+
+    result = handler(req, auth=1)
+    if result == apache.REQ_NOACTION:
+        result = apache.HTTP_UNAUTHORIZED
+    return result
 
 class RequestHandler:
     """
@@ -145,14 +168,9 @@ class RequestHandler:
     in other modules, for use with this module.
     """
 
-    def __init__(self, req):
+    def __init__(self, pb, sn, rq):
 
-	self.req = req
-
-        ## backward compatibility objects - pb, sn, rq
-        self.pb = NSAPI_ParameterBlock(req)
-        self.rq = NSAPI_Request(req)
-        self.sn = NSAPI_Session(req)
+        self.pb, self.sn, self.rq = pb, sn, rq
 
 	# default content-type
 	self.content_type = 'text/html'
@@ -241,7 +259,7 @@ class RequestHandler:
         http://hoohoo.ncsa.uiuc.edu/cgi/env.html
         """
 
-        return apache.build_cgi_env(self.req)
+        return apache.build_cgi_env(self.__req__)
 
     def hook_stdout(self):
         """
@@ -372,10 +390,9 @@ def NSAPI_ParameterBlock(req):
     pb["server-software"] = "Apache"
     pb["type"] = req.content_type
     pw = req.get_basic_auth_pw()
-    if pw:
-        pb["auth-password"] = pw
-        pb["auth-type"] = req.connection.ap_auth_type
-        pb["auth-user"] = req.connection.user
+    pb["auth-password"] = pw
+    pb["auth-type"] = req.connection.ap_auth_type
+    pb["auth-user"] = req.connection.user
 
     return NSAPI_Pblock(pb)
 

@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!-- $id$ -->
+
+
+<html>
+  <head>
+    <title>Httpdapy Handler</title>
+  </head>
+
+  <body bgcolor=white>
+    <h1>Httpdapy Handler</h1>
+
+    This handler is provided for people migrating from Httpdapy.
+    
+    To use it, add this to your .htaccess file:<pre>
+
+        PythonHandler mod_python.httpdapi
+    </pre>
+
+    You <em>will</em> need to change one line in your code. Wehre it said<pre>
+        import httpdapy
+    </pre> it now needs to say<pre>
+
+        from mod_python import httpdapy
+    </pre>
+
+    If you were using authentication, in your .htaccess, instead of:<pre>
+        AuthPythonModule modulename
+    </pre>
+    use<pre>
+        PythonOption authhandler modulename
+    </pre>
+
+    NB: Make sure that the old httpdapi.py and apache.py are not in your python 
+    path anymore.
+
+    <hr>
+
+<!-- Created: Wed May 10 16:25:12 EDT 2000 -->
+<!-- hhmts start -->
+Last modified: Thu May 11 18:24:39 EDT 2000
+<!-- hhmts end -->
+  </body>
+</html>
