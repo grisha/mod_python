@@ -496,6 +496,7 @@ class ModPythonTestCase(unittest.TestCase):
 
         cfg = "  SetHandler python-program\n" + \
               "  PythonPath ['%s']+sys.path\n" % PARAMS["document_root"] + \
+              "  PythonHandler tests::simplehandler\n" + \
               "  PythonOutputFilter tests::outputfilter myfilter\n" + \
               "  PythonDebug On\n" + \
               "  AddOutputFilter myfilter .py\n"
@@ -511,11 +512,7 @@ class ModPythonTestCase(unittest.TestCase):
         f.close()
         print "    response: ", rsp
 
-
-        import time
-        time.sleep(2)
-        
-        if (rsp != "test ok"):
+        if (rsp != "TEST OK"):
             self.fail("test failed")
 
 def findUnusedPort():
@@ -534,23 +531,23 @@ def findUnusedPort():
 def suite():
 
     mpTestSuite = unittest.TestSuite()
-#    mpTestSuite.addTest(ModPythonTestCase("testLoadModule"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_apache_log_error"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_apache_table"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_add_common_vars"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_add_handler"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_allow_methods"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_document_root"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_get_basic_auth_pw"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_get_config"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_get_remote_host"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_read"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_readlines"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_util_fieldstorage"))
+    mpTestSuite.addTest(ModPythonTestCase("testLoadModule"))
+    mpTestSuite.addTest(ModPythonTestCase("test_apache_log_error"))
+    mpTestSuite.addTest(ModPythonTestCase("test_apache_table"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_add_common_vars"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_add_handler"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_allow_methods"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_document_root"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_get_basic_auth_pw"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_get_config"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_get_remote_host"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_read"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_readline"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_readlines"))
+    mpTestSuite.addTest(ModPythonTestCase("test_req_register_cleanup"))
+    mpTestSuite.addTest(ModPythonTestCase("test_util_fieldstorage"))
     mpTestSuite.addTest(ModPythonTestCase("test_postreadrequest"))
-#    mpTestSuite.addTest(ModPythonTestCase("test_outputfilter"))
+    mpTestSuite.addTest(ModPythonTestCase("test_outputfilter"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()
