@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.20 2000/07/04 17:49:31 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.21 2000/07/28 18:47:36 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -97,7 +97,7 @@
                         Declarations
  ******************************************************************/
 
-#define VERSION_COMPONENT "mod_python/2.4.1"
+#define VERSION_COMPONENT "mod_python/2.5"
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #ifdef WIN32
@@ -157,12 +157,12 @@ typedef struct tableobject {
 static void table_dealloc(tableobject *self);
 static PyObject * table_getattr(PyObject *self, char *name);
 static PyObject * table_repr(tableobject *self);
-static PyObject * tablegetitem  (tableobject *self, PyObject *key );
-static PyObject * table_has_key (tableobject *self, PyObject *args );
-static PyObject * table_keys    (tableobject *self);
-static int tablelength          (tableobject *self);
-static int tablesetitem         (tableobject *self, PyObject *key, PyObject *val);
-static int tb_setitem           (tableobject *self, const char *key, const char *val);
+static PyObject * tablegetitem(tableobject *self, PyObject *key );
+static PyObject * table_has_key(tableobject *self, PyObject *args );
+static PyObject * table_keys(tableobject *self);
+static int tablelength(tableobject *self);
+static int tablesetitem(tableobject *self, PyObject *key, PyObject *val);
+static int tb_setitem(tableobject *self, const char *key, const char *val);
 static tableobject * make_tableobject(table * t);
 
 static PyMappingMethods table_mapping = {
@@ -192,13 +192,90 @@ static PyTypeObject tableobjecttype = {
 #define is_tableobject(op) ((op)->ob_type == &tableobjecttype)
 
 static PyMethodDef tablemethods[] = {
-  {     "keys",                 (PyCFunction)table_keys,    1},
-  {     "has_key",              (PyCFunction)table_has_key, 1},
-  { NULL, NULL } /* sentinel */
+    {"keys",                 (PyCFunction)table_keys,    METH_VARARGS},
+    {"has_key",              (PyCFunction)table_has_key, METH_VARARGS},
+    {NULL, NULL} /* sentinel */
 };
 
 /* another forward */
 tableobject * headers_in(request_rec *req);
+
+/********************************
+          arrayobject 
+ ********************************/
+
+/* XXX NOTE the Array Object is experimental and isn't used anywhere
+   so far */
+
+typedef struct arrayobject {
+    PyObject_VAR_HEAD
+    array_header    *ah;
+    pool            *pool;
+} arrayobject;
+
+static arrayobject *make_arrayobject(array_header *ah);
+static void array_dealloc(arrayobject *self);
+static PyObject *array_getattr(PyObject *self, char *name);
+static PyObject *array_repr(arrayobject *self);
+static int array_length(arrayobject *self);
+static PyObject *array_item(arrayobject *self, int i); 
+static PyObject *arrayappend(arrayobject *self, PyObject *args);
+static PyObject *arrayinsert(arrayobject *self, PyObject *args);
+static PyObject *arrayextend(arrayobject *self, PyObject *args);
+static PyObject *arraypop(arrayobject *self, PyObject *args);
+static PyObject *arrayremove(arrayobject *self, PyObject *args);
+static PyObject *arrayindex(arrayobject *self, PyObject *args);
+static PyObject *arraycount(arrayobject *self, PyObject *args);
+static PyObject *arrayreverse(arrayobject *self, PyObject *args);
+static PyObject *arraysort(arrayobject *self, PyObject *args);
+
+static PySequenceMethods array_mapping = {
+    (inquiry)         array_length,      /*sq_length*/
+    NULL,
+    /*    (binaryfunc)      array_concat,*/      /*sq_concat*/
+    NULL,
+    /*    (intargfunc)      array_repeat,*/      /*sq_repeat*/
+    (intargfunc)      array_item,        /*sq_item*/
+    NULL,
+    /*    (intintargfunc)   array_slice,  */     /*sq_slice*/
+    NULL,
+    /*    (intobjargproc)   array_ass_item, */   /*sq_ass_item*/
+    NULL,
+    /*    (intintobjargproc)array_ass_slice, */  /*sq_ass_slice*/
+};
+
+static PyTypeObject arrayobjecttype = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "mp_array",
+    sizeof(arrayobject),
+    0,
+    (destructor) array_dealloc,     /*tp_dealloc*/
+    0,                              /*tp_print*/
+    (getattrfunc) array_getattr,    /*tp_getattr*/
+    0,                              /*tp_setattr*/
+    0,                              /*tp_compare*/
+    (reprfunc) array_repr,          /*tp_repr*/
+    0,                              /*tp_as_number*/
+    &array_mapping,                 /*tp_as_sequence*/
+    0,                              /*tp_as_mapping*/
+    0,                              /*tp_hash*/
+};
+
+#define is_arrayobject(op) ((op)->ob_type == &arrayobjecttype)
+
+static PyMethodDef arraymethods[] = {
+    {"append",	(PyCFunction)arrayappend,  0},
+    {"insert",	(PyCFunction)arrayinsert,  0},
+    {"extend",  (PyCFunction)arrayextend,  METH_VARARGS},
+    {"pop",	(PyCFunction)arraypop,     METH_VARARGS},
+    {"remove",	(PyCFunction)arrayremove,  0},
+    {"index",	(PyCFunction)arrayindex,   0},
+    {"count",	(PyCFunction)arraycount,   0},
+    {"reverse",	(PyCFunction)arrayreverse, 0},
+    {"sort",	(PyCFunction)arraysort,    0},
+    {NULL, NULL}		/* sentinel */
+};
 
 /********************************
           serverobject
@@ -348,6 +425,7 @@ static PyObject * req_get_config           (requestobject *self, PyObject *args)
 static PyObject * req_get_options          (requestobject *self, PyObject *args);
 static PyObject * req_get_dirs             (requestobject *self, PyObject *args);
 static PyObject * req_add_common_vars      (requestobject *self, PyObject *args);
+static PyObject * req_add_handler          (requestobject *self, PyObject *args);
 
 static PyTypeObject requestobjecttype = {
     PyObject_HEAD_INIT(NULL)
@@ -378,6 +456,7 @@ static PyMethodDef requestobjectmethods[] = {
     {"get_options",          (PyCFunction) req_get_options,          METH_VARARGS},
     {"get_dirs",             (PyCFunction) req_get_dirs,             METH_VARARGS},
     {"add_common_vars",      (PyCFunction) req_add_common_vars,      METH_VARARGS},
+    {"add_handler",          (PyCFunction) req_add_handler,          METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
 
@@ -414,15 +493,16 @@ static struct memberlist request_memberlist[] = {
     {"handler",            T_STRING,    OFF(handler),              RO},
     {"content_encoding",   T_STRING,    OFF(content_encoding),     RO},
     {"content_language",   T_STRING,    OFF(content_language),     RO},
-    /* XXX content_languages */
+    /* content_languages in getattr*/
     {"vlist_validator",    T_STRING,    OFF(vlist_validator),      RO},
     {"no_cache",           T_INT,       OFF(no_cache),             RO},
     {"no_local_copy",      T_INT,       OFF(no_local_copy),        RO},
     {"unparsed_uri",       T_STRING,    OFF(unparsed_uri),         RO},
     {"uri",                T_STRING,    OFF(uri),                  RO},
-    {"filename",           T_STRING,    OFF(filename),             RO},
+    {"filename",           T_STRING,    OFF(filename),               },
     {"path_info",          T_STRING,    OFF(path_info),            RO},
     {"args",               T_STRING,    OFF(args),                 RO},
+    /* XXX - test an array header */
     /* XXX finfo */
     /* XXX parsed_uri */
     /* XXX per_dir_config */
@@ -464,6 +544,285 @@ typedef struct
 /******************************************************************
                  Python objects and their methods    
  ******************************************************************/
+
+/********************************
+         array object
+     XXX VERY EXPERIMENTAL
+ ********************************/
+
+/* This is a mapping of a Python object to an Apache
+ * array_header.
+ *
+ * The idea is to make it appear as a Python list. The main difference
+ * between an array and a Python list is that arrays are typed (i.e. all
+ * items must be of the same type), and in this case the type is assumed 
+ * to be a character string.
+ */
+
+/**
+ **     make_arrayobject
+ **
+ *      This routine creates a Python arrayobject given an Apache
+ *      array_header pointer.
+ *
+ */
+
+static arrayobject * make_arrayobject(array_header * ah)
+{
+  arrayobject *result;
+
+  result = PyMem_NEW(arrayobject, 1);
+  if (! result)
+      return (arrayobject *) PyErr_NoMemory();
+  
+  result->ah = ah;
+  result->ob_type = &arrayobjecttype;
+  result->pool = NULL;
+  
+  _Py_NewReference(result);
+  return result;
+}
+
+/**
+ ** array_getattr
+ **
+ *      Gets array's attributes
+ */
+
+static PyObject *array_getattr(PyObject *self, char *name)
+{
+    return Py_FindMethod(arraymethods, self, name);
+}
+
+/**
+ ** array_repr
+ **
+ *      prints array like a list
+ */
+
+static PyObject * array_repr(arrayobject *self)
+{
+    PyObject *s;
+    array_header *ah;
+    char **elts;
+    int i;
+
+    s = PyString_FromString("[");
+
+    ah = self->ah;
+    elts = (char **)ah->elts;
+
+    i = ah->nelts;
+    if (i == 0)
+	PyString_ConcatAndDel(&s, PyString_FromString("]"));
+
+    while (i--) {
+	PyString_ConcatAndDel(&s, PyString_FromString("'"));
+	PyString_ConcatAndDel(&s, PyString_FromString(elts[i]));
+	PyString_ConcatAndDel(&s, PyString_FromString("'"));
+	if (i > 0)
+	    PyString_ConcatAndDel(&s, PyString_FromString(", "));
+	else
+	    PyString_ConcatAndDel(&s, PyString_FromString("]"));
+    }
+
+    return s;
+}
+
+/**
+ ** array_length
+ **
+ *      Number of elements in a array. Called
+ *      when you do len(array) in Python.
+ */
+
+static int array_length(arrayobject *self) 
+{ 
+    return self->ah->nelts;
+}
+
+/**
+ ** array_item
+ **
+ *
+ *      Returns an array item.
+ */
+
+static PyObject *array_item(arrayobject *self, int i) 
+{ 
+
+    char **items;
+
+    if (i < 0 || i >= self->ah->nelts) {
+	PyErr_SetString(PyExc_IndexError, "array index out of range");
+	return NULL;
+    }
+
+    items = (char **) self->ah->elts;
+    return PyString_FromString(items[i]);
+}
+
+/**
+ ** arrayappend
+ **
+ *
+ *      Appends a string to an array.
+ */
+
+static PyObject *arrayappend(arrayobject *self, PyObject *args) 
+{
+    
+    char **item;
+    PyObject *s;
+    
+    if (!PyArg_Parse(args, "O", &s))
+	return NULL;
+    
+    if (!PyString_Check(s)) {
+	PyErr_SetString(PyExc_TypeError,
+			"array items can only be strings");
+	return NULL;
+    }
+    
+    item = ap_push_array(self->ah);
+    *item = ap_pstrdup(self->ah->pool, PyString_AS_STRING(s));
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** arrayinsert
+ **
+ *
+ *      XXX Not implemented
+ */
+static PyObject *arrayinsert(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "insert not implemented");
+    return NULL;
+}
+
+/**
+ ** arrayextend
+ **
+ *
+ *      Appends another array to this one.
+ *      XXX Not Implemented
+ */
+
+static PyObject *arrayextend(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "extend not implemented");
+    return NULL;
+}
+
+/**
+ ** arraypop
+ **
+ *
+ *      Get an item and remove it from the list
+ *      XXX Not Implemented
+ */
+
+static PyObject *arraypop(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "pop not implemented");
+    return NULL;
+}
+
+/**
+ ** arrayremove
+ **
+ *
+ *      Remove an item from the array
+ *      XXX Not Implemented
+ */
+
+static PyObject *arrayremove(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "remove not implemented");
+    return NULL;
+}
+
+/**
+ ** arrayindex
+ **
+ *
+ *      Find an item in an array
+ *      XXX Not Implemented
+ */
+
+static PyObject *arrayindex(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "index not implemented");
+    return 0;
+}
+
+/**
+ ** arraycount
+ **
+ *
+ *      Count a particular item in an array
+ *      XXX Not Implemented
+ */
+
+static PyObject *arraycount(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "count not implemented");
+    return NULL;
+}
+
+/**
+ ** arrayreverse
+ **
+ *
+ *      Reverse the order of items in an array
+ *      XXX Not Implemented
+ */
+
+static PyObject *arrayreverse(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "reverse not implemented");
+    return NULL;
+}
+
+/**
+ ** arraysort
+ **
+ *
+ *      Sort items in an array
+ *      XXX Not Implemented
+ */
+
+static PyObject *arraysort(arrayobject *self, PyObject *args) 
+{
+    PyErr_SetString(PyExc_NotImplementedError, 
+		    "sort not implemented");
+    return NULL;
+}
+
+/**
+ ** array_dealloc
+ **
+ *      Frees array's memory
+ */
+
+static void array_dealloc(arrayobject *self)
+{  
+
+    if (self->pool) 
+	ap_destroy_pool(self->pool);
+
+    free(self);
+}
 
 /********************************
          table object
@@ -523,7 +882,7 @@ static PyObject * make_table(PyObject *self, PyObject *args)
     pool *p;
 
     p = ap_make_sub_pool(NULL);
-
+    
     /* two is a wild guess */
     t = make_tableobject(ap_make_table(p, 2));
 
@@ -542,7 +901,7 @@ static PyObject * make_table(PyObject *self, PyObject *args)
 
 static PyObject * table_getattr(PyObject *self, char *name)
 {
-  return Py_FindMethod(tablemethods, self, name);
+    return Py_FindMethod(tablemethods, self, name);
 }
 
 /**
@@ -600,7 +959,7 @@ static PyObject * table_has_key(tableobject *self, PyObject *args)
 static int tablelength(tableobject *self) 
 { 
     return ap_table_elts(self->table)->nelts;
-};
+}
 
 /**
  ** tablesetitem
@@ -638,7 +997,7 @@ static int tablesetitem(tableobject *self,  PyObject *key, PyObject
 	ap_table_set(self->table, k, PyString_AsString(val));
     }
     return 0;
-};
+}
 
 /**
  ** tb_setitem
@@ -1170,8 +1529,10 @@ static PyObject * request_getattr(requestobject *self, char *name)
     else if (strcmp(name, "notes") == 0) {
 	Py_INCREF(self->notes);
 	return (PyObject *) self->notes;
+    }
+    else if (strcmp(name, "content_languages") == 0) {
+	return tuple_from_array_header(self->request_rec->content_languages);
     } else
-
 	return PyMember_Get((char *)self->request_rec, request_memberlist, name);
 
 }
@@ -1192,6 +1553,11 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
     }
     else if (strcmp(name, "content_type") == 0) {
 	self->request_rec->content_type = 
+	    ap_pstrdup(self->request_rec->pool, PyString_AS_STRING(value));
+	return 0;
+    }
+    else if (strcmp(name, "filename") == 0) {
+	self->request_rec->filename =
 	    ap_pstrdup(self->request_rec->pool, PyString_AS_STRING(value));
 	return 0;
     }
@@ -1388,6 +1754,71 @@ static PyObject * req_add_common_vars(requestobject *self, PyObject *args)
 
 }
 
+/**
+ ** request.add_handler(request self, string handler, string function)
+ **
+ *     Allows to add another handler to thendler list.
+ */
+
+static PyObject * req_add_handler(requestobject *self, PyObject *args)
+{
+
+    char *handler;
+    char *function;
+    const char *existing;
+    py_dir_config *conf;
+    const char *dir = NULL;
+
+    if (! PyArg_ParseTuple(args, "ss|s", &handler, &function, &dir)) 
+	return NULL;
+
+    /* get config */
+    conf = (py_dir_config *) ap_get_module_config(
+	self->request_rec->per_dir_config, &python_module);
+	
+    /* is there a handler like this in the config already? */
+    existing = ap_table_get(conf->directives, handler);
+
+    if (existing) {
+
+	/* append the function to the list using the table's pool */
+	array_header *ah = ap_table_elts(conf->directives);
+	ap_table_set(conf->directives, handler, 
+		     ap_pstrcat(ah->pool, existing, " ", function, NULL));
+
+	if (dir) 
+	    ap_table_set(conf->dirs, handler, dir);
+
+    }
+    else {
+
+	/* XXX Validity is not checked, document this! */
+	ap_table_set(conf->directives, handler, function);
+
+	if (! dir) {
+
+	    /*
+	     * If no directory was explicitely specified, the new handler will 
+	     * have the same directory associated with it as the handler 
+	     * currently being processed.
+	     */
+
+	    const char *currhand;
+	    
+	    /* which handler are we processing? */
+	    currhand = ap_table_get(self->request_rec->notes, "python_handler");
+
+	    /* what's the directory for this handler? */
+	    dir = ap_table_get(conf->dirs, currhand);
+	}
+
+	ap_table_set(conf->dirs, handler, dir);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 /********************************
   ***  end of request object ***
  ********************************/
@@ -1506,24 +1937,24 @@ static void *python_create_dir_config(pool *p, char *dir)
 PyObject * tuple_from_array_header(const array_header *ah)
 {
 
-  PyObject *t;
-  int i;
-  char **s;
+    PyObject *t;
+    int i;
+    char **s;
 
-  if (ah == NULL)
+    if (ah == NULL)
     {
-      Py_INCREF(Py_None);
-      return Py_None;
+	Py_INCREF(Py_None);
+	return Py_None;
     }
-  else
+    else
     {
-      t = PyTuple_New(ah->nelts);
+	t = PyTuple_New(ah->nelts);
 
-      s = (char **) ah->elts;
-      for (i = 0; i < ah->nelts; i++)
-	PyTuple_SetItem(t, i, PyString_FromString(s[i]));
-
-      return t;
+	s = (char **) ah->elts;
+	for (i = 0; i < ah->nelts; i++)
+	    PyTuple_SetItem(t, i, PyString_FromString(s[i]));
+	
+	return t;
     }
 }
 
@@ -1577,16 +2008,28 @@ static void *python_merge_dir_config(pool *p, void *cc, void *nc)
  ** python_directive
  **
  *  Called by Python*Handler directives.
+ *
+ *  When used within the same directory, this will have a
+ *  cumulative, rather than overriding effect - i.e. values
+ *  from same directives specified multiple times will be appended
+ *  with a space in between.
  */
 
 static const char *python_directive(cmd_parms *cmd, void * mconfig, 
 				    char *key, const char *val)
 {
     py_dir_config *conf;
+    const char *s;
     
     conf = (py_dir_config *) mconfig;
+    
+    /* something there already? */
+    s = ap_table_get(conf->directives, key);
+    if (s)
+	val = ap_pstrcat(cmd->pool, s, " ", val, NULL);
+    
     ap_table_set(conf->directives, key, val);
-
+    
     /* remember the directory where the directive was found */
     if (conf->config_dir) {
 	ap_table_set(conf->dirs, key, conf->config_dir);
@@ -1594,7 +2037,7 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
     else {
 	ap_table_set(conf->dirs, key, "");
     }
-
+    
     return NULL;
 }
 
@@ -1909,6 +2352,9 @@ static int python_handler(request_rec *req, char *handler)
     /* create/acquire request object */
     request_obj = get_request_object(req);
 
+    /* make a note of which handler we are in right now */
+    ap_table_set(req->notes, "python_handler", handler);
+
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
@@ -2087,6 +2533,20 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
 }
 
 /**
+ ** directive_PythonEnablePdb
+ **
+ *      This function called whenever PythonEnablePdb
+ *      is encountered.
+ */
+static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
+					     int val) {
+    if (val)
+	return python_directive(cmd, mconfig, "PythonEnablePdb", "On");
+    else
+	return python_directive(cmd, mconfig, "PythonEnablePdb", "");
+}
+
+/**
  ** directive_PythonInterpPerDirectory
  **
  *      This function called whenever PythonInterpPerDirectory directive
@@ -2253,8 +2713,8 @@ static void PythonChildInitHandler(server_rec *s, pool *p)
 	    char *module = elts[i].key;
 	    char *dir = elts[i].val;
 
-	    // XXXXXX PythonInterpreter!!!
-	    // This needs to be addressed in config_merge?
+	    /* XXX PythonInterpreter has no effect */
+	    /* This needs to be addressed in config_merge? */
 	    interpreter = dir;
 
 #ifdef WITH_THREAD  
@@ -2354,8 +2814,9 @@ static int PythonFixupHandler(request_rec *req) {
 static int PythonLogHandler(request_rec *req) {
     return python_handler(req, "PythonLogHandler");
 }
+
 static void PythonChildExitHandler(server_rec *srv, pool *p) {
-    // printf("In ExitHandler\n");
+    Py_Finalize();
 }
 
 
@@ -2378,86 +2839,6 @@ static handler_rec python_handlers[] =
 /* command table */
 command_rec python_commands[] =
 {
-    {
-	"PythonPath",
-	directive_PythonPath,
-	NULL,
-	OR_ALL,
-	TAKE1,
-	"Python path, specified in Python list syntax."
-    },
-    {
-	"PythonInterpreter",                 
-	directive_PythonInterpreter,         
-	NULL,                                
-	OR_ALL,                         
-	TAKE1,                               
-	"Forces a specific Python interpreter name to be used here."
-    },
-    {
-	"PythonInterpPerDirectory",                 
-	directive_PythonInterpPerDirectory,         
-	NULL,                                
-	OR_ALL,                         
-	FLAG,                               
-	"Create subinterpreters per directory rather than per directive."
-    },
-    {
-	"PythonDebug",                 
-	directive_PythonDebug,         
-	NULL,                                
-	OR_ALL,                         
-	FLAG,                               
-	"Send (most) Python error output to the client rather than logfile."
-    },
-    {
-	"PythonNoReload",                 
-	directive_PythonNoReload,         
-	NULL,                                
-	OR_ALL,                         
-	FLAG,                               
-	"Do not reload already imported modules if they changed."
-    },
-    {
-	"PythonOption",                                   
-	directive_PythonOption,                           
-	NULL, 
-	OR_ALL,                                      
-	TAKE2,                                            
-	"Useful to pass custom configuration information to scripts."
-    },
-    {
-	"PythonImport",
-	directive_PythonImport,
-	NULL,
-	ACCESS_CONF,
-	ITERATE,
-	"Modules to be imported when this directive is processed."
-    },
-    {
-	"PythonPostReadRequestHandler",
-	directive_PythonPostReadRequestHandler,
-	NULL,
-	OR_ALL,
-	RAW_ARGS,
-	"Python post read-request handlers."
-    },
-    {
-	"PythonTransHandler",
-	directive_PythonTransHandler,
-	NULL,
-	OR_ALL,
-	RAW_ARGS,
-	"Python filename to URI translation handlers."
-    },
-    {
-	"PythonHeaderParserHandler",
-	directive_PythonHeaderParserHandler,
-	NULL,
-	OR_ALL,
-	RAW_ARGS,
-	"Python header parser handlers."
-    },
     {
 	"PythonAccessHandler",
 	directive_PythonAccessHandler,
@@ -2483,20 +2864,20 @@ command_rec python_commands[] =
 	"Python authorization (user allowed _here_) handlers."
     },
     {
-	"PythonTypeHandler",
-	directive_PythonTypeHandler,
-	NULL,
-	OR_ALL,
-	RAW_ARGS,
-	"Python MIME type checker/setter handlers."
+	"PythonDebug",                 
+	directive_PythonDebug,         
+	NULL,                                
+	OR_ALL,                         
+	FLAG,                               
+	"Send (most) Python error output to the client rather than logfile."
     },
     {
-	"PythonHandler",
-	directive_PythonHandler,
-	NULL,
-	OR_ALL,
-	RAW_ARGS,
-	"Python request handlers."
+	"PythonEnablePdb",
+	directive_PythonEnablePdb,         
+	NULL,                                
+	OR_ALL,                         
+	FLAG,                               
+	"Run handlers in pdb (Python Debugger). Use with -X."
     },
     {
 	"PythonFixupHandler",
@@ -2507,12 +2888,100 @@ command_rec python_commands[] =
 	"Python fixups handlers."
     },
     {
+	"PythonHandler",
+	directive_PythonHandler,
+	NULL,
+	OR_ALL,
+	RAW_ARGS,
+	"Python request handlers."
+    },
+    {
+	"PythonHeaderParserHandler",
+	directive_PythonHeaderParserHandler,
+	NULL,
+	OR_ALL,
+	RAW_ARGS,
+	"Python header parser handlers."
+    },
+    {
+	"PythonImport",
+	directive_PythonImport,
+	NULL,
+	ACCESS_CONF,
+	ITERATE,
+	"Modules to be imported when this directive is processed."
+    },
+    {
+	"PythonInterpPerDirectory",                 
+	directive_PythonInterpPerDirectory,         
+	NULL,                                
+	OR_ALL,                         
+	FLAG,                               
+	"Create subinterpreters per directory rather than per directive."
+    },
+    {
+	"PythonInterpreter",                 
+	directive_PythonInterpreter,         
+	NULL,                                
+	OR_ALL,                         
+	TAKE1,                               
+	"Forces a specific Python interpreter name to be used here."
+    },
+    {
 	"PythonLogHandler",
 	directive_PythonLogHandler,
 	NULL,
 	OR_ALL,
 	RAW_ARGS,
 	"Python logger handlers."
+    },
+    {
+	"PythonNoReload",                 
+	directive_PythonNoReload,         
+	NULL,                                
+	OR_ALL,                         
+	FLAG,                               
+	"Do not reload already imported modules if they changed."
+    },
+    {
+	"PythonOption",                                   
+	directive_PythonOption,                           
+	NULL, 
+	OR_ALL,                                      
+	TAKE2,                                            
+	"Useful to pass custom configuration information to scripts."
+    },
+    {
+	"PythonPath",
+	directive_PythonPath,
+	NULL,
+	OR_ALL,
+	TAKE1,
+	"Python path, specified in Python list syntax."
+    },
+    {
+	"PythonPostReadRequestHandler",
+	directive_PythonPostReadRequestHandler,
+	NULL,
+	RSRC_CONF,
+	RAW_ARGS,
+	"Python post read-request handlers."
+    },
+    {
+	"PythonTransHandler",
+	directive_PythonTransHandler,
+	NULL,
+	RSRC_CONF,
+	RAW_ARGS,
+	"Python filename to URI translation handlers."
+    },
+    {
+	"PythonTypeHandler",
+	directive_PythonTypeHandler,
+	NULL,
+	OR_ALL,
+	RAW_ARGS,
+	"Python MIME type checker/setter handlers."
     },
     {NULL}
 };

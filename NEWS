@@ -1,4 +1,12 @@
 
+Jul 22 2000 -   Added req.add_handler (dynamic handler registration)
+
+Jul 18 2000 -   Added PythonEnablePdb
+		ChildExitHandler now properly calls Py_Finalize()
+		python_handler is now cumulative rather than overriding
+
+Jul 04 2000 -   2.4.1 Released. Mostly bug fixes. Should be pretty stable.
+
 Jun 20 2000 -   2.4 Released.
 
 Jun 17 2000 -   Started the tutorial.html.

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.3 2000/06/20 15:02:04 grisha Exp $ -->
+<!-- $Id: pythonapi.html,v 1.4 2000/07/28 18:47:36 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -22,6 +22,7 @@
 	  <li><a href="#connection">Connection Object</a>
 	  <li><a href="#server">Server Object</a>
 	</ul>
+	<li><a href="#debugging">Debugging</a>
     </ul>
 
     <hr>
@@ -238,43 +239,54 @@
 
 	<dl>
 	  
-	  <dt><b>send_http_header()</b>
+
+	  <dt><b>add_handler(string htype, string handler [,string dir])</b>
 	  <dd>
-	    Starts the output from the request by sending
-	    the HTTP headers. This function has no effect when called more than
-	    once within the same request. Any manipulation of 
-	    <code>request.headers_out</code> after this function has been called is 
-	    pointless since the headers have already been sent to the client.
+	    Allows dynamic handler registration. <em>htype</em> is a name of any of 
+	    the apache Python*Handler directives, e.g. 
+	    <code>&quot;PythonHandler&quot;</code>. <em>handler</em> is the name
+	    of the module and the handler function. Optional <em>dir</em> is the name
+	    of the directory to be added to the python path. If no directory is
+	    specified, then, if there is already a handler of the same type specified,
+	    its directory is inherited, otherwise the directory of the presently
+	    executing handler is used.
+	    <p>
+	      A handler added this way only persists throughout the life of the request.
+	      It is possible to register more handlers while inside the handler of the
+	      same type. One has to be careful as to not to create an infinite loop
+	      this way.
+	    <p>
+	      Dynamic handler registration is a useful technique that allows the code
+	      to take a decision on what will happen next. A typical example might
+	      be a PythonAuthenHandler that will assign different PythonHandlers based
+	      on the authrntication level, something like:
+	    <pre>
+              if manager:
+	          req.add_handler("PythonHandler", "menu::admin")
+              else:
+                  req.add_handler("PythonHandler", "menu::basic")
+	    </pre>
+	    Note: at this point there is no checking being done on the validity of the
+	    handler name. If you pass this function an invalid handler it will simply
+	    be ignored.
+
+	  <dt><br><b>add_common_vars()</b>
+	  <dd>
+	    Calls the Apache 
+	    <a href="http://dev.apache.org/apidoc/apidoc_ap_add_common_vars.html">ap_add_common_vars</a>
+	    function. After a call to this function,
+	    <code>request.subprocess_env</code> will contain a lot of
+	    CGI information.
 
 	  <dt><br><b>get_basic_auth_pw()</b>
 	  <dd>
 	    Returns a string containing the password when basic authentication is used.
-
-	  <dt><br><b>write(string)</b>
-	  <dd>
-	    Writes <em>string</em> directly to the client, then flushes the buffer.
-
-	  <dt><br><b>read(len)</b>
-	  <dd>
-	    Reads <em>len</em> bytes directly from the client, returning a string with 
-	    the data read. When there is nothing more to read, None is returned. To
-	    find out how much there is to read, use the <code>Content-length</code>
-	    header sent by the client, for example:
-	    <pre>
-            len = int(req.headers_in["content-length"])
-            form_data = req.read(len)
-	    </pre>
 
 	  <dt><br><b>get_config()</b>
 	  <dd>
 	    Returns a reference to the <code>table</code> object containing the 
 	    configuration in effect for this request. The table has directives as keys,
 	    and their values, if any, as values.
-
-	  <dt><br><b>get_options()</b>
-	  <dd>
-	    Returns a reference to the <code>table</code> object containing the options
-	    set by the PythonOption directives.
 
 	  <dt><br><b>get_dirs()</b>
 	  <dd>
@@ -287,13 +299,34 @@
 	    files outside of any &lt;Directory&gt;, then the value will
 	    be an empty string.
 	    
-	  <dt><br><b>add_common_vars()</b>
+	  <dt><br><b>get_options()</b>
 	  <dd>
-	    Calls the Apache 
-	    <a href="http://dev.apache.org/apidoc/apidoc_ap_add_common_vars.html">ap_add_common_vars</a>
-	    function. After a call to this function,
-	    <code>request.subprocess_env</code> will contain a lot of
-	    CGI information.
+	    Returns a reference to the <code>table</code> object containing the options
+	    set by the PythonOption directives.
+
+	  <dt><br><b>read(int len)</b>
+	  <dd>
+	    Reads <em>len</em> bytes directly from the client, returning a string with 
+	    the data read. When there is nothing more to read, None is returned. To
+	    find out how much there is to read, use the <code>Content-length</code>
+	    header sent by the client, for example:
+	    <pre>
+            len = int(req.headers_in["content-length"])
+            form_data = req.read(len)
+	    </pre>
+
+	  <dt><br><b>send_http_header()</b>
+	  <dd>
+	    Starts the output from the request by sending
+	    the HTTP headers. This function has no effect when called more than
+	    once within the same request. Any manipulation of 
+	    <code>request.headers_out</code> after this function has been called is 
+	    pointless since the headers have already been sent to the client.
+
+	  <dt><br><b>write(string)</b>
+	  <dd>
+	    Writes <em>string</em> directly to the client, then flushes the buffer.
+
 	    
 	</dl>
 
@@ -638,7 +671,20 @@
 	
       </blockquote>
 
-      <h3>Internal Callback Object</h4>
+      <a name="debugging"><h3>Debugging</h3></a>
+
+      <blockquote>
+	Mod_python supports the ability to execute handlers within the Python
+	debugger (pdb) via the 
+	<a href="#???">PythonEnablePdb</a> Apache directive. Since the 
+	debugger is an interactive tool, <code>httpd</code> must be invoked with 
+	the -X option. (NB: When pdb starts, you will not see the usual
+	&quot;&gt;&gt;&gt;&quot; prompt. Just type in the pdb commands like you
+	would if there was one.)
+
+      </blockquote>
+
+      <h3>Internal Callback Object</h3>
 
     <blockquote>
 
@@ -665,7 +711,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Tue Jun 20 10:54:49 EDT 2000
+Last modified: Sat Jul 22 20:25:01 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
