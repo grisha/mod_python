@@ -1,0 +1,8 @@
+.depend
+.install
+.libs
+Makefile
+*.la
+*.lo
+*.slo
+libpython.module
