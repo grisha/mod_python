@@ -1439,6 +1439,50 @@ are to be ignored and treated as if they were not included.
 
 \end{funcdesc}
 
+\section{\module{Cookie} -- HTTP State Management\label{pyapi-cookie}}
+\declaremodule[Cookie]{extension}{Cookie}
+\modulesynopsis{HTTP State Management}
+\moduleauthor{Gregory Trubetskoy}{grisha@modpython.org}
+
+The \module{Cookie} module provides convenient ways for creating,
+parsing, sending and receiving HTTP Cookies, as defined in the
+specification published by Netscape.
+
+Note that even though there are official IETF RFC's describing
+HTTP State Management Mechanism using cookies, the de facto standard
+supported by most browsers is the original Netscape specification.
+Further, true compliance with IETF standards is actually incompatible
+with many popular browsers, even those that claim to be RFC-compliant.
+
+Therefore, this module supports the current common practice, and is not
+fully RFC compliant.
+
+\begin{seealso}
+  \seetitle[http://wp.netscape.com/newsref/std/cookie_spec.html]
+	{Persistent Client State - HTTP Cookies}{for the original Netscape specification.}
+  \seerfc{2109}{HTTP State Management Mechanism}{for the first IETF RFC on Cookies.}
+  \seerfc{2964}{Use of HTTP State Management}{for guidelines on using Cookies.}
+  \seerfc{2965}{HTTP State Management Mechanism}{for the latest IETF standard.}
+  \seetitle[http://arxiv.org/abs/cs.SE/0105018]
+	{HTTP Cookies: Standards, Privacy, and Politics}{by David M. Kristol for an 
+         excellent overview
+         of the complications surrounding standardization of Cookies.}
+\end{seealso}
+
+\subsection{Cookie classes\label{pyapi-cookie-classes}}
+
+\begin{classdesc}{Cookie}{name, value\optional{, attributes}}
+
+This class is used to construct a single cookie named \var{name}
+and having \var{value} as the value. Additionally, any of the 
+attributes defined in the Netscape specification and RFC2109 can by
+supplied as keyword arguments.
+
+Note that in the Standard Python Library Cookie module, this type
+of object is referred to as a Morsel.
+
+\end{classdesc}
+
 \section{\module{psp} -- Python Server Pages\label{pyapi-psp}}
 \declaremodule[psp]{extension}{psp}
 \modulesynopsis{Python Server Pages}

@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.31 2003/05/30 15:10:47 grisha Exp $
+ # $Id: test.py,v 1.32 2003/06/24 04:16:00 grisha Exp $
  #
 
 """
@@ -847,6 +847,67 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp[-8:] != "test ok\n"):
             self.fail("test failed")
 
+    def test_Cookie_Cookie_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_Cookie_Cookie"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("tests::Cookie_Cookie"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_Cookie_Cookie(self):
+
+        print "\n  * Testing Cookie.Cookie"
+
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/testz.py", skip_host=1)
+        # this is three cookies, nastily formatted
+        conn.putheader("Host", "test_Cookie_Cookie:%s" % PORT)
+        conn.putheader("Cookie", "spam=foo; path=blah;;eggs=bar;")
+        conn.putheader("Cookie", "bar=foo")
+        conn.endheaders()
+        response = conn.getresponse()
+        setcookie = response.getheader("set-cookie", None)
+        rsp = response.read()
+        conn.close()
+
+        if rsp != "test ok" or setcookie != "eggs=bar, bar=foo, spam=foo; path=blah":
+            self.fail("cookie parsing failed")
+
+    def test_Cookie_MarshalCookie_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_Cookie_MarshalCookie"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("tests::Cookie_Cookie"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_Cookie_MarshalCookie(self):
+
+        print "\n  * Testing Cookie.MarshalCookie"
+
+        mc = "eggs=648aba93b961ee717e70531417d75fddWwIAAABzAwAAAGZvb3MDAAAAYmFy"
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/testz.py", skip_host=1)
+        conn.putheader("Host", "test_Cookie_MarshalCookie:%s" % PORT)
+        conn.putheader("Cookie", mc)
+        conn.endheaders()
+        response = conn.getresponse()
+        setcookie = response.getheader("set-cookie", None)
+        rsp = response.read()
+        conn.close()
+
+        if rsp != "test ok" or setcookie != mc:
+            self.fail("cookie parsing failed")
+
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
     # restart of httpd (e.g. we're using a fancy config)
@@ -895,6 +956,8 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
         perRequestSuite.addTest(PerRequestTestCase("test_cgihandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_psphandler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_Cookie_Cookie"))
+        perRequestSuite.addTest(PerRequestTestCase("test_Cookie_MarshalCookie"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
