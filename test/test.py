@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.29 2003/03/07 20:04:31 grisha Exp $
+ # $Id: test.py,v 1.30 2003/05/22 20:25:07 grisha Exp $
  #
 
 """
@@ -241,6 +241,9 @@ class HttpdCtrl:
             IfModule("!mod_log_config.c",
                      LoadModule("log_config_module %s" %
                                 self.quoteIfSpace(os.path.join(modpath, "mod_log_config.so")))),
+            IfModule("!mod_dir.c",
+                     LoadModule("dir_module %s" %
+                                self.quoteIfSpace(os.path.join(modpath, "mod_dir.so")))),
             ServerRoot(SERVER_ROOT),
             ErrorLog("logs/error_log"),
             LogLevel("debug"),
@@ -599,6 +602,28 @@ class PerRequestTestCase(unittest.TestCase):
         if h != "test ok":
             self.fail("x-test-header is there, but does not contain 'test ok'")
 
+    def test_req_sendfile_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_sendfile"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("tests::req_sendfile"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_req_sendfile(self):
+
+        print "\n  * Testing req.sendfile()"
+
+        rsp = self.vhost_get("test_req_sendfile")
+
+        if (rsp != "test ok"):
+            self.fail("test failed")
+            conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+
     def test_util_fieldstorage_conf(self):
 
         c = VirtualHost("*",
@@ -840,6 +865,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_headers_out"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile"))
         perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
         perRequestSuite.addTest(PerRequestTestCase("test_trans"))
