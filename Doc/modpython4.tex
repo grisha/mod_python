@@ -1549,6 +1549,11 @@ class. This class is similar to the standard library module
 
   If this function is called after the headers have already been sent,
   an \exception{IOError} is raised.
+
+  This function raises \exception{apache.SERVER_RETURN} exception to
+  abandon any further processing of the handle. If you do not want
+  this, you can wrap the call to \function{redirect} in a try/except
+  block catching the \exception{apache.SERVER_RETURN}.
 \end{funcdesc}
 
 \section{\module{Cookie} -- HTTP State Management\label{pyapi-cookie}}
@@ -1871,9 +1876,7 @@ delay.)
 sess = Session(req)
 if sess.is_new():
     # redirect to login
-    req.headers_out['location'] = 'http://www.mysite.com/login'  
-    req.status = apache.HTTP_MOVED_TEMPORARILY
-    return apache.OK
+    util.redirect(req, 'http://www.mysite.com/login')
     \end{verbatim}
   \end{methoddesc}
 

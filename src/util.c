@@ -57,7 +57,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.16 2003/08/09 18:08:17 grisha Exp $
+ * $Id: util.c,v 1.17 2003/08/18 20:51:24 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -452,4 +452,3 @@ PyObject *cfgtree_walk(ap_directive_t *dir)
 
     return list;
 }
-

@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.35 2003/08/09 18:08:17 grisha Exp $
+ * $Id: mod_python.h,v 1.36 2003/08/18 20:51:24 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -84,6 +84,9 @@
 #include "apr_hash.h"
 #include "scoreboard.h"
 #include "ap_mpm.h"
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+#include "unixd.h"
+#endif
 
 /* Python headers */
 /* this gets rid of some comile warnings */
