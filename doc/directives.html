@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: directives.html,v 1.8 2000/06/20 15:02:04 grisha Exp $ -->
+<!-- $Id: directives.html,v 1.9 2000/07/04 17:43:02 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -203,10 +203,25 @@ programs.
 <p>
 PythonPath directive sets the PythonPath. The path must be specified
 in Python list notation, e.g.  
-<pre> PythonPath "['/usr/local/lib/python1.5', '/usr/local/lib/site_python', '/some/other/place']".
+<pre> PythonPath "['/usr/local/lib/python1.5', '/usr/local/lib/site_python', '/some/other/place']"
 </pre> 
 The path specified in this directive will <em>replace</em> the path,
-not <em>add</em> to it.  Note that this directive should not be used as a
+not <em>add</em> to it. However, because the value of the directive is evaled, to
+append a directory to the path, one can specify something like
+<pre> PythonPath "sys.path+['/mydir']"
+</pre>
+Mod_python tries to minimize the number of evals associated with the
+<code>PythonPath</code> directive because evals are slow and can
+negatively impact performance, especially when the directive is
+specified in an .htaccess file which gets parse at every
+hit. Mod_python will remember the arguments to the PythonPath
+directive in the un-evaled form, and before evaling the value it will
+compare it to the remembered value. If the value is the same, no
+action is taken. Because of this, you should not rely on the directive
+as a way to restore the pythonpath to some value if your code changes
+it.
+<p>
+Note that this directive should not be used as a
 security measure since the Python path is easily manipulated from
 within the scripts.
 
@@ -455,7 +470,7 @@ within the scripts.
     <hr>
 <!-- Created: Sat May  6 21:05:39 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Tue Jun 20 09:55:56 EDT 2000
+Last modified: Tue Jul  4 13:14:39 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>
