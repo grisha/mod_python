@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.74 2002/09/12 18:24:06 gstein Exp $
+ * $Id: mod_python.c,v 1.75 2002/09/14 02:11:35 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -806,7 +806,7 @@ static int python_handler(request_rec *req, char *phase)
     py_config * conf;
     int result;
     const char *interp_name = NULL;
-    const char *ext;
+    const char *ext = NULL;
     hl_entry *hle = NULL;
     hl_entry *dynhle = NULL;
 
