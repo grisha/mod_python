@@ -1,3 +1,7 @@
+Dec 13 2000 -	The initial documentation for the util module and for the
+		publisher handler is done. Perhaps the tutorial should have
+		a bit on the publisher handler.
+
 Dec 12 2000 - 	publisher handler appears to be working pretty well. Now need
 		to document it.
 
