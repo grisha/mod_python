@@ -1131,7 +1131,7 @@ echo "configure:1130: checking Apache version" >&5
   ver=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}'`
   echo "$ac_t""$ver" 1>&6
 
-  # make version begins with 2
+  # make sure version begins with 2
   if test -z "`echo $ver | egrep \^2`"; then
     { echo "configure: error: This version of mod_python only works with Apache 2. The one you have seems to be $ver." 1>&2; exit 1; }
   fi
@@ -1388,6 +1388,11 @@ TEST_SERVER_ROOT="`pwd`/test"
 
 MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 
+# get the mod_python version
+
+MP_VERSION=`awk '/MPV_STRING/ {print $3}' src/include/mpversion.h`
+MP_VERSION=`echo $MP_VERSION | sed s/\\"//g`                                      
+
 trap '' 1 2 15
 cat > confcache <<\EOF
 # This file is a shell script that caches the results of configure
@@ -1501,7 +1506,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "Makefile src/Makefile Doc/Makefile test/testconf.py" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1554,6 +1559,7 @@ s%@PY_STD_LIB@%$PY_STD_LIB%g
 s%@INCLUDES@%$INCLUDES%g
 s%@TEST_SERVER_ROOT@%$TEST_SERVER_ROOT%g
 s%@MOD_PYTHON_SO@%$MOD_PYTHON_SO%g
+s%@MP_VERSION@%$MP_VERSION%g
 
 CEOF
 EOF
@@ -1595,7 +1601,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile Doc/Makefile test/testconf.py"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
