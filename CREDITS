@@ -5,9 +5,9 @@ development of mod_python.
 Anyone who has contributed code or otherwise made contributions that
 were constructive to the development of the project may have his name
 listed here. Note that the decision on whether a name goes on this
-list or not is initially taken by me (grisha@modpython.org) and that I can
-be wrong.  So if you feel that you should be credited as well, or if
-you feel that you should not be listed, please e-mail me.
+list or not is initially taken by me (grisha@modpython.org) and that I 
+can be wrong.  So if you feel that you should be credited as well, or 
+if you feel that you should not be listed, please e-mail me.
 
 The names are listed alphabetically by last name.
 
@@ -22,6 +22,9 @@ James Gessling <jgessling@etrade.com>
 
 Mads Kiilerich <mads@kiilerich.com> 
 	[RH rpm]
+
+Jørgen Frøjk Kjærsgaard <jfk@metation.com>
+	[rewrite of apache.import_module]
 
 Miguel Marques <miguel@yorku.ca>
 	[use of req->request_config instead of atol hack]
