@@ -44,7 +44,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.4 2000/12/18 19:50:03 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.5 2001/01/24 04:00:59 gtrubetskoy Exp $
  *
  */
 
@@ -76,7 +76,7 @@ PyObject * MpServer_FromServer(server_rec *s)
 }
 
 /**
- ** server.register_cleanup(handler, data)
+ ** server.register_cleanup(req, handler, data)
  **
  *    same as request.register_cleanup, except the server pool is used.
  *    the server pool gets destroyed before the child dies or when the
@@ -89,19 +89,30 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     cleanup_info *ci;
     PyObject *handler = NULL;
     PyObject *data = NULL;
+    PyObject *Req = NULL;
     requestobject *req = NULL;
 
-    if (! PyArg_ParseTuple(args, "OO|O", &req, &handler, &data))
+    if (! PyArg_ParseTuple(args, "OO|O", &Req, &handler, &data))
 	return NULL; 
 
-    if (! MpRequest_Check(req)) {
-	PyErr_SetString(PyExc_ValueError, "first argument must be a request object");
+    if (! PyObject_HasAttrString(Req, "_req")) {
+	PyErr_SetString(PyExc_ValueError, "first argument must be a Request object");
 	return NULL;
     }
-    else if(!PyCallable_Check(handler)) {
-	PyErr_SetString(PyExc_ValueError, 
-			"second argument must be a callable object");
-	return NULL;
+    else {
+
+	req = (requestobject *) PyObject_GetAttrString(Req, "_req");
+
+	if (! MpRequest_Check(req)) {
+	    PyErr_SetString(PyExc_ValueError, 
+			    "first argument must be a request object");
+	    return NULL;
+	}
+	else if(!PyCallable_Check(handler)) {
+	    PyErr_SetString(PyExc_ValueError, 
+			    "second argument must be a callable object");
+	    return NULL;
+	}
     }
     
     ci = (cleanup_info *)malloc(sizeof(cleanup_info));
