@@ -1,13 +1,47 @@
 
-The following people make mod_python possible:
+The following is a list of people who have contributed to the
+development of mod_python. 
 
-Richard Barrett <R.Barrett@ftel.co.uk>
-Stéphane Bidoul <sbi@acse.be>
-Greg Stein <gstein@lyra.org>
-Sean True <seant@alum.mit.edu>
-Dr. L.A. Timochouk <L.A.Timochouk@ukc.ac.uk>
-Gregory Trubetskoy <grisha@ispol.com>
+Anyone who has contributed code or otherwise made contributions that
+were constructive to the development of the project may have his name
+listed here. Note that the decision on whether a name goes on this
+list or not is initially taken by me (grisha@ispol.com) and that I can
+be wrong.  So if you feel that you should be credited as well, or if
+you feel that you should not be listed, please e-mail me.
+
+The names are listed alphabetically by last name.
+
+Richard Barrett <R.Barrett@ftel.co.uk> 
+	[patch for conn_rec.*adds]
+
+Stéphane Bidoul <sbi@acse.be> 
+	[win32 port and threading]
+
+James Gessling <jgessling@etrade.com>
+	[doc/README.VMS]
+
+Mads Kiilerich <mads@kiilerich.com> 
+	[RH rpm]
+
+Sean Reifschneider <jafo-rpms@tummy.com> 
+	[RH rpm]
+
+Greg Stein <gstein@lyra.org> 
+	[Python and Apache expert advice]
+
+Dr. L.A. Timochouk <L.A.Timochouk@ukc.ac.uk> 
+	[patch for .pyo and req_read]
+
+Gregory Trubetskoy <grisha@ispol.com> 
+	[mod_python]
+
+Sean True <seant@alum.mit.edu> 
+	[ap_note_basic_auth_failure fix]
+
 Enrique Vaamonde <evaamo@loquesea.com>
+	[windows docs]
+
 Dave Wallace <dwallace@delanet.com>
+	[PythonPath "sys.path+" hack invention]
 
 

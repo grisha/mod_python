@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.23 2000/10/30 23:16:10 gtrubetskoy Exp $
+  $Id: apache.py,v 1.24 2000/11/09 00:09:18 gtrubetskoy Exp $
 
 """
 
@@ -39,10 +39,7 @@ class Request:
         try:
             return getattr(self._req, attr)
         except AttributeError:
-            try:
-                return self.__dict__[attr]
-            except KeyError:
-                raise AttributeError, attr
+            raise AttributeError, attr
 
     def __setattr__(self, attr, val):
         try:
@@ -209,12 +206,19 @@ class CallBack:
             # SERVER_RETURN indicates a non-local abort from below
             # with value as (result, status) or (result, None) or result
             try:
-                if type(value) == type(()):
-                    (result, status) = value
+                if len(value.args) == 2:
+                    (result, status) = value.args
                     if status:
                         _req.status = status
                 else:
-                    result, status = value, value
+                    result = value.args[0]
+                    
+                if type(result) != type(7):
+                    s = "Value raised with SERVER_RETURN is invalid. It is a "
+                    s = s + "%s, but it must be a tuple or an int." % type(result)
+                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, _req.server)
+                    return HTTP_INTERNAL_SERVER_ERROR
+
             except:
                 pass
 
@@ -423,7 +427,12 @@ class CGIStdin(NullIO):
             self.buf = ""
             return result
         else:
-            s = self.req.read(n)
+            if self.buf:
+                s = self.buf[:n]
+                n = n - len(s)
+            else:
+                s = ""
+            s = s + self.req.read(n)
             self.pos = self.pos + len(s)
             return s
 
@@ -455,6 +464,7 @@ class CGIStdin(NullIO):
         # carve out the piece, then shorten the buffer
         result = self.buf[:i+1]
         self.buf = self.buf[i+1:]
+        self.pos = self.pos + len(result)
         return result
         
 
@@ -567,6 +577,7 @@ def init():
 make_table = _apache.make_table
 log_error = _apache.log_error
 parse_qs = _apache.parse_qs
+parse_qsl = _apache.parse_qsl
 
 ## Some constants
 
@@ -656,7 +667,7 @@ REMOTE_DOUBLE_REV = 3
 
 REQ_ABORTED = HTTP_INTERNAL_SERVER_ERROR
 REQ_EXIT = "REQ_EXIT"         
-SERVER_RETURN = "SERVER_RETURN"
+SERVER_RETURN = _apache.SERVER_RETURN
 PROG_TRACEBACK = "PROG_TRACEBACK"
 
 

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.14 2000/10/18 20:01:29 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.15 2000/11/09 00:09:18 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -357,19 +357,30 @@
 	    Returns a reference to the <code>table</code> object containing the options
 	    set by the PythonOption directives.
 
-	  <dt><br><b>read(int len)</b>
+	  <dt><br><b>read([int len])</b>
 	  <dd>
-	    Reads <em>len</em> bytes directly from the client, returning a string with 
-	    the data read. When there is nothing more to read, None is returned. To
-	    find out how much there is to read, use the <code>Content-length</code>
-	    header sent by the client, for example:
-	    <pre>
-            len = int(req.headers_in["content-length"])
-            form_data = req.read(len)
-	    </pre>
-	    This function is affected by the <code>Timeout</code> Apache configuration
-	    directive. The read will be aborted and an IOError raised if the Timout
-	    is reached while reading client data.
+	    Reads at most <em>len</em> bytes directly from the client, returning a string with 
+	    the data read. If the <em>len</em> argument is negative or ommitted, reads all
+	    data given by the client.
+	    <p>
+	      This function is affected by the <code>Timeout</code> Apache configuration
+	      directive. The read will be aborted and an IOError raised if the Timout
+	      is reached while reading client data.
+	    <p>
+	      This function relies on the client providing the <code>Content-length</code>
+	      header. Absense of the <code>Content-length</code> header will be treated as 
+	      if <code>Content-length: 0</code> was supplied.
+	    <p>
+	      Incorrect <code>Content-length</code> may cause the function to try to read
+	      more data than available, which will make the function block until a Timout
+	      is reached.
+
+	  <dt><br><b>readline([int len])</b>
+	  <dd>
+	    Like <code>read()</code> but reads until end of line.
+	    <p>
+	      Note that in accordance with the HTTP specification, most clients will
+	      be terminating lines with &quot;\r\n&quot; rather than simply &quot;\n&quot;.
 
 	  <dt><br><b>register_cleanup(callable function, data=None)</b>
 	  <dd>
@@ -806,7 +817,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Wed Oct 18 11:34:43 EDT 2000
+Last modified: Wed Nov  8 18:49:46 EST 2000
 <!-- hhmts end -->
   </body>
 </html>

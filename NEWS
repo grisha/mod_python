@@ -1,3 +1,14 @@
+Nov 08 2000 -	read() and reqadline() now behave very much like the standard
+		Python file object counterparts. Added James Gessling's VMS
+		instructions.
+
+Nov 07 2000 -   Initial version of req.readline(), also some fixes to 
+		req.read() (both now raise appropriate errors). Both still need
+		some work.
+
+Nov 04 2000 -	Implemented _apache.parse_qs. Also, CGIStin had a read() bug.
+		PythonHandlerModule is documented.
+
 Oct 30 2000 -	Implemented PythonHandlerModule. Still need to document it.
 
 Oct 29 2000 -	2.6.3 release. Mostly static install bug fixes.

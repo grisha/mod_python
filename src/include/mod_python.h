@@ -69,7 +69,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.h,v 1.9 2000/10/30 23:16:10 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.10 2000/11/09 00:09:18 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -137,6 +137,8 @@ extern module MODULE_VAR_EXPORT python_module;
 #define SLASH '/'
 #define SLASH_S "/"
 #endif
+
+PyObject *Mp_ServerReturn;
 
 /* structure to hold interpreter data */
 typedef struct {

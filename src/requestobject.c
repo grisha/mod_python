@@ -51,7 +51,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.1 2000/10/16 20:58:57 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.2 2000/11/09 00:09:18 gtrubetskoy Exp $
  *
  */
 
@@ -104,6 +104,9 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->notes = MpTable_FromTable(req->notes);
     result->header_sent = 0;
     result->hstack = NULL;
+    result->rbuff = NULL;
+    result->rbuff_pos = 0;
+    result->rbuff_len = 0;
 
     _Py_NewReference(result);
     ap_register_cleanup(req->pool, (PyObject *)result, python_decref, 
@@ -462,36 +465,43 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
 static PyObject * req_read(requestobject *self, PyObject *args)
 {
 
-    int len, rc, bytes_read, chunk_len;
+    int rc, bytes_read, chunk_len;
     char *buffer;
     PyObject *result;
+    int copied = 0;
+    int len = -1;
 
-    if (! PyArg_ParseTuple(args, "i", &len)) 
+    if (! PyArg_ParseTuple(args, "|i", &len)) 
 	return NULL;
 
     if (len == 0) {
 	return PyString_FromString("");
     }
-    else if (len < 0) {
-	PyErr_SetString(PyExc_ValueError, "must have positive integer parameter");
-	return NULL;
-    }
 
     /* is this the first read? */
     if (! self->request_rec->read_length) {
+
 	/* then do some initial setting up */
+
 	rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
 	if(rc != OK) {
-	    PyErr_SetObject(PyExc_IOError, PyInt_FromLong(rc));
+	    PyObject *val = PyInt_FromLong(rc);
+	    if (val == NULL)
+		return NULL;
+	    PyErr_SetObject(Mp_ServerReturn, val);
+	    Py_DECREF(val);
 	    return NULL;
 	}
 
 	if (! ap_should_client_block(self->request_rec)) {
 	    /* client has nothing to send */
-	    Py_INCREF(Py_None);
-	    return Py_None;
+	    return PyString_FromString("");
 	}
     }
+
+    if (len < 0)
+	len = self->request_rec->remaining +
+	    (self->rbuff_len - self->rbuff_pos);
 
     result = PyString_FromStringAndSize(NULL, len);
 
@@ -499,11 +509,19 @@ static PyObject * req_read(requestobject *self, PyObject *args)
     if (result == NULL) 
 	return NULL;
 
+    buffer = PyString_AS_STRING((PyStringObject *) result);
+
+    /* if anything left in the readline buffer */
+    while ((self->rbuff_pos < self->rbuff_len) && (copied < len))
+	buffer[copied++] = self->rbuff[self->rbuff_pos++];
+    
+    if (copied == len)
+	return result; 	/* we're done! */
+
     /* set timeout */
     ap_soft_timeout("mod_python_read", self->request_rec);
 
     /* read it in */
-    buffer = PyString_AS_STRING((PyStringObject *) result);
     Py_BEGIN_ALLOW_THREADS
     chunk_len = ap_get_client_block(self->request_rec, buffer, len);
     Py_END_ALLOW_THREADS
@@ -531,6 +549,143 @@ static PyObject * req_read(requestobject *self, PyObject *args)
     /* resize if necessary */
     if (bytes_read < len) 
 	if(_PyString_Resize(&result, bytes_read))
+	    return NULL;
+
+    return result;
+}
+
+/**
+ ** request.readline(request self, int maxbytes)
+ **
+ *     Reads stuff like POST requests from the client
+ *     (based on the old net_read) until EOL
+ */
+
+static PyObject * req_readline(requestobject *self, PyObject *args)
+{
+
+    int rc, chunk_len, bytes_read;
+    char *buffer;
+    PyObject *result;
+    int copied = 0;
+    int len = -1;
+
+    if (! PyArg_ParseTuple(args, "|i", &len)) 
+	return NULL;
+
+    if (len == 0) {
+	return PyString_FromString("");
+    }
+
+    /* is this the first read? */
+    if (! self->request_rec->read_length) {
+
+	/* then do some initial setting up */
+	rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
+
+	if(rc != OK) {
+	    PyObject *val = PyInt_FromLong(rc);
+	    if (val == NULL)
+		return NULL;
+	    PyErr_SetObject(Mp_ServerReturn, val);
+	    Py_DECREF(val);
+	    return NULL;
+	}
+
+	if (! ap_should_client_block(self->request_rec)) {
+	    /* client has nothing to send */
+	    return PyString_FromString("");
+	}
+    }
+
+    if (len < 0)
+	len = self->request_rec->remaining + 
+	    (self->rbuff_len - self->rbuff_pos);
+
+    /* create the result buffer */
+    result = PyString_FromStringAndSize(NULL, len);
+
+    /* possibly no more memory */
+    if (result == NULL) 
+	return NULL;
+
+    buffer = PyString_AS_STRING((PyStringObject *) result);
+
+    /* is there anything left in the rbuff from previous reads? */
+    if (self->rbuff_pos < self->rbuff_len) {
+	
+	/* if yes, process that first */
+	while (self->rbuff_pos < self->rbuff_len) {
+
+	    buffer[copied++] = self->rbuff[self->rbuff_pos];
+	    if ((self->rbuff[self->rbuff_pos++] == '\n') || 
+		(copied == len)) {
+
+		/* our work is done */
+
+		/* resize if necessary */
+		if (copied < len) 
+		    if(_PyString_Resize(&result, copied))
+			return NULL;
+
+		return result;
+	    }
+	}
+    }
+
+    /* if got this far, the buffer should be empty, we need to read more */
+	
+    /* create a read buffer */
+    self->rbuff_len = len > HUGE_STRING_LEN ? len : HUGE_STRING_LEN;
+    self->rbuff_pos = self->rbuff_len;
+    self->rbuff = ap_palloc(self->request_rec->pool, self->rbuff_len);
+    if (! self->rbuff)
+	return PyErr_NoMemory();
+
+    /* set timeout */
+    ap_soft_timeout("mod_python_read", self->request_rec);
+
+    /* read it in */
+    Py_BEGIN_ALLOW_THREADS
+	chunk_len = ap_get_client_block(self->request_rec, self->rbuff, 
+					self->rbuff_len);
+    Py_END_ALLOW_THREADS;
+    bytes_read = chunk_len;
+
+    /* if this is a "short read", try reading more */
+    while ((chunk_len != 0 ) && (bytes_read + copied < len)) {
+	Py_BEGIN_ALLOW_THREADS
+	    chunk_len = ap_get_client_block(self->request_rec, 
+					    self->rbuff + bytes_read, 
+					    self->rbuff_len - bytes_read);
+	Py_END_ALLOW_THREADS
+	    ap_reset_timeout(self->request_rec);
+	if (chunk_len == -1) {
+	    ap_kill_timeout(self->request_rec);
+	    PyErr_SetObject(PyExc_IOError, 
+			    PyString_FromString("Client read error (Timeout?)"));
+	    return NULL;
+	}
+	else
+	    bytes_read += chunk_len;
+    }
+    self->rbuff_len = bytes_read;
+    self->rbuff_pos = 0;
+    ap_kill_timeout(self->request_rec);
+
+    /* now copy the remaining bytes */
+    while (self->rbuff_pos < self->rbuff_len) {
+
+	buffer[copied++] = self->rbuff[self->rbuff_pos];
+	if ((self->rbuff[self->rbuff_pos++] == '\n') || 
+	    (copied == len)) 
+	    /* our work is done */
+	    break;
+    }
+
+    /* resize if necessary */
+    if (copied < len) 
+	if(_PyString_Resize(&result, copied))
 	    return NULL;
 
     return result;
@@ -643,6 +798,7 @@ static PyMethodDef requestobjectmethods[] = {
     {"get_remote_host",      (PyCFunction) req_get_remote_host,      METH_VARARGS},
     {"get_options",          (PyCFunction) req_get_options,          METH_VARARGS},
     {"read",                 (PyCFunction) req_read,                 METH_VARARGS},
+    {"readline",             (PyCFunction) req_readline,             METH_VARARGS},
     {"register_cleanup",     (PyCFunction) req_register_cleanup,     METH_VARARGS},
     {"send_http_header",     (PyCFunction) req_send_http_header,     METH_VARARGS},
     {"write",                (PyCFunction) req_write,                METH_VARARGS},
