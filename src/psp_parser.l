@@ -83,7 +83,7 @@
 	psp_string_appendc(&PSP_PG(pycode), yytext[0]);
 }
 
-<IN_PYCODE>"?>" {
+<IN_PYCODE>"%>" {
 	if (PSP_PG(is_psp_echo)) {
 		psp_string_appendl(&PSP_PG(pycode), STATIC_STR(")\n"));
 		PSP_PG(is_psp_echo) = 0;
@@ -94,7 +94,7 @@
 	BEGIN 0;
 }
 
-"<?=" {
+"<%=" {
 	if (PSP_PG(ob).length) {
 		psp_string_0(&PSP_PG(ob));
 		OUTPUT_WHITESPACE(&PSP_PG(whitespace));
@@ -111,7 +111,7 @@
 	BEGIN IN_PYCODE;
 }
 
-("<?psp"|"<?")([ \t]|[\n\r]) {
+"<%"([ \t]|[\n\r]) {
 	if (PSP_PG(ob).length) {
 		psp_string_0(&PSP_PG(ob));
 		OUTPUT_WHITESPACE(&PSP_PG(whitespace));

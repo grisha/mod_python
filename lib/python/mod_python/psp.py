@@ -52,12 +52,43 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: psp.py,v 1.1 2003/04/09 14:05:55 grisha Exp $
+ # $Id: psp.py,v 1.2 2003/04/18 19:54:24 grisha Exp $
 
+import mod_python
+import sys
 import _psp
 
-def parse(filename):
-	return _psp.parse(filename)
+class psp:
+	def parse(self, filename):
+		return _psp.parse(filename)
 
-def execute(req, code):
-	exec code
+	def execute(self, code):
+		exec code
+
+	parse = classmethod(parse)
+	execute = classmethod(execute)
+
+class _stream:
+	def __init__(self, request):
+		self.old_stdout = sys.stdout
+		self.req = request
+	
+	def close(self):
+		sys.stdout = self.old_stdout
+	
+	def write(self, text):
+		self.req.write(text)
+
+def handler(request):
+	global req
+
+	request.content_type = "text/html"
+
+	sys.stdout = _stream(request)
+
+	req = request
+
+	code = psp.parse(request.filename)
+	psp.execute(code)
+
+	return mod_python.apache.OK
