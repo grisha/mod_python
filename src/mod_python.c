@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.14 2000/06/06 12:48:32 grisha Exp $
+ * $Id: mod_python.c,v 1.15 2000/06/07 23:21:57 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -101,6 +101,9 @@
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
+
+/* list of modules to be imported from PythonImport */
+static table *python_imports = NULL;
 
 /* some forward declarations */
 void python_decref(void *object);
@@ -1469,7 +1472,12 @@ static void *python_create_dir_config(pool *p, char *dir)
 	(py_dir_config *) ap_pcalloc(p, sizeof(py_dir_config));
 
     conf->authoritative = 1;
-    conf->config_dir = ap_pstrdup(p, dir);
+    /* make sure directory ends with a slash */
+    /* XXX what about win32 "\" ? */
+    if (dir && (dir[strlen(dir) - 1] != '/'))
+	conf->config_dir = ap_pstrcat(p, dir, "/", NULL);
+    else
+	conf->config_dir = ap_pstrdup(p, dir);
     conf->options = ap_make_table(p, 4);
     conf->directives = ap_make_table(p, 4);
     conf->dirs = ap_make_table(p, 4);
@@ -1489,7 +1497,7 @@ PyObject * tuple_from_array_header(const array_header *ah)
 
   PyObject *t;
   int i;
-  char *s;
+  char **s;
 
   if (ah == NULL)
     {
@@ -1500,9 +1508,9 @@ PyObject * tuple_from_array_header(const array_header *ah)
     {
       t = PyTuple_New(ah->nelts);
 
-      s = (char *) ah->elts;
+      s = (char **) ah->elts;
       for (i = 0; i < ah->nelts; i++)
-	PyTuple_SetItem(t, i, PyString_FromString(&s[i]));
+	PyTuple_SetItem(t, i, PyString_FromString(s[i]));
 
       return t;
     }
@@ -1946,92 +1954,53 @@ static int python_handler(request_rec *req, char *handler)
  ** directive_PythonImport
  **
  *      This function called whenever PythonImport directive
- *      is encountered.
+ *      is encountered. Note that this function does not actually
+ *      import anything, it just remembers what needs to be imported
+ *      in the python_imports table. The actual importing is done later
+ *      in the ChildInitHandler. This is because this function here
+ *      is called before the python_init and before the suid and fork.
+ *
+ *      The reason why this infor stored in a global variable as opposed
+ *      to the actual config, is that the config info doesn't seem to
+ *      be available within the ChildInit handler.
  */
 static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig, 
 					  const char *module) 
 {
-    const char *s; /* general purpose string */
+    const char *s = NULL; /* general purpose string */
     py_dir_config *conf;
-    PyObject *obcallback;
-    PyObject *sys, *path, *dot;
-    PyThreadState *tstate;
-    const char *interpreter = NULL;
     const char *key = "PythonImport";
-
-    /* this directive needs Python to be initialized and may be
-       processed before python_init is called */
-    python_init(cmd->server, cmd->pool);
 
     /* get config */
     conf = (py_dir_config *) mconfig;
 
-    /* Append the module to the directive. (ITERATE calls multiple times) */
+    /* make the table if not yet */
+    if (! python_imports)
+	python_imports = ap_make_table(cmd->pool, 4);
+    
+    /* remember the module name and the directory in which to
+       import it (this is for ChildInit) */
+    ap_table_add(python_imports, module, conf->config_dir);
+
+    /* the rest is basically for consistency */
+
+    /* Append the module to the directive. (this is ITERATE) */
     if ((s = ap_table_get(conf->directives, key))) {
-	ap_pstrcat(cmd->pool, s, " ", module);
+	ap_pstrcat(cmd->pool, s, " ", module, NULL);
     }
     else {
 	ap_table_set(conf->directives, key, module);
     }
 
-    /* determine interpreter to use */
-    if ((s = ap_table_get(conf->directives, "PythonInterpreter"))) {
-	/* forced by configuration */
-	interpreter = s;
-    }
-    else { 
-	interpreter = conf->config_dir;
-    }
-    
-#ifdef WITH_THREAD  
-    /* acquire lock */
-    PyEval_AcquireLock();
-#endif
-    
-    /* get/create obcallback */
-    obcallback = get_obcallback(interpreter);
-    
-    /* we must have a callback object to succeed! */
-    if (!obcallback) {
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, cmd->server,
-		      "directive_PythonImport: get_obcallback returned NULL. No more memory?");
-	return NULL;
-    }
-
-    /* find __interpreter__ in obCallBack */
-    tstate = (PyThreadState *) PyCObject_AsVoidPtr(PyObject_GetAttrString(obcallback, INTERP_ATTR));
-    
-    /* make this thread state current */
-    PyThreadState_Swap(tstate);
-
-    /* remember and chdir to the directory where the directive was found */
+    /* remember the directory where the directive was found */
     if (conf->config_dir) {
 	ap_table_set(conf->dirs, key, conf->config_dir);
-	chdir(conf->config_dir);
     }
     else {
 	ap_table_set(conf->dirs, key, "");
     }
 
-    /* add '.' to pythonpath */
-    sys = PyImport_ImportModule("sys");
-    path = PyObject_GetAttrString(sys, "path");
-    dot = Py_BuildValue("[s]", ".");
-    PyList_SetSlice(path, 0, 0, dot);
-    Py_DECREF(dot);
-    Py_DECREF(path);
-    Py_DECREF(sys);
-
-    /* now import the specified module */
-    if (! PyImport_ImportModule((char *)module)) {
-	if (PyErr_Occurred())
-	    PyErr_Print();
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, cmd->server,
-		      "directive_PythonImport: error importing %s", module);
-    }
-
     return NULL;
-
 }
 
 /**
@@ -2063,8 +2032,8 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
  *      is encountered.
  */
 static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
-					 const char *val) {
-    if (strcmp(val, "On") == NULL)
+					 int val) {
+    if (val)
 	return python_directive(cmd, mconfig, "PythonDebug", "On");
     else
 	return python_directive(cmd, mconfig, "PythonDebug", "");
@@ -2078,14 +2047,14 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
  */
 
 static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd, 
-						      void *mconfig, const char* val) {
+						      void *mconfig, int val) {
     py_dir_config *conf;
     const char *key = "PythonInterpPerDirectory";
 
     conf = (py_dir_config *) mconfig;
 
-    if (strcmp(val, "On") == NULL) {
-	ap_table_set(conf->directives, key, val);
+    if (val) {
+	ap_table_set(conf->directives, key, "1");
 
 	/* remember the directory where the directive was found */
 	if (conf->config_dir) {
@@ -2111,15 +2080,15 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
  */
 
 static const char *directive_PythonNoReload(cmd_parms *cmd, 
-					    void *mconfig, const char *val) {
+					    void *mconfig, int val) {
 
     py_dir_config *conf;
     const char *key = "PythonNoReload";
     
     conf = (py_dir_config *) mconfig;
 
-    if (strcmp(val, "On") == NULL) {
-	ap_table_set(conf->directives, key, val);
+    if (val) {
+	ap_table_set(conf->directives, key, "1");
 
 	/* remember the directory where the directive was found */
 	if (conf->config_dir) {
@@ -2211,6 +2180,83 @@ static const char *directive_PythonLogHandler(cmd_parms *cmd, void * mconfig,
  *  (In order, in which they get called by Apache)
  */
 
+static void PythonChildInitHandler(server_rec *s, pool *p) 
+{
+
+    array_header *ah;
+    table_entry *elts;
+    PyObject *sys, *path, *dot;
+    int i;
+    const char *interpreter;
+    PyThreadState *tstate;
+    py_dir_config *conf;
+    PyObject *obcallback;
+    const char *x = NULL;
+
+    /* iterate throught the python_imports table and import all
+       modules specified by PythonImport */
+
+    ah = ap_table_elts(python_imports);
+    elts = (table_entry *)ah->elts;
+    for (i = 0; i < ah->nelts; i++) {
+	
+	char *module = elts[i].key;
+	char *dir = elts[i].val;
+
+	/* determine interpreter to use */
+	if ((x = ap_table_get(conf->directives, "PythonInterpreter"))) {
+	    /* forced by configuration */
+	    interpreter = x;
+	}
+	else {
+	    interpreter = dir;
+	}
+    
+#ifdef WITH_THREAD  
+	/* acquire lock */
+	PyEval_AcquireLock();
+#endif
+    
+	/* get/create obcallback */
+	obcallback = get_obcallback(interpreter);
+    
+	/* we must have a callback object to succeed! */
+	if (!obcallback) {
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
+			 "directive_PythonImport: get_obcallback returned NULL. No more memory?");
+	    return;
+	}
+
+	/* find __interpreter__ in obCallBack */
+	tstate = (PyThreadState *) PyCObject_AsVoidPtr(
+	    PyObject_GetAttrString(obcallback, INTERP_ATTR));
+	
+	/* make this thread state current */
+	PyThreadState_Swap(tstate);
+
+	/* chdir to the directory where the directive was found */
+	if (dir)
+	    chdir(dir);
+	
+	/* add '.' to pythonpath */
+	sys = PyImport_ImportModule("sys");
+	path = PyObject_GetAttrString(sys, "path");
+	dot = Py_BuildValue("[s]", ".");
+	PyList_SetSlice(path, 0, 0, dot);
+	Py_DECREF(dot);
+	Py_DECREF(path);
+	Py_DECREF(sys);
+
+	/* now import the specified module */
+	if (! PyImport_ImportModule(module)) {
+	    if (PyErr_Occurred())
+		PyErr_Print();
+	    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, s,
+			 "directive_PythonImport: error importing %s", module);
+	}
+    }
+}
+
 static int PythonPostReadRequestHandler(request_rec *req) {
     return python_handler(req, "PythonPostReadRequestHandler");
 }
@@ -2240,6 +2286,9 @@ static int PythonFixupHandler(request_rec *req) {
 }
 static int PythonLogHandler(request_rec *req) {
     return python_handler(req, "PythonLogHandler");
+}
+static void PythonChildExitHandler(server_rec *srv, pool *p) {
+    // printf("In ExitHandler\n");
 }
 
 
@@ -2452,8 +2501,8 @@ module python_module =
   PythonFixupHandler,            /* [8] fixups */
   PythonLogHandler,              /* [10] logger */
   PythonHeaderParserHandler,     /* [3] header parser */
-  NULL,                          /* process initializer */
-  NULL,                          /* process exit/cleanup */
+  PythonChildInitHandler,        /* process initializer */
+  PythonChildExitHandler,        /* process exit/cleanup */
   PythonPostReadRequestHandler   /* [1] post read_request handling */
 };
 
