@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.68 2003/02/28 04:55:15 grisha Exp $
+ # $Id: apache.py,v 1.69 2003/05/30 04:37:09 grisha Exp $
 
 import sys
 import traceback
@@ -415,11 +415,12 @@ class CallBack:
                     return HTTP_INTERNAL_SERVER_ERROR
                 else:
                     # write to client
-                    req.content_type = 'text/plain'
+                    req.content_type = 'text/html'
 
-                    s = '\nMod_python error: "%s %s"\n\n' % (phase, hname)
+                    s = '\n<pre>\nMod_python error: "%s %s"\n\n' % (phase, hname)
                     for e in traceback.format_exception(etype, evalue, etb):
                         s = s + e + '\n'
+                    s = s + "</pre>\n"
                         
                     if filter:
                         filter.write(s)

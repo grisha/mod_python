@@ -53,10 +53,16 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.6 2003/05/29 20:52:25 grisha Exp $
+ * $Id: psp_parser.l,v 1.7 2003/05/30 04:37:09 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
+ */
+
+/* NOTE The seemingly unusual generated Python code (sometime using
+ * ";" to separate statements, newline placement, etc) is such that
+ * for vast majority of cases the line number of the input file will
+ * match the line number of the output!
  */
 
 #include "psp_parser.h"

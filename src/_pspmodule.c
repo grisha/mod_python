@@ -54,7 +54,7 @@
  *
  * This file originally written by Stering Hughes
  * 
- * $Id: _pspmodule.c,v 1.2 2003/05/29 20:52:25 grisha Exp $
+ * $Id: _pspmodule.c,v 1.3 2003/05/30 04:37:09 grisha Exp $
  *
  * See accompanying documentation and source code comments for
  * details.
@@ -110,13 +110,16 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
         return NULL;
     }
     
+    Py_BEGIN_ALLOW_THREADS
     f = fopen(filename, "rb");
-    
+    Py_END_ALLOW_THREADS
+
     if (f == NULL) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
         return NULL;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     parser = psp_parser_init();
 
     yylex_init(&scanner);
@@ -124,12 +127,13 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     yyset_extra(parser, scanner);
     yylex(scanner);
     yylex_destroy(scanner);
-    
+
     fclose(f);
-
     psp_string_0(&parser->pycode);
-    code = PyString_FromString(parser->pycode.blob);
 
+    Py_END_ALLOW_THREADS
+
+    code = PyString_FromString(parser->pycode.blob);
     psp_parser_cleanup(parser);
     
     return code; 
@@ -147,6 +151,7 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
         return NULL;
     }
 
+    Py_BEGIN_ALLOW_THREADS
     parser = psp_parser_init();
     yylex_init(&scanner);
     yyset_extra(parser, scanner);
@@ -158,10 +163,12 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     yylex_destroy(scanner);
     
     psp_string_0(&parser->pycode);
+    Py_END_ALLOW_THREADS
+
     code = PyString_FromString(parser->pycode.blob);
 
     psp_parser_cleanup(parser);
-    
+
     return code; 
 }
 
