@@ -14,23 +14,56 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: win32_postinstall.py,v 1.5 2004/02/16 19:47:27 grisha Exp $
+ # $Id: win32_postinstall.py,v 1.6 2004/04/30 19:35:37 grisha Exp $
  #
  # this script runs at the end of windows install
 
-
 import sys, os, shutil
+import distutils.sysconfig
 
+def getApacheDirOptions():
+    """find potential apache directories in the registry..."""
+    try:
+        import win32api, win32con
+        class regkey:
+            """simple wrapper for registry functions that closes keys nicely..."""
+            def __init__(self, parent, subkeyname):
+                 self.key = win32api.RegOpenKey(parent, subkeyname)
+            def childkey(self, subkeyname):
+                 return regkey(self.key, subkeyname)
+            def subkeynames(self):
+                 numsubkeys = win32api.RegQueryInfoKey(self.key)[0]
+                 return [win32api.RegEnumKey(self.key, index) for index in range(numsubkeys)]
+            def getvalue(self, valuename):
+                 return win32api.RegQueryValueEx(self.key, valuename)
+            def __del__(self):
+                 win32api.RegCloseKey(self.key)
+    except ImportError:
+        return {}
+    versions = {}
+    apachekey = regkey(win32con.HKEY_LOCAL_MACHINE, "Software").childkey("Apache Group").childkey("Apache")
+    for versionname in apachekey.subkeynames():
+        serverroot = apachekey.childkey(versionname).getvalue("ServerRoot")
+        versions[versionname] = serverroot[0]
+    return versions
 
-def askForApacheDir():
+def askForApacheDir(apachediroptions):
     # try to ask for Apache directory
+    if len(apachediroptions) > 0:
+        # get the most recent version...
+        versionnames = apachediroptions.keys()
+        versionnames.sort()
+        initialdir = apachediroptions[versionnames[-1]]
+    else:
+        initialdir="C:/Program Files/Apache Group/Apache2"
+    # TODO: let the user select the name from a list, or click browse to choose...
     try:
         from tkFileDialog import askdirectory
         from Tkinter import Tk
         root = Tk()
         root.withdraw()
         path = askdirectory(title="Where is Apache installed?",
-                            initialdir="C:/Program Files/Apache Group/Apache2",
+                            initialdir=initialdir,
                             mustexist=1, master=root)
         root.quit()
         root.destroy()
@@ -47,14 +80,16 @@ def askForApacheDir():
 # if we're called during removal, just exit
 if len(sys.argv) == 0 or sys.argv[1] != "-remove":
 
-    mp = os.path.join(sys.prefix, "mod_python.so")
+    mp = os.path.join(distutils.sysconfig.get_python_lib(), "mod_python_so.pyd")
 
-    apachedir = askForApacheDir()
+    apachediroptions = getApacheDirOptions()
+
+    apachedir = askForApacheDir(apachediroptions)
 
     if apachedir:
 
         # put mod_python.so there
-        shutil.copy2(mp, os.path.join(apachedir, "modules"))
+        shutil.copy2(mp, os.path.join(apachedir, "modules", "mod_python.so"))
         os.remove(mp)
 
         print """Important Note for Windows users, PLEASE READ!!!
