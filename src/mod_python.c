@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.18 2000/06/20 15:02:05 grisha Exp $
+ * $Id: mod_python.c,v 1.19 2000/06/25 20:04:05 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -105,7 +105,7 @@
 #define SLASH_S "\\"
 #else
 #define SLASH '/'
-#define SLASH_S "\\"
+#define SLASH_S "/"
 #endif
 
 /* structure to hold interpreter data */
