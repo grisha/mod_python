@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.10 2003/08/01 01:53:13 grisha Exp $
+ # $Id: psp.py,v 1.11 2003/08/05 19:28:26 grisha Exp $
 
 # this trick lets us be used outside apache
 try:
@@ -83,9 +83,11 @@ dbm_types = {}
 
 tempdir = tempfile.gettempdir()
 
-def parse(filename):
-
-    return _psp.parse(filename)
+def parse(filename, dir=None):
+    if dir:
+        return _psp.parse(filename, dir)
+    else:
+        return _psp.parse(filename)
 
 def parsestring(str):
 
@@ -139,8 +141,17 @@ def load_file(filename, dbmcache=None, srv=None):
             code = str2code(open(name + cext).read())
 
             return code
-                
-    source = _psp.parse(filename)
+
+    # extract dir from filename to be passed
+    # to psp - this way it can process includes wihtout
+    # needing an absolute path
+    dir, fname = os.path.split(filename)
+    if os.name == "nt":
+        dir += "\\"
+    else:
+        dir += "/"
+
+    source = _psp.parse(fname, dir)
     code = compile(source, filename, "exec")
 
     if dbmcache:
@@ -260,7 +271,7 @@ def cache_store(srv, dbmfile, filename, mtime, val):
 
 def cache_get(srv, dbmfile, filename, mtime):
     dbm_type = cache_type(dbmfile)
-#    _apache._global_lock(srv, "pspcache")
+    _apache._global_lock(srv, "pspcache")
     try:
         dbm = dbm_type.open(dbmfile, 'c')
         try:
@@ -273,4 +284,4 @@ def cache_get(srv, dbmfile, filename, mtime):
     finally:
         try: dbm.close()
         except: pass
-#        _apache._global_unlock(srv, "pspcache")
+        _apache._global_unlock(srv, "pspcache")

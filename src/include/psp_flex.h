@@ -216,6 +216,7 @@ void yyfree (void * ,yyscan_t yyscanner );
 #define TEXT 1
 #define PYCODE 2
 #define INDENT 3
+#define DIR 4
 
 #endif
 
@@ -319,9 +320,9 @@ extern int yylex (yyscan_t yyscanner);
 #undef YY_DECL_IS_OURS
 #undef YY_DECL
 #endif
-#line 199 "psp_parser.l"
+#line 248 "psp_parser.l"
 
 
-#line 326 "include/psp_flex.h"
+#line 327 "include/psp_flex.h"
 #undef yyIN_HEADER
 #endif /* yyHEADER_H */

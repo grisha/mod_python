@@ -54,7 +54,7 @@
  *
  * This file originally written by Stering Hughes
  * 
- * $Id: _pspmodule.c,v 1.4 2003/07/25 05:07:57 grisha Exp $
+ * $Id: _pspmodule.c,v 1.5 2003/08/05 19:28:26 grisha Exp $
  *
  * See accompanying documentation and source code comments for
  * details.
@@ -78,6 +78,7 @@ static psp_parser_t *psp_parser_init(void)
 
     memset(&parser->pycode, 0, sizeof(psp_string));
     memset(&parser->whitespace, 0, sizeof(psp_string));
+    parser->dir = NULL;
     parser->is_psp_echo = 0;
     parser->after_colon = 0;
     parser->seen_newline = 0;
@@ -94,7 +95,7 @@ static void psp_parser_cleanup(psp_parser_t *parser)
     if (parser->whitespace.allocated) {
         free(parser->whitespace.blob);
     }
-    
+
     free(parser);
 }
 
@@ -102,25 +103,41 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
 {
     PyObject *code;
     char     *filename;
+    char     *dir = NULL;
+    char     *path;
     psp_parser_t  *parser;
     yyscan_t scanner;
     FILE *f;
     
-    if (!PyArg_ParseTuple(argv, "s", &filename)) {
+    if (!PyArg_ParseTuple(argv, "s|s", &filename, &dir)) {
         return NULL;
+    }
+
+    if (dir) {
+	path = malloc(strlen(filename)+strlen(dir)+1);
+	if (!path) 
+	    return PyErr_NoMemory();
+	strcpy(path, dir);
+	strcat(path, filename);
+    }
+    else {
+	path = filename;
     }
     
     Py_BEGIN_ALLOW_THREADS
-    f = fopen(filename, "rb");
+    f = fopen(path, "rb");
     Py_END_ALLOW_THREADS
 
     if (f == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
+	if (dir) free(path);
         return NULL;
     }
+    if (dir) free(path);
 
-    Py_BEGIN_ALLOW_THREADS
     parser = psp_parser_init();
+    if (dir)
+	parser->dir = dir;
 
     yylex_init(&scanner);
     yyset_in(f, scanner);
@@ -131,12 +148,18 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     fclose(f);
     psp_string_0(&parser->pycode);
 
-    Py_END_ALLOW_THREADS
+    if (PyErr_Occurred()) {
+	psp_parser_cleanup(parser);
+	return NULL;
+    }
 
-    if (parser->pycode.blob)
+    if (parser->pycode.blob) {
 	code = PyString_FromString(parser->pycode.blob);
-    else
+    }
+    else {
 	code = PyString_FromString("");
+    }
+
     psp_parser_cleanup(parser);
     
     return code; 
