@@ -173,8 +173,8 @@ distclean:  clobber
 
 # HTML in the doc directory
 dist: version html
-	rm -rf ../doc
-	mv modpython ../doc
+	rm -rf ../doc-html
+	mv modpython ../doc-html
 
 # Version substitution
 version: ../src/include/mpversion.h
