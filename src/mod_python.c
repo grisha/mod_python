@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.79 2002/09/27 17:59:00 grisha Exp $
+ * $Id: mod_python.c,v 1.80 2002/10/01 22:04:54 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1151,6 +1151,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
      */
     resultobject = PyObject_CallMethod(idata->obcallback, "FilterDispatch", "O", 
                                        filter);
+
     /* release interpreter */
     release_interpreter();
     
@@ -1166,8 +1167,6 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
         Py_XDECREF(resultobject);
     }
     return filter->rc;
-
-    return APR_SUCCESS;
 }
 
 /**

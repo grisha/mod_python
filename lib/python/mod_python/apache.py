@@ -256,7 +256,7 @@ class CallBack:
             try:
                 (etype, value, traceback) = traceblock
                 filter.disable()
-                result = self.ReportError(etype, value, traceback, req=req,
+                result = self.ReportError(etype, value, traceback, req=req, filter=filter,
                                           phase="Filter: " + filter.name,
                                           hname=filter.handler, debug=debug)
             finally:
@@ -267,7 +267,7 @@ class CallBack:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 filter.disable()
-                result = self.ReportError(exc_type, exc_value, exc_traceback, req=req,
+                result = self.ReportError(exc_type, exc_value, exc_traceback, req=req, filter=filter,
                                           phase=filter.name, hname=filter.handler,
                                           debug=debug)
             finally:
@@ -389,7 +389,7 @@ class CallBack:
 	return result
 
 
-    def ReportError(self, etype, evalue, etb, req=None, srv=None,
+    def ReportError(self, etype, evalue, etb, req=None, filter=None, srv=None,
                     phase="N/A", hname="N/A", debug=0):
 	""" 
 	This function is only used when debugging is on.
@@ -424,8 +424,12 @@ class CallBack:
                     s = '\nMod_python error: "%s %s"\n\n' % (phase, hname)
                     for e in traceback.format_exception(etype, evalue, etb):
                         s = s + e + '\n'
-
-                    req.write(s)
+                        
+                    if filter:
+                        filter.write(s)
+                        filter.flush()
+                    else:
+                        req.write(s)
 
                     return DONE
             except:
