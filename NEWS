@@ -1,3 +1,9 @@
+Oct 16 2000 -	Began a major file reorganization. All objects are now in
+		separate files, and all external functions have an Mp prefix
+		and named consistently with Python C API conventions.
+
+Oct 15 2000 -	We now use mkdep.
+
 Oct 12 2000 -   Autoconf now works. Documentation has been adjusted. Also
 		added Windows installation instructions to the docs.
 
@@ -72,3 +78,7 @@ Jun  7 2000 -	PythonImport now works.
 
 Jun  5 2000 - 	PythonDebug and other on/off type handlers are now of type FLAG
 		so they require an argument of On or Off. 
+
+Apr    2000 - 	rename to mod_python and go apache-specific.
+Nov    1998 - 	support for multiple interpreters introduced.
+May    1998 - 	initial release (httpdapy).
