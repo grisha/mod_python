@@ -1115,7 +1115,6 @@ fi
 
 
 
-
 if test -z "$APXS"; then
   echo "configure: warning: **** apxs was not found, DSO compilation will not be available." 1>&2
   echo "configure: warning: **** You can use --with-apxs to specify where your apxs is." 1>&2
@@ -1127,7 +1126,7 @@ else
 
   # check Apache version
   echo $ac_n "checking Apache version""... $ac_c" 1>&6
-echo "configure:1131: checking Apache version" >&5
+echo "configure:1130: checking Apache version" >&5
   HTTPD="`${APXS} -q SBINDIR`/`${APXS} -q TARGET`"
   ver=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}'`
   echo "$ac_t""$ver" 1>&6
@@ -1139,22 +1138,21 @@ echo "configure:1131: checking Apache version" >&5
 
   # determine LIBEXEC
   echo $ac_n "checking for Apache libexec directory""... $ac_c" 1>&6
-echo "configure:1143: checking for Apache libexec directory" >&5
+echo "configure:1142: checking for Apache libexec directory" >&5
   LIBEXECDIR=`${APXS} -q LIBEXECDIR`
   echo "$ac_t""$LIBEXECDIR" 1>&6
 
   # determine INCLUDES
   echo $ac_n "checking for Apache include directory""... $ac_c" 1>&6
-echo "configure:1149: checking for Apache include directory" >&5
+echo "configure:1148: checking for Apache include directory" >&5
   AP_INCLUDES="-I`${APXS} -q INCLUDEDIR`"
   echo "$ac_t""$AP_INCLUDES" 1>&6
 
     if test "`uname`" = "SunOS"; then
     echo $ac_n "checking for gcc on Solaris possible missing _eprintf problem""... $ac_c" 1>&6
-echo "configure:1155: checking for gcc on Solaris possible missing _eprintf problem" >&5
+echo "configure:1154: checking for gcc on Solaris possible missing _eprintf problem" >&5
     if test "$CC" = "gcc"; then
-      EPRINTF_HACK="_eprintf.o"
-      FLOATDIDF_HACK="_floatdidf.o"
+      SOLARIS_HACKS="_eprintf.o _floatdidf.o _muldi3.o"
     fi
     echo "$ac_t"""done"" 1>&6
   fi
@@ -1207,7 +1205,7 @@ if test "$STATIC" = "no_static" -a "$DSO" = "no_dso"; then
 fi
 
 echo $ac_n "checking for --with-python""... $ac_c" 1>&6
-echo "configure:1211: checking for --with-python" >&5
+echo "configure:1209: checking for --with-python" >&5
 # Check whether --with-python or --without-python was given.
 if test "${with_python+set}" = set; then
   withval="$with_python"
@@ -1226,7 +1224,7 @@ if test -z "$PYTHON_BIN"; then
   # Extract the first word of "python", so it can be a program name with args.
 set dummy python; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1230: checking for $ac_word" >&5
+echo "configure:1228: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_PYTHON_BIN'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1265,7 +1263,7 @@ fi
 
 # find out python version
 echo $ac_n "checking Python version""... $ac_c" 1>&6
-echo "configure:1269: checking Python version" >&5
+echo "configure:1267: checking Python version" >&5
 PyVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:3]'`
 PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:1]'`
 echo "$ac_t""$PyVERSION" 1>&6
@@ -1277,7 +1275,7 @@ fi
 
 # find out compiled in install prefix
 echo $ac_n "checking Python install prefix""... $ac_c" 1>&6
-echo "configure:1281: checking Python install prefix" >&5
+echo "configure:1279: checking Python install prefix" >&5
 PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
 echo "$ac_t""$PyEXEC_INSTALLDIR" 1>&6
 
@@ -1305,7 +1303,7 @@ if test "$PyFRAMEWORKDIR" != "no-framework"; then
 else
   LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
   echo $ac_n "checking for Py_NewInterpreter in -lpython${PyVERSION}""... $ac_c" 1>&6
-echo "configure:1309: checking for Py_NewInterpreter in -lpython${PyVERSION}" >&5
+echo "configure:1307: checking for Py_NewInterpreter in -lpython${PyVERSION}" >&5
 ac_lib_var=`echo python${PyVERSION}'_'Py_NewInterpreter | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -1313,7 +1311,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lpython${PyVERSION}  ${PyLIBS} ${PyMODLIBS}   $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1317 "configure"
+#line 1315 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1324,7 +1322,7 @@ int main() {
 Py_NewInterpreter()
 ; return 0; }
 EOF
-if { (eval echo configure:1328: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1326: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -1356,7 +1354,7 @@ LIBS="$save_LIBS"
 
 # (actually this check already just happened above)
 echo $ac_n "checking what libraries Python was linked with""... $ac_c" 1>&6
-echo "configure:1360: checking what libraries Python was linked with" >&5 
+echo "configure:1358: checking what libraries Python was linked with" >&5 
 PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
  
 ## XXX this is a small work around for a weird RedHat problem
@@ -1369,7 +1367,7 @@ LIBS="${LIBS} ${PY_LIBS}"
 echo "$ac_t""$PY_LIBS" 1>&6
 
 echo $ac_n "checking linker flags used to link Python""... $ac_c" 1>&6
-echo "configure:1373: checking linker flags used to link Python" >&5
+echo "configure:1371: checking linker flags used to link Python" >&5
 
 PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
 PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
@@ -1378,7 +1376,7 @@ LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 echo "$ac_t""$PY_LDFLAGS" 1>&6
 
 echo $ac_n "checking where Python include files are""... $ac_c" 1>&6
-echo "configure:1382: checking where Python include files are" >&5
+echo "configure:1380: checking where Python include files are" >&5
 
 PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
@@ -1545,8 +1543,7 @@ s%@APXS@%$APXS%g
 s%@DSO@%$DSO%g
 s%@ALL@%$ALL%g
 s%@LIBEXECDIR@%$LIBEXECDIR%g
-s%@EPRINTF_HACK@%$EPRINTF_HACK%g
-s%@FLOATDIDF_HACK@%$FLOATDIDF_HACK%g
+s%@SOLARIS_HACKS@%$SOLARIS_HACKS%g
 s%@HTTPD@%$HTTPD%g
 s%@AP_SRC@%$AP_SRC%g
 s%@AP_SRC_OWN@%$AP_SRC_OWN%g

@@ -124,8 +124,7 @@ fi
 
 # if apxs was still not found, then no DSO
 AC_SUBST(LIBEXECDIR)
-AC_SUBST(EPRINTF_HACK)
-AC_SUBST(FLOATDIDF_HACK)
+AC_SUBST(SOLARIS_HACKS)
 AC_SUBST(HTTPD)
 if test -z "$APXS"; then
   AC_MSG_WARN([**** apxs was not found, DSO compilation will not be available.])
@@ -161,8 +160,7 @@ else
   if test "`uname`" = "SunOS"; then
     AC_MSG_CHECKING([for gcc on Solaris possible missing _eprintf problem])
     if test "$CC" = "gcc"; then
-      EPRINTF_HACK="_eprintf.o"
-      FLOATDIDF_HACK="_floatdidf.o"
+      SOLARIS_HACKS="_eprintf.o _floatdidf.o _muldi3.o"
     fi
     AC_MSG_RESULT("done")
   fi

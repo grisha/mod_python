@@ -75,11 +75,11 @@ all:	@ALL@
 dso:	mod_python.so
 	@echo dso > .install
 
-mod_python.so: $(SRCS) @EPRINTF_HACK@ @FLOATDIDF_HACK@
+mod_python.so: $(SRCS) @SOLARIS_HACKS@ 
 	@echo
 	@echo 'Compiling for DSO. For static, do "make static"'
 	@echo
-	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS) @EPRINTF_HACK@ @FLOATDIDF_HACK@
+	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS) @SOLARIS_HACKS@
 	@rm -f mod_python.so
 	@ln -s .libs/mod_python.so
 	@echo
@@ -95,10 +95,13 @@ distclean: clean
 	rm -f Makefile .depend .install
 
 # this is a hack to help avoid a gcc/solaris problem
-# python uses assert() which needs _eprintf()
+# python uses assert() which needs _eprintf(). See 
+# SOLARIS_HACKS above
 _eprintf.o:
 	ar -x `gcc -print-libgcc-file-name` _eprintf.o
 _floatdidf.o:
 	ar -x `gcc -print-libgcc-file-name` _floatdidf.o
+_muldi3.o:
+	ar -x `gcc -print-libgcc-file-name` _muldi3.o
 
 # DO NOT DELETE THIS LINE

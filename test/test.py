@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.21 2002/12/02 21:53:11 grisha Exp $
+ # $Id: test.py,v 1.22 2002/12/17 20:44:04 grisha Exp $
  #
 
 """
@@ -796,7 +796,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.stopHttpd()
 
         # see what's in the log now
-        time.sleep(1)
+        time.sleep(2)
         f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
         log = f.read()
         f.close()
