@@ -14,9 +14,10 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: win32_postinstall.py,v 1.6 2004/04/30 19:35:37 grisha Exp $
+ # $Id: win32_postinstall.py,v 1.7 2004/04/30 19:38:46 grisha Exp $
  #
  # this script runs at the end of windows install
+
 
 import sys, os, shutil
 import distutils.sysconfig
@@ -25,26 +26,46 @@ def getApacheDirOptions():
     """find potential apache directories in the registry..."""
     try:
         import win32api, win32con
+        class nullregkey:
+            """a registry key that doesn't exist..."""
+            def childkey(self, subkeyname):
+                return nullregkey()
+            def subkeynames(self):
+                return []
+            def getvalue(self, valuename):
+                raise AttributeError("Cannot access registry value %r: key does not exist" % (valuename))
         class regkey:
             """simple wrapper for registry functions that closes keys nicely..."""
             def __init__(self, parent, subkeyname):
-                 self.key = win32api.RegOpenKey(parent, subkeyname)
+               self.key = win32api.RegOpenKey(parent, subkeyname)
             def childkey(self, subkeyname):
-                 return regkey(self.key, subkeyname)
+               try:
+                   return regkey(self.key, subkeyname)
+               except win32api.error:
+                   return nullregkey()
             def subkeynames(self):
-                 numsubkeys = win32api.RegQueryInfoKey(self.key)[0]
-                 return [win32api.RegEnumKey(self.key, index) for index in range(numsubkeys)]
+               numsubkeys = win32api.RegQueryInfoKey(self.key)[0]
+               return [win32api.RegEnumKey(self.key, index) for index in range(numsubkeys)]
             def getvalue(self, valuename):
-                 return win32api.RegQueryValueEx(self.key, valuename)
+               try:
+                   return win32api.RegQueryValueEx(self.key, valuename)
+               except win32api.error:
+                   raise AttributeError("Cannot access registry value %r" % (valuename))
             def __del__(self):
-                 win32api.RegCloseKey(self.key)
+               if hasattr(self, "key"):
+                   win32api.RegCloseKey(self.key)
     except ImportError:
         return {}
     versions = {}
-    apachekey = regkey(win32con.HKEY_LOCAL_MACHINE, "Software").childkey("Apache Group").childkey("Apache")
-    for versionname in apachekey.subkeynames():
-        serverroot = apachekey.childkey(versionname).getvalue("ServerRoot")
-        versions[versionname] = serverroot[0]
+    hklm_key = regkey(win32con.HKEY_LOCAL_MACHINE, "Software").childkey("Apache Group").childkey("Apache")
+    hkcu_key = regkey(win32con.HKEY_CURRENT_USER, "Software").childkey("Apache Group").childkey("Apache")
+    for apachekey in (hklm_key, hkcu_key):
+        for versionname in apachekey.subkeynames():
+            try:
+                serverroot = apachekey.childkey(versionname).getvalue("ServerRoot")
+            except AttributeError:
+                continue
+            versions[versionname] = serverroot[0]
     return versions
 
 def askForApacheDir(apachediroptions):
@@ -78,7 +99,7 @@ def askForApacheDir(apachediroptions):
             return ""
 
 # if we're called during removal, just exit
-if len(sys.argv) == 0 or sys.argv[1] != "-remove":
+if len(sys.argv) == 0 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
 
     mp = os.path.join(distutils.sysconfig.get_python_lib(), "mod_python_so.pyd")
 
