@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.36 2004/02/16 19:47:27 grisha Exp $
+ # $Id: publisher.py,v 1.37 2004/06/25 00:58:00 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -139,6 +139,8 @@ def handler(req):
         
         if result is None:
             result = ""
+        elif type(result) == UnicodeType:
+            return result
         else:
             result = str(result)
 
