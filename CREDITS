@@ -20,6 +20,9 @@ Gary Benson <gbenson@redhat.com>
 Stéphane Bidoul <sbi@acse.be> 
 	[win32 port and threading]
 
+Justin Erenkrantz <jerenkrantz@apache.org>
+        [bugfixes/patches]
+
 James Gessling <jgessling@etrade.com>
 	[doc/README.VMS]
 
