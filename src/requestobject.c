@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.45 2003/05/22 20:25:07 grisha Exp $
+ * $Id: requestobject.c,v 1.46 2003/05/29 14:44:33 grisha Exp $
  *
  */
 
@@ -819,16 +819,20 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "s|ll", &fname, &offset, &len))
         return NULL;  /* bad args */
 
+    Py_BEGIN_ALLOW_THREADS
     status=apr_stat(&finfo, fname,
                     APR_READ, self->request_rec->pool);
+    Py_END_ALLOW_THREADS
     if (status != APR_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Could not stat file for reading");
         return NULL;
     }
     
+    Py_BEGIN_ALLOW_THREADS                         
     status=apr_file_open(&fd, fname,
                          APR_READ, finfo.protection,
                          self->request_rec->pool);
+    Py_END_ALLOW_THREADS
     if (status != APR_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Could not open file for reading");
         return NULL;

@@ -490,7 +490,7 @@ static yyconst flex_int16_t yy_chk[43] =
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.c,v 1.5 2003/05/29 14:15:48 grisha Exp $
+ * $Id: psp_parser.c,v 1.6 2003/05/29 14:44:33 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
