@@ -96,13 +96,13 @@ static PyObject * make_obcallback(server_rec *s)
 
     if (! ((m = PyImport_ImportModule(MODULENAME)))) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                     "make_obcallback: could not import %s.\n", MODULENAME);
+                     "make_obcallback: could not import %s.\n", (!MODULENAME) ? "<null>" : MODULENAME);
         PyErr_Print();
     }
     
     if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                     "make_obcallback: could not call %s.\n", INITFUNC);
+                     "make_obcallback: could not call %s.\n", (!INITFUNC) ? "<null>" : INITFUNC);
         PyErr_Print();
     }
     
@@ -130,8 +130,11 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
     PyEval_AcquireLock();
 #endif
 
-    if (!interpreters)
+    if (!interpreters) {
+         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
+                       "python_handler: interpreters dictionary not initialised.");
         return NULL;
+    }
 
     p = PyDict_GetItemString(interpreters, (char *)name);
     if (!p)
@@ -179,6 +182,8 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
             PyEval_ReleaseThread(tstate);
 #endif
             PyThreadState_Delete(tstate);
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
+                      "python_handler: no interpreter callback found.");
             return NULL;
         }
     }
@@ -1036,8 +1041,11 @@ static int python_handler(request_rec *req, char *phase)
     /* get/create interpreter */
     idata = get_interpreter(interp_name, req->server);
 
-    if (!idata)
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                      "python_handler: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
+    }
     
     /* create/acquire request object */
     request_obj = get_request_object(req, interp_name, phase);
@@ -1220,8 +1228,11 @@ static apr_status_t python_connection(conn_rec *con)
     /* get/create interpreter */
     idata = get_interpreter(interp_name, con->base_server);
 
-    if (!idata)
+    if (!idata) {
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server,
+                      "python_handler: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
+    }
     
     /* create connection object */
     conn_obj = (connobject*) MpConn_FromConn(con);
@@ -1317,8 +1328,11 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     /* get/create interpreter */
     idata = get_interpreter(interp_name, req->server);
    
-    if (!idata)
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                      "python_handler: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
+    }
 
     /* create/acquire request object */
     request_obj = get_request_object(req, interp_name, 
@@ -1855,7 +1869,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
             if (PyErr_Occurred())
                 PyErr_Print();
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                         "directive_PythonImport: error importing %s", module_name);
+                         "directive_PythonImport: error importing %s", (!module_name) ? "<null>" : module_name);
         }
 
         /* release interpreter */
