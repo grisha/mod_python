@@ -60,8 +60,14 @@ def handler(req):
         func_path = "index"
 
     # if any part of the path begins with "_", abort
+    # We need to make this test here, before resolve_object,
+    # to prevent the loading of modules whose name begins with
+    # an underscore.
     if func_path[0] == '_' or func_path.count("._"):
-        raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+        req.log_error('Cannot access %s because '
+                      'it contains at least an underscore'
+                      %func_path,apache.APLOG_WARNING)
+        raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
     ## import the script
     path, module_name =  os.path.split(req.filename)
@@ -259,19 +265,46 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     This function traverses the objects separated by .
     (period) to find the last one we're looking for.
     """
+    parts = object_str.split('.')
+    last_part = len(parts)-1
+        
+    for i, obj_str in enumerate(parts):
+        # path components starting with an underscore are forbidden
+        if obj_str[0]=='_':
+            req.log_error('Cannot traverse %s in %s because '
+                          'it starts with an underscore'
+                          %(obj_str,req.unparsed_uri),apache.APLOG_WARNING)
+            raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
-    for obj_str in  object_str.split('.'):
+        # if we're not in the first object (which is the module)
+        if i>0:
+            # we must be in an instance, nothing else
+            # we have to check for old-style instances AND
+            # new-style instances.
+            # XXX testing for new-style class instance is tricky
+            # see http://groups.google.fr/groups?th=7bab336f2b4f7e03&seekm=107l13c5tti8876%40news.supernews.com
+            if not (isinstance(obj,InstanceType)):
+                req.log_error('Cannot traverse %s in %s because '
+                              '%s is not an instance'
+                              %(obj_str,req.unparsed_uri,obj),apache.APLOG_WARNING)
+                raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+        
+        # we know it's OK to call getattr
+        # note that getattr can really call some code because
+        # of property objects (or attribute with __get__ special methods)...
         obj = getattr(obj, obj_str)
 
-        # object cannot be a module
-        if type(obj) == ModuleType:
-            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+        # we don't want to get a module or class
+        obj_type = type(obj)
+        if (isinstance(obj,ModuleType)
+            or isinstance(obj,ClassType)
+            or isinstance(obj,type)):
+             req.log_error('Cannot access %s in %s because '
+                           'it is a class or module'
+                           %(obj_str,req.unparsed_uri),apache.APLOG_WARNING)
+             raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
         realm, user, passwd = process_auth(req, obj, realm,
                                            user, passwd)
 
     return obj
-
-    
-        
-

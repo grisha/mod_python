@@ -64,6 +64,10 @@ import time
 import os
 import cStringIO
 
+# This is used for mod_python.publisher security tests
+_SECRET_PASSWORD = 'root'
+__ANSWER = 42
+
 class SimpleTestCase(unittest.TestCase):
 
     def __init__(self, methodName, req):
@@ -823,6 +827,26 @@ def PythonOption_items(req):
 def interpreter(req):
     req.write(req.interpreter)
     return apache.OK
+
+def index(req):
+    return "test ok, interpreter=%s"%req.interpreter
+
+def test_publisher(req):
+    return "test ok, interpreter=%s"%req.interpreter
+
+class OldStyleClassTest:
+    def __call__(self,req):
+        return "test callable old-style instance ok"
+    def traverse(self,req):
+        return "test traversable old-style instance ok"
+old_instance = OldStyleClassTest()
+
+class InstanceTest(object):
+    def __call__(self,req):
+        return "test callable instance ok"
+    def traverse(self,req):
+        return "test traversable instance ok"
+instance = InstanceTest()
 
 def _test_table():
 

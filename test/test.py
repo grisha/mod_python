@@ -1103,6 +1103,119 @@ class PerRequestTestCase(unittest.TestCase):
         if rsp != "test ok":
             self.fail("session did not accept our cookie")
 
+    def test_publisher_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+    
+    def test_publisher(self):
+        print "\n  * Testing mod_python.publisher"
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py")
+        if (rsp != "test ok, interpreter=test_publisher"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py/index")
+        if (rsp != "test ok, interpreter=test_publisher"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py/test_publisher")
+        if (rsp != "test ok, interpreter=test_publisher"):
+            self.fail(`rsp`)
+
+    def test_publisher_security_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+    
+    def test_publisher_security(self):
+        print "\n  * Testing mod_python.publisher security"
+
+        def get_status(path):
+            conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+            conn.putrequest("GET", path, skip_host=1)
+            conn.putheader("Host", "test_publisher:%s" % PORT)
+            conn.endheaders()
+            response = conn.getresponse()
+            status, response = response.status, response.read()
+            conn.close()
+            return status, response
+
+        status, response = get_status("/tests.py/_SECRET_PASSWORD")
+        if status != 403:
+            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s'%(status,response))
+
+        status, response = get_status("/tests.py/__ANSWER")
+        if status != 403:
+            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s'%(status,response))
+
+        status, response = get_status("/tests.py/re")
+        if status != 403:
+            self.fail('Vulnerability : module access (%i)\n%s'%(status,response))
+
+        status, response = get_status("/tests.py/OldStyleClassTest")
+        if status != 403:
+            self.fail('Vulnerability : old style class access (%i)\n%s'%(status,response))
+
+        status, response = get_status("/tests.py/InstanceTest")
+        if status != 403:
+            self.fail('Vulnerability : new style class access (%i)\n%s'%(status,response))
+
+        status, response = get_status("/tests.py/index/func_code")
+        if status != 403:
+            self.fail('Vulnerability : function traversal (%i)\n%s'%(status,response))
+
+    def test_publisher_old_style_instance_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+    
+    def test_publisher_old_style_instance(self):
+        print "\n  * Testing mod_python.publisher old-style instance publishing"
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py/old_instance")
+        if (rsp != "test callable old-style instance ok"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py/old_instance/traverse")
+        if (rsp != "test traversable old-style instance ok"):
+            self.fail(`rsp`)
+
+    def test_publisher_instance_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+    
+    def test_publisher_instance(self):
+        print "\n  * Testing mod_python.publisher instance publishing"
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py/instance")
+        if (rsp != "test callable instance ok"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher", path="/tests.py/instance/traverse")
+        if (rsp != "test traversable instance ok"):
+            self.fail(`rsp`)
 
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
@@ -1197,6 +1310,10 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_Session_Session"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_old_style_instance"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
