@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.6 2000/12/18 19:50:03 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.7 2001/01/20 03:11:24 gtrubetskoy Exp $
  *
  */
 
@@ -96,6 +96,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->subprocess_env = MpTable_FromTable(req->subprocess_env);
     result->notes = MpTable_FromTable(req->notes);
     result->header_sent = 0;
+    result->content_type_set = 0;
     result->hstack = NULL;
     result->rbuff = NULL;
     result->rbuff_pos = 0;
@@ -834,6 +835,7 @@ static struct memberlist request_memberlist[] = {
     {"read_body",          T_INT,       OFF(read_body),            RO},
     {"read_chunked",       T_INT,       OFF(read_chunked),         RO},
     {"content_type",       T_STRING,    OFF(content_type)            },
+    {"_content_type_set",  T_INT,       NULL,                      RO},
     {"handler",            T_STRING,    OFF(handler),              RO},
     {"content_encoding",   T_STRING,    OFF(content_encoding),     RO},
     {"content_language",   T_STRING,    OFF(content_language),     RO},
@@ -1011,6 +1013,9 @@ static PyObject * request_getattr(requestobject *self, char *name)
     else if (strcmp(name, "hstack") == 0) {
 	return PyString_FromString(self->hstack);
     }
+    else if (strcmp(name, "_content_type_set") == 0) {
+	return PyInt_FromLong(self->content_type_set);
+    }
     else
 	return PyMember_Get((char *)self->request_rec, request_memberlist, name);
 
@@ -1033,6 +1038,7 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
     else if (strcmp(name, "content_type") == 0) {
 	self->request_rec->content_type = 
 	    ap_pstrdup(self->request_rec->pool, PyString_AsString(value));
+	self->content_type_set = 1;
 	return 0;
     }
     else if (strcmp(name, "filename") == 0) {
