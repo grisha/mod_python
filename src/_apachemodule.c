@@ -1,4 +1,4 @@
-/*====================================================================
+/* ====================================================================
  * Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -13,11 +13,11 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by Gregory Trubetskoy
- *    for use in the mod_python module for Apache HTTP server 
- *    (http://www.modpython.org/)."
+ * 3. The end-user documentation included with the redistribution, if
+ *    any, must include the following acknowledgment: "This product 
+ *    includes software developed by Gregory Trubetskoy."
+ *    Alternately, this acknowledgment may appear in the software itself, 
+ *    if and wherever such third-party acknowledgments normally appear.
  *
  * 4. The names "mod_python", "modpython" or "Gregory Trubetskoy" must not 
  *    be used to endorse or promote products derived from this software 
@@ -26,14 +26,7 @@
  *
  * 5. Products derived from this software may not be called "mod_python"
  *    or "modpython", nor may "mod_python" or "modpython" appear in their 
- *    names without prior written permission of Gregory Trubetskoy. For 
- *    written permission, please contact grisha@ispol.com..
- *
- * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by Gregory Trubetskoy
- *    for use in the mod_python module for Apache HTTP server 
- *    (http://www.modpython.org/)."
+ *    names without prior written permission of Gregory Trubetskoy.
  *
  * THIS SOFTWARE IS PROVIDED BY GREGORY TRUBETSKOY ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -51,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.4 2000/12/05 00:14:02 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.5 2000/12/05 23:47:01 gtrubetskoy Exp $
  *
  */
 
