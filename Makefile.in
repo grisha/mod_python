@@ -70,7 +70,7 @@ dso: @DSO@
 
 do_dso:
 	@cd src && $(MAKE)
-	@cd dist && $(MAKE) dist
+	@cd dist && $(MAKE) build
 
 no_dso:
 	@echo
