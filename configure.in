@@ -42,7 +42,7 @@
  # ====================================================================
  #
 
-dnl $Id: configure.in,v 1.13 2001/09/06 20:39:04 gtrubetskoy Exp $
+dnl $Id: configure.in,v 1.14 2002/06/18 21:15:29 gtrubetskoy Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/mod_python.c)
@@ -124,7 +124,18 @@ if test -z "$APXS"; then
 else
   DSO="do_dso"
   ALL="dso"
-  
+
+  # check Apache version
+  AC_MSG_CHECKING(Apache version)
+  httpd="`${APXS} -q SBINDIR`/`${APXS} -q TARGET`"
+  ver=`$httpd -v | awk '/version/ {print $3}' | awk -F/ '{print $2}'`
+  AC_MSG_RESULT($ver)
+
+  # make version begins with 2
+  if test -z "`echo $ver | egrep ^2`"; then
+    AC_MSG_ERROR([This version of mod_python only works with Apache 2. The one you have seems to be $ver.])
+  fi
+
   # determine LIBEXEC
   AC_MSG_CHECKING(for Apache libexec directory)
   LIBEXECDIR=`${APXS} -q LIBEXECDIR`
