@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.62 2002/07/26 13:10:30 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.63 2002/08/11 22:53:10 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -573,11 +573,13 @@ PyObject * make_obcallback()
 
     if (! ((m = PyImport_ImportModule(MODULENAME)))) {
 	fprintf(stderr, "make_obcallback(): could not import %s.\n", MODULENAME);
+	PyErr_Print();
     }
     
-    if (! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
+    if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
 	fprintf(stderr, "make_obcallback(): could not call %s.\n",
 		INITFUNC);
+	PyErr_Print();
     }
     
     return obCallBack;
