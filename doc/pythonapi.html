@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
-<!-- $Id: pythonapi.html,v 1.6 2000/08/16 18:49:33 gtrubetskoy Exp $ -->
+<!-- $Id: pythonapi.html,v 1.7 2000/08/21 17:16:37 gtrubetskoy Exp $ -->
 
 <html>
   <head>
@@ -304,6 +304,31 @@
 	    files outside of any &lt;Directory&gt;, then the value will
 	    be an empty string.
 	    
+	  <dt><br><b>get_remote_host(int type = apache.REMOTE_NAME)</b>
+	  <dd>
+	    Returns the a string with the remote client's DNS name or IP or
+	    None on failure. The first call to this function may entail a 
+	    DNS look up, but subsequent calls will use the cached result
+	    from the first call.
+	    <p>
+	      The optional <em>type</em> argument can specify the following:
+	    <p>
+	      <b>apache.REMOTE_HOST</b> Look
+	      up the DNS name. Fail if Apache directive
+	      <code>HostNameLookups</code> is <code>off</code> or the
+	      hostname cannot be determined.
+	    <p>
+	      <b>apache.REMOTE_NAME</b> <em>(Default)</em> Return
+	      the DNS name if possible, or the IP (as a string in
+	      dotted decimal notation) otherwise.
+	    <p>
+	      <b>apache.REMOTE_NOLOOKUP</b> Don't perform a DNS lookup,
+	      return an IP. Note: if a lookup was performed prior to this call,
+	      then the cached host name is returned. 
+	    <p>
+	      <b>apache.REMOTE_DOUBLE_REV</b> Force a double-reverse
+	      lookup. On failure, return None.
+
 	  <dt><br><b>get_options()</b>
 	  <dd>
 	    Returns a reference to the <code>table</code> object containing the options
@@ -721,7 +746,7 @@
     <hr>
 <!-- Created: Tue May  9 08:24:45 EDT 2000 -->
 <!-- hhmts start -->
-Last modified: Wed Aug 16 12:33:34 EDT 2000
+Last modified: Fri Aug 18 16:12:59 EDT 2000
 <!-- hhmts end -->
   </body>
 </html>

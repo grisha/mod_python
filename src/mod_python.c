@@ -67,7 +67,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.23 2000/08/16 18:49:33 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.24 2000/08/21 17:16:37 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -81,6 +81,7 @@
 /* Apache headers */
 #include "httpd.h"
 #include "http_config.h"
+#include "http_core.h"
 #include "http_main.h"
 #include "http_protocol.h"
 #include "util_script.h"
@@ -420,15 +421,16 @@ typedef struct requestobject {
 static void request_dealloc(requestobject *self);
 static PyObject * request_getattr(requestobject *self, char *name);
 static int request_setattr(requestobject *self, char *name, PyObject *value);
-static PyObject * req_send_http_header     (requestobject *self, PyObject *args);
-static PyObject * req_get_basic_auth_pw    (requestobject *self, PyObject *args);
-static PyObject * req_write                (requestobject *self, PyObject *args);
-static PyObject * req_read                 (requestobject *self, PyObject *args);
-static PyObject * req_get_config           (requestobject *self, PyObject *args);
-static PyObject * req_get_options          (requestobject *self, PyObject *args);
-static PyObject * req_get_dirs             (requestobject *self, PyObject *args);
 static PyObject * req_add_common_vars      (requestobject *self, PyObject *args);
 static PyObject * req_add_handler          (requestobject *self, PyObject *args);
+static PyObject * req_get_basic_auth_pw    (requestobject *self, PyObject *args);
+static PyObject * req_get_config           (requestobject *self, PyObject *args);
+static PyObject * req_get_dirs             (requestobject *self, PyObject *args);
+static PyObject * req_get_remote_host      (requestobject *self, PyObject *args);
+static PyObject * req_get_options          (requestobject *self, PyObject *args);
+static PyObject * req_read                 (requestobject *self, PyObject *args);
+static PyObject * req_send_http_header     (requestobject *self, PyObject *args);
+static PyObject * req_write                (requestobject *self, PyObject *args);
 
 static PyTypeObject requestobjecttype = {
     PyObject_HEAD_INIT(NULL)
@@ -451,15 +453,16 @@ static PyTypeObject requestobjecttype = {
 #define is_requestobject(op) ((op)->ob_type == &requestobjecttype)
 
 static PyMethodDef requestobjectmethods[] = {
-    {"send_http_header",     (PyCFunction) req_send_http_header,     METH_VARARGS},
-    {"get_basic_auth_pw",    (PyCFunction) req_get_basic_auth_pw,    METH_VARARGS},
-    {"write",                (PyCFunction) req_write,                METH_VARARGS},
-    {"read",                 (PyCFunction) req_read,                 METH_VARARGS},
-    {"get_config",           (PyCFunction) req_get_config,           METH_VARARGS},
-    {"get_options",          (PyCFunction) req_get_options,          METH_VARARGS},
-    {"get_dirs",             (PyCFunction) req_get_dirs,             METH_VARARGS},
     {"add_common_vars",      (PyCFunction) req_add_common_vars,      METH_VARARGS},
     {"add_handler",          (PyCFunction) req_add_handler,          METH_VARARGS},
+    {"get_basic_auth_pw",    (PyCFunction) req_get_basic_auth_pw,    METH_VARARGS},
+    {"get_config",           (PyCFunction) req_get_config,           METH_VARARGS},
+    {"get_dirs",             (PyCFunction) req_get_dirs,             METH_VARARGS},
+    {"get_remote_host",      (PyCFunction) req_get_remote_host,      METH_VARARGS},
+    {"get_options",          (PyCFunction) req_get_options,          METH_VARARGS},
+    {"read",                 (PyCFunction) req_read,                 METH_VARARGS},
+    {"send_http_header",     (PyCFunction) req_send_http_header,     METH_VARARGS},
+    {"write",                (PyCFunction) req_write,                METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
 
@@ -1671,9 +1674,6 @@ static PyObject * req_read(requestobject *self, PyObject *args)
     char *buffer;
     PyObject *result;
 
-    /* GT STOPPED HERE - test timeout, then add PythonOptimize patch */
-
-
     if (! PyArg_ParseTuple(args, "i", &len)) 
 	return NULL;
 
@@ -1753,6 +1753,32 @@ static PyObject * req_get_config(requestobject *self, PyObject *args)
 	(py_dir_config *) ap_get_module_config(self->request_rec->per_dir_config, 
 					       &python_module);
     return (PyObject *)make_tableobject(conf->directives);
+}
+
+/**
+ ** request.get_remote_host(request self, [int type])
+ **
+ *    An interface to the ap_get_remote_host function.
+ */
+
+static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
+{
+
+    int type = REMOTE_NAME;
+    const char *host;
+
+    if (! PyArg_ParseTuple(args, "|i", &type)) 
+	return NULL;
+    
+    host = ap_get_remote_host(self->request_rec->connection, 
+			      self->request_rec->per_dir_config, type);
+
+    if (! host) {
+	Py_INCREF(Py_None);
+	return Py_None;
+    }
+    else
+	return PyString_FromString(host);
 }
 
 /**
