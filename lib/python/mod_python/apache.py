@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.38 2001/11/03 04:24:30 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.39 2001/11/06 05:06:58 gtrubetskoy Exp $
 
 import sys
 import string
@@ -58,10 +58,6 @@ import _apache
 # variable stores the last PythonPath in raw (unevaled) form.
 _path = None
 
-# this is used in Request.__init__
-def _cleanup_request(_req):
-    _req._Request = None
-
 class Request:
     """ This is a normal Python Class that can be subclassed.
         However, most of its functionality comes from a built-in
@@ -72,11 +68,6 @@ class Request:
     def __init__(self, _req):
         # look at __setattr__ if changing this line!
         self._req = _req
-        
-        # this will decrement the reference to the _req
-        # object at cleanup time. If we don't do this, we
-        # get a cirular reference and _req never gets destroyed.
-        _req.register_cleanup(_cleanup_request, _req)
 
     def __getattr__(self, attr):
         try:
@@ -239,7 +230,7 @@ class CallBack:
         # is there a Request object for this request?
         if not _req._Request:
             _req._Request = Request(_req)
-            
+
         req = _req._Request
 
         # config

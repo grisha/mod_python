@@ -44,7 +44,7 @@
  *
  * hlist.c 
  *
- * $Id: hlistobject.c,v 1.1 2001/11/03 04:26:43 gtrubetskoy Exp $
+ * $Id: hlistobject.c,v 1.2 2001/11/06 05:06:58 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -130,12 +130,10 @@ static struct memberlist hlist_memberlist[] = {
 
 static void hlist_dealloc(hlistobject *self)
 {  
-    printf("destroying %d\n", self);
     if (self->pool)
 	apr_pool_destroy(self->pool);
     free(self);
 }
-
 
 /**
  ** hlist_getattr
