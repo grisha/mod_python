@@ -42,47 +42,36 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  *
- * requestobject.h
+ * hlistobject.h 
  *
- * $Id: requestobject.h,v 1.7 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: hlistobject.h,v 1.1 2001/11/03 04:26:43 gtrubetskoy Exp $
+ *
+ * See accompanying documentation and source code comments 
+ * for details.
  *
  */
 
-#ifndef Mp_REQUESTOBJECT_H
-#define Mp_REQUESTOBJECT_H
+#ifndef Mp_HLISTOBJECT_H
+#define Mp_HLISTOBJECT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    typedef struct requestobject {
+    typedef struct hlist {
 	PyObject_HEAD
-	request_rec    * request_rec;
-	PyObject       * connection;
-	PyObject       * server;
-	PyObject       * next;
-	PyObject       * prev;
-	PyObject       * main;
-	PyObject       * headers_in;
-	PyObject       * headers_out;
-	PyObject       * err_headers_out;
-	PyObject       * subprocess_env;
-	PyObject       * notes;
-	PyObject       * Request;
-	PyObject       * phase;
-	int              content_type_set;
-	hlistobject    * hlo;
-	char           * rbuff;       /* read bufer */
-	int              rbuff_len;   /* read buffer size */
-	int              rbuff_pos;   /* position into the buffer */
-    } requestobject;
+	struct hl_entry *head;
+	apr_pool_t *pool;
+    } hlistobject;
 
-    extern DL_IMPORT(PyTypeObject) MpRequest_Type;
+    extern DL_IMPORT(PyTypeObject) MpHList_Type;
     
-#define MpRequest_Check(op) ((op)->ob_type == &MpRequest_Type)
-    
-    extern DL_IMPORT(PyObject *) MpRequest_FromRequest Py_PROTO((request_rec *r));
+#define MpHList_Check(op) ((op)->ob_type == &MpHList_Type)
 
+    extern DL_IMPORT(PyObject *)MpHList_FromHLEntry Py_PROTO((hl_entry *hse));
+    extern DL_IMPORT(void)MpHList_Append Py_PROTO((hlistobject *self, hl_entry *hse));
+    extern DL_IMPORT(void)MpHList_Append Py_PROTO((hlistobject *self, hl_entry *hle));
+    
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Mp_REQUESTOBJECT_H */
+#endif /* !Mp_HLISTOBJECT_H */

@@ -42,47 +42,38 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  *
- * requestobject.h
+ * hlist.h 
  *
- * $Id: requestobject.h,v 1.7 2001/11/03 04:24:30 gtrubetskoy Exp $
+ * $Id: hlist.h,v 1.1 2001/11/03 04:26:43 gtrubetskoy Exp $
+ *
+ * See accompanying documentation and source code comments 
+ * for details.
  *
  */
 
-#ifndef Mp_REQUESTOBJECT_H
-#define Mp_REQUESTOBJECT_H
+#ifndef Mp_HLIST_H
+#define Mp_HLIST_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    typedef struct requestobject {
-	PyObject_HEAD
-	request_rec    * request_rec;
-	PyObject       * connection;
-	PyObject       * server;
-	PyObject       * next;
-	PyObject       * prev;
-	PyObject       * main;
-	PyObject       * headers_in;
-	PyObject       * headers_out;
-	PyObject       * err_headers_out;
-	PyObject       * subprocess_env;
-	PyObject       * notes;
-	PyObject       * Request;
-	PyObject       * phase;
-	int              content_type_set;
-	hlistobject    * hlo;
-	char           * rbuff;       /* read bufer */
-	int              rbuff_len;   /* read buffer size */
-	int              rbuff_pos;   /* position into the buffer */
-    } requestobject;
-
-    extern DL_IMPORT(PyTypeObject) MpRequest_Type;
+    /* handler list entry */
+    typedef struct hl_entry {
+	const char *handler;
+	const char *directory;
+	int silent;  /* 1 for PythonHandlerModule, where
+			if a handler is not found in a module,
+			no error should be reported */
+	struct hl_entry *next;
+    } hl_entry;
     
-#define MpRequest_Check(op) ((op)->ob_type == &MpRequest_Type)
-    
-    extern DL_IMPORT(PyObject *) MpRequest_FromRequest Py_PROTO((request_rec *r));
+    hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
+			const int s);
+    hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
+			   const char *d, const int s);
+    hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Mp_REQUESTOBJECT_H */
+#endif /* !Mp_HLIST_H */

@@ -47,17 +47,12 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.15 2001/09/09 00:25:37 gtrubetskoy Exp $
+ * $Id: mod_python.h,v 1.16 2001/11/03 04:24:30 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
  *
- * Apr 2000 - rename to mod_python and go apache-specific.
- * Nov 1998 - support for multiple interpreters introduced.
- * May 1998 - initial release (httpdapy).
- *
  */
-
 
 /* Apache headers */
 #include "httpd.h"
@@ -70,6 +65,8 @@
 #include "util_filter.h"
 #include "http_log.h"
 #include "apr_strings.h"
+#include "apr_lib.h"
+#include "apr_hash.h"
 #include "scoreboard.h"
 
 /* Python headers */
@@ -100,6 +97,8 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 
 #include "mpversion.h"
 #include "util.h"
+#include "hlist.h"
+#include "hlistobject.h"
 #include "tableobject.h"
 #include "serverobject.h"
 #include "connobject.h"
@@ -133,13 +132,11 @@ typedef struct
 {
     int           authoritative;
     char         *config_dir;
-    apr_table_t  *options;
     apr_table_t  *directives;
-    apr_table_t  *dirs;
-    apr_table_t  *input_filters;
-    apr_table_t  *input_filter_dirs;
-    apr_table_t  *output_filters;
-    apr_table_t  *output_filter_dirs;
+    apr_table_t  *options;
+    apr_hash_t   *hlists; /* hlists for every phase */
+    apr_hash_t   *in_filters;
+    apr_hash_t   *out_filters;
 } py_dir_config;
 
 /* register_cleanup info */
@@ -152,11 +149,26 @@ typedef struct
     PyObject     *data;
 } cleanup_info;
 
+/* request config structure */
+typedef struct
+{
+    requestobject *request_obj;
+    apr_hash_t    *dynhls;     /* dynamically registered handlers
+				  for this request */
+} py_req_config;
+
 /* filter context */
 typedef struct
 {
     int transparent;
 } python_filter_ctx;
+
+/* filter handler, used in configuration */
+typedef struct
+{
+    char *handler;
+    char *dir;
+} py_filter_handler;
 
 apr_status_t python_cleanup(void *data);
 

@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.10 2001/08/18 22:43:45 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.11 2001/11/03 04:24:30 gtrubetskoy Exp $
  *
  */
 
@@ -371,6 +371,7 @@ DL_EXPORT(void) init_apache()
     MpConn_Type.ob_type = &PyType_Type;  
     MpRequest_Type.ob_type = &PyType_Type; 
     MpFilter_Type.ob_type = &PyType_Type;
+    MpHList_Type.ob_type = &PyType_Type;
 
     m = Py_InitModule("_apache", _apache_module_methods);
     d = PyModule_GetDict(m);

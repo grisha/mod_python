@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.37 2001/10/15 22:58:20 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.38 2001/11/03 04:24:30 gtrubetskoy Exp $
 
 import sys
 import string
@@ -113,13 +113,14 @@ class CallBack:
         def pop(self):
 
             handlers = string.split(self.req.hstack)
+
             if not handlers:
                 return None
             else:
                 self.req.hstack = string.join(handlers[1:], " ")
                 return handlers[0]
 
-    def FilterDispatch(self, filter, func):
+    def FilterDispatch(self, filter):
 
         _req = filter._req
 
@@ -136,7 +137,7 @@ class CallBack:
         try:
 
             # split module::handler
-            l = string.split(func, '::', 1)
+            l = string.split(filter.handler, '::', 1)
             module_name = l[0]
             if len(l) == 1:
                 # no oject, provide default
@@ -162,19 +163,14 @@ class CallBack:
                     if sys.path != newpath:
                         sys.path[:] = newpath
             else:
-                if filter.is_input:
-                    dir = _req.get_input_filter_dirs()[filter.name]
-                else:
-                    dir = _req.get_output_filter_dirs()[filter.name]
-                if dir not in sys.path:
-                    sys.path[:0] = [dir]
+                if filter.dir not in sys.path:
+                    sys.path[:0] = [filter.dir]
 
             # import module
             module = import_module(module_name, _req)
 
             # find the object
-            silent = config.has_key("PythonHandlerModule")
-            object = resolve_object(req, module, object_str, silent)
+            object = resolve_object(req, module, object_str, 0)
 
             if object:
 
@@ -214,8 +210,8 @@ class CallBack:
                 (etype, value, traceback) = traceblock
                 filter.disable()
                 result = self.ReportError(req, etype, value, traceback,
-                                          htype="Filter: " + filter.name,
-                                          hname=func, debug=debug)
+                                          phase="Filter: " + filter.name,
+                                          hname=filter.handler, debug=debug)
             finally:
                 traceback = None
 
@@ -225,13 +221,14 @@ class CallBack:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 filter.disable()
                 result = self.ReportError(req, exc_type, exc_value, exc_traceback,
-                                          htype=filter.name, hname=func, debug=debug)
+                                          phase=filter.name, hname=filter.handler,
+                                          debug=debug)
             finally:
                 exc_traceback = None
 
 	return
 
-    def HandlerDispatch(self, _req, htype):
+    def HandlerDispatch(self, _req):
         """
         This is the handler dispatcher.
         """
@@ -250,24 +247,20 @@ class CallBack:
         debug = config.has_key("PythonDebug")
 
         try:
+            hlist = _req.hlist
 
-            # cycle through the handlers
-            dirs = _req.get_all_dirs()
-
-            hstack = self.HStack(_req)
-
-            handler = hstack.pop()
-            while handler:
+            while hlist.handler:
 
                 # split module::handler
-                l = string.split(handler, '::', 1)
+                l = string.split(hlist.handler, '::', 1)
+
                 module_name = l[0]
                 if len(l) == 1:
                     # no oject, provide default
-                    object_str = string.lower(htype[len("python"):])
+                    object_str = string.lower(_req.phase[len("python"):])
                 else:
                     object_str = l[1]
-                
+
                 # add the direcotry to pythonpath if
                 # not there yet, or pythonpath specified
                 if config.has_key("PythonPath"):
@@ -282,10 +275,7 @@ class CallBack:
                         if sys.path != newpath:
                             sys.path[:] = newpath
                 else:
-                    if config.has_key("PythonHandlerModule"):
-                        dir = _req.get_all_dirs()["PythonHandlerModule"]
-                    else:
-                        dir = _req.get_all_dirs()[htype]
+                    dir = hlist.directory
                     if dir not in sys.path:
                         sys.path[:0] = [dir]
 
@@ -293,8 +283,7 @@ class CallBack:
                 module = import_module(module_name, _req)
 
                 # find the object
-                silent = config.has_key("PythonHandlerModule")
-                object = resolve_object(req, module, object_str, silent)
+                object = resolve_object(req, module, object_str, hlist.silent)
 
                 if object:
 
@@ -308,10 +297,10 @@ class CallBack:
                     if result != OK:
                         break
                     
-                elif silent:
+                elif hlist.silent:
                     result = DECLINED
-                        
-                handler = hstack.pop()
+
+                hlist.next()
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -338,7 +327,7 @@ class CallBack:
             try:
                 (etype, value, traceback) = traceblock
                 result = self.ReportError(req, etype, value, traceback,
-                                          htype=htype, hname=handler,
+                                          phase=phase, hname=handler,
                                           debug=debug)
             finally:
                 traceback = None
@@ -348,14 +337,14 @@ class CallBack:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 result = self.ReportError(req, exc_type, exc_value, exc_traceback,
-                                          htype=htype, hname=handler, debug=debug)
+                                          phase=phase, hname=handler, debug=debug)
             finally:
                 exc_traceback = None
 
 	return result
 
 
-    def ReportError(self, req, etype, evalue, etb, htype="N/A", hname="N/A", debug=0):
+    def ReportError(self, req, etype, evalue, etb, phase="N/A", hname="N/A", debug=0):
 	""" 
 	This function is only used when debugging is on.
 	It sends the output similar to what you'd see
@@ -373,7 +362,7 @@ class CallBack:
             
             # write to log
             for e in traceback.format_exception(etype, evalue, etb):
-                s = "%s %s: %s" % (htype, hname, e[:-1])
+                s = "%s %s: %s" % (phase, hname, e[:-1])
                 _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
 
             if not debug:
@@ -383,7 +372,7 @@ class CallBack:
 
                 req.content_type = 'text/plain'
 
-                s = '\nMod_python error: "%s %s"\n\n' % (htype, hname)
+                s = '\nMod_python error: "%s %s"\n\n' % (phase, hname)
                 for e in traceback.format_exception(etype, evalue, etb):
                     s = s + e + '\n'
 

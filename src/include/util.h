@@ -45,9 +45,9 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  *
- * mod_python.c 
+ * util.h 
  *
- * $Id: util.h,v 1.3 2001/08/18 22:43:46 gtrubetskoy Exp $
+ * $Id: util.h,v 1.4 2001/11/03 04:24:30 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -56,5 +56,6 @@
 
 PyObject * tuple_from_array_header(const apr_array_header_t *ah);
 PyObject * tuple_from_method_list(const ap_method_list_t *l);
+apr_status_t python_decref(void *object);
 
 #endif /* !Mp_UTIL_H */

@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: Makefile.in,v 1.10 2001/09/06 20:39:24 gtrubetskoy Exp $
+ # $Id: Makefile.in,v 1.11 2001/11/03 04:24:30 gtrubetskoy Exp $
 
 CC=@CC@
 RANLIB=@RANLIB@
@@ -63,10 +63,12 @@ OBJS=		mod_python.o \
 		util.o \
 		serverobject.o \
 		connobject.o \
-		filterobject.o @EPRINTF_HACK@ @FLOATDIDF_HACK@
+		filterobject.o \
+		hlist.o \
+		hlistobject.o @EPRINTF_HACK@ @FLOATDIDF_HACK@
 
 SRCS=		mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
-		serverobject.c connobject.c filterobject.c
+		serverobject.c connobject.c filterobject.c hlist.c hlistobject.c
 
 all:	@ALL@
 
