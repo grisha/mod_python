@@ -1575,16 +1575,27 @@ spamcookie = mycookies["spam"]
 
 \begin{classdesc}{SignedCookie}{name, value, secret\optional{, attributes}}
 
-  This is a subclass of \class{Cookie}.
+  This is a subclass of \class{Cookie}. This class creates cookies
+  whose name and value are automatically signed using HMAC (md5) with
+  a provided secret \var{secret}, which must be a non-empty string.
 
-  This class creates cookies whose name and value are automatically
-  signed using HMAC (md5) with a provided secret \var{secret}, which must be
-  a non-empty string.
-
-  \begin{methoddesc}[Cookie]{parse}{string}{secret}
+  \begin{methoddesc}[SignedCookie]{parse}{string, secret}
     This method acts the same way as \class{Cookie.parse()}, but also
     verifies that the cookie is correctly signed. If the signature
-    cannot be verified, a \exception{CookieError} is raised.
+    cannot be verified, the object returned will be of class
+    \class{Cookie}.
+
+    \begin{notice}
+      Always check the type of the object returned by
+      \method{SignedCookie.parse()} is an instance of \class{Cookie}
+      (as oppsed to \class{SignedCookie}), the signature verification
+      failed:
+      \begin{verbatim}
+# assume spam is supposed to be a signed cookie
+if type(spam) is not Cookie.SignedCookie:
+    # do something that indicates cookie isn't signed correctly
+      \end{verbatim}
+    \end{notice}
   \end{methoddesc}
 
 \end{classdesc}
@@ -1647,7 +1658,7 @@ def handler(req):
 
 \end{verbatim}
 
-This example checks for incoming marshal cookie and displays it the
+This example checks for incoming marshal cookie and displays it to the
 client. If no incoming cookie is present a new marshal cookie is set.
 This example uses \samp{secret007} as the secret for HMAC signature.
 
@@ -1656,19 +1667,19 @@ from mod_python import apache, Cookie
 
 def handler(req):
     
-    try:
-        cookies = Cookie.getCookie(req, Cookie.MarshalCookie, \
+    cookies = Cookie.getCookie(req, Cookie.MarshalCookie, \
                                    'secret007')
-    except Cookie.CookieError:
-        req.write('Cookie parsing error!\n')
-	return apache.OK
-
     if cookies.has_key('spam'):
         spamcookie = cookies['spam']
+
         req.write('Great, a spam cookie was found: %s\n' \
                                       % str(spamcookie))
-        req.write('Here is what it looks like decoded: %s=%s\n'
-                  % (spamcookie.name, spamcookie.value))
+        if type(spamcookie) is Cookie.MarshalCookie:
+            req.write('Here is what it looks like decoded: %s=%s\n'
+                      % (spamcookie.name, spamcookie.value))
+	else:
+            req.write('WARNING: The cookie found is not a \
+                       MarshalCookie, it may have been tapered with!')
 
     else:
 

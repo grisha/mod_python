@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.6 2003/07/24 19:00:46 grisha Exp $
+ # $Id: Cookie.py,v 1.7 2003/07/24 20:51:08 grisha Exp $
 
 """
 
@@ -210,12 +210,17 @@ class SignedCookie(Cookie):
     is still plainly visible as part of the cookie.
     """
 
-    def parse(Class, secret, str):
+    def parse(Class, secret, s):
 
-        dict = _parseCookie(str, Class)
+        dict = _parseCookie(s, Class)
 
         for k in dict:
-            dict[k].unsign(secret)
+            c = dict[k]
+            try:
+                c.unsign(secret)
+            except CookieError:
+                # downgrade to Cookie
+                dict[k] = Cookie.parse(Cookie.__str__(c))[k]
         
         return dict
 
@@ -276,13 +281,18 @@ class MarshalCookie(SignedCookie):
     http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&selm=7xn0hcugmy.fsf%40ruckus.brouhaha.com
     """
 
-    def parse(Class, secret, str):
+    def parse(Class, secret, s):
 
-        dict = _parseCookie(str, Class)
+        dict = _parseCookie(s, Class)
 
         for k in dict:
-            dict[k].unmarshal(secret)
-        
+            c = dict[k]
+            try:
+                c.unmarshal(secret)
+            except (CookieError, ValueError):
+                # downgrade to Cookie
+                dict[k] = Cookie.parse(Cookie.__str__(c))[k]
+
         return dict
 
     parse = classmethod(parse)
