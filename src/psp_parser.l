@@ -14,7 +14,7 @@
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
  *
- * $Id: psp_parser.l,v 1.20 2004/02/16 19:47:27 grisha Exp $
+ * $Id: psp_parser.l,v 1.21 2004/07/23 14:01:30 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -47,14 +47,14 @@
 %%
 
 \r\n|\n {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(r\"\"\"")); 
 
     yyless(0);
     BEGIN TEXT;
 }
 
 . {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(r\"\"\"")); 
 
     yyless(0);
     BEGIN TEXT;
@@ -87,11 +87,16 @@
 }
 
 <TEXT>. {
-    if (yytext[0] == '"') {
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\""));
-    } else {
-        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-    }
+    /*   " no longer needs to be escaped */
+    psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+}
+
+<TEXT>"\"\"\"" {
+    /* close python triplequoted string, put in a triple quote enclosed
+     * itself by single quotes, then restart the python triplequoted
+     * string. */
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\" +'\"\"\"'+ r\"\"\""));
+
 }
 
 <TEXT><<EOF>> {
@@ -117,7 +122,7 @@
 <PYCODE>"%>" {
 
     if (PSP_PG(is_psp_echo)) {
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("),0); req.write(\"\"\""));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("),0); req.write(r\"\"\""));
         PSP_PG(is_psp_echo) = 0;
     } 
     else {
@@ -133,7 +138,7 @@
             PSP_PG(after_colon) = 0;
         }
         OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(r\"\"\""));
     }
     
     BEGIN TEXT;
