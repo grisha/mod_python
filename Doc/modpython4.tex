@@ -893,6 +893,12 @@ A list of strings and/or \class{Field} objects. This is when multiple values
 exist, such as for a \code{<select>} HTML form element.
 \end{itemize}
 
+Note that unlike the standard library \module{cgi} module
+\class{FieldStorage} class, a
+\class{Field} object is returned \emph{only} when it is a file
+upload. This means that you do not need to use the \member{.value}
+attribute to access values of fields in most cases.
+
 In addition to standard mapping object methods, \class{FieldStorage} objects
 have the following attributes:
 

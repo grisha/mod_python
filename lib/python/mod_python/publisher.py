@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: publisher.py,v 1.5 2000/12/14 19:19:58 gtrubetskoy Exp $
+ # $Id: publisher.py,v 1.6 2001/01/18 22:23:49 gtrubetskoy Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -90,7 +90,7 @@ def handler(req):
 
     # if any part of the path begins with "_", abort
     if func_path[0] == '_' or string.count(func_path, "._"):
-        raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+        raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
 
     # process input, if any
     fs = util.FieldStorage(req, keep_blank_values=1)
@@ -246,6 +246,11 @@ def resolve_object(req, obj, object_str, auth_realm=None):
 
     for obj_str in  string.split(object_str, '.'):
         obj = getattr(obj, obj_str)
+
+        # object cannot be a module
+        if type(obj) == type(apache):
+            raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
+
         auth_realm = process_auth(req, obj, auth_realm)
 
     return obj
