@@ -61,8 +61,8 @@
  # See also the README file.
  #
 
-# You might need to set this manually
-PYTHON_SRC=	@PYTHON_SRC@
+# You need to set this manually
+PYTHON_SRC=
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
@@ -87,19 +87,28 @@ MPFILES=	modpython.tex \
 		appendixa.tex \
 		appendixb.tex
 
+# this target pukes if we don't have PYTHON_SRC set
+src_set:
+	@if test -z "$(PYTHON_SRC)"; then \
+		echo; \
+		echo "Please edit Makefile and set PYTHON_SRC to where Python sources are."; \
+		echo; \
+		exit 1; \
+	fi
+
 # Main target
 all:	pdf
 
-dvi:	$(MPFILES)
+dvi:	$(MPFILES) src_set
 	$(MKHOWTO) --dvi modpython.tex
 
-pdf:	$(MPFILES)
+pdf:	$(MPFILES) src_set
 	$(MKHOWTO) --pdf --$(PAPER) modpython.tex
 
-ps:	$(MPFILES)
+ps:	$(MPFILES) src_set
 	$(MKHOWTO) --ps --$(PAPER) modpython.tex
 
-html:	$(MPFILES)
+html:	$(MPFILES) src_set
 	$(MKHOWTO) --html modpython.tex
 	mkdir -p modpython/icons
 	cp $(PYTHON_SRC)/Doc/html/icons/* modpython/icons/

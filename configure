@@ -16,7 +16,7 @@ ac_help="$ac_help
 ac_help="$ac_help
 --with-apache=DIR 	Path to Apache sources"
 ac_help="$ac_help
---with-python=DIR	Path to Python sources"
+--with-python=DIR	Path to specific Python binary"
 
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
@@ -1213,8 +1213,8 @@ if test "${with_python+set}" = set; then
   withval="$with_python"
   
   
-  PYTHON_SRC=`cd $withval; pwd`
-  echo "$ac_t""$PYTHON_SRC" 1>&6
+  PYTHON_BIN="$withval"
+  echo "$ac_t""$PYTHON_BIN" 1>&6
 
 else
   echo "$ac_t""no" 1>&6
@@ -1222,7 +1222,7 @@ fi
 
 
 # check for Python executable
-if test -z "$PYTHON_SRC"; then
+if test -z "$PYTHON_BIN"; then
   # Extract the first word of "python", so it can be a program name with args.
 set dummy python; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
@@ -1259,61 +1259,25 @@ else
 fi
 
   if test -z "$PYTHON_BIN"; then
-    { echo "configure: error: python binary not found" 1>&2; exit 1; }
-  fi
-else
-  # Extract the first word of "python", so it can be a program name with args.
-set dummy python; ac_word=$2
-echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1269: checking for $ac_word" >&5
-if eval "test \"`echo '$''{'ac_cv_path_PYTHON_BIN'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  case "$PYTHON_BIN" in
-  /*)
-  ac_cv_path_PYTHON_BIN="$PYTHON_BIN" # Let the user override the test with a path.
-  ;;
-  ?:/*)			 
-  ac_cv_path_PYTHON_BIN="$PYTHON_BIN" # Let the user override the test with a dos path.
-  ;;
-  *)
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
-  ac_dummy="$PYTHON_SRC"
-  for ac_dir in $ac_dummy; do 
-    test -z "$ac_dir" && ac_dir=.
-    if test -f $ac_dir/$ac_word; then
-      ac_cv_path_PYTHON_BIN="$ac_dir/$ac_word"
-      break
-    fi
-  done
-  IFS="$ac_save_ifs"
-  test -z "$ac_cv_path_PYTHON_BIN" && ac_cv_path_PYTHON_BIN=""""
-  ;;
-esac
-fi
-PYTHON_BIN="$ac_cv_path_PYTHON_BIN"
-if test -n "$PYTHON_BIN"; then
-  echo "$ac_t""$PYTHON_BIN" 1>&6
-else
-  echo "$ac_t""no" 1>&6
-fi
-
-  if test -z "$PYTHON_BIN"; then
-    { echo "configure: error: python executable not found in ${withval}, 
-perhaps you need to build Python first." 1>&2; exit 1; }
+    { echo "configure: error: python binary not found in path" 1>&2; exit 1; }
   fi
 fi
 
 # find out python version
 echo $ac_n "checking Python version""... $ac_c" 1>&6
-echo "configure:1310: checking Python version" >&5
+echo "configure:1269: checking Python version" >&5
 PyVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:3]'`
 PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:1]'`
 echo "$ac_t""$PyVERSION" 1>&6
 
+# make sure Python is version 2
+if test "$PyMAJVERSION" != "2"; then
+  { echo "configure: error: This version of mod_python only works with Python major version 2. The one you have seems to be $PyVERSION." 1>&2; exit 1; }
+fi
+
 # find out compiled in install prefix
 echo $ac_n "checking Python install prefix""... $ac_c" 1>&6
-echo "configure:1317: checking Python install prefix" >&5
+echo "configure:1281: checking Python install prefix" >&5
 PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
 echo "$ac_t""$PyEXEC_INSTALLDIR" 1>&6
 
@@ -1323,26 +1287,15 @@ PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
 
 # set python std library variable
 echo $ac_n "checking what libraries Python was linked with""... $ac_c" 1>&6
-echo "configure:1327: checking what libraries Python was linked with" >&5
+echo "configure:1291: checking what libraries Python was linked with" >&5
 
-if test -z "$PYTHON_SRC"; then
-  PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
-  PyLIBPL=${PyLIBP}/config
-  PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-  PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
-else
-  PyPYTHONLIBS=${PYTHON_SRC}/libpython${PyVERSION}.a
-  if test ${PyMAJVERSION} = "2"; then
-    PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  else
-    PyLIBS=`grep "^LIB[SMC]=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-    PyMODLIBS=`grep "^LOCALMODLIBS=" ${PYTHON_SRC}/Modules/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  fi
-  PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
-fi
+
+PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
+PyLIBPL=${PyLIBP}/config
+PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
  
 ## XXX this is a small work around for a weird RedHat problem
 ## erase -lieee from library list
@@ -1354,28 +1307,18 @@ LIBS="${LIBS} ${PY_LIBS}"
 echo "$ac_t""$PY_LIBS" 1>&6
 
 echo $ac_n "checking linker flags used to link Python""... $ac_c" 1>&6
-echo "configure:1358: checking linker flags used to link Python" >&5
+echo "configure:1311: checking linker flags used to link Python" >&5
 
-if test -z "$PYTHON_SRC"; then
-  PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
-else
-  PyLFS=`grep "^LINKFORSHARED=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PyLDFLAGS=`grep "^LDFLAGS=" ${PYTHON_SRC}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-  PY_LDFLAGS="${PyLFS} ${PyLDFLAGS}"
-fi
+PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
 LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
 echo "$ac_t""$PY_LDFLAGS" 1>&6
 
 echo $ac_n "checking where Python include files are""... $ac_c" 1>&6
-echo "configure:1373: checking where Python include files are" >&5
+echo "configure:1320: checking where Python include files are" >&5
 
-if test -z "$PYTHON_SRC"; then
-  PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
-else
-  PY_INCLUDES="-I${PYTHON_SRC} -I${PYTHON_SRC}/Include"
-fi
+PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
 INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
 echo "$ac_t""$PY_INCLUDES" 1>&6
 
@@ -1547,7 +1490,6 @@ s%@AP_SRC@%$AP_SRC%g
 s%@AP_SRC_OWN@%$AP_SRC_OWN%g
 s%@AP_SRC_GRP@%$AP_SRC_GRP%g
 s%@STATIC@%$STATIC%g
-s%@PYTHON_SRC@%$PYTHON_SRC%g
 s%@PYTHON_BIN@%$PYTHON_BIN%g
 s%@PY_STD_LIB@%$PY_STD_LIB%g
 s%@INCLUDES@%$INCLUDES%g
