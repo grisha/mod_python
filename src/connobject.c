@@ -44,7 +44,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.6 2000/12/18 19:50:03 gtrubetskoy Exp $
+ * $Id: connobject.c,v 1.7 2001/08/18 22:43:45 gtrubetskoy Exp $
  *
  */
 
@@ -75,6 +75,7 @@ PyObject * MpConn_FromConn(conn_rec *c)
     result->ob_type = &MpConn_Type;
     result->server = NULL;
     result->base_server = NULL;
+    result->notes = MpTable_FromTable(c->notes);
 
     _Py_NewReference(result);
     return (PyObject *)result;
@@ -84,23 +85,26 @@ PyObject * MpConn_FromConn(conn_rec *c)
 #define OFF(x) offsetof(conn_rec, x)
 
 static struct memberlist conn_memberlist[] = {
-    {"server",             T_OBJECT                                },
-    {"base_server",        T_OBJECT                                },
+    {"base_server",        T_OBJECT,    0,                       RO},
     /* XXX vhost_lookup_data? */
-    {"child_num",          T_INT,       OFF(child_num),          RO},
-    /* XXX BUFF? */
-    {"local_addr",         T_OBJECT                                },
-    {"remote_addr",        T_OBJECT                                },
-    {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
+    /* XXX client_socket? */
+    {"local_addr",         T_OBJECT,    0,                       RO},
+    {"remote_addr",        T_OBJECT,    0,                       RO},
     {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
     {"remote_host",        T_STRING,    OFF(remote_host),        RO},
     {"remote_logname",     T_STRING,    OFF(remote_logname),     RO},
-    {"user",               T_STRING,    OFF(user),                 },
-    {"ap_auth_type",       T_STRING,    OFF(ap_auth_type),       RO},
-    /* XXX aborted, keepalive, keptalive, double_reverse ? */
+    {"aborted",            T_INT,       0,                       RO},
+    {"keepalive",          T_INT,       0,                       RO},
+    {"double_reverse",     T_INT,       0,                       RO},
+    {"keepalives",         T_INT,       OFF(keepalives),         RO},
     {"local_ip",           T_STRING,    OFF(remote_ip),          RO},
     {"local_host",         T_STRING,    OFF(remote_host),        RO},
-    {"keepalives",         T_INT,       OFF(keepalives),         RO},
+    {"id",                 T_LONG,      OFF(id),                 RO},
+    /* XXX conn_config? */
+    {"notes",              T_OBJECT,    0,                       RO},
+    /* XXX filters ? */
+    /* XXX document remain */
+    //{"remain",             T_LONG,      OFF(remain),             RO},
     {NULL}  /* Sentinel */
 };
 
@@ -114,6 +118,7 @@ static void conn_dealloc(connobject *self)
 {  
     Py_XDECREF(self->server);
     Py_XDECREF(self->base_server);
+    Py_XDECREF(self->notes);
     free(self);
 }
 
@@ -159,26 +164,8 @@ static PyObject *makesockaddr(struct sockaddr_in *addr)
 
 static PyObject * conn_getattr(connobject *self, char *name)
 {
-    if (strcmp(name, "server") == 0) {
 
-	/* server serverobject is created as needed */
-	if (self->server == NULL) {
-	    if (self->conn->server == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	    }
-	    else {
-		self->server = MpServer_FromServer(self->conn->server);
-		Py_INCREF(self->server);
-		return self->server;
-	    }
-	}
-	else {
-	    Py_INCREF(self->server);
-	    return self->server;
-	}
-    }
-    else if (strcmp(name, "base_server") == 0) {
+    if (strcmp(name, "base_server") == 0) {
 
 	/* base_server serverobject is created as needed */
 	if (self->base_server == NULL) {
@@ -197,11 +184,22 @@ static PyObject * conn_getattr(connobject *self, char *name)
 	    return self->base_server;
 	}
     }
-    else if (strcmp(name, "local_addr") == 0) {
-	return makesockaddr(&(self->conn->local_addr));
+    else if (strcmp(name, "aborted") == 0) {
+	return PyInt_FromLong(self->conn->aborted);
+    }
+    else if (strcmp(name, "keepalive") == 0) {
+	return PyInt_FromLong(self->conn->keepalive);
+    }
+    else if (strcmp(name, "double_reverse") == 0) {
+	return PyInt_FromLong(self->conn->double_reverse);
     }
     else if (strcmp(name, "remote_addr") == 0) {
+	/* XXX this needs to be compatible with apr_sockaddr_t */
 	return makesockaddr(&(self->conn->remote_addr));
+    }
+    else if (strcmp(name, "notes") == 0) {
+	Py_INCREF(self->notes);
+	return (PyObject *) self->notes;
     }
     else
 	return PyMember_Get((char *)self->conn, conn_memberlist, name);
@@ -221,11 +219,6 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
 	PyErr_SetString(PyExc_AttributeError,
 			"can't delete connection attributes");
 	return -1;
-    }
-    else if (strcmp(name, "user") == 0) {
-	self->conn->user = 
-	    ap_pstrdup(self->conn->pool, PyString_AsString(value));
-	return 0;
     }
     else
 	return PyMember_Set((char *)self->conn, conn_memberlist, name, value);

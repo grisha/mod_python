@@ -44,7 +44,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.5 2001/01/24 04:00:59 gtrubetskoy Exp $
+ * $Id: serverobject.c,v 1.6 2001/08/18 22:43:45 gtrubetskoy Exp $
  *
  */
 
@@ -120,7 +120,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     ci->server_rec = self->server;
     Py_INCREF(handler);
     ci->handler = handler;
-    ci->interpreter = ap_table_get(req->request_rec->notes, "python_interpreter");
+    ci->interpreter = apr_table_get(req->request_rec->notes, "python_interpreter");
     if (data) {
 	Py_INCREF(data);
 	ci->data = data;
@@ -130,8 +130,8 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
 	ci->data = Py_None;
     }
     
-    ap_register_cleanup(child_init_pool, ci, python_cleanup, 
-			ap_null_cleanup);
+    apr_pool_cleanup_register(child_init_pool, ci, python_cleanup, 
+			      apr_pool_cleanup_null);
     
     Py_INCREF(Py_None);
     return Py_None;
@@ -145,29 +145,37 @@ static PyMethodDef serverobjectmethods[] = {
 #define OFF(x) offsetof(server_rec, x)
 
 static struct memberlist server_memberlist[] = {
-  {"defn_name",          T_STRING,    OFF(defn_name),          RO},
-  {"defn_line_number",   T_INT,       OFF(defn_line_number),   RO},
-  {"srm_confname",       T_STRING,    OFF(srm_confname),       RO},
-  {"access_confname",    T_STRING,    OFF(access_confname),    RO},
-  {"server_admin",       T_STRING,    OFF(server_admin),       RO},
-  {"server_hostname",    T_STRING,    OFF(server_hostname),    RO},
-  {"port",               T_SHORT,     OFF(port),               RO},
-  {"error_fname",        T_STRING,    OFF(error_fname),        RO},
-  {"loglevel",           T_INT,       OFF(loglevel),           RO},
-  {"is_virtual",         T_INT,       OFF(is_virtual),         RO},
-  /* XXX implement module_config ? */
-  /* XXX implement lookup_defaults ? */
-  /* XXX implement server_addr_rec ? */
-  {"timeout",            T_INT,       OFF(timeout),            RO},
-  {"keep_alive_timeout", T_INT,       OFF(keep_alive_timeout), RO},
-  {"keep_alive_max",     T_INT,       OFF(keep_alive_max),     RO},
-  {"keep_alive",         T_INT,       OFF(keep_alive),         RO},
-  {"send_buffer_size",   T_INT,       OFF(send_buffer_size),   RO},
-  {"path",               T_STRING,    OFF(path),               RO},
-  {"pathlen",            T_INT,       OFF(pathlen),            RO},
-  {"server_uid",         T_INT,       OFF(server_uid),         RO},
-  {"server_gid",         T_INT,       OFF(server_gid),         RO},
-  {NULL}  /* Sentinel */
+    /* XXX process */
+    /* next ? */
+    {"defn_name",          T_STRING,    OFF(defn_name),          RO},
+    {"defn_line_number",   T_INT,       OFF(defn_line_number),   RO},
+    {"server_admin",       T_STRING,    OFF(server_admin),       RO},
+    {"server_hostname",    T_STRING,    OFF(server_hostname),    RO},
+    {"port",               T_SHORT,     OFF(port),               RO},
+    {"error_fname",        T_STRING,    OFF(error_fname),        RO},
+    {"loglevel",           T_INT,       OFF(loglevel),           RO},
+    {"is_virtual",         T_INT,       OFF(is_virtual),         RO},
+    /* XXX implement module_config ? */
+    /* XXX implement lookup_defaults ? */
+    /* XXX implement server_addr_rec ? */
+    {"timeout",            T_INT,       OFF(timeout),            RO},
+    {"keep_alive_timeout", T_INT,       OFF(keep_alive_timeout), RO},
+    {"keep_alive_max",     T_INT,       OFF(keep_alive_max),     RO},
+    {"keep_alive",         T_INT,       OFF(keep_alive),         RO},
+    /* XXX send_buffer_size gone. where? document */
+    //{"send_buffer_size",   T_INT,       OFF(send_buffer_size),   RO},
+    {"path",               T_STRING,    OFF(path),               RO},
+    {"pathlen",            T_INT,       OFF(pathlen),            RO},
+    /* XXX names */
+    /* XXX wild names */
+    /* XXX server_uid and server_gid seem gone. Where? Document. */
+    //{"server_uid",         T_INT,       OFF(server_uid),         RO},
+    //{"server_gid",         T_INT,       OFF(server_gid),         RO},
+    /* XXX Document limit* below. Make RW? */
+    {"limit_req_line",       T_INT,       OFF(limit_req_line),     RO},
+    {"limit_req_fieldsize",  T_INT,       OFF(limit_req_fieldsize),RO},
+    {"limit_req_fields",     T_INT,       OFF(limit_req_fields),   RO},
+    {NULL}  /* Sentinel */
 };
 
 /**

@@ -44,7 +44,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.9 2001/05/28 20:00:41 gtrubetskoy Exp $
+ * $Id: _apachemodule.c,v 1.10 2001/08/18 22:43:45 gtrubetskoy Exp $
  *
  */
 
@@ -84,7 +84,7 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
 	    }
 	    serv_rec = server->server;
 	}
-	ap_log_error(APLOG_MARK, level, serv_rec, "%s", message);
+	ap_log_error(APLOG_MARK, level, 0, serv_rec, "%s", message);
     }
 
     Py_INCREF(Py_None);
@@ -370,6 +370,7 @@ DL_EXPORT(void) init_apache()
     MpServer_Type.ob_type = &PyType_Type;
     MpConn_Type.ob_type = &PyType_Type;  
     MpRequest_Type.ob_type = &PyType_Type; 
+    MpFilter_Type.ob_type = &PyType_Type;
 
     m = Py_InitModule("_apache", _apache_module_methods);
     d = PyModule_GetDict(m);

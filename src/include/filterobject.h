@@ -1,11 +1,5 @@
-#ifndef Mp_TABLEOBJECT_H
-#define Mp_TABLEOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* ====================================================================
- * Copyright (c) 2000 Gregory Trubetskoy.  All rights reserved.
+ * Copyright (c) 2001 Gregory Trubetskoy.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,7 +22,7 @@ extern "C" {
  * 4. The names "mod_python", "modpython" or "Gregory Trubetskoy" must not 
  *    be used to endorse or promote products derived from this software 
  *    without prior written permission. For written permission, please 
- *    contact grisha@ispol.com.
+ *    contact grisha@modpython.org.
  *
  * 5. Products derived from this software may not be called "mod_python"
  *    or "modpython", nor may "mod_python" or "modpython" appear in their 
@@ -48,36 +42,51 @@ extern "C" {
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  *
- * tableobject.h
+ * filterobject.h 
  *
- * $Id: tableobject.h,v 1.3 2001/08/18 22:43:46 gtrubetskoy Exp $
- *
- */
-
-/*
- * This is a mapping of a Python object to an Apache table.
- *
- * This object behaves like a dictionary. Note that the
- * underlying table can have duplicate keys, which can never
- * happen to a Python dictionary. But this is such a rare thing 
- * that I can't even think of a possible scenario or implications.
+ * $Id: filterobject.h,v 1.1 2001/08/18 22:43:46 gtrubetskoy Exp $
  *
  */
 
-    typedef struct tableobject {
-	PyObject_VAR_HEAD
-	apr_table_t     *table;
-	apr_pool_t      *pool;
-    } tableobject;
+#ifndef Mp_FILTEROBJECT_H
+#define Mp_FILTEROBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    typedef struct filterobject {
+	PyObject_HEAD
+	ap_filter_t        *f;
+
+	/* in out refers to the dircetion of data with respect to
+	   filter, not the filter type */
+	apr_bucket_brigade *bb_in; 
+	apr_bucket_brigade *bb_out;
+
+	apr_status_t rc;
+
+	int is_input;
+	ap_input_mode_t mode;
+	apr_size_t *readbytes;
+
+	int closed;
+	int softspace;
+	int bytes_written;
+
+	requestobject *request_obj;
+	PyObject *Request;
+
+    } filterobject;
+
+    extern DL_IMPORT(PyTypeObject) MpFilter_Type;
     
-    extern DL_IMPORT(PyTypeObject) MpTable_Type;
+#define MpFilter_Check(op) ((op)->ob_type == &MpFilter_Type)
     
-#define MpTable_Check(op) ((op)->ob_type == &MpTable_Type)
-    
-    extern DL_IMPORT(PyObject *) MpTable_FromTable Py_PROTO((apr_table_t *t));
-    extern DL_IMPORT(PyObject *) MpTable_New Py_PROTO((void));
+    extern DL_IMPORT(PyObject *) 
+	MpFilter_FromFilter Py_PROTO((ap_filter_t *f, apr_bucket_brigade *bb_in, int is_input, 
+				      ap_input_mode_t mode, apr_size_t *readbytes));
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Mp_TABLEOBJECT_H */
+#endif /* !Mp_FILTEROBJECT_H */

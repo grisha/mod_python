@@ -44,7 +44,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.2 2000/12/06 03:05:38 gtrubetskoy Exp $
+ * $Id: util.c,v 1.3 2001/08/18 22:43:45 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -60,7 +60,7 @@
  *   assumed to be strings.
  */
 
-PyObject * tuple_from_array_header(const array_header *ah)
+PyObject * tuple_from_array_header(const apr_array_header_t *ah)
 {
 
     PyObject *t;
@@ -77,9 +77,37 @@ PyObject * tuple_from_array_header(const array_header *ah)
 	t = PyTuple_New(ah->nelts);
 
 	s = (char **) ah->elts;
-	for (i = 0; i < ah->nelts; i++)
+	for (i = 0; i < ah->nelts; i++) {
 	    PyTuple_SetItem(t, i, PyString_FromString(s[i]));
+	}
+	return t;
+    }
+}
+
+/**
+ ** tuple_from_method_list
+ **
+ *   Given an apr_method_list_t return a tuple. 
+ */
+
+PyObject * tuple_from_method_list(const ap_method_list_t *l)
+{
+
+    PyObject *t;
+    int i;
+    char **methods;
+
+    if ((l->method_list == NULL) || (l->method_list->nelts == 0)) {
+	Py_INCREF(Py_None);
+	return Py_None;
+    }
+    else {
+	t = PyTuple_New(l->method_list->nelts);
 	
+	methods = (char **)l->method_list->elts;
+	for (i = 0; i < l->method_list->nelts; ++i) {
+	    PyTuple_SetItem(t, i, PyString_FromString(methods[i]));
+	}
 	return t;
     }
 }
