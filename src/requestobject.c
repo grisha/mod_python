@@ -44,7 +44,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.9 2001/05/18 02:42:45 gtrubetskoy Exp $
+ * $Id: requestobject.c,v 1.10 2001/05/19 05:22:11 gtrubetskoy Exp $
  *
  */
 
@@ -1070,6 +1070,7 @@ static int request_setattr(requestobject *self, char *name, PyObject *value)
 	}
 	Py_INCREF(value);
 	self->Request = value;
+	return 0;
     }
     else
 	return PyMember_Set((char *)self->request_rec, request_memberlist, name, value);

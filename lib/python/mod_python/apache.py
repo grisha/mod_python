@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.30 2001/05/18 02:42:45 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.31 2001/05/19 05:22:10 gtrubetskoy Exp $
 
 import sys
 import string
@@ -92,9 +92,6 @@ class CallBack:
     A generic callback object.
     """
 
-    def __init__(self):
-        self.req = None
-
     class HStack:
         """
         The actual stack string lives in the request object so
@@ -123,9 +120,9 @@ class CallBack:
 
         # is there a Request object for this request?
         if not _req._Request:
-            req = Request(_req)
-        else:
-            req = _req._Request
+            _req._Request = Request(_req)
+
+        req = _req._Request
 
         # config
         config = _req.get_config()
@@ -230,7 +227,7 @@ class CallBack:
             # Any other rerror (usually parsing)
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                result = self.ReportError(exc_type, exc_value, exc_traceback,
+                result = self.ReportError(req, exc_type, exc_value, exc_traceback,
                                           htype=htype, hname=handler, debug=debug)
             finally:
                 exc_traceback = None
