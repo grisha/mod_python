@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.104 2003/10/15 03:00:31 grisha Exp $
+ * $Id: mod_python.c,v 1.105 2003/10/21 19:11:51 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -344,7 +344,20 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     }
     max_clients = (((max_threads <= 0) ? 1 : max_threads) *
                    ((max_procs <= 0) ? 1 : max_procs));
-    locks = max_clients; /* XXX this is completely out of the blue */
+
+    /* XXX On some systems the locking mechanism chosen uses valuable
+       system resources, notably on RH 8 it will use sysv ipc for
+       which Linux by default provides only 128 semaphores
+       system-wide, and on many other systems flock is used, which
+       results in a relatively large number of open files. So for now
+       we get by with MAX_LOCKS constant for lack of a better
+       solution.
+
+       The optimal number of necessary locks is not clear, perhaps a
+       small number is more than sufficient - if someone took the
+       time to run some research on this, that'd be most welcome!
+    */
+    locks = (max_clients > MAX_LOCKS) ? MAX_LOCKS : max_clients; 
 
     ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
                  "mod_python: Creating %d session mutexes based "
@@ -383,10 +396,14 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                              "mod_python: Hint: On Linux, the problem may be the number of "
                              "available semaphores, check 'sysctl kernel.sem'");
-                /* now free one lock so that if there is a module that wants a lock, it
-                   will be ok */
+                /* now free two locks so that if there is another
+                   module or two that wants a lock, it will be ok */
                 apr_global_mutex_destroy(mutex[n-1]);
                 glb->nlocks = n-1;
+                if (n > 2) {
+                  apr_global_mutex_destroy(mutex[n-2]);
+                  glb->nlocks = n-2;
+                }
                 break;
                 
             }

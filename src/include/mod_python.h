@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.37 2003/09/10 02:11:22 grisha Exp $
+ * $Id: mod_python.h,v 1.38 2003/10/21 19:11:51 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -140,6 +140,9 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 /* used in python_directive_handler */
 #define SILENT 0
 #define NOTSILENT 1
+
+/* hopefully this will go away */
+#define MAX_LOCKS 32
 
 /* python 2.3 no longer defines LONG_LONG, it defines PY_LONG_LONG */
 #ifndef LONG_LONG
