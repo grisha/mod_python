@@ -494,7 +494,7 @@ static yyconst flex_int16_t yy_chk[47] =
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.c,v 1.9 2003/07/24 17:44:13 grisha Exp $
+ * $Id: psp_parser.c,v 1.10 2003/07/24 17:59:34 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -514,10 +514,11 @@ static yyconst flex_int16_t yy_chk[47] =
 
 #define CLEAR_WHITESPACE(__wsstring) psp_string_clear((__wsstring));
 
+#define YY_NO_UNISTD_H 1
 
 
 
-#line 521 "psp_parser.c"
+#line 522 "psp_parser.c"
 
 #define INITIAL 0
 #define TEXT 1
@@ -739,7 +740,7 @@ YY_DECL
 #line 84 "psp_parser.l"
 
 
-#line 743 "psp_parser.c"
+#line 744 "psp_parser.c"
 
 	if ( yyg->yy_init )
 		{
@@ -989,7 +990,7 @@ YY_RULE_SETUP
 #line 199 "psp_parser.l"
 ECHO;
 	YY_BREAK
-#line 993 "psp_parser.c"
+#line 994 "psp_parser.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PYCODE):
 case YY_STATE_EOF(INDENT):
