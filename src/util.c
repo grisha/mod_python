@@ -44,7 +44,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.6 2002/08/15 21:46:35 gtrubetskoy Exp $
+ * $Id: util.c,v 1.7 2002/08/28 16:50:11 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -69,18 +69,18 @@ PyObject * tuple_from_array_header(const apr_array_header_t *ah)
 
     if (ah == NULL)
     {
-	Py_INCREF(Py_None);
-	return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
     }
     else
     {
-	t = PyTuple_New(ah->nelts);
+        t = PyTuple_New(ah->nelts);
 
-	s = (char **) ah->elts;
-	for (i = 0; i < ah->nelts; i++) {
-	    PyTuple_SetItem(t, i, PyString_FromString(s[i]));
-	}
-	return t;
+        s = (char **) ah->elts;
+        for (i = 0; i < ah->nelts; i++) {
+            PyTuple_SetItem(t, i, PyString_FromString(s[i]));
+        }
+        return t;
     }
 }
 
@@ -98,17 +98,17 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
     char **methods;
 
     if ((l->method_list == NULL) || (l->method_list->nelts == 0)) {
-	Py_INCREF(Py_None);
-	return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
     }
     else {
-	t = PyTuple_New(l->method_list->nelts);
-	
-	methods = (char **)l->method_list->elts;
-	for (i = 0; i < l->method_list->nelts; ++i) {
-	    PyTuple_SetItem(t, i, PyString_FromString(methods[i]));
-	}
-	return t;
+        t = PyTuple_New(l->method_list->nelts);
+        
+        methods = (char **)l->method_list->elts;
+        for (i = 0; i < l->method_list->nelts; ++i) {
+            PyTuple_SetItem(t, i, PyString_FromString(methods[i]));
+        }
+        return t;
     }
 }
 
@@ -124,84 +124,84 @@ PyObject *tuple_from_finfo(apr_finfo_t *f)
     PyObject *t;
 
     if (f->filetype == APR_NOFILE) {
-	Py_INCREF(Py_None);
-	return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
     }
       
     t = PyTuple_New(12);
 
     if (f->valid & APR_FINFO_PROT) {
-	PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f->protection));
+        PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f->protection));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 0, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 0, Py_None);
     }
     if (f->valid & APR_FINFO_INODE) {
-	PyTuple_SET_ITEM(t, 1, PyInt_FromLong(f->inode));
+        PyTuple_SET_ITEM(t, 1, PyInt_FromLong(f->inode));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 1, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 1, Py_None);
     }
     if (f->valid & APR_FINFO_DEV) {
-	PyTuple_SET_ITEM(t, 2, PyInt_FromLong(f->device));
+        PyTuple_SET_ITEM(t, 2, PyInt_FromLong(f->device));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 2, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 2, Py_None);
     }
     if (f->valid & APR_FINFO_NLINK) {
-	PyTuple_SET_ITEM(t, 3, PyInt_FromLong(f->nlink));
+        PyTuple_SET_ITEM(t, 3, PyInt_FromLong(f->nlink));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 3, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 3, Py_None);
     }
     if (f->valid & APR_FINFO_USER) {
-	PyTuple_SET_ITEM(t, 4, PyInt_FromLong(f->user));
+        PyTuple_SET_ITEM(t, 4, PyInt_FromLong(f->user));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 4, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 4, Py_None);
     }
     if (f->valid & APR_FINFO_GROUP) {
-	PyTuple_SET_ITEM(t, 5, PyInt_FromLong(f->group));
+        PyTuple_SET_ITEM(t, 5, PyInt_FromLong(f->group));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 5, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 5, Py_None);
     }
     if (f->valid & APR_FINFO_SIZE) {
-	PyTuple_SET_ITEM(t, 6, PyInt_FromLong(f->size));
+        PyTuple_SET_ITEM(t, 6, PyInt_FromLong(f->size));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 6, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 6, Py_None);
     }
     if (f->valid & APR_FINFO_ATIME) {
-	PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f->atime/1000000));
+        PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f->atime/1000000));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 7, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 7, Py_None);
     }
     if (f->valid & APR_FINFO_MTIME) {
-	PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f->mtime/1000000));
+        PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f->mtime/1000000));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 8, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 8, Py_None);
     }
     if (f->valid & APR_FINFO_CTIME) {
-	PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f->ctime/10000000));
+        PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f->ctime/10000000));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 9, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 9, Py_None);
     }
     if (f->fname) {
-	PyTuple_SET_ITEM(t, 10, PyString_FromString(f->fname));
+        PyTuple_SET_ITEM(t, 10, PyString_FromString(f->fname));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 10, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 10, Py_None);
     }
     if (f->valid & APR_FINFO_NAME) {
-	PyTuple_SET_ITEM(t, 11, PyString_FromString(f->name));
+        PyTuple_SET_ITEM(t, 11, PyString_FromString(f->name));
     } else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 11, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 11, Py_None);
     }
     /* it'd be nice to also return the file dscriptor, 
        f->filehand->filedes, but it's platform dependent,
@@ -224,67 +224,67 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u)
     t = PyTuple_New(9);
 
     if (u->scheme) {
-	PyTuple_SET_ITEM(t, 0, PyString_FromString(u->scheme));
+        PyTuple_SET_ITEM(t, 0, PyString_FromString(u->scheme));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 0, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 0, Py_None);
     }
     if (u->hostinfo) {
-	PyTuple_SET_ITEM(t, 1, PyString_FromString(u->hostinfo));
+        PyTuple_SET_ITEM(t, 1, PyString_FromString(u->hostinfo));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 1, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 1, Py_None);
     }
     if (u->user) {
-	PyTuple_SET_ITEM(t, 2, PyString_FromString(u->user));
+        PyTuple_SET_ITEM(t, 2, PyString_FromString(u->user));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 2, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 2, Py_None);
     }
     if (u->password) {
-	PyTuple_SET_ITEM(t, 3, PyString_FromString(u->password));
+        PyTuple_SET_ITEM(t, 3, PyString_FromString(u->password));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 3, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 3, Py_None);
     }
     if (u->hostname) {
-	PyTuple_SET_ITEM(t, 4, PyString_FromString(u->hostname));
+        PyTuple_SET_ITEM(t, 4, PyString_FromString(u->hostname));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 4, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 4, Py_None);
     }
     if (u->port_str) {
-	PyTuple_SET_ITEM(t, 5, PyInt_FromLong(u->port));
+        PyTuple_SET_ITEM(t, 5, PyInt_FromLong(u->port));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 5, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 5, Py_None);
     }
     if (u->path) {
-	PyTuple_SET_ITEM(t, 6, PyString_FromString(u->path));
+        PyTuple_SET_ITEM(t, 6, PyString_FromString(u->path));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 6, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 6, Py_None);
     }
     if (u->query) {
-	PyTuple_SET_ITEM(t, 7, PyString_FromString(u->query));
+        PyTuple_SET_ITEM(t, 7, PyString_FromString(u->query));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 7, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 7, Py_None);
     }
     if (u->fragment) {
-	PyTuple_SET_ITEM(t, 8, PyString_FromString(u->fragment));
+        PyTuple_SET_ITEM(t, 8, PyString_FromString(u->fragment));
     }
     else {
-	Py_INCREF(Py_None);
-	PyTuple_SET_ITEM(t, 8, Py_None);
+        Py_INCREF(Py_None);
+        PyTuple_SET_ITEM(t, 8, Py_None);
     }
     // XXX hostent, is_initialized, dns_*
 
@@ -316,8 +316,8 @@ module *find_module(char *name)
     int n; 
     for (n = 0; ap_loaded_modules[n]; ++n) {
 
-	if (strcmp(name, ap_loaded_modules[n]->name) == 0)
-	    return ap_loaded_modules[n];
+        if (strcmp(name, ap_loaded_modules[n]->name) == 0)
+            return ap_loaded_modules[n];
 
     }
     return NULL;
@@ -342,20 +342,20 @@ char * get_addhandler_extensions(request_rec *req)
     /* these typedefs are copied from mod_mime.c */
 
     typedef struct {
-	apr_hash_t  *extension_mappings;  
-	apr_array_header_t *remove_mappings; 
-	char *default_language;
-	int multimatch;
+        apr_hash_t  *extension_mappings;  
+        apr_array_header_t *remove_mappings; 
+        char *default_language;
+        int multimatch;
     } mime_dir_config;
 
     typedef struct extension_info {
-	char *forced_type;                /* Additional AddTyped stuff */
-	char *encoding_type;              /* Added with AddEncoding... */
-	char *language_type;              /* Added with AddLanguage... */
-	char *handler;                    /* Added with AddHandler... */
-	char *charset_type;               /* Added with AddCharset... */
-	char *input_filters;              /* Added with AddInputFilter... */
-	char *output_filters;             /* Added with AddOutputFilter... */
+        char *forced_type;                /* Additional AddTyped stuff */
+        char *encoding_type;              /* Added with AddEncoding... */
+        char *language_type;              /* Added with AddLanguage... */
+        char *handler;                    /* Added with AddHandler... */
+        char *charset_type;               /* Added with AddCharset... */
+        char *input_filters;              /* Added with AddInputFilter... */
+        char *output_filters;             /* Added with AddOutputFilter... */
     } extension_info;
 
     mime_dir_config *mconf;
@@ -370,11 +370,11 @@ char * get_addhandler_extensions(request_rec *req)
     mconf = (mime_dir_config *) ap_get_module_config(req->per_dir_config, mod_mime);
 
     for (hi = apr_hash_first(req->pool, mconf->extension_mappings); hi; hi = apr_hash_next(hi)) {
-	apr_hash_this(hi, &key, NULL, &val);
-	ei = (extension_info *)val;
-	if (ei->handler) 
-	    if (strcmp("python-program", ei->handler) == 0) 
-		result = apr_pstrcat(req->pool, (char *)key, " ", result, NULL);
+        apr_hash_this(hi, &key, NULL, &val);
+        ei = (extension_info *)val;
+        if (ei->handler) 
+            if (strcmp("python-program", ei->handler) == 0) 
+                result = apr_pstrcat(req->pool, (char *)key, " ", result, NULL);
     }
 
     return result;
@@ -390,8 +390,8 @@ const PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
     PyMemberDef *md;
 
     for (md = mlist; md->name != NULL; md++)
-	if (strcmp(md->name, name) == 0)
-	    return md;
+        if (strcmp(md->name, name) == 0)
+            return md;
 
     /* this should never happen or the mlist is screwed up */
     return NULL;
