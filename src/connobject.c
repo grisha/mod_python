@@ -18,7 +18,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.18 2004/02/16 19:47:27 grisha Exp $
+ * $Id: connobject.c,v 1.19 2004/07/06 15:05:45 grisha Exp $
  *
  */
 
@@ -258,8 +258,8 @@ static struct memberlist conn_memberlist[] = {
     {"keepalive",          T_INT,       0,                       RO},
     {"double_reverse",     T_INT,       0,                       RO},
     {"keepalives",         T_INT,       OFF(keepalives),         RO},
-    {"local_ip",           T_STRING,    OFF(remote_ip),          RO},
-    {"local_host",         T_STRING,    OFF(remote_host),        RO},
+    {"local_ip",           T_STRING,    OFF(local_ip),          RO},
+    {"local_host",         T_STRING,    OFF(local_host),        RO},
     {"id",                 T_LONG,      OFF(id),                 RO},
     /* XXX conn_config? */
     {"notes",              T_OBJECT,    0,                       RO},
