@@ -58,11 +58,11 @@ to Python object within the module.
 
 If no path_info was given in the URL, the Publisher handler will use
 the default value of \samp{index}. If the last element is an object inside
-a module, and the one immediately preceeding it is a directory
+a module, and the one immediately preceding it is a directory
 (i.e. no module name is given), then the module name will also default
 to \samp{index}.
 
-The traversal will stop and \constant{HTTP_NOTFOUND} will be returned to
+The traversal will stop and \constant{HTTP_NOT_FOUND} will be returned to
 the client if:
 
 \begin{itemize}
@@ -81,7 +81,7 @@ the client if:
 If an object in the path could not be found, \constant{HTTP_NOT_FOUND}
 is returned to the client.
 
-For eaxmple, given the following configuration:
+For example, given the following configuration:
 
 \begin{verbatim}
   DocumentRoot /some/dir
@@ -260,7 +260,7 @@ class. A reference to this instance is stored in an attribute \member{form}
 of the \class{Request} object.
 
 Since a \class{FieldStorage} can only be instantiated once per
-request, one must not attept to instantiate \class{FieldStorage} when
+request, one must not attempt to instantiate \class{FieldStorage} when
 using the Publisher handler and should use
 \class{Request.form} instead.
 

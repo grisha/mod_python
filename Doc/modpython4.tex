@@ -31,7 +31,7 @@ name}. This name can be any string.  The main interpreter is named
 be controlled by \code{PythonInterp*} directives. Default behaviour is
 to name interpreters using the Apache virtual server name
 (\code{ServerName} directive). This means that all scripts in the same
-vrtual server execute in the same subinterpreter, but scripts in
+virtual server execute in the same subinterpreter, but scripts in
 different virtual servers execute in different subinterpreters with
 completely separate namespaces.
 \citetitle[dir-other-ipd.html]{\code{PythonInterpPerDirectory}} and
@@ -235,7 +235,7 @@ single request, a filter may be called once or five times, and there
 is no way for the filter to know beforehand that the request is over
 and which of calls is last or first for this request, thought
 encounter of an EOS (None returned from a read operation) is a fairly
-strong indiciation of an end of a request.
+strong indication of an end of a request.
 
 Also note that filters may end up being called recursively in
 subrequests. To avoid the data being altered more than once, always
@@ -331,18 +331,18 @@ objects. For a more in-depth look at Apache internals, see the
   an httpd compile-time default, usually \code{warn}.
 
   If you have a reference to a request object available, consider using
-  \method{req.log_error} intead, it will prepend request-specific
+  \method{req.log_error} instead, it will prepend request-specific
   information such as the source IP of the request to the log entry.
 \end{funcdesc}
 
 \begin{funcdesc}{import_module}{module_name\optional{, autoreload=1, log=0, path=None}}
   This function can be used to import modules taking advantage of
   mod_python's internal mechanism which reloads modules automatically
-  if they changed since last import. 
+  if they have changed since last import. 
 
   \var{module_name} is a string containing the module name (it can
   contain dots, e.g. \code{mypackage.mymodule}); \var{autoreload}
-  indicates whether the module should be reloaded if it changed since
+  indicates whether the module should be reloaded if it has changed since
   last import; when \var{log} is true, a message will be written to
   the logs when a module is reloaded; \var{path} allows restricting
   modules to specific paths.
@@ -469,7 +469,7 @@ else:
     Key lookups are case-insensitive.
   \item
     Duplicate keys are allowed (see \method{add()} below). When there is
-    more than one value for a key, a subscript opration returns a list.
+    more than one value for a key, a subscript operation returns a list.
   \end{itemize}
 
   Much of the information that Apache uses is stored in tables. For
@@ -657,14 +657,14 @@ else:
 
   Reads at most \var{len} bytes directly from the client, returning a
   string with the data read. If the \var{len} argument is negative or
-  ommitted, reads all data given by the client.
+  omitted, reads all data given by the client.
 
   This function is affected by the \code{Timeout} Apache configuration
   directive. The read will be aborted and an \exception{IOError}
   raised if the \code{Timeout} is reached while reading client data.
 
   This function relies on the client providing the \code{Content-length}
-  header. Absense of the \code{Content-length} header will be treated as
+  header. Absence of the \code{Content-length} header will be treated as
   if \code{Content-length: 0} was supplied.
 
   Incorrect \code{Content-length} may cause the function to try to read
@@ -726,7 +726,7 @@ else:
 \end{methoddesc}
 
 \begin{methoddesc}[request]{set_content_length}{len}
-  Sets the value of \member{req.clength} and the \samp{Conent-Length}
+  Sets the value of \member{req.clength} and the \samp{Content-Length}
   header to len. Note that after the headers have been sent out (which
   happens just before the first byte of the body is written,
   i.e. first call to \member{req.write()}), calling the method is
@@ -818,7 +818,7 @@ else:
 \end{memberdesc}
 
 \begin{memberdesc}[request]{method_number}
-  Integer containg the method number.
+  Integer containing the method number.
   \emph{(Read-Only})
 \end{memberdesc}
 
@@ -942,7 +942,7 @@ else:
   (\member{req._content_type_set}) to keep track of whether
   \member{content_type} was set manually from within Python. The
   publisher handler uses this flag in the following way: when
-  \member{content_type} isn't explicitely set, it attempts to guess the
+  \member{content_type} isn't explicitly set, it attempts to guess the
   content type by examining the first few bytes of the output.
 \end{memberdesc}
 
@@ -1002,7 +1002,7 @@ else:
 
 \begin{memberdesc}[request]{canonical_filename}
   String. The true filename (\member{req.filename} is canonicalized if
-  they dont match).  \emph{(Read-Only)}
+  they don't match).  \emph{(Read-Only)}
 \end{memberdesc}
 
 \begin{memberdesc}[request]{path_info}
@@ -1135,7 +1135,7 @@ structure.
 \end{memberdesc}
 
 \begin{memberdesc}[connection]{double_reverse}
-  Ingeter. 1 means double reverse DNS lookup has been performed, 0 means
+  Integer. 1 means double reverse DNS lookup has been performed, 0 means
   not yet, -1 means yes and it failed.
   \emph{(Read-Only})
 \end{memberdesc}
@@ -1174,7 +1174,7 @@ information to adjacent filters in the filter stack.
 \subsubsection{Filter Methods\label{pyapi-mpfilt-meth}}
 
 \begin{methoddesc}[filter]{pass_on}{}
-  Passes all data throught the filter without any processing.
+  Passes all data through the filter without any processing.
 \end{methoddesc}
 
 \begin{methoddesc}[filter]{read}{\optional{length}}
@@ -1182,7 +1182,7 @@ information to adjacent filters in the filter stack.
   with the data read or None if End Of Stream (EOS) has been reached. A
   filter \emph{must} be closed once the EOS has been encountered.
 
-  If the \var{len} argument is negative or ommitted, reads all data
+  If the \var{len} argument is negative or omitted, reads all data
   currently available.
 \end{methoddesc}
 
@@ -1388,7 +1388,7 @@ class. This class is similar to the standard library module
   During initialization, \class{FieldStorage} class reads all of the
   data provided by the client. Since all data provided by the client is
   consumed at this point, there should be no more than one
-  \class{FieldStorage} class instantiated per signle request, nor should
+  \class{FieldStorage} class instantiated per single request, nor should
   you make any attempts to read client data before or after
   instantiating a \class{FieldStorage}.
 
@@ -1450,7 +1450,7 @@ class. This class is similar to the standard library module
 
   \begin{memberdesc}{value}
     The input value. This attribute can be used to read data from a file
-    upload as well, but one has to excercise caution when dealing with
+    upload as well, but one has to exercise caution when dealing with
     large files since when accessed via \member{value}, the whole file is
     read into memory.
   \end{memberdesc}
@@ -1470,7 +1470,7 @@ class. This class is similar to the standard library module
     The content-type for this input as provided by the client.
   \end{memberdesc}
 
-  \begin{memberdesc}{type_opyions}
+  \begin{memberdesc}{type_options}
     This is what follows the actual content type in the \code{content-type}
     header provided by the client, if anything. This is a dictionary.
   \end{memberdesc}
@@ -1494,7 +1494,7 @@ class. This class is similar to the standard library module
 
 \begin{funcdesc}{parse_qs}{qs\optional{, keep_blank_values, strict_parsing}}
 
-  This functnion is functionally equivalent to the standard library
+  This function is functionally equivalent to the standard library
   \module{cgi} \function{parse_qs}, except that it is written in C and is
   much faster. 
 
@@ -1518,7 +1518,7 @@ class. This class is similar to the standard library module
 
 \begin{funcdesc}{parse_qsl}{qs\optional{, keep_blank_values, strict_parsing}}
 
-  This functnion is functionally equivalent to the standard library
+  This function is functionally equivalent to the standard library
   \module{cgi} \function{parse_qsl}, except that it is written in C and is
   much faster. 
 
@@ -1544,7 +1544,7 @@ class. This class is similar to the standard library module
   status is sent to the client, otherwise it is
   \constant{MOVED_TEMPORARILY}. A short text is sent to the browser
   informing that the document has moved (for those rare browsers that
-  do not support redirection); this text can be overriden by
+  do not support redirection); this text can be overridden by
   supplying a \var{text} string.
 
   If this function is called after the headers have already been sent,
@@ -1612,7 +1612,7 @@ specification published by Netscape.
   (as dictated per Netscape cookie specification), or a numeric value
   representing time in seconds since beginning of epoch (which will be
   automatically correctly converted to GMT time string). An invalid
-  \code{expires} value will raise \exception{ValieError}.
+  \code{expires} value will raise \exception{ValueError}.
 
   When converted to a string, a \class{Cookie} will be in correct
   format usable as value in a \samp{Cookie} or \samp{Set-Cookie}
@@ -1630,7 +1630,7 @@ specification published by Netscape.
     value. During parsing, attribute names are converted to lower
     case.
 
-    Because this is a class method, it must be called explicitely
+    Because this is a class method, it must be called explicitly
     specifying the class.
 
     This method returns a dictionary of \class{Cookie} instances, not
@@ -1667,7 +1667,7 @@ spamcookie = mycookies["spam"]
     \begin{notice}
       Always check the types of objects returned by
       \method{SignedCookie.parse()}.If it is an instance of
-      \class{Cookie} (as oppsed to \class{SignedCookie}), the
+      \class{Cookie} (as opposed to \class{SignedCookie}), the
       signature verification has failed:
       \begin{verbatim}
 # assume spam is supposed to be a signed cookie
@@ -1796,7 +1796,7 @@ be used directly (it provides no means of storing a session), and a
 \class{DbmSession} class, which uses a dbm to store sessions. 
 
 The \class{BaseSession} class also provides session locking, both
-across processees and threads. For locking it uses APR global_mutexes
+across processes and threads. For locking it uses APR global_mutexes
 (a number of them is pre-created at startup) The mutex number is
 computed by using modulus of the session id
 \function{hash()}. (Therefore it's possible that different session
@@ -1960,7 +1960,7 @@ if sess.is_new():
 
 \begin{classdesc}{DbmSession}{req, \optional{, dbm, sid, secret, dbmtype, timeout}}
 
-  This class provides session storage using a dmb file. Generally, dbm
+  This class provides session storage using a dbm file. Generally, dbm
   access is very fast, and most dbm implementations memory-map files
   for faster access, which makes their performance nearly as fast as
   direct shared memory access.
@@ -1971,7 +1971,7 @@ if sess.is_new():
   server restarts). By default the session information is stored in a
   dbmfile named \file{mp_sess.dbm} and stored in a temporary directory
   returned by \code{tempfile.gettempdir()} standard library
-  function. It can be overriden by setting \code{PythonOption
+  function. It can be overridden by setting \code{PythonOption
   SessionDbm filename}.
 
   The implementation uses Python \module{anydbm} module, which will

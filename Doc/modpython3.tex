@@ -118,7 +118,7 @@ The data is sent back to the browser via the return value of the
 function.
 
 Even though the Publisher handler simplifies mod_python programming a
-grat deal, all the power of mod_python is still available to this
+great deal, all the power of mod_python is still available to this
 program, since it has access to the request object. You can do all the
 same things you can do with a ``native'' mod_python handler, e.g. set
 custom headers via \code{req.headers_out}, return errors by raising
@@ -138,7 +138,7 @@ Apache processes requests in \dfn{phases}. For example, the first
 phase may be to authenticate the user, the next phase to verify
 whether that user is allowed to see a particular file, then (next
 phase) read the file and send it to the client. A typical static file
-request involves three phases: (1) translate the requisted URI to a
+request involves three phases: (1) translate the requested URI to a
 file location (2) read the file and send it to the client, then (3)
 log the request. Exactly which phases are processed and how varies
 greatly and depends on the configuration.
@@ -161,7 +161,7 @@ like you.
 
 The most commonly used handler is \code{PythonHandler}. It handles the
 phase of the request during which the actual content is
-provided. Becausee it has no name, it is sometimes referred to as as
+provided. Because it has no name, it is sometimes referred to as as
 \dfn{generic} handler. The default Apache action for this handler is
 to read the file and send it to the client. Most applications you will
 write will override this one handler. To see all the possible

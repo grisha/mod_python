@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.30 2003/08/12 19:19:43 grisha Exp $
+ # $Id: publisher.py,v 1.31 2003/08/22 02:22:44 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -286,7 +286,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
 
         # object cannot be a module
         if type(obj) == ModuleType:
-            raise apache.SERVER_RETURN, apache.HTTP_NOTFOUND
+            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
         realm, user, passwd = process_auth(req, obj, realm,
                                            user, passwd)

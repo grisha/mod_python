@@ -57,7 +57,7 @@
  *
  * _apachemodule.c 
  *
- * $Id: _apachemodule.c,v 1.25 2003/08/06 20:03:29 grisha Exp $
+ * $Id: _apachemodule.c,v 1.26 2003/08/22 02:22:44 grisha Exp $
  *
  */
 
@@ -70,7 +70,7 @@ PyObject *Mp_ServerReturn;
 /** 
  ** mp_log_error
  **
- *  A wrpapper to ap_log_error
+ *  A wrapper to ap_log_error
  * 
  *  mp_log_error(string message, int level, server server)
  *
