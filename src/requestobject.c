@@ -57,7 +57,7 @@
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.30 2002/09/12 18:24:06 gstein Exp $
+ * $Id: requestobject.c,v 1.31 2002/09/15 23:45:35 grisha Exp $
  *
  */
 
@@ -861,7 +861,7 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
 
 #define OFF(x) offsetof(request_rec, x)
 
-static struct memberlist request_rec_mbrs[] = {
+static struct PyMemberDef request_rec_mbrs[] = {
     {"the_request",        T_STRING,  OFF(the_request)},
     {"assbackwards",       T_INT,     OFF(assbackwards)},
     {"proxyreq",           T_INT,     OFF(proxyreq)},
@@ -919,8 +919,8 @@ static struct memberlist request_rec_mbrs[] = {
 
 static PyObject *getreq_recmbr(requestobject *self, void *name) 
 {
-    return PyMember_Get((char*)self->request_rec, request_rec_mbrs, 
-                        (char*)name);
+    return PyMember_GetOne((char*)self->request_rec,
+                           find_memberdef(request_rec_mbrs, name));
 }
 
 /**
@@ -931,6 +931,7 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
 
 static int setreq_recmbr(requestobject *self, PyObject *val, void *name) 
 {
+
     if (strcmp(name, "content_type") == 0) {
         if (! PyString_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "content_type must be a string");
@@ -960,8 +961,9 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
     
-    return PyMember_Set((char*)self->request_rec, request_rec_mbrs, 
-                        (char*)name, val);
+    return PyMember_SetOne((char*)self->request_rec, 
+                           find_memberdef(request_rec_mbrs, (char*)name),
+                           val);
 }
 
 /**
@@ -974,7 +976,7 @@ static PyObject *getreq_rec_ah(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     apr_array_header_t *ah = 
-        (apr_array_header_t *)(self->request_rec + md->offset);
+        (apr_array_header_t *)((void *)self->request_rec + md->offset);
 
     return tuple_from_array_header(ah);
 }
@@ -989,7 +991,7 @@ static PyObject *getreq_rec_ml(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     ap_method_list_t *ml = 
-        (ap_method_list_t *)(self->request_rec + md->offset);
+        (ap_method_list_t *)((void *)self->request_rec + md->offset);
 
     return tuple_from_method_list(ml);
 }
@@ -1004,7 +1006,7 @@ static PyObject *getreq_rec_fi(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     apr_finfo_t *fi = 
-        (apr_finfo_t *)(self->request_rec + md->offset);
+        (apr_finfo_t *)((void *)self->request_rec + md->offset);
 
     return tuple_from_finfo(fi);
 }
@@ -1018,8 +1020,7 @@ static PyObject *getreq_rec_fi(requestobject *self, void *name)
 static PyObject *getreq_rec_uri(requestobject *self, void *name) 
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
-    apr_uri_t *uri = 
-        (apr_uri_t *)(self->request_rec + md->offset);
+    apr_uri_t *uri = (apr_uri_t *)((void *)self->request_rec + md->offset);
 
     return tuple_from_apr_uri(uri);
 }
@@ -1073,7 +1074,7 @@ static PyGetSetDef request_getsets[] = {
     {"path_info",     (getter)getreq_recmbr, NULL, "Path_info, if any", "path_info"},
     {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
     {"finfo",         (getter)getreq_rec_fi, NULL, "File information", "finfo"},
-    {"parsed_uri",    (getter)getreq_recmbr, NULL, "Components of URI", "parsed_uri"},
+    {"parsed_uri",    (getter)getreq_rec_uri, NULL, "Components of URI", "parsed_uri"},
     {"used_path_info", (getter)getreq_recmbr, NULL, "Flag to accept or reject path_info on current request", "used_path_info"},
     /* XXX per_dir_config */
     /* XXX request_config */

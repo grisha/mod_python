@@ -60,7 +60,7 @@
  *
  * util.h 
  *
- * $Id: util.h,v 1.6 2002/09/12 18:24:06 gstein Exp $
+ * $Id: util.h,v 1.7 2002/09/15 23:45:35 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -73,6 +73,6 @@ PyObject *tuple_from_finfo(apr_finfo_t *f);
 PyObject *tuple_from_apr_uri(apr_uri_t *u);
 char * get_addhandler_extensions(request_rec *req);
 apr_status_t python_decref(void *object);
-const PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name);
+PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name);
 
 #endif /* !Mp_UTIL_H */
