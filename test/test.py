@@ -1,7 +1,8 @@
 
-HTTPD="/home/grisha/www/bin/httpd"
-TESTHOME="/home/grisha/src/mod_python/test"
+import testconf
 
+HTTPD = testconf.HTTPD
+TESTHOME = testconf.TESTHOME
 PARAMS = {
     "server_root": TESTHOME,
     "config": TESTHOME + "/conf/test.conf",
