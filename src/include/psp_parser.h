@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
- * $Id: psp_parser.h,v 1.7 2004/02/16 19:47:28 grisha Exp $
+ * $Id$
  *
  */
 

@@ -14,7 +14,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Makefile.in,v 1.11 2004/02/16 19:47:27 grisha Exp $
+ # $Id$
  #
 
 PYTHON_BIN=@PYTHON_BIN@

@@ -482,7 +482,7 @@ static yyconst flex_int16_t yy_chk[107] =
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
  *
- * $Id: psp_parser.c,v 1.19 2004/02/18 23:04:36 grisha Exp $
+ * $Id$
  *
  * This file originally written by Sterling Hughes.
  * 

@@ -21,7 +21,7 @@
  *
  * apachemodule.h 
  *
- * $Id: _apachemodule.h,v 1.6 2004/02/16 19:47:28 grisha Exp $
+ * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.

@@ -13,7 +13,7 @@
  # implied.  See the License for the specific language governing
  # permissions and limitations under the License.
  #
- # $Id: test.py,v 1.42 2004/02/23 17:37:16 grisha Exp $
+ # $Id$
  #
 
 """

@@ -13,7 +13,7 @@
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
  *
- * $Id: psp_string.h,v 1.4 2004/02/16 19:47:28 grisha Exp $
+ * $Id$
  *
  */
 

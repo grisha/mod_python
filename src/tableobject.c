@@ -18,7 +18,7 @@
  *
  * tableobject.c 
  *
- * $Id: tableobject.c,v 1.31 2004/02/16 19:47:27 grisha Exp $
+ * $Id$
  *
  */
 

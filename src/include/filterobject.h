@@ -18,7 +18,7 @@
  *
  * filterobject.h 
  *
- * $Id: filterobject.h,v 1.10 2004/02/16 19:47:28 grisha Exp $
+ * $Id$
  *
  */
 

@@ -52,7 +52,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_string.c,v 1.2 2003/09/10 02:11:22 grisha Exp $
+ * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.

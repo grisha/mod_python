@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: __init__.py,v 1.10 2004/02/16 19:47:27 grisha Exp $
+ # $Id$
 
 __all__ = ["apache", "cgihandler", "psp",
            "publisher", "util"]

@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py,v 1.11 2004/02/16 19:47:27 grisha Exp $
+ # $Id$
 
 """
 

@@ -21,7 +21,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.41 2004/07/23 14:05:03 grisha Exp $
+ * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.

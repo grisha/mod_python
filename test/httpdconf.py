@@ -13,7 +13,7 @@
  # implied.  See the License for the specific language governing
  # permissions and limitations under the License.
  #
- # $Id: httpdconf.py,v 1.10 2004/02/16 19:49:15 grisha Exp $
+ # $Id$
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #

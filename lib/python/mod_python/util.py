@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: util.py,v 1.22 2004/04/30 19:26:36 grisha Exp $
+ # $Id$
 
 import _apache
 import apache

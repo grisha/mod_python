@@ -18,7 +18,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.19 2004/07/06 15:05:45 grisha Exp $
+ * $Id$
  *
  */
 

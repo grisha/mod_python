@@ -13,7 +13,7 @@
  #  limitations under the License.
  #
  #
- # $Id: setup.py.in,v 1.6 2004/04/30 19:33:59 grisha Exp $
+ # $Id$
 
 from distutils.core import setup, Extension
 

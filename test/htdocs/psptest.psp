@@ -1,4 +1,4 @@
-<%-- $Id: psptest.psp,v 1.2 2003/08/08 22:44:26 grisha Exp $ --%>
+<%-- $Id$ --%>
 <%
 if 1:
     req.write("t")

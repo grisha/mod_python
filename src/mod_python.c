@@ -18,7 +18,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.114 2004/07/26 23:28:04 grisha Exp $
+ * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.
