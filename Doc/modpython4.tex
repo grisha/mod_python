@@ -190,12 +190,13 @@ write methods.
 Filters need to be closed when a read operation returns None 
 (indicating End-Of-Stream).
 
-Similarly to a phase handler, a filter handler must return one of the
-status return codes.
+The return value of a filter is ignored. Filters cannot decline
+processing like handlers, but the same effect can be achieved
+by using the \method{filter.pass_on()} method.
 
 Filters must first be registered using \code{PythonInputFilter} or
 \code{PythonOutputFilter}, then added using the Apache
-\code{AddInputFilter} or \code{AddOutputFilter} directives. 
+\code{Add/SetInputFilter} or \code{Add/SetOutputFilter} directives. 
 
 Here is an example of how to specify an output filter, it tells the
 server that all .py files should processed by CAPITALIZE filter:
@@ -221,8 +222,6 @@ def outputfilter(filter):
     if s is None:
         filter.close()
 
-    return apache.OK
-
 \end{verbatim}
 
 When writing filters, keep in mind that a filter will be called any
@@ -231,7 +230,14 @@ control over the amount of data passed through it and no notion of
 where in the request processing it is called. For example, within a
 single request, a filter may be called once or five times, and there
 is no way for the filter to know beforehand that the request is over
-and which of calls is last or first for this request.
+and which of calls is last or first for this request, thought
+encounter of an EOS (None returned from a read operation) is a fairly
+strong indiciation of an end of a request.
+
+Also note that filters may end up being called recursively in
+subrequests. To avoid the data being altered more than once, always
+make sure you are not in a subrequest by examining the \code{req.main}
+value.
 
 For more information on filters, see
 \citetitle[http://httpd.apache.org/docs-2.0/developer/filters.html]{http://httpd.apache.org/docs-2.0/developer/filters.html}.

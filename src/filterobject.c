@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.16 2002/10/04 18:56:18 grisha Exp $
+ * $Id: filterobject.c,v 1.17 2002/10/04 21:31:05 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -125,12 +125,17 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
 
 static PyObject *filter_pass_on(filterobject *self)
 {
+
+    Py_BEGIN_ALLOW_THREADS;
+
     if (self->is_input) 
         self->rc = ap_get_brigade(self->f->next, self->bb_out, 
                                   self->mode, APR_BLOCK_READ, 
                                   self->readbytes);
     else
         self->rc = ap_pass_brigade(self->f->next, self->bb_in);
+
+    Py_END_ALLOW_THREADS;
 
     Py_INCREF(Py_None);
     return Py_None;
