@@ -52,12 +52,12 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * Originally developed by Gregory Trubetskoy <grisha@apache.org>
+ * Originally developed by Gregory Trubetskoy.
  *
  *
  * requestobject.c 
  *
- * $Id: requestobject.c,v 1.35 2002/10/15 15:47:31 grisha Exp $
+ * $Id: requestobject.c,v 1.36 2002/11/08 00:15:11 gstein Exp $
  *
  */
 

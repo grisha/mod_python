@@ -52,12 +52,12 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * Originally developed by Gregory Trubetskoy <grisha@apache.org>
+ * Originally developed by Gregory Trubetskoy.
  *
  *
  * hlist.c 
  *
- * $Id: hlistobject.c,v 1.6 2002/10/15 15:47:31 grisha Exp $
+ * $Id: hlistobject.c,v 1.7 2002/11/08 00:15:11 gstein Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.

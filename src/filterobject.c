@@ -52,12 +52,12 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * Originally developed by Gregory Trubetskoy <grisha@apache.org>
+ * Originally developed by Gregory Trubetskoy.
  *
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.17 2002/10/04 21:31:05 grisha Exp $
+ * $Id: filterobject.c,v 1.18 2002/11/08 00:15:11 gstein Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.

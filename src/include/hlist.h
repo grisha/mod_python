@@ -52,12 +52,12 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * Originally developed by Gregory Trubetskoy <grisha@apache.org>
+ * Originally developed by Gregory Trubetskoy.
  *
  *
  * hlist.h 
  *
- * $Id: hlist.h,v 1.2 2002/09/12 18:24:06 gstein Exp $
+ * $Id: hlist.h,v 1.3 2002/11/08 00:15:11 gstein Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
