@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.50 2001/05/24 02:53:53 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.51 2001/05/25 03:27:31 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -1147,7 +1147,7 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
 }
 
 /**
- ** directive_PythonNoReload
+ ** directive_PythonNoReload [obsoleted]
  **
  *      This function called whenever PythonNoReload directive
  *      is encountered.
@@ -1155,10 +1155,22 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
 
 static const char *directive_PythonNoReload(cmd_parms *cmd, 
 					    void *mconfig, int val) {
+    return "PythonNoReload is obsolete, use PythonAutoReload Off instead.";
+}
+
+/**
+ ** directive_PythonAutoReload
+ **
+ *      This function called whenever PythonAutoReload directive
+ *      is encountered.
+ */
+
+static const char *directive_PythonAutoReload(cmd_parms *cmd, 
+					    void *mconfig, int val) {
     if (val)
-	return python_directive(cmd, mconfig, "PythonNoReload", "1");
+	return python_directive(cmd, mconfig, "PythonAutoReload", "1");
     else
-	return python_directive(cmd, mconfig, "PythonNoReload", NULL);
+	return python_directive(cmd, mconfig, "PythonAutoReload", "0");
 }
 
 /**
@@ -1489,6 +1501,14 @@ command_rec python_commands[] =
 	"Python authentication handlers."
     },
     {
+	"PythonAutoReload",                 
+	directive_PythonAutoReload,         
+	NULL,                                
+	OR_ALL,                         
+	FLAG,                               
+	"Set to Off if you do not want changed modules to automatically reload."
+    },
+    {
 	"PythonAuthzHandler",
 	directive_PythonAuthzHandler,
 	NULL,
@@ -1601,12 +1621,13 @@ command_rec python_commands[] =
 	"A Python module containing handlers to be executed."
     },
     {
+	/* This one is obsolete and is there only for the warning */
 	"PythonNoReload",                 
 	directive_PythonNoReload,         
 	NULL,                                
 	OR_ALL,                         
 	FLAG,                               
-	"Do not reload already imported modules if they changed."
+	"Obsolete. Use PythonAutoReload instead."
     },
     {
 	"PythonOptimize",

@@ -41,7 +41,7 @@
  # OF THE POSSIBILITY OF SUCH DAMAGE.
  # ====================================================================
  #
- # $Id: apache.py,v 1.33 2001/05/24 02:53:53 gtrubetskoy Exp $
+ # $Id: apache.py,v 1.34 2001/05/25 03:27:31 gtrubetskoy Exp $
 
 import sys
 import string
@@ -239,7 +239,7 @@ class CallBack:
                                           htype=htype, hname=handler, debug=debug)
             finally:
                 exc_traceback = None
-        print "RRRR", result
+
 	return result
 
 
@@ -296,7 +296,8 @@ def import_module(module_name, req=None, path=None):
     autoreload, debug = 1, None
     if req:
         config = req.get_config()
-        autoreload = not config.has_key("PythonNoReload")
+        if config.has_key("PythonAutoReload"):
+            autoreload = int(config["PythonAutoReload"])
         debug = config.has_key("PythonDebug")
 
     # try to import the module
