@@ -996,13 +996,19 @@ structure.
 
 \subsubsection{Connection Methods\label{pyapi-mpconn-meth}}
 
-\begin{methoddesc}[connection]{read}{length}
-  Reads \var{length} bytes from the connection. The read blocks
-  indefinitely until length bytes has been read. If length is -1, keep
-  reading until the socket is closed from the other end (This is known
-  as \code{EXHAUSTIVE} mode in the http server code).
+\begin{methoddesc}[connection]{read}{\optional{length}}
+  Reads at most \var{length} bytes from the client. The read blocks
+  indefinitely until there is at least one byte to read. If length is
+  -1, keep reading until the socket is closed from the other end (This
+  is known as \code{EXHAUSTIVE} mode in the http server code).
 
   This method should only be used inside \emph{Connection Handlers}.
+
+  \begin{notice}
+    The behaviour of this method has changed since version 3.0.3. In
+    3.0.3 and prior, this method would block until \var{length} bytes
+    was read.
+  \end{notice}
 
 \end{methoddesc}
 

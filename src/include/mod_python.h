@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.30 2003/05/29 14:15:52 grisha Exp $
+ * $Id: mod_python.h,v 1.31 2003/07/17 00:51:46 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -82,6 +82,8 @@
 #include "apr_strings.h"
 #include "apr_lib.h"
 #include "apr_hash.h"
+#include "apr_rmm.h"
+#include "apr_shm.h"
 #include "scoreboard.h"
 
 /* Python headers */
@@ -119,8 +121,10 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #include "_apachemodule.h"
 #include "_pspmodule.h"
 
+
 /** Things specific to mod_python, as an Apache module **/
 
+#define MP_CONFIG_KEY "python_module"
 #define VERSION_COMPONENT "mod_python/" MPV_STRING
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
@@ -142,16 +146,27 @@ typedef struct {
     PyObject *obcallback;
 } interpreterdata;
 
+/* Shared memory info */
+typedef struct
+{
+    char      *shm_file;
+    apr_size_t shm_size;
+    apr_shm_t *shm;
+    apr_rmm_t *rmm;
+    apr_table_t *table;
+} py_global;
+
 /* structure describing per directory configuration parameters */
 typedef struct {
     int           authoritative;
     char         *config_dir;
     apr_table_t  *directives;
     apr_table_t  *options;
-    apr_hash_t   *hlists; /* hlists for every phase */
+    apr_hash_t   *hlists;   /* hlists for every phase */
     apr_hash_t   *in_filters;
     apr_hash_t   *out_filters;
     hl_entry     *imports;  /* for PythonImport */
+    py_global    *global;
 } py_config;
 
 /* register_cleanup info */
@@ -187,5 +202,9 @@ typedef struct
 } py_handler;
 
 apr_status_t python_cleanup(void *data);
+
+void table_rmm_init(server_rec *s, apr_pool_t *p);
+int table_rmm_store(server_rec *s, char *key, char *val);
+char *table_rmm_retrieve(server_rec *s, char *key);
 
 #endif /* !Mp_MOD_PYTHON_H */

@@ -57,7 +57,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.14 2003/01/23 22:34:18 grisha Exp $
+ * $Id: connobject.c,v 1.15 2003/07/17 00:51:46 grisha Exp $
  *
  */
 
@@ -113,8 +113,10 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
     bb = apr_brigade_create(c->pool, c->bucket_alloc);
 
+    bufsize = len == 0 ? HUGE_STRING_LEN : len;
+
     Py_BEGIN_ALLOW_THREADS;
-    rc = ap_get_brigade(c->input_filters, bb, mode, APR_BLOCK_READ, len);
+    rc = ap_get_brigade(c->input_filters, bb, mode, APR_BLOCK_READ, bufsize);
     Py_END_ALLOW_THREADS;
 
     if (! APR_STATUS_IS_SUCCESS(rc)) {
@@ -135,7 +137,6 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         return Py_None;
     }
 
-    bufsize = len == 0 ? HUGE_STRING_LEN : len;
     result = PyString_FromStringAndSize(NULL, bufsize);
 
     /* possibly no more memory */
@@ -180,7 +181,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 	}
 
 
-        if (mode == AP_MODE_GETLINE) {
+        if (mode == AP_MODE_GETLINE || len == 0) {
             apr_bucket_delete(b);
             break;
         }
@@ -208,11 +209,8 @@ static PyObject * conn_read(connobject *self, PyObject *args)
 
     long len = 0;
 
-    if (! PyArg_ParseTuple(args, "l|i", &len)) 
+    if (! PyArg_ParseTuple(args, "|l", &len)) 
         return NULL;
-
-    if (len == 0)
-        return PyString_FromString("");
 
     if (len == -1)
         return _conn_read(self->conn, AP_MODE_EXHAUSTIVE, 0);
