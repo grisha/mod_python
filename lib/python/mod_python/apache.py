@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.19 2000/08/28 21:33:41 gtrubetskoy Exp $
+  $Id: apache.py,v 1.20 2000/10/03 02:07:39 gtrubetskoy Exp $
 
 """
 
@@ -24,10 +24,50 @@ import _apache
 # variable stores the last PythonPath in raw (unevaled) form.
 _path = None
 
+class Request:
+    """ This is a normal Python Class that can be subclassed.
+        However, most of its functionality comes from a built-in
+        object of type mp_request provided by mod_python at
+        initialization and stored in self._req.
+    """
+
+    def __init__(self, _req):
+        # look at __setattr__ if changing this line!
+        self._req = _req
+
+    def __getattr__(self, attr):
+        try:
+            return getattr(self._req, attr)
+        except AttributeError:
+            try:
+                return self.__dict__[attr]
+            except KeyError:
+                raise AttributeError, attr
+
+    def __setattr__(self, attr, val):
+        try:
+            if attr != "_req":
+                print 1
+                setattr(self._req, attr, val)
+            else:
+                self.__dict__["_req"] = val
+        except AttributeError, x:
+            a,b,c = sys.exc_info()
+            for e in traceback.format_exception(a,b,c):
+                print e
+            self.__dict__[attr] = val
+
+    def __nonzero__(self):
+        return 1
+
 class CallBack:
     """
     A generic callback object.
     """
+
+    def __init__(self):
+        self.req = None
+
 
     def resolve_object(self, module, object_str):
         """
@@ -79,7 +119,7 @@ class CallBack:
                 self.req.hstack = string.join(handlers[1:], " ")
                 return handlers[0]
 
-    def Dispatch(self, req, htype):
+    def Dispatch(self, _req, htype):
         """
         This is the handler dispatcher.
         """
@@ -87,19 +127,23 @@ class CallBack:
         # be cautious
         result, handler = HTTP_INTERNAL_SERVER_ERROR, ""
 
-        # request
-        self.req = req
+        # is there a Request object for this request?
+        if not self.req or (self.req._req != _req):
+            # self.req is a regular oject, _req is a built-in.
+            # for speed, we mostly use the built-in. Users
+            # should only use self.req.
+            self.req = Request(_req)
 
         # config
-        config = req.get_config()
+        config = _req.get_config()
         debug = config.has_key("PythonDebug")
 
         try:
 
             # cycle through the handlers
-            dirs = req.get_all_dirs()
+            dirs = _req.get_all_dirs()
 
-            hstack = self.HStack(req)
+            hstack = self.HStack(_req)
         
             handler = hstack.pop()
             while handler:
@@ -127,12 +171,12 @@ class CallBack:
                         if sys.path != newpath:
                             sys.path = newpath
                 else:
-                    dir = req.get_all_dirs()[htype]
+                    dir = _req.get_all_dirs()[htype]
                     if dir not in sys.path:
                         sys.path[:0] = [dir]
 
                 # import module
-                module = import_module(module_name, req)
+                module = import_module(module_name, _req)
 
                 # find the object
                 object = self.resolve_object(module, object_str)
@@ -140,9 +184,9 @@ class CallBack:
                 # call the object
                 if config.has_key("PythonEnablePdb"):
                     if config["PythonEnablePdb"]:
-                        result = pdb.runcall(object, req)
+                        result = pdb.runcall(object, self.req)
                 else:
-                    result = object(req)
+                    result = object(self.req)
 
                 # stop cycling through handlers
                 if result != OK:
@@ -158,7 +202,7 @@ class CallBack:
                 if type(value) == type(()):
                     (result, status) = value
                     if status:
-                        req.status = status
+                        _req.status = status
                 else:
                     result, status = value, value
             except:
@@ -194,7 +238,7 @@ class CallBack:
 	"""
 
         try:
-            req = self.req
+            req = self.req._req
 
             if str(etype) == "exceptions.IOError" \
                and str(evalue)[:5] == "Write":
