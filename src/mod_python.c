@@ -18,7 +18,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.113 2004/02/16 19:47:27 grisha Exp $
+ * $Id: mod_python.c,v 1.114 2004/07/26 23:28:04 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -223,6 +223,7 @@ apr_status_t python_cleanup(void *data)
     if (!idata) {
         Py_DECREF(ci->handler);
         Py_XDECREF(ci->data);
+        free(ci->interpreter);
         free(ci);
         return APR_SUCCESS; /* this is ignored anyway */
     }

@@ -18,7 +18,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.22 2004/02/16 19:47:27 grisha Exp $
+ * $Id: serverobject.c,v 1.23 2004/07/26 23:28:04 grisha Exp $
  *
  */
 
@@ -101,7 +101,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     ci->server_rec = self->server;
     Py_INCREF(handler);
     ci->handler = handler;
-    ci->interpreter = req->interpreter;
+    ci->interpreter = strdup(req->interpreter);
     if (data) {
         Py_INCREF(data);
         ci->data = data;
