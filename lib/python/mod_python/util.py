@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: util.py,v 1.21 2004/02/16 19:47:27 grisha Exp $
+ # $Id: util.py,v 1.22 2004/04/30 19:26:36 grisha Exp $
 
 import _apache
 import apache
@@ -224,7 +224,8 @@ class FieldStorage:
         found = []
         for item in self.list:
             if item.name == key:
-                if isinstance(item.file, FileType):
+                if isinstance(item.file, FileType) or \
+                       isinstance(getattr(item.file, 'file', None), FileType):
                     found.append(item)
                 else:
                     found.append(StringField(item.value))
@@ -268,7 +269,8 @@ class FieldStorage:
         """ return the first value received """
         for item in self.list:
             if item.name == key:
-                if isinstance(item.file, FileType):
+                if isinstance(item.file, FileType) or \
+                       isinstance(getattr(item.file, 'file', None), FileType):
                     return item
                 else:
                     return StringField(item.value)
@@ -281,7 +283,8 @@ class FieldStorage:
         found = []
         for item in self.list:
             if item.name == key:
-                if isinstance(item.file, FileType):
+                if isinstance(item.file, FileType) or \
+                       isinstance(getattr(item.file, 'file', None), FileType):
                     found.append(item)
                 else:
                     found.append(StringField(item.value))
