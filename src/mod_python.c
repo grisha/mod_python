@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.110 2004/01/14 02:43:18 grisha Exp $
+ * $Id: mod_python.c,v 1.111 2004/01/19 05:06:14 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -312,11 +312,12 @@ apr_status_t python_cleanup(void *data)
         Py_DECREF(svalue);
     }
 
-    release_interpreter();
-
     Py_DECREF(ci->handler);
     Py_DECREF(ci->data);
     free(ci);
+
+    release_interpreter();
+
     return APR_SUCCESS;
 }
 
