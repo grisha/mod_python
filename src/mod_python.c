@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.98 2003/08/19 14:41:39 grisha Exp $
+ * $Id: mod_python.c,v 1.99 2003/08/21 18:25:12 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -381,8 +381,9 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
 	    }
 	}
 	else {
-	    if (fname)
-		chown(fname, unixd_config.user_id, -1);
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+	    chown(fname, unixd_config.user_id, -1);
+#endif
 	}
     }
     return APR_SUCCESS;
