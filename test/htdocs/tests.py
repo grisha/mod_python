@@ -135,6 +135,23 @@ def util_fieldstorage(req):
     req.write(`util.FieldStorage(req).list`)
     return apache.OK
 
+def postreadrequest(req):
+
+    req.write("test ok")
+
+    return apache.DONE
+
+def outputfilter(filter):
+
+    apache.log_error("filter: " + str(filter))
+
+    s = filter.read()
+    a = 1/0
+    filter.write("test ok")
+
+    return apache.OK
+
+
 def _test_table():
 
     d = apache.table()

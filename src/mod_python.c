@@ -44,7 +44,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.69 2002/08/21 16:12:22 gtrubetskoy Exp $
+ * $Id: mod_python.c,v 1.70 2002/08/22 21:09:08 gtrubetskoy Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -484,8 +484,8 @@ static const char *python_directive_handler(cmd_parms *cmd, void * mconfig,
      * is the case, we will end up with a directive concatenated
      * with the extension, one per, e.g.
      * "PythonHandler foo | .ext1 .ext2" will result in
-     * PythonHandlerext1 foo
-     * PythonHandlerext2 foo
+     * PythonHandler.ext1 foo
+     * PythonHandler.ext2 foo
      */
 
     const char *exts = val;
@@ -752,7 +752,7 @@ static int python_handler(request_rec *req, char *phase)
     conf = (py_dir_config *) ap_get_module_config(req->per_dir_config, 
                                                   &python_module);
     /* get file extension */
-    if (req->filename) {
+    if (req->filename) {        /* filename is null until after transhandler */
         ext = req->filename;
         ap_getword(req->pool, &ext, '.');
         if (*ext != '\0')
@@ -1022,8 +1022,6 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     filterobject *filter;
     python_filter_ctx *ctx;
     py_filter_handler *fh;
-
-    return APR_SUCCESS;
 
     /* we only allow request level filters so far */
     req = f->r;
@@ -1405,11 +1403,18 @@ static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
 static const char *directive_PythonPostReadRequestHandler(cmd_parms *cmd, 
                                                           void * mconfig, 
                                                           const char *val) {
+
+    if (strchr(val, '|'))
+        return "PythonPostReadRequestHandler does not accept \"| .ext\" syntax.";
+
     return python_directive_handler(cmd, mconfig, "PythonPostReadRequestHandler", val,0);
 }
 
 static const char *directive_PythonTransHandler(cmd_parms *cmd, void *mconfig, 
                                                 const char *val) {
+    if (strchr(val, '|'))
+        return "PythonTransHandler does not accept \"| .ext\" syntax.";
+
     return python_directive_handler(cmd, mconfig, "PythonTransHandler", val, 0);
 }
 static const char *directive_PythonTypeHandler(cmd_parms *cmd, void *mconfig, 
