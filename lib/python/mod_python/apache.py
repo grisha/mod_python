@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.6 2000/05/22 12:14:39 grisha Exp $
+  $Id: apache.py,v 1.7 2000/05/26 19:51:19 grisha Exp $
 
 """
 
@@ -46,7 +46,7 @@ class CallBack:
         try:
             obj = eval("%s.%s" % (module_name, object_str))
             if hasattr(obj, "im_self") and not obj.im_self:
-                # this is an unbound method, it's class
+                # this is an unbound method, its class
                 # needs to be insantiated
                 raise AttributeError, obj.__name__
             else:
@@ -221,8 +221,10 @@ def import_module(module_name, req=None):
     if  not autoreload:
 
         # import module
-        exec "import " + module_name
-        module = eval(module_name)
+        module = __import__(module_name)
+        components = string.split(module_name, '.')
+        for cmp in components[1:]:
+            module = getattr(module, cmp)
 
     else:
 
@@ -241,8 +243,10 @@ def import_module(module_name, req=None):
         # import the module for the first time
         else:
 
-            exec "import " + module_name
-            module = eval(module_name)
+            module = __import__(module_name)
+            components = string.split(module_name, '.')
+            for cmp in components[1:]:
+                module = getattr(module, cmp)
 
         # find out the last modification time
         # but only if there is a __file__ attr
