@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: publisher.py,v 1.32 2003/09/29 20:21:54 grisha Exp $
+ # $Id: publisher.py,v 1.33 2003/09/29 21:04:51 grisha Exp $
 
 """
   This handler is conceputally similar to Zope's ZPublisher, except
@@ -122,7 +122,7 @@ def handler(req):
     # the [path] argument tells import_module not to allow modules whose
     # full path is not in [path] or below.
     config = req.get_config()
-    autoreload=int(config.get("PythonAutoReload", 0))
+    autoreload=int(config.get("PythonAutoReload", 1))
     log=int(config.get("PythonDebug", 0))
     try:
         module = apache.import_module(module_name,
