@@ -57,7 +57,7 @@
  *
  * mod_python.c 
  *
- * $Id: mod_python.c,v 1.88 2003/04/09 14:05:55 grisha Exp $
+ * $Id: mod_python.c,v 1.89 2003/05/24 03:55:27 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -376,7 +376,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* release the lock; now other threads can run */
         PyEval_ReleaseLock();
 #endif
-		PSP_PG(files) = PyDict_New();
+/* XXX		PSP_PG(files) = PyDict_New(); */
     }
     return OK;
 }

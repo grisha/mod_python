@@ -60,7 +60,8 @@ AR=@AR@
 APXS=@APXS@
 MKDEP=@MKDEP@
 
-LEX=flex
+# requires flex 2.5.31 for reentrant support
+LEX=/usr/local/bin/flex
 INCLUDES=@INCLUDES@
 LIBS=@LIBS@ -ll
 LDFLAGS=@LDFLAGS@
@@ -75,7 +76,7 @@ SRCS=	mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
 all:	@ALL@
 
 psp_parser.c:
-	$(LEX) -opsp_parser.c psp_parser.l
+	$(LEX) -R -opsp_parser.c --header-file=include/psp_flex.h psp_parser.l
 
 dso:	mod_python.so
 	@echo dso > .install

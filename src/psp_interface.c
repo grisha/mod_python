@@ -52,7 +52,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_interface.c,v 1.1 2003/04/09 14:05:55 grisha Exp $
+ * $Id: psp_interface.c,v 1.2 2003/05/24 03:55:27 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -63,54 +63,64 @@
 #include "httpd.h"
 #include <stdio.h>
 
-extern FILE *yyin;
-
-static void
+static psp_parser_t*
 psp_parser_init(void)
 {
-	memset(&PSP_PG(ob), 0, sizeof(psp_string));
-	memset(&PSP_PG(pycode), 0, sizeof(psp_string));
-	memset(&PSP_PG(whitespace), 0, sizeof(psp_string));
-	PSP_PG(in_block) = 0;
-	PSP_PG(string_char) = 0;
-	PSP_PG(is_psp_echo) = 0;
-	PSP_PG(is_string_escape) = 0;
+    psp_parser_t *parser;
+
+    parser = (psp_parser_t *) malloc(sizeof(*parser));
+
+    memset(&parser->ob, 0, sizeof(psp_string));
+    memset(&parser->pycode, 0, sizeof(psp_string));
+    memset(&parser->whitespace, 0, sizeof(psp_string));
+    parser->in_block = 0;
+    parser->string_char = 0;
+    parser->is_psp_echo = 0;
+    parser->is_string_escape = 0;
+
+    return parser;
 }
 
 static void
-psp_parser_cleanup(void)
+psp_parser_cleanup(psp_parser_t *parser)
 {
-	if (PSP_PG(ob).allocated) {
-		free(PSP_PG(ob).blob);
-	}
+    if (parser->ob.allocated) {
+        free(parser->ob.blob);
+    }
 
-	if (PSP_PG(pycode).allocated) {
-		free(PSP_PG(pycode).blob);
-	}
+    if (parser->pycode.allocated) {
+        free(parser->pycode.blob);
+    }
 
-	if (PSP_PG(whitespace).allocated) {
-		free(PSP_PG(whitespace).blob);
-	}
+    if (parser->whitespace.allocated) {
+        free(parser->whitespace.blob);
+    }
+
+    free(parser);
 }
 
 static char *
-psp_parser_gen_pycode(char *filename)
-{
-	FILE *f;
+psp_parser_gen_pycode(psp_parser_t *parser, char *filename)
+{ 
+    yyscan_t scanner;
+    FILE *f;
+     
+    f = fopen(filename, "rb");
+    if (f == NULL) {
+        return NULL;
+    }
 
-	f = fopen(filename, "rb");
-	if (f == NULL) {
-		return NULL;
-	}
-	yyin = f;
-	
-	yylex();
+    yylex_init(&scanner);
+    yyset_in(f, scanner);
+    yyset_extra(parser, scanner);
+    yylex(scanner);
+    yylex_destroy(scanner);
 
-	fclose(f);
+    fclose(f);
 
-	psp_string_0(&PSP_PG(pycode));
+    psp_string_0(&parser->pycode);
 
-	return PSP_PG(pycode).blob;
+    return parser->pycode.blob;
 }
 
 struct psp_object {
@@ -125,32 +135,34 @@ psp_parser_compile_file(char *filename)
 	struct psp_object *cached;
 	char              *code;
 	struct stat        sb;
+        psp_parser_t      *parser;
 
 	if (stat(filename, &sb) != 0) {
 		return NULL;
 	}
 
-	cached = (struct psp_object *) PyDict_GetItemString(PSP_PG(files), filename);
-	if (cached != NULL) {
-		if (sb.st_mtime == cached->mtime) {
-			compiled = cached->image;
-			goto psp_ret;
-		}
-	}
+/* XXX TODO - Make cache work, but in a thread-safe way
+/* 	cached = (struct psp_object *) PyDict_GetItemString(parser->files, filename); */
+/* 	if (cached != NULL) { */
+/* 		if (sb.st_mtime == cached->mtime) { */
+/* 			compiled = cached->image; */
+/* 			goto psp_ret; */
+/* 		} */
+/* 	} */
 	
-	psp_parser_init();
-	code = psp_parser_gen_pycode(filename);
+	parser = psp_parser_init();
+	code = psp_parser_gen_pycode(parser, filename);
 	if (code == NULL) {
 		return NULL;
 	}
 	compiled = Py_CompileString(code, filename, Py_file_input);
-	psp_parser_cleanup();
+	psp_parser_cleanup(parser);
 
 	cached = (struct psp_object *) malloc(sizeof(struct psp_object));
 	cached->mtime = sb.st_mtime;
 	cached->image = compiled;
 	
-	PyDict_SetItemString(PSP_PG(files), filename, (PyObject *) cached);
+/*	PyDict_SetItemString(parser->files, filename, (PyObject *) cached); */
 psp_ret:
 	return compiled;
 }
