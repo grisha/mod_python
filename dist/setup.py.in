@@ -1,5 +1,5 @@
 
-# $Id: setup.py.in,v 1.4 2003/05/29 14:15:46 grisha Exp $
+# $Id: setup.py.in,v 1.5 2003/07/24 17:46:09 grisha Exp $
 
 APXS = r"@APXS@"
 VER = "@MP_VERSION@"
@@ -39,8 +39,7 @@ else:
                                  ["src/psp_string.c",
                                   "src/psp_parser.c",
                                   "src/_pspmodule.c"],
-                                 include_dirs=["src/include"],
-                                 libraries=["l"]
+                                 include_dirs=["src/include"]
                                  )
                        ]
           )
