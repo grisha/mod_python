@@ -75,7 +75,7 @@ all:	@ALL@
 dso:	mod_python.so
 	@echo dso > .install
 
-mod_python.so: $(SRCS) 
+mod_python.so: $(SRCS) @EPRINTF_HACK@ @FLOATDIDF_HACK@
 	@echo
 	@echo 'Compiling for DSO. For static, do "make static"'
 	@echo
