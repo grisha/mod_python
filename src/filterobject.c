@@ -57,7 +57,7 @@
  *
  * filterobject.c 
  *
- * $Id: filterobject.c,v 1.18 2002/11/08 00:15:11 gstein Exp $
+ * $Id: filterobject.c,v 1.19 2003/01/18 03:43:07 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -358,7 +358,6 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
     len = PyString_Size(s);
 
     if (len) {
-	buff = apr_pmemdup(self->f->r->pool, PyString_AS_STRING(s), len);
 
 	/* does the output brigade exist? */
 	if (!self->bb_out) {
@@ -366,10 +365,14 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
 					      c->bucket_alloc);
 	}
 	
-	b = apr_bucket_pool_create(buff, len, self->f->r->pool,
-					      c->bucket_alloc);
+        buff = apr_bucket_alloc(len, c->bucket_alloc);
+        memcpy(buff, PyString_AS_STRING(s), len);
+
+        b = apr_bucket_heap_create(buff, len, apr_bucket_free,
+                                   c->bucket_alloc);
+
 	APR_BRIGADE_INSERT_TAIL(self->bb_out, b);
-	
+
     }
 
     Py_INCREF(Py_None);
@@ -398,6 +401,7 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS;
     self->rc = ap_pass_brigade(self->f->next, self->bb_out);
+    apr_brigade_destroy(self->bb_out);
     Py_END_ALLOW_THREADS;
 
     if(self->rc != APR_SUCCESS) { 
