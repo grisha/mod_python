@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.21 2000/10/03 03:24:39 gtrubetskoy Exp $
+  $Id: apache.py,v 1.22 2000/10/21 20:24:54 gtrubetskoy Exp $
 
 """
 
@@ -47,7 +47,6 @@ class Request:
     def __setattr__(self, attr, val):
         try:
             if attr != "_req":
-                print 1
                 setattr(self._req, attr, val)
             else:
                 self.__dict__["_req"] = val
