@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.24 2003/11/04 20:30:39 grisha Exp $
+ # $Id: psp.py,v 1.25 2003/12/11 03:15:59 grisha Exp $
 
 import apache, Session, util, _psp
 import _apache
@@ -249,7 +249,7 @@ class PSP:
                 
                 # the mere instantiation of a session changes it
                 # (access time), so it *always* has to be saved
-                if session:
+                if session is not None:
                     session.save()
             except:
                 et, ev, etb = sys.exc_info()
@@ -259,7 +259,7 @@ class PSP:
                 else:
                     raise et, ev, etb
         finally:
-            if session:
+            if session is not None:
                     session.unlock()
 
     def __str__(self):
