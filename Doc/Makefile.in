@@ -227,4 +227,6 @@ version: ../src/include/mpversion.h
 # 9. on the website:
 #        make pdf
 #        put modpython.pdf on the web in live
-
+#
+# To sign: gpg -a -b mod_python-3.1.0a.win32-py2.3.exe
+#
