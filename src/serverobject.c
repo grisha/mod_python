@@ -57,7 +57,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.19 2003/10/23 03:06:39 grisha Exp $
+ * $Id: serverobject.c,v 1.20 2003/10/23 13:43:36 grisha Exp $
  *
  */
 
@@ -281,6 +281,11 @@ static PyObject *my_generation(serverobject *self, void *objname)
     return PyInt_FromLong((long)ap_my_generation);
 }
 
+static PyObject *restart_time(serverobject *self, void *objname)
+{
+    return PyFloat_FromDouble(ap_scoreboard_image->global->restart_time*0.000001);
+}
+
 static PyGetSetDef server_getsets[] = {
     /* XXX process */
     {"next",         (getter)getmakeobj,    NULL, "The next server in the list", "next"},
@@ -306,6 +311,7 @@ static PyGetSetDef server_getsets[] = {
     {"limit_req_fieldsize",    (getter)getsrv_recmbr, NULL, "limit on size of any request header field", "limit_req_fieldsize"},
     {"limit_req_fields",    (getter)getsrv_recmbr, NULL, "limit on number of request header fields", "limit_req_fields"},
     {"my_generation",    (getter)my_generation, NULL, "Generation of this child", "my_generation"},
+    {"restart_time",    (getter)restart_time, NULL, "Server restart time", "restart_time"},
     {NULL}  /* Sentinel */
 };
 
