@@ -60,7 +60,7 @@
  *
  * mod_python.h 
  *
- * $Id: mod_python.h,v 1.27 2002/11/08 00:15:11 gstein Exp $
+ * $Id: mod_python.h,v 1.27.2.1 2003/11/10 18:54:45 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -137,6 +137,11 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 /* used in python_directive_handler */
 #define SILENT 0
 #define NOTSILENT 1
+
+/* python 2.3 no longer defines LONG_LONG, it defines PY_LONG_LONG */
+#ifndef LONG_LONG
+#define LONG_LONG PY_LONG_LONG
+#endif
 
 /* structure to hold interpreter data */
 typedef struct {
