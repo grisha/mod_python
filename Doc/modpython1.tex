@@ -2,20 +2,29 @@
 
 \section{Performance\label{intr-performance}}
 
-Some very quick tests showed a very apparent performance increase: 
+One of the most wonderful advantages of mod_python is the increase in
+performance over traditional CGI. Below are results of a very crude
+test. The test was done on a 1.2Ghz Pentium machine running RedHat
+Linux
+7.3. \citetitle[http://httpd.apache.org/docs-2.0/programs/ab.html]{Ab}
+was used to poll 4 kinds of scripts, all of which imported the
+standard cgi module (because this is how a typical Python cgi script
+begins), then output a single word "Hello!". The results are based on
+10000 requests with concurrency of 1.
 
 \begin{verbatim}
-      Platform:       300Mhz Pentium MMX (Sony Vaio PCG-505TR), FreeBSD
-      Program:        A script that first imported the standard library 
-                      cgi module, then output a single word "Hello!".
-      Measuring tool: ab (included with apache), 1000 requests.
 
-      Standard CGI:   5 requests/s
-      Cgihandler:     40 requests/s
-      As a handler:   140 requests/s
+    Standard CGI:               23 requests/s
+    Mod_python cgihandler:     385 requests/s
+    Mod_python publisher:      476 requests/s
+    Mod_python handler:       1203 requests/s
+
 \end{verbatim}         
 
 \section{Flexibility\label{intr-flexibility}}
+
+Mod_python allows for a level of functionality beyond the reach of
+CGI scripts.
 
 Apache processes requests in phases (e.g. read the request, parse
 headers, check access, etc.). These phases can be implemented by
@@ -23,25 +32,30 @@ functions called handlers. Traditionally, handlers are written in C
 and compiled into Apache modules. Mod_python provides a way to extend
 Apache functionality by writing Apache handlers in Python. For a
 detailed description of the Apache request processing process, see the
-\citetitle[http://dev.apache.org/API.html]{Apache API Notes}.
+\citetitle[http://dev.apache.org/API.html]{Apache API Notes}, as well
+as the \citetitle[http://www.modpython.org/python10/]{Mod_python -
+Integrating Python with Apache} paper.
 
 For most programmers, the request and the authentication handlers
 provide everything required.
 
-To ease migration from CGI and Httpdapy, two handlers are provided
-that simulate these environments allowing a user to run his scripts
+To ease migration from CGI, a standard mod_python handler is provided
+that simulates the CGI environment allowing a user to run legacy scripts
 under mod_python with (for the most part) no changes to the code.
  
 \begin{seealso}
   \seeurl{http://dev.apache.org/}{Apache Developer Resources}
+  \seeurl{http://www.modpython.org/python10/}{Mod_Python - Integrating Python with Apache}
 \end{seealso}
 
 \section{History\label{intr-history}}
 
-Mod_python originates from a project called Httpdapy. For a long time
-Httpdapy was not called mod_python because Httpdapy was not meant to
-be Apache-specific. Httpdapy was designed to be cross-platform and in
-fact was initially written for the Netscape server.
+Mod_python originates from a project called
+\citetitle[http://www.ispol.com/home/grisha/httpdapy/]{Httpdapy}. For
+a long time Httpdapy was not called mod_python because Httpdapy was
+not meant to be Apache-specific. Httpdapy was designed to be
+cross-platform and in fact was initially written for the Netscape
+server.
 
 This excerpt from the Httpdapy README file describes well the
 challenges and the solution provided by embedding Python within the

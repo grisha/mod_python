@@ -6,7 +6,7 @@ directory, or http://www.modpython.org/.
 
 This directory is mainly for LaTeX geeks.
 
-In order for anything here to functional, you must have
+In order for anything here to be functional, you must have
 configured mod_python with the --with-python option.
 
 You also need to have all the necessary tools installed, see
@@ -23,4 +23,3 @@ make ps
 
 Good Luck!
 
-Grisha Trubetskoy
