@@ -18,4 +18,8 @@ rem
 rem $Id: Makefile.in 106619 2004-11-25 22:10:52Z nd $
 rem
 rem This script builds the installer for Windows
+
+rmdir /s /q build
+rmdir /s /q dist
+del ..\src\*.obj ..\src\*.lib ..\src\*.exp ..\src\*.res
 python setup.py.in bdist_wininst --install-script win32_postinstall.py
