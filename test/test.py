@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.20 2002/10/29 21:52:18 grisha Exp $
+ # $Id: test.py,v 1.21 2002/12/02 21:53:11 grisha Exp $
  #
 
 """
@@ -776,12 +776,39 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
 
         self.failUnless(result.wasSuccessful())
 
+    def test_srv_register_cleanup(self):
+
+        print "\n* Testing server.register_cleanup()..."
+
+        c = Directory(DOCUMENT_ROOT,
+                      SetHandler("python-program"),
+                      PythonHandler("tests::srv_register_cleanup"),
+                      PythonDebug("On"))
+
+        self.makeConfig(str(c))
+
+        self.startHttpd()
+
+        f = urllib.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f.read()
+        f.close()
+
+        self.stopHttpd()
+
+        # see what's in the log now
+        time.sleep(1)
+        f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
+        log = f.read()
+        f.close()
+        if log.find("test ok") == -1:
+            self.fail("Could not find test message in error_log")
 
 def suite():
 
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(PerInstanceTestCase("testLoadModule"))
     mpTestSuite.addTest(PerInstanceTestCase("testPerRequestTests"))
+    mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
     return mpTestSuite
 
 tr = unittest.TextTestRunner()

@@ -57,7 +57,7 @@
  *
  * serverobject.c 
  *
- * $Id: serverobject.c,v 1.13 2002/11/08 00:15:11 gstein Exp $
+ * $Id: serverobject.c,v 1.14 2002/12/02 21:53:11 grisha Exp $
  *
  */
 
@@ -117,30 +117,20 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     cleanup_info *ci;
     PyObject *handler = NULL;
     PyObject *data = NULL;
-    PyObject *Req = NULL;
     requestobject *req = NULL;
 
-    if (! PyArg_ParseTuple(args, "OO|O", &Req, &handler, &data))
+    if (! PyArg_ParseTuple(args, "OO|O", &req, &handler, &data))
 	return NULL; 
 
-    if (! PyObject_HasAttrString(Req, "_req")) {
-	PyErr_SetString(PyExc_ValueError, "first argument must be a Request object");
-	return NULL;
+    if (! MpRequest_Check(req)) {
+        PyErr_SetString(PyExc_ValueError, 
+                        "first argument must be a request object");
+        return NULL;
     }
-    else {
-
-	req = (requestobject *) PyObject_GetAttrString(Req, "_req");
-
-	if (! MpRequest_Check(req)) {
-	    PyErr_SetString(PyExc_ValueError, 
-			    "first argument must be a request object");
-	    return NULL;
-	}
-	else if(!PyCallable_Check(handler)) {
-	    PyErr_SetString(PyExc_ValueError, 
-			    "second argument must be a callable object");
-	    return NULL;
-	}
+    else if(!PyCallable_Check(handler)) {
+        PyErr_SetString(PyExc_ValueError, 
+                        "second argument must be a callable object");
+        return NULL;
     }
     
     ci = (cleanup_info *)malloc(sizeof(cleanup_info));

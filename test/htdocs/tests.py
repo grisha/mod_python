@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: tests.py,v 1.19 2002/10/29 21:52:18 grisha Exp $
+ # $Id: tests.py,v 1.20 2002/12/02 21:53:11 grisha Exp $
  #
 
 # mod_python tests
@@ -504,6 +504,14 @@ def cleanup(data):
     # for req_register_cleanup above
 
     data.log_error(data.cleanup_data)
+
+def srv_register_cleanup(req):
+
+    req.cleanup_data = "test ok"
+    req.server.register_cleanup(req, cleanup, req)
+    req.write("registered server cleanup that will write to log")
+
+    return apache.OK
 
 def util_fieldstorage(req):
 
