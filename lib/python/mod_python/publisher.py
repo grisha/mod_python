@@ -83,10 +83,12 @@ def handler(req):
     if req.method not in ["GET", "POST"]:
         raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
-    func_path = req.path_info[1:] # skip first /
-    func_path = func_path.replace("/", ".")
-    if func_path[-1:] == ".":
-        func_path = func_path[:-1] 
+    func_path = ""
+    if req.path_info:
+        func_path = req.path_info[1:] # skip first /
+        func_path = func_path.replace("/", ".")
+        if func_path[-1:] == ".":
+            func_path = func_path[:-1] 
 
     # default to 'index' if no path_info was given
     if not func_path:
@@ -126,6 +128,8 @@ def handler(req):
 
     ## import the script
     path, module_name =  os.path.split(req.filename)
+    if not module_name:
+        module_name = "index"
 
     # get rid of the suffix
     #   explanation: Suffixes that will get stripped off
