@@ -54,7 +54,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: apache.py,v 1.80 2004/01/16 04:50:15 grisha Exp $
+ # $Id: apache.py,v 1.81 2004/01/23 07:24:49 grisha Exp $
 
 import sys
 import traceback
@@ -548,7 +548,7 @@ def resolve_object(module, object_str, arg=None, silent=0):
         parent = obj
 
         # don't throw attribute errors when silent
-        if silent and not hasattr(module, obj_str):
+        if silent and not hasattr(obj, obj_str):
             return None
 
         # this adds a little clarity if we have an attriute error
