@@ -3,7 +3,7 @@
  
   This file is part of mod_python. See COPYRIGHT file for details.
 
-  $Id: apache.py,v 1.12 2000/06/25 20:04:05 gtrubetskoy Exp $
+  $Id: apache.py,v 1.13 2000/07/04 17:43:02 gtrubetskoy Exp $
 
 """
 
@@ -18,6 +18,10 @@ import types
 import _apache
 
 # XXX consider using intern() for some strings
+
+# a small hack to improve PythonPath performance. This
+# variable stores the last PythonPath in raw (unevaled) form.
+_path = None
 
 class CallBack:
     """
@@ -39,6 +43,13 @@ class CallBack:
         for obj_str in  string.split(object_str, '.'):
 
             parent = obj
+
+            # this adds a little clarity if we have an attriute error
+            if obj == module and not hasattr(module, obj_str):
+                if hasattr(module, "__file__"):
+                    s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
+                    raise AttributeError, s
+
             obj = getattr(obj, obj_str)
             
             if hasattr(obj, "im_self") and not obj.im_self:
@@ -79,13 +90,20 @@ class CallBack:
                     object_str = string.lower(htype[len("python"):])
                 else:
                     object_str = l[1]
-
+                
                 # add the direcotry to pythonpath if
                 # not there yet, or pythonpath specified
                 if config.has_key("PythonPath"):
-                    newpath = eval(config["PythonPath"])
-                    if sys.path != newpath:
-                        sys.path = newpath
+                    # we want to do as little evaling as possible,
+                    # so we remember the path in un-evaled form and
+                    # compare it
+                    global _path
+                    pathstring = config["PythonPath"]
+                    if pathstring != _path:
+                        _path = pathstring
+                        newpath = eval(pathstring)
+                        if sys.path != newpath:
+                            sys.path = newpath
                 else:
                     dir = req.get_dirs()[htype]
                     if dir not in sys.path:
@@ -169,7 +187,7 @@ class CallBack:
                 req.content_type = 'text/plain'
                 req.send_http_header()
 
-                s = '\nERROR mod_python: "%s %s"\n\n' % (htype, hname)
+                s = '\nMod_python error: "%s %s"\n\n' % (htype, hname)
                 for e in traceback.format_exception(etype, evalue, etb):
                     s = s + e + '\n'
 
