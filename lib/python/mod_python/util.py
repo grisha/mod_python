@@ -354,7 +354,7 @@ def apply_fs_data(object, fs, **args):
         # builtin
         fc = None
         expected = []
-    elif hasattr(object,'__call__'):
+    elif hasattr(object, '__call__'):
         # callable object
         fc = object.__call__.im_func.func_code
         expected = fc.co_varnames[1:fc.co_argcount]

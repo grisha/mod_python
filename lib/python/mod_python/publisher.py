@@ -66,7 +66,7 @@ def handler(req):
     if func_path[0] == '_' or func_path.count("._"):
         req.log_error('Cannot access %s because '
                       'it contains at least an underscore'
-                      %func_path,apache.APLOG_WARNING)
+                      % func_path, apache.APLOG_WARNING)
         raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
     ## import the script
@@ -228,7 +228,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
 
         if not user:
             # note that Opera supposedly doesn't like spaces around "=" below
-            s = 'Basic realm="%s"' % realm 
+            s = 'Basic realm="%s"' % realm
             req.err_headers_out["WWW-Authenticate"] = s
             raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED    
 
@@ -265,17 +265,17 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
 # The first item in the tuple is a boolean telling if the object can be traversed (default is True)
 # The second item in the tuple is a boolen telling if the object can be published (default is True)
 tp_rules = {
-    FunctionType        : (False,True),
-    MethodType          : (False,True),
-    BuiltinFunctionType : (False,True),
-    ModuleType          : (False,False),
-    ClassType           : (False,False),
+    FunctionType        : (False, True),
+    MethodType          : (False, True),
+    BuiltinFunctionType : (False, True),
+    ModuleType          : (False, False),
+    ClassType           : (False, False),
     # XXX Generators should be publishable, see
     # http://issues.apache.org/jira/browse/MODPYTHON-15
     # Until they are, it is not interesting to publish them
-    GeneratorType       : (False,False),
+    GeneratorType       : (False, False),
 }
-default_tp_rule = (True,True)
+default_tp_rule = (True, True)
 
 def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     """
@@ -283,28 +283,25 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     (period) to find the last one we're looking for.
     """
     parts = object_str.split('.')
-    last_part = len(parts)-1
         
     for i, obj_str in enumerate(parts):
+
         # path components starting with an underscore are forbidden
         if obj_str[0]=='_':
             req.log_error('Cannot traverse %s in %s because '
                           'it starts with an underscore'
-                          %(obj_str,req.unparsed_uri),apache.APLOG_WARNING)
+                          % (obj_str, req.unparsed_uri), apache.APLOG_WARNING)
             raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
         # if we're not in the first object (which is the module)
         if i>0:
-            # we must be in an instance, nothing else
-            # we have to check for old-style instances AND
-            # new-style instances.
-            # XXX testing for new-style class instance is tricky
-            # see http://groups.google.fr/groups?th=7bab336f2b4f7e03&seekm=107l13c5tti8876%40news.supernews.com
-            rule = tp_rules.get(type(obj),default_tp_rule)
+        
+            # we're going to check whether be can traverse this type or not
+            rule = tp_rules.get(type(obj), default_tp_rule)
             if not rule[0]:
                 req.log_error('Cannot traverse %s in %s because '
                               '%s is not a traversable object'
-                              %(obj_str,req.unparsed_uri,obj),apache.APLOG_WARNING)
+                              % (obj_str, req.unparsed_uri, obj), apache.APLOG_WARNING)
                 raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
         
         # we know it's OK to call getattr
@@ -312,16 +309,18 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
         # of property objects (or attribute with __get__ special methods)...
         obj = getattr(obj, obj_str)
 
-        realm, user, passwd = process_auth(req, obj, realm,
-                                           user, passwd)
+        # we process the authentication for the object
+        realm, user, passwd = process_auth(req, obj, realm, user, passwd)
     
-    rule = tp_rules.get(type(obj),default_tp_rule)
-    # XXX the isinstance(obj,type) test is required until
+    # we're going to check if the final object is publishable
+    rule = tp_rules.get(type(obj), default_tp_rule)
+    # XXX the isinstance(obj, type) test is required until
     # we allow the publication of class objects.
-    if (not rule[1]) or isinstance(obj,type):
+    if (not rule[1]) or isinstance(obj, type):
+
          req.log_error('Cannot publish %s in %s because '
                        '%s is not publishable'
-                       %(obj_str,req.unparsed_uri,obj),apache.APLOG_WARNING)
+                       % (obj_str, req.unparsed_uri, obj), apache.APLOG_WARNING)
          raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
     return obj
