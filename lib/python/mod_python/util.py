@@ -54,11 +54,12 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: util.py,v 1.18 2003/08/28 18:47:13 grisha Exp $
+ # $Id: util.py,v 1.19 2003/09/15 15:43:33 grisha Exp $
 
 import _apache
 import apache
-import StringIO
+import cStringIO
+import tempfile
 
 from types import *
 from exceptions import *
@@ -130,7 +131,7 @@ class FieldStorage:
         if req.args:
             pairs = parse_qsl(req.args, keep_blank_values)
             for pair in pairs:
-                file = StringIO.StringIO(pair[1])
+                file = cStringIO.StringIO(pair[1])
                 self.list.append(Field(pair[0], file, "text/plain", {},
                                        None, {}))
 
@@ -151,7 +152,7 @@ class FieldStorage:
                 
                 pairs = parse_qsl(req.read(clen), keep_blank_values)
                 for pair in pairs:
-                    file = StringIO.StringIO(pair[1])
+                    file = cStringIO.StringIO(pair[1])
                     self.list.append(Field(pair[0], file, "text/plain",
                                      {}, None, {}))
 
@@ -207,7 +208,7 @@ class FieldStorage:
                     if disp_options.has_key("filename"):
                         file = self.make_file()
                     else:
-                        file = StringIO.StringIO()
+                        file = cStringIO.StringIO()
 
                     # read it in
                     self.read_to_boundary(req, boundary, file)
@@ -228,7 +229,6 @@ class FieldStorage:
 
 
     def make_file(self):
-        import tempfile
         return tempfile.TemporaryFile("w+b")
 
     def skip_to_boundary(self, req, boundary):
@@ -263,10 +263,10 @@ class FieldStorage:
         found = []
         for item in self.list:
             if item.name == key:
-                if isinstance(item.file, StringIO.StringIO):
-                    found.append(StringField(item.value))
-                else:
+                if isinstance(item.file, FileType):
                     found.append(item)
+                else:
+                    found.append(StringField(item.value))
         if not found:
             raise KeyError, key
         if len(found) == 1:
@@ -302,6 +302,29 @@ class FieldStorage:
     def __len__(self):
         """Dictionary style len(x) support."""
         return len(self.keys())
+
+    def getfirst(self, key, default=None):
+        """ return the first value received """
+        for item in self.list:
+            if item.name == key:
+                if isinstance(item.file, FileType):
+                    return item
+                else:
+                    return StringField(item.value)
+                return default
+                                                                    
+    def getlist(self, key):
+        """ return a list of received values """
+        if self.list is None:
+            raise TypeError, "not indexable"
+        found = []
+        for item in self.list:
+            if item.name == key:
+                if isinstance(item.file, FileType):
+                    found.append(item)
+                else:
+                    found.append(StringField(item.value))
+        return found
 
 def parse_header(line):
     """Parse a Content-type like header.
