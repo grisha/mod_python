@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.6 2003/05/30 04:37:09 grisha Exp $
+ # $Id: psp.py,v 1.7 2003/05/30 15:10:46 grisha Exp $
 
 # this trick lets us be used outside apache
 try:
@@ -72,7 +72,7 @@ import new
 
 def parse(filename):
 
-    return _psp.parse(req.filename)
+    return _psp.parse(filename)
 
 def parsestring(str):
 
