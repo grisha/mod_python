@@ -52,7 +52,7 @@
  # information on the Apache Software Foundation, please see
  # <http://www.apache.org/>.
  #
- # $Id: test.py,v 1.23 2002/12/18 20:47:02 grisha Exp $
+ # $Id: test.py,v 1.24 2003/01/09 19:14:31 grisha Exp $
  #
 
 """
@@ -747,6 +747,25 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp[-7:] != "test ok"):
             self.fail("test failed")
         
+    def test_cgihandler_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_cgihandler"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("python-program"),
+                                  PythonHandler("mod_python.cgihandler"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_cgihandler(self):
+
+        print "\n  * Testing mod_python.cgihandler"
+
+        rsp = self.vhost_get("test_cgihandler", path="/cgitest.py")
+
+        if (rsp[-8:] != "test ok\n"):
+            self.fail("test failed")
 
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
@@ -776,23 +795,24 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         print "\n* Running the per-request test suite..."
 
         perRequestSuite = unittest.TestSuite()
-        perRequestSuite.addTest(PerRequestTestCase("test_req_document_root"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
-        perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
-        perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
-        perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
-        perRequestSuite.addTest(PerRequestTestCase("test_trans"))
-        perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
-        perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
-        perRequestSuite.addTest(PerRequestTestCase("test_import"))
-        perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
-        perRequestSuite.addTest(PerRequestTestCase("test_internal"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_document_root"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_util_fieldstorage"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_trans"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_import"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
+##         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
+        perRequestSuite.addTest(PerRequestTestCase("test_cgihandler"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)
         self.startHttpd()
