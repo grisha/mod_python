@@ -1422,10 +1422,10 @@ class. This class is similar to the standard library module
   \begin{notice}
     Unlike the standard library \module{cgi} module
     \class{FieldStorage} class, a \class{Field} object is returned
-    \emph{only} when it is a file upload. In all other cases an instance
-    the return is an instance of \class{StringField}, which is a subclass
-    of \class{str}. This means that you do not need to use the
-    \member{.value} attribute to access values of fields in most cases.
+    \emph{only} when it is a file upload. In all other cases the
+    return is an instance of \class{StringField}. This means that you
+    do not need to use the \member{.value} attribute to access values
+    of fields in most cases.
   \end{notice}
 
   In addition to standard mapping object methods, \class{FieldStorage} objects
@@ -1435,6 +1435,23 @@ class. This class is similar to the standard library module
     This is a list of \class{Field} objects, one for each input. Multiple
     inputs with the same name will have multiple elements in this list.
   \end{memberdesc}
+
+  \class{FieldStorage} methods:
+
+  \begin{methoddesc}[FieldStorage]{getfirst}{name\optional{, default}}
+    Always returns only one value associated with form field
+    \var{name}. If no such form field or value exists then the method
+    returns the value specified by the optional parameter
+    \var{default}. This parameter defaults to \code{None} if not
+    specified.
+  \end{methoddesc}
+
+  \begin{methoddesc}[FieldStorage]{getlist}{name}
+    This method always returns a list of values associated with form
+    field \var{name}. The method returns an empty list if no such form
+    field or value exists for \var{name}. It returns a list consisting
+    of one item if only one such value exists.
+  \end{methoddesc}
 
 \end{classdesc}
 
