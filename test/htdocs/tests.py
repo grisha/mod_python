@@ -105,6 +105,13 @@ def req_readline(req):
 
     return apache.OK
 
+def req_readlines(req):
+
+    lines = req.readlines()
+    req.write("".join(lines))
+
+    return apache.OK
+
 def req_register_cleanup(req):
 
     req.cleanup_data = "test ok"
