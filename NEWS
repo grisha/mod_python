@@ -1,3 +1,6 @@
+Oct 12 2000 -   Autoconf now works. Documentation has been adjusted. Also
+		added Windows installation instructions to the docs.
+
 Oct  2 2000 -   PythonInterpPerServer is now default behavior, and this 
 		directive is therefore obsolete. The old default behavior can
 		be achieved via the new PythonInterpPerDirective directive.
