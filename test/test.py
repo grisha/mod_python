@@ -1028,8 +1028,9 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if rsp != "test ok" or setcookie != "eggs=bar, bar=foo, spam=foo; path=blah":
+        if rsp != "test ok" or setcookie != 'path=blah, eggs=bar, bar=foo, spam=foo':
             print `rsp`
+            print `setcookie`
             self.fail("cookie parsing failed")
 
     def test_Cookie_MarshalCookie_conf(self):
