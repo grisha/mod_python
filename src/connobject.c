@@ -57,7 +57,7 @@
  *
  * connobject.c 
  *
- * $Id: connobject.c,v 1.12 2002/11/08 00:15:11 gstein Exp $
+ * $Id: connobject.c,v 1.13 2002/12/30 15:17:56 grisha Exp $
  *
  */
 
@@ -308,7 +308,7 @@ static struct memberlist conn_memberlist[] = {
     {"notes",              T_OBJECT,    0,                       RO},
     /* XXX filters ? */
     /* XXX document remain */
-    //{"remain",             T_LONG,      OFF(remain),             RO},
+    /*{"remain",             T_LONG,      OFF(remain),             RO},*/
     {NULL}  /* Sentinel */
 };
 

@@ -57,7 +57,7 @@
  *
  * util.c 
  *
- * $Id: util.c,v 1.14 2002/11/08 00:15:11 gstein Exp $
+ * $Id: util.c,v 1.15 2002/12/30 15:17:56 grisha Exp $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -299,7 +299,7 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u)
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 8, Py_None);
     }
-    // XXX hostent, is_initialized, dns_*
+    /* XXX hostent, is_initialized, dns_* */
 
     return t;
 }
