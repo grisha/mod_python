@@ -53,7 +53,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  *
- * $Id: psp_parser.l,v 1.14 2003/08/08 22:44:26 grisha Exp $
+ * $Id: psp_parser.l,v 1.15 2003/08/11 20:13:03 grisha Exp $
  *
  * This file originally written by Sterling Hughes.
  * 
@@ -134,8 +134,16 @@
 }
 
 <TEXT><<EOF>> {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
-    yyterminate();
+    yypop_buffer_state(yyscanner);
+    if (!YY_CURRENT_BUFFER) {
+	/* this is really the end */
+	psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\")\n"));
+	yyterminate();
+    }
+    else {
+	/* we are inside include, continue scanning */
+	BEGIN DIR;
+    }
 }
 
 <PYCODE>\r\n|\n {
@@ -236,11 +244,9 @@
 	PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
     }
     else {
-	FILE *save = yyget_in(yyscanner);
-	yyset_in(f, yyscanner);
-	yylex(yyscanner);
-	fclose(f);
-	yyset_in(save, yyscanner);
+	yypush_buffer_state(yy_create_buffer(f, YY_BUF_SIZE, yyscanner), 
+			    yyscanner);
+	BEGIN(TEXT);
     }
 
     if (PSP_PG(dir)) free(path);

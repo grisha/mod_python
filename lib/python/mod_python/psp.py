@@ -54,7 +54,7 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id: psp.py,v 1.15 2003/08/11 18:12:55 grisha Exp $
+ # $Id: psp.py,v 1.16 2003/08/11 20:13:03 grisha Exp $
 
 from mod_python import apache, Session, util, _psp
 import _apache
@@ -244,7 +244,7 @@ def run_psp(req):
                 # run error page
                 exec psp._error_page in globals(), {"req":req, "session":session,
                                                     "form":form, "psp":psp,
-                                                    "error": (et, ev, etb)}
+                                                    "exception": (et, ev, etb)}
             else:
                 # pass it on
                 raise et, ev, etb
