@@ -20,6 +20,9 @@
 import cPickle
 import tempfile
 import os
+import apache, _apache
+import cStringIO
+import traceback
 
 from mod_python import Session
 
@@ -32,6 +35,8 @@ class FileSession(Session.BaseSession):
             timeout=timeout, lock=lock)
 
     def do_cleanup(self):
+        self._req.log_error('Sessions cleanup...',apache.APLOG_NOTICE)
+
         # is there any faster way of doing this?
         for f in os.listdir(tempdir):
             if not f.startswith('mp_sess_'):
@@ -45,31 +50,56 @@ class FileSession(Session.BaseSession):
                         os.unlink('%s%s' % (tempdir, f))
                 finally:
                     fp.close()
-            except Exception:
-                # TODO : emit a warning to the Apache Log
-                pass
+            except:
+                s = cStringIO.StringIO()
+                traceback.print_exc(file=s)
+                s = s.getvalue()
+                self._req.log_error('Error while cleaning up the sessions : %s'%s)
 
     def do_load(self):
+        _apache._global_lock(self._req.server, self._sid)
         try:
-            # again, is there a more pythonic way of doing this check?
-            fp = file('%s/mp_sess_%s' % (tempdir, self._sid))
             try:
-                data = cPickle.load(fp)
-                return data
-            finally:
-                fp.close()
-        except:
-            return None
+                # again, is there a more pythonic way of doing this check?
+                # TODO : why does this load fails sometimes with an EOFError ?
+                fp = file('%s/mp_sess_%s' % (tempdir, self._sid))
+                try:
+                    data = cPickle.load(fp)
+                    return data
+                finally:
+                    fp.close()
+            except:
+                s = cStringIO.StringIO()
+                traceback.print_exc(file=s)
+                s = s.getvalue()
+                self._req.log_error('Error while loading a session : %s'%s)
+                return None
+        finally:
+            _apache._global_unlock(self._req.server, self._sid)
 
     def do_save(self, dict):
-        fp = file('%s/mp_sess_%s' % (tempdir, self._sid), 'w+')
+        _apache._global_lock(self._req.server, self._sid)
         try:
-            cPickle.dump(dict, fp)
+            try:
+                fp = file('%s/mp_sess_%s' % (tempdir, self._sid), 'w+')
+                try:
+                    cPickle.dump(dict, fp, 2)
+                finally:
+                    fp.close()
+            except:
+                s = cStringIO.StringIO()
+                traceback.print_exc(file=s)
+                s = s.getvalue()
+                self._req.log_error('Error while saving a session : %s'%s)
         finally:
-            fp.close()
+            _apache._global_unlock(self._req.server, self._sid)
 
     def do_delete(self):
+        _apache._global_lock(self._req.server, self._sid)
         try:
-            os.unlink('%s/mp_sess_%s' % (tempdir, self._sid))
-        except Exception:
-            pass
+            try:
+                os.unlink('%s/mp_sess_%s' % (tempdir, self._sid))
+            except Exception:
+                pass
+        finally:
+            _apache._global_unlock(self._req.server, self._sid)
