@@ -47,10 +47,6 @@ readBlockSize = 65368
 """
 
 class Field:
-
-   filename = None
-   headers = {}
-
    def __init__(self, name, file, ctype, type_options,
                 disp, disp_options, headers = {}):
        self.name = name
