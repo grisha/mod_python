@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Session.py 106619 2004-11-25 22:10:52Z nd $
+ # $Id$
 
 import cPickle
 import tempfile
