@@ -32,14 +32,17 @@ tempdir = tempfile.gettempdir()
 # Credits : this was initially contributed by dharana <dharana@dharana.net>
 class FileSession(Session.BaseSession):
     def __init__(self, req, sid=0, secret=None,
-                timeout=0, lock=0,
+                timeout=0, lock=1,
                 fast_cleanup=True, verify_cleanup=False):
         
         opts = req.get_options()
+        self._sessdir = opts.get('FileSessionDir',tempdir)
+        
         self._fast_cleanup = fast_cleanup
         self._verify_cleanup = verify_cleanup
+        # FIXME - what happens to fast_cleanup when timeout = 0???
         self._fast_timeout = timeout
-        self._sessdir = opts.get('FileSessionDir',tempdir)
+        
         Session.BaseSession.__init__(self, req, sid=sid, secret=secret,
             timeout=timeout, lock=lock)
 
@@ -76,7 +79,7 @@ class FileSession(Session.BaseSession):
                 self._req.log_error('Error while cleaning up the sessions : %s'%s)
 
     def do_load(self):
-        _apache._global_lock(self._req.server, 'fl_%s' % self._sid)
+        self.lock_file()
         try:
             try:
                 # again, is there a more pythonic way of doing this check?
@@ -94,10 +97,10 @@ class FileSession(Session.BaseSession):
                 self._req.log_error('Error while loading a session : %s'%s)
                 return None
         finally:
-            _apache._global_unlock(self._req.server, 'fl_%s' % self._sid)
+            self.unlock_file()
 
     def do_save(self, dict):
-        _apache._global_lock(self._req.server, 'fl_%s' % self._sid)
+        self.lock_file()
         try:
             try:
                 fp = file(os.path.join(self._sessdir, 'mp_sess_%s' % self._sid), 'w+')
@@ -111,15 +114,29 @@ class FileSession(Session.BaseSession):
                 s = s.getvalue()
                 self._req.log_error('Error while saving a session : %s'%s)
         finally:
-            _apache._global_unlock(self._req.server, 'fl_%s' % self._sid)
+            self.unlock_file()
 
     def do_delete(self):
-        _apache._global_lock(self._req.server, 'fl_%s' % self._sid)
+        self.lock_file()
         try:
             try:
                 os.unlink(os.path.join(self._sessdir, 'mp_sess_%s' % self._sid))
             except Exception:
                 pass
         finally:
-            _apache._global_unlock(self._req.server, 'fl_%s' % self._sid)
+            self.unlock_file()
 
+    def lock_file(self):
+        # self._lock = 1 indicates that session locking is turned on,
+        # so let BaseSession handle it.
+        # Otherwise, explicitly acquire a lock for the file manipulation.
+        if not self._locked:
+            self._req.log_error('lock file %s' % self._sid)
+            _apache._global_lock(self._req.server, self._sid)
+            self._locked = 1
+
+    def unlock_file(self):
+        if self._locked and not self._lock:
+            self._req.log_error('unlock file %s' % self._sid)
+            _apache._global_unlock(self._req.server, self._sid)
+            self._locked = 0
