@@ -40,13 +40,17 @@ class FileSession(Session.BaseSession):
         
         self._fast_cleanup = fast_cleanup
         self._verify_cleanup = verify_cleanup
-        # FIXME - what happens to fast_cleanup when timeout = 0???
-        self._fast_timeout = timeout
+        if timeout:
+            self._fast_timeout = timeout
+        else:
+            self._fast_timeout = Session.DFT_TIMEOUT
         
         Session.BaseSession.__init__(self, req, sid=sid, secret=secret,
             timeout=timeout, lock=lock)
 
     def do_cleanup(self):
+        # WARNING - this method does no file locking.
+        # Problems may lurk here.
         self._req.log_error('Sessions cleanup (fast=%s, verify=%s) ...' 
             % (self._fast_cleanup,self._verify_cleanup),
             apache.APLOG_NOTICE)
@@ -61,9 +65,14 @@ class FileSession(Session.BaseSession):
                     mtime = os.stat(filename).st_mtime
                     if time.time() - mtime < self._fast_timeout:
                         continue
-
+            
+                # FIXME - What happens if another process saved it's
+                # session data to filename after the above test but
+                # before we have a chance to deleted the file below?
+                # WARNING - We may be deleting a completely valid session file.
+                # Oops. Sorry.
                 if self._fast_cleanup and not self._verify_cleanup:        
-                        os.unlink(filename)
+                    os.unlink(filename)
                 else:
                     try:
                         fp = file(filename)
@@ -131,12 +140,10 @@ class FileSession(Session.BaseSession):
         # so let BaseSession handle it.
         # Otherwise, explicitly acquire a lock for the file manipulation.
         if not self._locked:
-            self._req.log_error('lock file %s' % self._sid)
             _apache._global_lock(self._req.server, self._sid)
             self._locked = 1
 
     def unlock_file(self):
         if self._locked and not self._lock:
-            self._req.log_error('unlock file %s' % self._sid)
             _apache._global_unlock(self._req.server, self._sid)
             self._locked = 0
