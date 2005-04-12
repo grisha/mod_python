@@ -418,6 +418,81 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
 }
 
 /**
+ ** _global_trylock
+ **
+ *   Try to lock one of our global_mutexes
+ */
+
+static PyObject *_global_trylock(PyObject *self, PyObject *args)
+{
+
+    PyObject *server;
+    PyObject *key;
+    server_rec *s;
+    py_global_config *glb;
+    int index = -1;
+    apr_status_t rv;
+
+    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index)) 
+        return NULL;
+
+    if (!  MpServer_Check(server)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "First argument must be a server object");
+        return NULL;
+    }
+
+    s = ((serverobject *)server)->server;
+
+    apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
+                          s->process->pool);
+    
+    if (index == -1) {
+
+        int hash = PyObject_Hash(key);
+        if (hash == -1) {
+            return NULL;
+        }
+        else {
+            hash = abs(hash);
+        }
+
+        /* note that this will never result in 0,
+         * which is reserved for things like dbm
+         * locking (see Session.py)
+         */
+        
+        index = (hash % (glb->nlocks-1)+1);
+    }
+
+//      ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+//                "_global_trylock at index %d from pid %d", index, getpid());
+    Py_BEGIN_ALLOW_THREADS
+    rv = apr_global_mutex_trylock(glb->g_locks[index]);        
+    Py_END_ALLOW_THREADS
+    
+    if (rv == APR_SUCCESS) {
+//      ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+//                "_global_trylock DONE at index %d from pid %d", index, getpid());
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    else if(APR_STATUS_IS_EBUSY(rv)) {
+//      ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+//                "_global_trylock BUSY at index %d from pid %d", index, getpid());
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+    else {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
+                     "Failed to acquire global mutex lock at index %d", index);
+        PyErr_SetString(PyExc_ValueError,
+                        "Failed to acquire global mutex lock %i",rv);
+        return NULL;
+    }
+}
+
+/**
  ** _global_unlock
  **
  *   Unlock one of our global_mutexes
@@ -509,6 +584,7 @@ struct PyMethodDef _apache_module_methods[] = {
     {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
     {"server_root",               (PyCFunction)server_root,      METH_NOARGS},
     {"_global_lock",              (PyCFunction)_global_lock,     METH_VARARGS},
+    {"_global_trylock",           (PyCFunction)_global_trylock,  METH_VARARGS},
     {"_global_unlock",            (PyCFunction)_global_unlock,   METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
