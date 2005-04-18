@@ -418,6 +418,17 @@ static PyObject * req_log_error(requestobject *self, PyObject *args)
     return Py_None;
 }
 
+ /**
+ ** request.meets_conditions(req self)
+ **
+ *  ap_meets_conditions wrapper
+ */
+
+static PyObject * req_meets_conditions(requestobject *self) {
+    return PyInt_FromLong(ap_meets_conditions(self->request_rec));
+}
+
+
 /**
  ** request.read(request self, int bytes)
  **
@@ -951,6 +962,7 @@ static PyMethodDef request_methods[] = {
     {"get_options",           (PyCFunction) req_get_options,           METH_NOARGS},
     {"internal_redirect",     (PyCFunction) req_internal_redirect,     METH_VARARGS},
     {"log_error",             (PyCFunction) req_log_error,             METH_VARARGS},
+    {"meets_conditions",      (PyCFunction) req_meets_conditions,      METH_NOARGS},
     {"read",                  (PyCFunction) req_read,                  METH_VARARGS},
     {"readline",              (PyCFunction) req_readline,              METH_VARARGS},
     {"readlines",             (PyCFunction) req_readlines,             METH_VARARGS},
