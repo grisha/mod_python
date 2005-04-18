@@ -656,6 +656,31 @@ else:
   use the \function{apache.log_error} function.
 \end{methoddesc}
 
+\begin{methoddesc}[request]{meets_conditions}{}
+  Calls the Apache \cfunction{ap_meets_conditions()} function which
+  returns a status code.  If \var{status} is \constant{apache.OK}, generate
+  the content of the response normally.  If not, simply return \var{status}.
+  Note that \member{req.headers_out} should be set prior to calling this
+  function.  The same goes for \member{req.status} if the status differs
+  from \constant{apache.OK}.
+
+  Example:
+  \begin{verbatim}
+...
+r.headers_out['ETag'] = "1130794f-3774-4584-a4ea-0ab19e684268"
+r.headers_out['Last-Modified'] = 'Wed, 23 Feb 2005 00:00:00 GMT'
+r.headers_out['Expires'] = 'Mon, 18 Apr 2005 17:30:00 GMT'
+
+status = r.meets_conditions()
+if status != apache.OK:
+  return status
+
+... do expensive generation of the response content ... 
+\end{verbatim}
+
+\end{methoddesc}
+
+
 \begin{methoddesc}[request]{requires}{}
 
   Returns a tuple of strings of arguments to \code{require} directive.
