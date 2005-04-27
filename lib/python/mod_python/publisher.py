@@ -43,81 +43,93 @@ from types import *
 
 imp_suffixes = " ".join([x[0][1:] for x in imp.get_suffixes()])
 
+from cache import ModuleCache, NOT_INITIALIZED
+
+class PageCache(ModuleCache):
+    """ This is the cache for page objects. Handles the automatic reloading of pages. """
+    
+    def key(self,req):
+        """ Extracts the filename from the request """
+        return req.filename
+    
+    def check(self,req,entry):
+        config = req.get_config()
+        autoreload=int(config.get("PythonAutoReload", 1))
+        if autoreload==0 and entry._value is not NOT_INITIALIZED:
+            # if we don't want to reload and we have a value,
+            # then we consider it fresh
+            return None
+        else:
+            return ModuleCache.check(self,req.filename,entry)
+
+    def build(self,req,opened,entry):
+        config = req.get_config()
+        log=int(config.get("PythonDebug", 0))
+        if log:
+            if entry._value is NOT_INITIALIZED:
+                req.log_error('Publisher loading page %s'%req.filename,apache.APLOG_NOTICE)
+            else:
+                req.log_error('Publisher reloading page %s'%req.filename,apache.APLOG_NOTICE)        
+        return ModuleCache.build(self,req,opened,entry)
+
+page_cache = PageCache()
+
 def handler(req):
 
     req.allow_methods(["GET", "POST", "HEAD"])
     if req.method not in ["GET", "POST", "HEAD"]:
         raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
-    func_path = ""
-    if req.path_info:
-        func_path = req.path_info[1:] # skip first /
-        func_path = func_path.replace("/", ".")
-        if func_path[-1:] == ".":
-            func_path = func_path[:-1] 
-
-    # default to 'index' if no path_info was given
-    if not func_path:
-        func_path = "index"
-
-    # if any part of the path begins with "_", abort
-    # We need to make this test here, before resolve_object,
-    # to prevent the loading of modules whose name begins with
-    # an underscore.
-    if func_path[0] == '_' or func_path.count("._"):
-        req.log_error('Cannot access %s because '
-                      'it contains at least an underscore'
-                      % func_path, apache.APLOG_WARNING)
-        raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
-
-    ## import the script
-    path, module_name =  os.path.split(req.filename)
-    if not module_name:
-        module_name = "index"
-
-    # get rid of the suffix
-    #   explanation: Suffixes that will get stripped off
-    #   are those that were specified as an argument to the
-    #   AddHandler directive. Everything else will be considered
-    #   a package.module rather than module.suffix
-    exts = req.get_addhandler_exts()
-    if not exts:
-        # this is SetHandler, make an exception for Python suffixes
-        exts = imp_suffixes
-    if req.extension:  # this exists if we're running in a | .ext handler
-        exts += req.extension[1:] 
-    if exts:
-        suffixes = exts.strip().split()
-        exp = "\\." + "$|\\.".join(suffixes)
-        suff_matcher = re.compile(exp) # python caches these, so its fast
-        module_name = suff_matcher.sub("", module_name)
-
-    # import module (or reload if needed)
-    # the [path] argument tells import_module not to allow modules whose
-    # full path is not in [path] or below.
-    config = req.get_config()
-    autoreload=int(config.get("PythonAutoReload", 1))
-    log=int(config.get("PythonDebug", 0))
-    try:
-        module = apache.import_module(module_name,
-                                      autoreload=autoreload,
-                                      log=log,
-                                      path=[path])
-    except ImportError:
-        et, ev, etb = sys.exc_info()
-        # try again, using default module, perhaps this is a
-        # /directory/function (as opposed to /directory/module/function)
-        func_path = module_name
-        module_name = "index"
-        try:
-            module = apache.import_module(module_name,
-                                          autoreload=autoreload,
-                                          log=log,
-                                          path=[path])
-        except ImportError:
-            # raise the original exception
-            raise et, ev, etb
+    # if the file exists, req.finfo is not None
+    if req.finfo:
         
+        # The file exists, so we have a request of the form :
+        # /directory/[module][/func_path]
+        
+        # we check whether there is a file name or not
+        path, filename = os.path.split(req.filename)
+        if not filename:
+            
+            # if not, we look for index.py
+            req.filename = os.path.join(path,'index.py')
+
+        if not req.path_info or req.path_info=='/':
+
+            # we don't have a path info, or it's just a slash,
+            # so we'll call index
+            func_path = 'index'
+
+        else:
+
+            # we have a path_info, so we use it, removing the first slash
+            func_path = req.path_info[1:]
+    
+    else:
+        
+        # The file does not exist, so it seems we are in the 
+        # case of a request in the form :
+        # /directory/func_path
+
+        # we'll just insert the module name index.py in the middle
+        path, func_path = os.path.split(req.filename)
+        req.filename = os.path.join(path,'index.py')
+
+        # I don't know if it's still possible to have a path_info
+        # but if we have one, we append it to the filename which
+        # is considered as a path_info.
+        if req.path_info:
+            func_path = func_path + req.path_info
+
+    # Now we turn slashes into dots
+    func_path = func_path.replace('/','.')    
+    
+    # We remove the last dot if any
+    if func_path[-1:] == ".":
+        func_path = func_path[:-1] 
+
+    # We use the page cache to load the module
+    module = page_cache[req]
+
     # does it have an __auth__?
     realm, user, passwd = process_auth(req, module)
 
@@ -139,9 +151,11 @@ def handler(req):
         
         # process input, if any
         req.form = util.FieldStorage(req, keep_blank_values=1)
-        
         result = util.apply_fs_data(object, req.form, req=req)
 
+    # Now we'll send what the published object has returned
+    # TODO : I'm not sure we should always return apache.OK if something was sent
+    # or if there was an internal redirect.
     if result or req.bytes_sent > 0 or req.next:
         
         if result is None:
@@ -303,7 +317,6 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     parts = object_str.split('.')
         
     for i, obj_str in enumerate(parts):
-
         # path components starting with an underscore are forbidden
         if obj_str[0]=='_':
             req.log_error('Cannot traverse %s in %s because '
