@@ -146,7 +146,7 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     bs = yy_scan_string(PyString_AsString(str), scanner);
     yylex(scanner);
 
-    yy_delete_buffer(bs, scanner);
+    /* yy_delete_buffer(bs, scanner); */
     yylex_destroy(scanner);
     
     psp_string_0(&parser->pycode);

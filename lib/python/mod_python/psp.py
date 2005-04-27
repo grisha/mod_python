@@ -111,12 +111,14 @@ class PSP:
             self.load_from_file()
         else:
 
-            cached = strcache.get(string)
+            cached = mem_scache.get(string)
             if cached:
                 self.code = cached
             else:
-                self.code = _psp.parsestring(string)
-                strcache.store(string)
+                source = _psp.parsestring(string)
+                code = compile(source, "__psp__", "exec")
+                mem_scache.store(string,code)
+                self.code = code
 
     def cache_get(self, filename, mtime):
 
@@ -358,8 +360,8 @@ class HitsCache:
 
     def get(self, key):
         if self.cache.has_key(key):
-            hist, val = self.cache[key]
-            self.cache[key] = (hits+1, code)
+            hits, val = self.cache[key]
+            self.cache[key] = (hits+1, val)
             return val
         else:
             return None
