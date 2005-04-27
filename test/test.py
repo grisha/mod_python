@@ -1149,8 +1149,12 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok, interpreter=test_publisher"):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_publisher", path="/tests.py/test_dict_keys")
-        if (rsp != '[1, 2, 3]'):
+        rsp = self.vhost_get("test_publisher", path="/")
+        if (rsp != "test 1 ok, interpreter=test_publisher"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher", path="/foobar")
+        if (rsp != "test 2 ok, interpreter=test_publisher"):
             self.fail(`rsp`)
 
     def test_publisher_security_conf(self):
@@ -1211,6 +1215,10 @@ class PerRequestTestCase(unittest.TestCase):
         status, response = get_status("/tests.py/test_dict/keys")
         if status != 403:
             self.fail('Vulnerability : built-in type traversal (%i)\n%s' % (status, response))
+
+        status, response = get_status("/tests.py/test_dict_keys")
+        if status != 403:
+            self.fail('Vulnerability : built-in type publishing (%i)\n%s' % (status, response))
 
     def test_publisher_old_style_instance_conf(self):
         c = VirtualHost("*",
