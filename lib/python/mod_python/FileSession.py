@@ -65,9 +65,8 @@ class FileSession(Session.BaseSession):
         self.lock_file()
         try:
             try:
-                # TODO : why does this load fails sometimes with an EOFError ?
                 filename = os.path.join(self._sessdir, 'mp_sess_%s' % self._sid)
-                fp = file(filename)
+                fp = file(filename,'rb')
                 try:
                     data = cPickle.load(fp)
                     if (time.time() - data["_accessed"]) <= data["_timeout"]:
@@ -91,7 +90,8 @@ class FileSession(Session.BaseSession):
         self.lock_file()
         try:
             try:
-                fp = file(os.path.join(self._sessdir, 'mp_sess_%s' % self._sid), 'w+')
+                filename = os.path.join(self._sessdir, 'mp_sess_%s' % self._sid)
+                fp = file(filename, 'wb')
                 try:
                     cPickle.dump(dict, fp, 2)
                 finally:
