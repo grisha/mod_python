@@ -1157,6 +1157,10 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test 2 ok, interpreter=test_publisher"):
             self.fail(`rsp`)
 
+        rsp = self.vhost_get("test_publisher", path="/tests")
+        if (rsp != "test ok, interpreter=test_publisher"):
+            self.fail(`rsp`)
+
     def test_publisher_security_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
