@@ -93,6 +93,7 @@ def handler(req):
             # if not, we look for index.py
             req.filename = os.path.join(path,'index.py')
 
+        # Now we build the function path
         if not req.path_info or req.path_info=='/':
 
             # we don't have a path info, or it's just a slash,
@@ -106,19 +107,38 @@ def handler(req):
     
     else:
         
-        # The file does not exist, so it seems we are in the 
-        # case of a request in the form :
-        # /directory/func_path
+        # First we check if there is a Python module with that name
+        # just by adding a .py extension
+        if os.path.isfile(req.filename+'.py'):
 
-        # we'll just insert the module name index.py in the middle
-        path, func_path = os.path.split(req.filename)
-        req.filename = os.path.join(path,'index.py')
+            req.filename += '.py'
+            
+            # Now we build the function path
+            if not req.path_info or req.path_info=='/':
+    
+                # we don't have a path info, or it's just a slash,
+                # so we'll call index
+                func_path = 'index'
+    
+            else:
+    
+                # we have a path_info, so we use it, removing the first slash
+                func_path = req.path_info[1:]
+        else:
 
-        # I don't know if it's still possible to have a path_info
-        # but if we have one, we append it to the filename which
-        # is considered as a path_info.
-        if req.path_info:
-            func_path = func_path + req.path_info
+            # The file does not exist, so it seems we are in the 
+            # case of a request in the form :
+            # /directory/func_path
+    
+            # we'll just insert the module name index.py in the middle
+            path, func_path = os.path.split(req.filename)
+            req.filename = os.path.join(path,'index.py')
+    
+            # I don't know if it's still possible to have a path_info
+            # but if we have one, we append it to the filename which
+            # is considered as a path_info.
+            if req.path_info:
+                func_path = func_path + req.path_info
 
     # Now we turn slashes into dots
     func_path = func_path.replace('/','.')    
