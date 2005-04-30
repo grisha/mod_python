@@ -155,10 +155,13 @@ class BaseSession(dict):
         if config.has_key("ApplicationPath"):
             c.path = config["ApplicationPath"]
         else:
-            docroot = self._req.document_root()
             # the path where *Handler directive was specified
             dirpath = self._req.hlist.directory 
-            c.path = dirpath[len(docroot):]
+            if dirpath:
+                docroot = self._req.document_root()
+                c.path = dirpath[len(docroot):]
+            else:
+                c.path = '/'
 
             # Sometimes there is no path, e.g. when Location
             # is used. When Alias or UserDir are used, then
