@@ -159,12 +159,6 @@ class BaseSession(dict):
             dirpath = self._req.hlist.directory 
             c.path = dirpath[len(docroot):]
 
-            # XXX Not sure why, but on Win32 hlist.directory
-            # may contain a trailing \ - need to investigate,
-            # this value is given to us directly by httpd
-            if os.name == 'nt' and c.path[-1] == '\\':
-                c.path = c.path[:-1]
-        
             # Sometimes there is no path, e.g. when Location
             # is used. When Alias or UserDir are used, then
             # the path wouldn't match the URI. In those cases
