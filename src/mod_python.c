@@ -98,12 +98,14 @@ static PyObject * make_obcallback(server_rec *s)
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
                      "make_obcallback: could not import %s.\n", (!MODULENAME) ? "<null>" : MODULENAME);
         PyErr_Print();
+        fflush(stderr); 
     }
     
     if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
                      "make_obcallback: could not call %s.\n", (!INITFUNC) ? "<null>" : INITFUNC);
         PyErr_Print();
+        fflush(stderr); 
     }
     
     return obCallBack;
@@ -1859,6 +1861,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
         err:
             PyErr_Print();
+            fflush(stderr); 
             release_interpreter();
             return;
         }
@@ -1866,8 +1869,10 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     success:
         /* now import the specified module */
         if (! PyImport_ImportModule((char *)module_name)) {
-            if (PyErr_Occurred())
+            if (PyErr_Occurred()) {
                 PyErr_Print();
+                fflush(stderr); 
+            }
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
                          "directive_PythonImport: error importing %s", (!module_name) ? "<null>" : module_name);
         }
