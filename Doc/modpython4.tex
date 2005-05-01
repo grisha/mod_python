@@ -1832,7 +1832,7 @@ from mod_python import apache, Cookie
 
 def handler(req):
     
-    cookies = Cookie.get_cookie(req, Cookie.MarshalCookie,
+    cookies = Cookie.get_cookies(req, Cookie.MarshalCookie,
                                     secret='secret007')
     if cookies.has_key('spam'):
         spamcookie = cookies['spam']
