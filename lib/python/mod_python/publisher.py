@@ -344,7 +344,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
 
 # This regular expression is used to test for the presence of an HTML header
 # tag, written in upper or lower case.
-re_html = re.compile(r"</HTML",re.I)
+re_html = re.compile(r"</HTML\s*>\s*$",re.I)
 re_charset = re.compile(r"charset\s*=\s*([^\s;]+)",re.I);
 
 def publish_object(req, object):
