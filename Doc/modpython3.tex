@@ -278,6 +278,11 @@ req.content_type = "text/plain"
     This sets the content type to \samp{text/plain}. The default is usually
     \samp{text/html}, but since our handler doesn't produce any html,
     \samp{text/plain} is more appropriate.
+    \strong{Important:} you should \strong{always} make sure this is set
+    \strong{before} any call to \samp{req.write}. When you first call
+    \samp{req.write}, the response HTTP header is sent to the client and all
+    subsequent changes to the content type (or other HTTP headers) are simply
+    lost.
 
   \item
     \begin{verbatim}
