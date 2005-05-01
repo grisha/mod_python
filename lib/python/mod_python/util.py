@@ -399,7 +399,7 @@ def apply_fs_data(object, fs, **args):
        # method
        fc = object.im_func.func_code
        expected = fc.co_varnames[1:fc.co_argcount]
-   elif type(object) is ClassType:
+   elif type(object) in (TypeType,ClassType):
        # class
        fc = object.__init__.im_func.func_code
        expected = fc.co_varnames[1:fc.co_argcount]
