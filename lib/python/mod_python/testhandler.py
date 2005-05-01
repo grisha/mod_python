@@ -15,7 +15,7 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id: Cookie.py 149291 2005-01-31 20:12:20Z nlehuen $
+ # $Id$
 
 """
 
