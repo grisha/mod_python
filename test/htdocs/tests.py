@@ -835,8 +835,6 @@ def test_publisher(req):
     return "test ok, interpreter=%s" % req.interpreter
 
 class OldStyleClassTest:
-    def __init__(self):
-        pass
     def __call__(self, req):
         return "test callable old-style instance ok"
     def traverse(self, req):
@@ -845,15 +843,6 @@ old_instance = OldStyleClassTest()
 
 test_dict = {1:1, 2:2, 3:3}
 test_dict_keys = test_dict.keys
-
-def test_dict_iteration(req):
-    return test_dict_keys()
-    
-def test_generator(req):
-    c = 0
-    while c < 10:
-        yield c
-        c += 1
 
 class InstanceTest(object):
     def __call__(self, req):

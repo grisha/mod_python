@@ -1224,27 +1224,6 @@ class PerRequestTestCase(unittest.TestCase):
         if status != 403:
             self.fail('Vulnerability : built-in type publishing (%i)\n%s' % (status, response))
 
-    def test_publisher_iterator(self):
-        c = VirtualHost("*",
-                        ServerName("test_publisher"),
-                        DocumentRoot(DOCUMENT_ROOT),
-                        Directory(DOCUMENT_ROOT,
-                                  SetHandler("mod_python"),
-                                  PythonHandler("mod_python.publisher"),
-                                  PythonDebug("On")))
-        return str(c)
-
-    def test_publisher_iterator(self):
-        print "\n  * Testing mod_python.publisher iterators"
-
-        rsp = self.vhost_get("test_publisher", path="/tests.py/test_dict_iteration")
-        if (rsp != "123"):
-            self.fail(`rsp`)
-
-        rsp = self.vhost_get("test_publisher", path="/tests.py/test_generator")
-        if (rsp != "0123456789"):
-            self.fail(`rsp`)
-
     def test_publisher_old_style_instance_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
@@ -1384,7 +1363,6 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_old_style_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
-        perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
