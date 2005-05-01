@@ -154,55 +154,18 @@ def handler(req):
     realm, user, passwd = process_auth(req, module)
 
     # resolve the object ('traverse')
-    try:
-        object = resolve_object(req, module, func_path, realm, user, passwd)
-    except AttributeError:
-        raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+    object = resolve_object(req, module, func_path, realm, user, passwd)
+
+    # publish the object
+    published = publish_object(req, object)
     
-    # not callable, a class or an unbound method
-    if (not callable(object) or 
-        type(object) is ClassType or
-        (hasattr(object, 'im_self') and not object.im_self)):
+    # we log a message if nothing was published, it helps with debugging
+    if (not published) and (req.bytes_sent==0) and (req.next is None):
+        log=int(req.get_config().get("PythonDebug", 0))
+        if log:
+            req.log_error("mod_python.publisher: nothing to publish.")
 
-        result = str(object)
-        
-    else:
-        # callable, (but not a class or unbound method)
-        
-        # process input, if any
-        req.form = util.FieldStorage(req, keep_blank_values=1)
-        result = util.apply_fs_data(object, req.form, req=req)
-
-    # Now we'll send what the published object has returned
-    # TODO : I'm not sure we should always return apache.OK if something was sent
-    # or if there was an internal redirect.
-    if result or req.bytes_sent > 0 or req.next:
-        
-        if result is None:
-            result = ""
-        elif type(result) == UnicodeType:
-            return result
-        else:
-            result = str(result)
-
-        # unless content_type was manually set, we will attempt
-        # to guess it
-        if not req._content_type_set:
-            # make an attempt to guess content-type
-            if result[:100].strip()[:6].lower() == '<html>' \
-               or result.find('</') > 0:
-                req.content_type = 'text/html'
-            else:
-                req.content_type = 'text/plain'
-
-        if req.method != "HEAD":
-            req.write(result)
-        else:
-            req.write("")
-        return apache.OK
-    else:
-        req.log_error("mod_python.publisher: %s returned nothing." % `object`)
-        return apache.HTTP_INTERNAL_SERVER_ERROR
+    return apache.OK
 
 def process_auth(req, object, realm="unknown", user=None, passwd=None):
 
@@ -312,14 +275,16 @@ for t in types.__dict__.values():
 tp_rules.update({
     # Those are not traversable nor publishable
     ModuleType          : (False, False),
-    ClassType           : (False, False),
-    TypeType            : (False, False),
     BuiltinFunctionType : (False, False),
     
-    # XXX Generators should be publishable, see
-    # http://issues.apache.org/jira/browse/MODPYTHON-15
-    # Until they are, it is not interesting to publish them
-    GeneratorType       : (False, False),
+    # This may change in the near future to (False, True)
+    ClassType           : (False, False),
+    TypeType            : (False, False),
+    
+    # Publishing a generator may not seem to makes sense, because
+    # it can only be done once. However, we could get a brand new generator
+    # each time a new-style class property is accessed.
+    GeneratorType       : (False, True),
     
     # Old-style instances are traversable
     InstanceType        : (True, True),
@@ -358,7 +323,10 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
         # we know it's OK to call getattr
         # note that getattr can really call some code because
         # of property objects (or attribute with __get__ special methods)...
-        obj = getattr(obj, obj_str)
+        try:
+            obj = getattr(obj, obj_str)
+        except AttributeError:
+            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
         # we process the authentication for the object
         realm, user, passwd = process_auth(req, obj, realm, user, passwd)
@@ -373,3 +341,55 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
          raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
     return obj
+
+# This regular expression is used to test for the presence of an HTML header
+# tag, written in upper or lower case.
+re_html = re.compile(r"</HTML",re.I)
+re_charset = re.compile(r"charset\s*=\s*([^\s;]+)",re.I);
+
+def publish_object(req, object):
+    if callable(object):
+        req.form = util.FieldStorage(req, keep_blank_values=1)
+        return publish_object(req,util.apply_fs_data(object, req.form, req=req))
+    elif hasattr(object,'__iter__'):
+        result = False
+        for item in object:
+            result |= publish_object(req,item)
+        return result
+    else:
+        if object is None:
+            return False
+        elif isinstance(object,UnicodeType):
+            # We try to detect the character encoding
+            # from the Content-Type header
+            if req._content_type_set:
+                charset = re_charset.search(req.content_type)
+                if charset:
+                    charset = charset.group(1)
+                else:
+                    charset = 'UTF8'
+                    req.content_type += '; charset=UTF8'
+            else:
+                charset = 'UTF8'
+                
+            result = object.encode(charset)
+        else:
+            charset = None
+            result = str(object)
+            
+        if not req._content_type_set:
+            # make an attempt to guess content-type
+            # we look for a </HTML in the last 100 characters.
+            # re.search works OK with a negative start index (it starts from 0
+            # in that case)
+            if re_html.search(result,len(result)-100):
+                req.content_type = 'text/html'
+            else:
+                req.content_type = 'text/plain'
+            if charset is not None:
+                req.content_type += '; charset=UTF8'
+        
+        if req.method!='HEAD':
+            req.write(result)
+
+        return True
