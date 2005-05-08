@@ -487,7 +487,7 @@ static PyObject *_global_trylock(PyObject *self, PyObject *args)
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
                      "Failed to acquire global mutex lock at index %d", index);
         PyErr_SetString(PyExc_ValueError,
-                        "Failed to acquire global mutex lock %i",rv);
+                        "Failed to acquire global mutex lock");
         return NULL;
     }
 }
