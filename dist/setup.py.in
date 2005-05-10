@@ -39,12 +39,12 @@ def getconfigure_option(option_name):
     if not os.path.exists(config_status_file):
         raise AssertionError("config.status not found in expected location (%s)" % config_status_file)
     header = open(config_status_file, 'r')
-    r = re.compile('s, @%s@, (?P<OPTION_STRING>[^,]+), ' % (option_name))
+    r = re.compile(r's,\s*@%s@,\s*(?P<OPTION_STRING>[^,]+),\s*' % (option_name))
     for line in header.readlines():
         m = r.search(line)
         if m is not None:
             return m.group('OPTION_STRING')
-        raise AssertionError("unable to find @%s@ definition in %s", (option_name, config_status_file))
+    raise AssertionError("unable to find @%s@ definition in %s", (option_name, config_status_file))
 
 def getmp_version():
     """finds out the version of mod_python"""
@@ -120,10 +120,15 @@ class finallist(list):
 class ModPyExtension(Extension):
     """a class that actually builds the mod_python.so extension for Apache (yikes)"""
     def __init__(self, source_dir, include_dirs, library_dirs):
+        if winbuild:
+            libraries = ['libhttpd', 'libapr', 'libaprutil', 'ws2_32']
+        else:
+            libraries = ['apr-0', 'aprutil-0']
+
         Extension.__init__(self, "mod_python_so",
             sources = [os.path.join(source_dir, source_file) for source_file in modpy_src_files],
                            include_dirs=include_dirs,
-            libraries = ['libhttpd', 'libapr', 'libaprutil', 'ws2_32'],
+            libraries = libraries,
             library_dirs=library_dirs
                            )
         if winbuild:
