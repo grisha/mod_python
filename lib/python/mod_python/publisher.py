@@ -74,6 +74,31 @@ class PageCache(ModuleCache):
 
 page_cache = PageCache()
 
+class DummyRequest(object):
+    """
+        This class is used to simulate a request object to be able to import
+        an arbitrary module from the page cache.
+    """
+    def __init__(self,filename):
+        self.filename = filename
+        
+    def get_config(self):
+        return {}
+        
+    def log_error(self,message,level):
+        apache.log_error(message,level)
+
+def import_page(absolute_path):
+    req = DummyRequest(absolute_path)
+    return page_cache[req]
+
+def get_page(req,relative_path):
+    real_filename = req.filename
+    try:
+        return page_cache[req]
+    finally:
+        req.filename = real_filename
+
 def handler(req):
 
     req.allow_methods(["GET", "POST", "HEAD"])
