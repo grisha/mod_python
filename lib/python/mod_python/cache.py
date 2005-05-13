@@ -362,6 +362,7 @@ class ModuleCache(FileCache):
     
     def build(self,name,opened,entry):
         try:
+            name = self.key(name)
             module = Module(name)
             exec opened in module.__dict__
             return module
