@@ -33,6 +33,7 @@ import util
 
 import sys
 import os
+from os.path import normpath, split, isfile, join, dirname
 import imp
 import re
 import base64
@@ -43,16 +44,19 @@ from types import *
 
 imp_suffixes = " ".join([x[0][1:] for x in imp.get_suffixes()])
 
+
+####################### The published page cache ##############################
+
 from cache import ModuleCache, NOT_INITIALIZED
 
 class PageCache(ModuleCache):
     """ This is the cache for page objects. Handles the automatic reloading of pages. """
     
-    def key(self,req):
-        """ Extracts the filename from the request """
+    def key(self, req):
+        """ Extracts the normalized filename from the request """
         return req.filename
     
-    def check(self,req,entry):
+    def check(self, key, req, entry):
         config = req.get_config()
         autoreload=int(config.get("PythonAutoReload", 1))
         if autoreload==0 and entry._value is not NOT_INITIALIZED:
@@ -60,44 +64,94 @@ class PageCache(ModuleCache):
             # then we consider it fresh
             return None
         else:
-            return ModuleCache.check(self,req.filename,entry)
+            return ModuleCache.check(self, key, req, entry)
 
-    def build(self,req,opened,entry):
+    def build(self, key, req, opened, entry):
         config = req.get_config()
         log=int(config.get("PythonDebug", 0))
         if log:
             if entry._value is NOT_INITIALIZED:
-                req.log_error('Publisher loading page %s'%req.filename,apache.APLOG_NOTICE)
+                req.log_error('Publisher loading page %s'%req.filename, apache.APLOG_NOTICE)
             else:
-                req.log_error('Publisher reloading page %s'%req.filename,apache.APLOG_NOTICE)        
-        return ModuleCache.build(self,req,opened,entry)
+                req.log_error('Publisher reloading page %s'%req.filename, apache.APLOG_NOTICE)
+        return ModuleCache.build(self, key, req, opened, entry)
 
 page_cache = PageCache()
 
-class DummyRequest(object):
+class DummyModule(object):
     """
         This class is used to simulate a request object to be able to import
         an arbitrary module from the page cache.
     """
-    def __init__(self,filename):
+    def __init__(self, filename):
         self.filename = filename
         
     def get_config(self):
         return {}
         
-    def log_error(self,message,level):
-        apache.log_error(message,level)
+    def log_error(self, message, level):
+        apache.log_error(message, level)
+    
+    def __str__(self):
+        return "<mod_python.publisher.DummyModule at 0x%08x for %s>"%(id(self), self.filename)
 
-def import_page(absolute_path):
-    req = DummyRequest(absolute_path)
-    return page_cache[req]
+    def __getattr__(self, name):
+        return getattr(page_cache[self], name)
 
-def get_page(req,relative_path):
+####################### Interface to the published page cache ##################    
+
+def import_page(relative_path, auto_reload=True):
+    """
+        This imports a published page. The relative_path argument is a path
+        relative to the directory of the page where import_page() is called.
+        Hence, if we have index.py and foobar.py in the same directory, index.py
+        can simply do something like :
+        
+        import mod_python.publisher
+        foobar = mod_python.publisher.import_page('foobar.py')
+        
+        If auto_reload is True (the default), the returned object is not really
+        the module itself, but a placeholder object which allows the real module
+        to be automatically reloaded whenever its source file changes.
+    """
+
+    # this is quite a hack but this is handy.
+    try:
+        raise ZeroDivisionError
+    except ZeroDivisionError:
+        calling_frame = sys.exc_info()[2].tb_frame.f_back
+    
+    calling_page = calling_frame.f_code.co_filename
+    
+    # we look for the given page in the same directory as the calling page
+    page = normpath(join(dirname(calling_page), relative_path))
+    
+    if auto_reload:
+        return DummyModule(page)
+    else:
+        # the DummyModule instance can masquerade itself as a request object
+        # so the PageCache will be happy.
+        return page_cache[DummyModule(page)]
+
+def get_page(req, relative_path):
+    """
+        This imports a published page. The relative_path argument is a path 
+        relative to the published page where the request is really handled (not
+        relative to the path given in the URL).
+        
+        Warning : in order to maintain consistency in case of module reloading,
+        do not store the resulting module in a place that outlives the request
+        duration.
+    """
+    
     real_filename = req.filename
+    req.filename = normpath(join(dirname(req.filename), relative_path))
     try:
         return page_cache[req]
     finally:
         req.filename = real_filename
+
+####################### The publisher handler himself ##########################    
 
 def handler(req):
 
@@ -112,11 +166,11 @@ def handler(req):
         # /directory/[module][/func_path]
         
         # we check whether there is a file name or not
-        path, filename = os.path.split(req.filename)
+        path, filename = split(req.filename)
         if not filename:
             
             # if not, we look for index.py
-            req.filename = os.path.join(path,'index.py')
+            req.filename = join(path, 'index.py')
 
         # Now we build the function path
         if not req.path_info or req.path_info=='/':
@@ -134,7 +188,7 @@ def handler(req):
         
         # First we check if there is a Python module with that name
         # just by adding a .py extension
-        if os.path.isfile(req.filename+'.py'):
+        if isfile(req.filename+'.py'):
 
             req.filename += '.py'
             
@@ -151,13 +205,13 @@ def handler(req):
                 func_path = req.path_info[1:]
         else:
 
-            # The file does not exist, so it seems we are in the 
+            # The file does not exist, so it seems we are in the
             # case of a request in the form :
             # /directory/func_path
     
             # we'll just insert the module name index.py in the middle
-            path, func_path = os.path.split(req.filename)
-            req.filename = os.path.join(path,'index.py')
+            path, func_path = split(req.filename)
+            req.filename = join(path, 'index.py')
     
             # I don't know if it's still possible to have a path_info
             # but if we have one, we append it to the filename which
@@ -165,8 +219,11 @@ def handler(req):
             if req.path_info:
                 func_path = func_path + req.path_info
 
+    # Normalize the filename to save us from insanity on Win32.
+    req.filename = normpath(req.filename)
+
     # Now we turn slashes into dots
-    func_path = func_path.replace('/','.')    
+    func_path = func_path.replace('/', '.')
     
     # We remove the last dot if any
     if func_path[-1:] == ".":
@@ -290,7 +347,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
             # note that Opera supposedly doesn't like spaces around "=" below
             s = 'Basic realm="%s"' % realm
             req.err_headers_out["WWW-Authenticate"] = s
-            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED    
+            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED
 
         if callable(__auth__):
             rc = __auth__(req, user, passwd)
@@ -303,7 +360,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         if not rc:
             s = 'Basic realm = "%s"' % realm
             req.err_headers_out["WWW-Authenticate"] = s
-            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED    
+            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED
 
     if found_access:
 
@@ -328,7 +385,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
 tp_rules = {}
 
 # by default, built-in types cannot be traversed, but can be published
-default_builtins_tp_rule = (False,True)
+default_builtins_tp_rule = (False, True)
 for t in types.__dict__.values():
     if isinstance(t, type):
         tp_rules[t]=default_builtins_tp_rule
