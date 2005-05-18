@@ -23,7 +23,7 @@
 # -*- coding: CP1252 -*-
 from threading import Lock
 from os import fstat
-from time import time,strptime
+from time import time, strptime
 from calendar import timegm
 import urllib2
 import re
@@ -33,7 +33,7 @@ NOT_INITIALIZED = object()
 
 class Entry(object):
     """ A cache entry, mostly an internal object. """
-    def __init__(self,key):
+    def __init__(self, key):
         object.__init__(self)
         self._key=key
         self._value=NOT_INITIALIZED
@@ -42,7 +42,7 @@ class Entry(object):
 class Cache(object):
     """ An abstract, multi-threaded cache object. """
     
-    def __init__(self,max_size=0):
+    def __init__(self, max_size=0):
         """ Builds a cache with a limit of max_size entries.
             If this limit is exceeded, the Least Recently Used entry is discarded.
             if max_size==0, the cache is unbounded (no LRU rule is applied).
@@ -58,7 +58,7 @@ class Cache(object):
             self._head._previous=self._head
             self._head._next=self._head
 
-    def __setitem__(self,name,value):
+    def __setitem__(self, name, value):
         """ Populates the cache with a given name and value. """
         self._lock.acquire()
         try:
@@ -66,21 +66,21 @@ class Cache(object):
             entry = self._dict.get(key)
             if not entry:
                 entry = Entry(key)
-                self._pack(entry,value)
+                self._pack(entry, value)
                 self._dict[key]=entry
                 if self._maxsize:
                     entry._next = entry._previous = None
                     self._access(entry)
                     self._checklru()
             else:
-                self._pack(entry,value)
+                self._pack(entry, value)
                 if self._maxsize:
                     self._access(entry)
             self.commit()
         finally:
             self._lock.release()
 
-    def __getitem__(self,name):
+    def __getitem__(self, name):
         """ Gets a value from the cache, builds it if required. """
         self._lock.acquire()
         try:
@@ -102,21 +102,21 @@ class Cache(object):
         try:
             value = self._unpack(entry)
             if value is NOT_INITIALIZED:
-                opened = self.check(name,entry)
-                value = self.build(name,opened,entry)
-                self._pack(entry,value)
+                opened = self.check(key, name, entry)
+                value = self.build(key, name, opened, entry)
+                self._pack(entry, value)
                 self.commit()
             else:
-                opened = self.check(name,entry)
+                opened = self.check(key, name, entry)
                 if opened is not None:
-                    value = self.build(name,opened,entry)
-                    self._pack(entry,value)
+                    value = self.build(key, name, opened, entry)
+                    self._pack(entry, value)
                     self.commit()
             return value
         finally:
             entry._lock.release()
 
-    def __delitem__(self,key):
+    def __delitem__(self, key):
         self._lock.acquire()
         try:
             key = self.key(key)
@@ -146,7 +146,7 @@ class Cache(object):
         else:
             return None
 
-    def key(self,name):
+    def key(self, name):
         """ Override this method to extract a key from the name passed to the [] operator """
         return name
 
@@ -165,7 +165,7 @@ class Cache(object):
         finally:
             self._lock.release()
 
-    def check(self,name,entry):
+    def check(self, key, name, entry):
         """ Override this method to check whether the entry with the given name is stale. Return None if it is fresh
             or an opened resource if it is stale. The object returned will be passed to the 'build' method as the 'opened' parameter.
             Use the 'entry' parameter to store meta-data if required. Don't worry about multiple threads accessing the same name,
@@ -173,13 +173,13 @@ class Cache(object):
         """
         return None
 
-    def build(self,name,opened,entry):
+    def build(self, key, name, opened, entry):
         """ Build the cached value with the given name from the given opened resource. Use entry to obtain or store meta-data if needed.
              Don't worry about multiple threads accessing the same name, as this method is properly isolated.
         """
         raise NotImplementedError()
            
-    def _access(self,entry):
+    def _access(self, entry):
         " Internal use only, must be invoked within a cache lock. Updates the access list. """
         if entry._next is not self._head:
             if entry._previous is not None:
@@ -202,11 +202,11 @@ class Cache(object):
             lru._next._previous=lru._previous
             del self._dict[lru._key]
 
-    def _pack(self,entry,value):
+    def _pack(self, entry, value):
         """ Store the value in the entry. """
         entry._value=value
 
-    def _unpack(self,entry):
+    def _unpack(self, entry):
         """ Recover the value from the entry, returns NOT_INITIALIZED if it is not OK. """
         return entry._value
 
@@ -216,10 +216,10 @@ class WeakCache(Cache):
         computations but letting them go as soon as they are not needed by anybody.
     """
         
-    def _pack(self,entry,value):
-        entry._value=weakref.ref(value,lambda ref: self.__delitem__(entry._key))
+    def _pack(self, entry, value):
+        entry._value=weakref.ref(value, lambda ref: self.__delitem__(entry._key))
         
-    def _unpack(self,entry):
+    def _unpack(self, entry):
         if entry._value is NOT_INITIALIZED:
             return NOT_INITIALIZED
             
@@ -234,13 +234,13 @@ class FileCache(Cache):
         Whenever the files are modified (according to their modification time) the cache is updated.
         Override the build method to obtain more interesting behaviour.
     """
-    def __init__(self,max_size=0,mode='rb'):
-        Cache.__init__(self,max_size)
+    def __init__(self, max_size=0, mode='rb'):
+        Cache.__init__(self, max_size)
         self.mode=mode
     
-    def check(self,name,entry):
+    def check(self, key, name, entry):
         """ Checks the modification time to determine whether a file has changed or not. """
-        f = file(name,self.mode)
+        f = file(key, self.mode)
         fs = fstat(f.fileno())
         ts1 = fs[-2]
         try:
@@ -254,7 +254,7 @@ class FileCache(Cache):
         else:
             return None
 
-    def build(self,name,opened,entry):
+    def build(self, key, name, opened, entry):
         """ Return the content of the file as a string. Override this for better behaviour. """
         try:
             return opened.read()
@@ -262,17 +262,17 @@ class FileCache(Cache):
             opened.close()
 
 def parseRFC822Time(t):
-    return timegm(strptime(t,"%a, %d %b %Y %H:%M:%S %Z"))
+    return timegm(strptime(t, "%a, %d %b %Y %H:%M:%S %Z"))
 
-re_max_age=re.compile('max-age\s*=\s*(\d+)',re.I)
+re_max_age=re.compile('max-age\s*=\s*(\d+)', re.I)
 
 class HTTPEntity(object):
-    def __init__(self,entity,metadata):
+    def __init__(self, entity, metadata):
         self.entity=entity
         self.metadata=metadata
     
     def __repr__(self):
-        return 'HTTPEntity(%s,%s)'%(repr(self.entity),self.metadata)
+        return 'HTTPEntity(%s, %s)'%(repr(self.entity), self.metadata)
         
     def __str__(self):
         return self.entity
@@ -282,8 +282,8 @@ class HTTPCache(Cache):
         Uses Expires, ETag and Last-Modified headers to minimize bandwidth usage.
         Partial Cache-Control support (only max-age is supported).
     """
-    def check(self,name,entry):
-        request = urllib2.Request(name)
+    def check(self, key, name, entry):
+        request = urllib2.Request(key)
         
         try:
             if time()<entry._expires:
@@ -307,7 +307,7 @@ class HTTPCache(Cache):
                 if match:
                         entry._expires=time()+int(match.group(1))
                         expiration = True
-            except (KeyError,ValueError):
+            except (KeyError, ValueError):
                 pass
             if not expiration:
                 try:
@@ -321,13 +321,13 @@ class HTTPCache(Cache):
             # validator handling
             validation = False
             try:
-                entry._validator='If-None-Match',headers['etag']
+                entry._validator='If-None-Match', headers['etag']
                 validation = True
             except KeyError:
                 pass
             if not validation:
                 try:
-                    entry._validator='If-Modified-Since',headers['last-modified']
+                    entry._validator='If-Modified-Since', headers['last-modified']
                 except KeyError:
                     pass
 
@@ -339,35 +339,34 @@ class HTTPCache(Cache):
             else:
                 raise error
 
-    def build(self,name,opened,entry):
+    def build(self, key, name, opened, entry):
         try:
-            return HTTPEntity(opened.read(),dict(opened.info()))
+            return HTTPEntity(opened.read(), dict(opened.info()))
         finally:
             opened.close()
 
 class Module(object):
     """ Placeholder object for the module definition. """
-    def __init__(self,filename):
+    def __init__(self, filename):
         self.__file__=filename
     
     def __repr__(self):
-        return '<%s object at 0x%08x from %s>'%(type(self).__name__,id(self),self.__file__)
+        return '<%s object at 0x%08x from %s>'%(type(self).__name__, id(self), self.__file__)
 
 class ModuleCache(FileCache):
     """ A module cache. Give it a file name, it returns a module-like object
         which results from the execution of the Python script it contains.
     """
-    def __init__(self,max_size=0):
-        FileCache.__init__(self,max_size,'r')
+    def __init__(self, max_size=0):
+        FileCache.__init__(self, max_size, 'r')
     
-    def build(self,name,opened,entry):
+    def build(self, key, name, opened, entry):
         try:
-            name = self.key(name)
-            module = Module(name)
+            module = Module(key)
             exec opened in module.__dict__
             return module
             # I used to use imp.load_source but right now I'm trying the stuff above
-            # return imp.load_source(re.sub('\W','_',name),name,opened)
+            # return imp.load_source(re.sub('\W', '_', name), name, opened)
         finally:
             opened.close()
 
@@ -375,34 +374,34 @@ class HttpModuleCache(HTTPCache):
     """ A module cache. Give it a file name, it returns a module-like object
         which results from the execution of the Python script it contains.
     """
-    def __init__(self,max_size=0):
-        HTTPCache.__init__(self,max_size)
+    def __init__(self, max_size=0):
+        HTTPCache.__init__(self, max_size)
     
-    def build(self,name,opened,entry):
+    def build(self, key, name, opened, entry):
         try:
-            module = Module(name)
-            text = opened.read().replace('\r\n','\n')
-            code = compile(text,name,'exec')
+            module = Module(key)
+            text = opened.read().replace('\r\n', '\n')
+            code = compile(text, name, 'exec')
             exec code in module.__dict__
             return module
             # I used to use imp.load_source but right now I'm trying the stuff above
-            # return imp.load_source(re.sub('\W','_',name),name,opened)
+            # return imp.load_source(re.sub('\W', '_', name), name, opened)
         finally:
             opened.close()
 
 class FunctionCache(Cache):
-    def __init__(self,function,max_size=0):
-        Cache.__init__(self,max_size)
+    def __init__(self, function, max_size=0):
+        Cache.__init__(self, max_size)
         self.function=function
     
-    def __call__(self,*args,**kw):
+    def __call__(self, *args, **kw):
         if kw:
-            # a dict is not hashable so we build a tuple of (key,value) pairs
+            # a dict is not hashable so we build a tuple of (key, value) pairs
             kw = tuple(kw.iteritems())
-            return self[args,kw]
+            return self[args, kw]
         else:
-            return self[args,()]
+            return self[args, ()]
     
-    def build(self,name,opened,entry):
-        args,kw = name
-        return self.function(*args,**dict(kw))
+    def build(self, key, name, opened, entry):
+        args, kw = key
+        return self.function(*args, **dict(kw))
