@@ -18,7 +18,7 @@
  # $Id$
 
 """
-  This handler is conceputally similar to Zope's ZPublisher, except
+  This handler is conceptually similar to Zope's ZPublisher, except
   that it:
 
   1. Is written specifically for mod_python and is therefore much faster
@@ -33,7 +33,7 @@ import util
 
 import sys
 import os
-from os.path import normpath, split, isfile, join, dirname
+from os.path import isabs, normpath, split, isfile, join, dirname
 import imp
 import re
 import base64
@@ -78,66 +78,14 @@ class PageCache(ModuleCache):
 
 page_cache = PageCache()
 
-class DummyModule(object):
-    """
-        This class is used to simulate a request object to be able to import
-        an arbitrary module from the page cache.
-    """
-    def __init__(self, filename):
-        self.filename = filename
-        
-    def get_config(self):
-        return {}
-        
-    def log_error(self, message, level):
-        apache.log_error(message, level)
-    
-    def __str__(self):
-        return "<mod_python.publisher.DummyModule at 0x%08x for %s>"%(id(self), self.filename)
-
-    def __getattr__(self, name):
-        return getattr(page_cache[self], name)
-
 ####################### Interface to the published page cache ##################    
 
-def import_page(relative_path, auto_reload=True):
+def get_page(req, path):
     """
-        This imports a published page. The relative_path argument is a path
-        relative to the directory of the page where import_page() is called.
-        Hence, if we have index.py and foobar.py in the same directory, index.py
-        can simply do something like :
-        
-        import mod_python.publisher
-        foobar = mod_python.publisher.import_page('foobar.py')
-        
-        If auto_reload is True (the default), the returned object is not really
-        the module itself, but a placeholder object which allows the real module
-        to be automatically reloaded whenever its source file changes.
-    """
-
-    # this is quite a hack but this is handy.
-    try:
-        raise ZeroDivisionError
-    except ZeroDivisionError:
-        calling_frame = sys.exc_info()[2].tb_frame.f_back
-    
-    calling_page = calling_frame.f_code.co_filename
-    
-    # we look for the given page in the same directory as the calling page
-    page = normpath(join(dirname(calling_page), relative_path))
-    
-    if auto_reload:
-        return DummyModule(page)
-    else:
-        # the DummyModule instance can masquerade itself as a request object
-        # so the PageCache will be happy.
-        return page_cache[DummyModule(page)]
-
-def get_page(req, relative_path):
-    """
-        This imports a published page. The relative_path argument is a path 
-        relative to the published page where the request is really handled (not
-        relative to the path given in the URL).
+        This imports a published page. If the path is absolute it is used as is.
+        If it is a relative path it is relative to the published page
+        where the request is really handled (not relative to the path
+        given in the URL).
         
         Warning : in order to maintain consistency in case of module reloading,
         do not store the resulting module in a place that outlives the request
@@ -145,9 +93,15 @@ def get_page(req, relative_path):
     """
     
     real_filename = req.filename
-    req.filename = normpath(join(dirname(req.filename), relative_path))
+    
     try:
+        if isabs(path):
+            req.filename = path
+        else:
+            req.filename = normpath(join(dirname(req.filename), path))
+        
         return page_cache[req]
+    
     finally:
         req.filename = real_filename
 
@@ -408,7 +362,7 @@ tp_rules.update({
 })
 
 # types which are not referenced in the tp_rules dictionary will be traversable
-# AND publishables 
+# AND publishable 
 default_tp_rule = (True, True)
 
 def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
