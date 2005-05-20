@@ -28,6 +28,7 @@ from calendar import timegm
 import urllib2
 import re
 import weakref
+import new
 
 NOT_INITIALIZED = object()
 
@@ -81,7 +82,13 @@ class Cache(object):
             self._lock.release()
 
     def __getitem__(self, name):
-        """ Gets a value from the cache, builds it if required. """
+        return self.checkitem(name)[1]
+
+    def checkitem(self, name):
+        """ Gets a value from the cache, builds it if required.
+            Returns a tuple is_new, value. If is_new is True, the dependency had
+            to be rebuilt.
+        """
         self._lock.acquire()
         try:
             key = self.key(name)
@@ -101,18 +108,21 @@ class Cache(object):
         entry._lock.acquire()
         try:
             value = self._unpack(entry)
+            is_new = False
             if value is NOT_INITIALIZED:
                 opened = self.check(key, name, entry)
                 value = self.build(key, name, opened, entry)
+                is_new = True
                 self._pack(entry, value)
                 self.commit()
             else:
                 opened = self.check(key, name, entry)
                 if opened is not None:
                     value = self.build(key, name, opened, entry)
+                    is_new = True
                     self._pack(entry, value)
                     self.commit()
-            return value
+            return is_new, value
         finally:
             entry._lock.release()
 
@@ -248,10 +258,11 @@ class FileCache(Cache):
         except AttributeError:
             ts2 = ts1-1
                         
-        if ts2<ts1:
+        if ts2!=ts1:
             entry._timestamp=ts1
             return f
         else:
+            f.close()
             return None
 
     def build(self, key, name, opened, entry):
@@ -345,14 +356,6 @@ class HTTPCache(Cache):
         finally:
             opened.close()
 
-class Module(object):
-    """ Placeholder object for the module definition. """
-    def __init__(self, filename):
-        self.__file__=filename
-    
-    def __repr__(self):
-        return '<%s object at 0x%08x from %s>'%(type(self).__name__, id(self), self.__file__)
-
 class ModuleCache(FileCache):
     """ A module cache. Give it a file name, it returns a module-like object
         which results from the execution of the Python script it contains.
@@ -362,11 +365,10 @@ class ModuleCache(FileCache):
     
     def build(self, key, name, opened, entry):
         try:
-            module = Module(key)
+            module = new.module(key)
+            module.__file__ = key
             exec opened in module.__dict__
             return module
-            # I used to use imp.load_source but right now I'm trying the stuff above
-            # return imp.load_source(re.sub('\W', '_', name), name, opened)
         finally:
             opened.close()
 
@@ -379,13 +381,12 @@ class HttpModuleCache(HTTPCache):
     
     def build(self, key, name, opened, entry):
         try:
-            module = Module(key)
+            module = new.module(key)
+            module.__file__ = key
             text = opened.read().replace('\r\n', '\n')
             code = compile(text, name, 'exec')
             exec code in module.__dict__
             return module
-            # I used to use imp.load_source but right now I'm trying the stuff above
-            # return imp.load_source(re.sub('\W', '_', name), name, opened)
         finally:
             opened.close()
 
