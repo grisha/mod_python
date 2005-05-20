@@ -15,7 +15,7 @@ rem  limitations under the License.
 rem  
 rem Originally developed by Gregory Trubetskoy.
 rem  
-rem $Id: Makefile.in 106619 2004-11-25 22:10:52Z nd $
+rem $Id$
 rem
 rem This script builds the installer for Windows
 
