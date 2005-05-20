@@ -61,37 +61,33 @@ class Cache(object):
 
     def __setitem__(self, name, value):
         """ Populates the cache with a given name and value. """
+        key = self.key(name)
+        
+        entry = self._get_entry(key)
+        
+        entry._lock.acquire()
+        try:
+            self._pack(entry,value)
+            self.commit()
+        finally:
+            entry._lock.release()
+
+    def __getitem__(self, name):
+        """ Gets a value from the cache, builds it if required.
+        """
+        return self._checkitem(name)[2]
+
+    def __delitem__(self, name):
         self._lock.acquire()
         try:
             key = self.key(name)
-            entry = self._dict.get(key)
-            if not entry:
-                entry = Entry(key)
-                self._pack(entry, value)
-                self._dict[key]=entry
-                if self._maxsize:
-                    entry._next = entry._previous = None
-                    self._access(entry)
-                    self._checklru()
-            else:
-                self._pack(entry, value)
-                if self._maxsize:
-                    self._access(entry)
-            self.commit()
+            del self._dict[key]
         finally:
             self._lock.release()
 
-    def __getitem__(self, name):
-        return self.checkitem(name)[1]
-
-    def checkitem(self, name):
-        """ Gets a value from the cache, builds it if required.
-            Returns a tuple is_new, value. If is_new is True, the dependency had
-            to be rebuilt.
-        """
+    def _get_entry(self,key):
         self._lock.acquire()
         try:
-            key = self.key(name)
             entry = self._dict.get(key)
             if not entry:
                 entry = Entry(key)
@@ -102,8 +98,18 @@ class Cache(object):
                     self._checklru()
             elif self._maxsize:
                 self._access(entry)
+            return entry
         finally:
             self._lock.release()
+
+    def _checkitem(self, name):
+        """ Gets a value from the cache, builds it if required.
+            Returns a tuple is_new, key, value, entry.
+            If is_new is True, the result had to be rebuilt.
+        """
+        key = self.key(name)
+        
+        entry = self._get_entry(key)
 
         entry._lock.acquire()
         try:
@@ -122,17 +128,9 @@ class Cache(object):
                     is_new = True
                     self._pack(entry, value)
                     self.commit()
-            return is_new, value
+            return is_new, key, value, entry
         finally:
             entry._lock.release()
-
-    def __delitem__(self, key):
-        self._lock.acquire()
-        try:
-            key = self.key(key)
-            del self._dict[key]
-        finally:
-            self._lock.release()
 
     def mru(self):
         """ Returns the Most Recently Used key """
@@ -249,21 +247,20 @@ class FileCache(Cache):
         self.mode=mode
     
     def check(self, key, name, entry):
-        """ Checks the modification time to determine whether a file has changed or not. """
-        f = file(key, self.mode)
-        fs = fstat(f.fileno())
-        ts1 = fs[-2]
-        try:
-            ts2 = entry._timestamp
-        except AttributeError:
-            ts2 = ts1-1
-                        
-        if ts2!=ts1:
-            entry._timestamp=ts1
-            return f
+        opened = file(key, self.mode)
+
+        timestamp = fstat(opened.fileno())[-2]
+
+        if entry._value is NOT_INITIALIZED:
+            entry._timestamp = timestamp
+            return opened
         else:
-            f.close()
-            return None
+            if entry._timestamp != timestamp:
+                entry._timestamp = timestamp
+                return opened
+            else:
+                opened.close()
+                return None
 
     def build(self, key, name, opened, entry):
         """ Return the content of the file as a string. Override this for better behaviour. """
@@ -357,8 +354,9 @@ class HTTPCache(Cache):
             opened.close()
 
 class ModuleCache(FileCache):
-    """ A module cache. Give it a file name, it returns a module-like object
+    """ A module cache. Give it a file name, it returns a module
         which results from the execution of the Python script it contains.
+        This module is not inserted into sys.modules.
     """
     def __init__(self, max_size=0):
         FileCache.__init__(self, max_size, 'r')
@@ -373,8 +371,9 @@ class ModuleCache(FileCache):
             opened.close()
 
 class HttpModuleCache(HTTPCache):
-    """ A module cache. Give it a file name, it returns a module-like object
+    """ A module cache. Give it a file name, it returns a module
         which results from the execution of the Python script it contains.
+        This module is not inserted into sys.modules.
     """
     def __init__(self, max_size=0):
         HTTPCache.__init__(self, max_size)
