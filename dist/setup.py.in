@@ -92,7 +92,7 @@ def getapache_libdir():
 VER = getmp_version()
 
 # TODO: improve the intelligence here...
-winbuild = (len(sys.argv) > 1 and sys.argv[1] == "bdist_wininst") or (os.name == "nt")
+winbuild = ("bdist_wininst" in sys.argv) or (os.name == "nt")
 
 class PSPExtension(Extension):
     """a class that helps build the PSP extension"""
