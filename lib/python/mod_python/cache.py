@@ -1,4 +1,4 @@
- #
+#
  # Copyright 2004 Apache Software Foundation 
  # 
  # Licensed under the Apache License, Version 2.0 (the "License"); you
@@ -353,6 +353,8 @@ class HTTPCache(Cache):
         finally:
             opened.close()
 
+re_not_word = re.compile(r'\W+')
+
 class ModuleCache(FileCache):
     """ A module cache. Give it a file name, it returns a module
         which results from the execution of the Python script it contains.
@@ -363,7 +365,7 @@ class ModuleCache(FileCache):
     
     def build(self, key, name, opened, entry):
         try:
-            module = new.module(key)
+            module = new.module(re_not_word.sub('_',key))
             module.__file__ = key
             exec opened in module.__dict__
             return module
@@ -380,7 +382,7 @@ class HttpModuleCache(HTTPCache):
     
     def build(self, key, name, opened, entry):
         try:
-            module = new.module(key)
+            module = new.module(re_not_word.sub('_',key))
             module.__file__ = key
             text = opened.read().replace('\r\n', '\n')
             code = compile(text, name, 'exec')
