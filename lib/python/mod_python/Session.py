@@ -527,10 +527,13 @@ def filesession_cleanup(data):
 ## MemorySession
 
 def mem_cleanup(sdict):
-    for sid in sdict:
-        dict = sdict[sid]
-        if (time.time() - dict["_accessed"]) > dict["_timeout"]:
-            del sdict[sid]
+    for sid in sdict.keys():
+        try:
+            session = sdict[sid]
+            if (time.time() - session["_accessed"]) > session["_timeout"]:
+                del sdict[sid]
+        except:
+            pass
 
 class MemorySession(BaseSession):
 
