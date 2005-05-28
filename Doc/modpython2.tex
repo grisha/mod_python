@@ -214,6 +214,13 @@ if you are using Apache 1.3.x), please refer to the proper documentation.
   your system, usually your Apache ServerRoot)
 
 \item
+  This redirects all requests for URLs ending in \filenq{.py} to the mod_python
+  handler. mod_python receives those requests and looks for an appropriate
+  PythonHandler to handle them. Here, there is a single PythonHandler
+  directive defining mptest as the python handler to use. We'll see next
+  how this python handler is defined.
+
+\item
   At this time, if you made changes to the main configuration file, you
   will need to restart Apache in order for the changes to take effect.
 
@@ -238,6 +245,20 @@ if you are using Apache 1.3.x), please refer to the proper documentation.
   troubleshooting section next.
 
 \item
+  Note that according to the configuration written above, you can
+  also point your browser to any URL ending in .py in the test directory.
+  You can for example point your browser to \filenq{/test/foobar.py}
+  and it will be handled by \filenq{mptest.py}. That's because you
+  explicitely set the handler to always be \filenq{mptest}, whatever the
+  requested file was. If you want to have many handler files named
+  \filenq{handler1.py}, \filenq{handler2.py}
+  and so on, and have them accessible on \filenq{/test/handler1.py},
+  \filenq{/test/handler2.py}, etc., then you have to use a higher level
+  handler system such as the mod_python publisher (see \ref{tut-pub}),
+  mpservlets or Vampire. Those are just special mod_python handler
+  that know how to map requests to a dynamically loaded handler.
+
+\item
   If everything worked well, move on to Chapter \ref{tutorial}, 
   \citetitle[tutorial.html]{Tutorial}. 
 
@@ -259,6 +280,20 @@ There are a few things you can try to identify the problem:
   \end{verbatim}
   This prevents it from backgrounding itself and may provide some useful
   information.
+
+\item Beginning with mod_python 3.2.0, you can use the mod_python.testhandler
+  to diagnose your configuration. Add this to your \filenq{httpd.conf} file :
+
+  \begin{verbatim}
+    <Location /mpinfo>
+      SetHandler mod_python
+      PythonHandler mod_python.testhandler
+    </Location>
+  \end{verbatim}
+
+  Now point your browser to the \filenq{/mpinfo} URL
+  (e.g. \filenq{http://localhost/mpinfo}) and note down the information given.
+  This will help you reporting your problem to the mod_python list.
 
 \item
   Ask on the mod_python list. Make sure to provide specifics such as:
