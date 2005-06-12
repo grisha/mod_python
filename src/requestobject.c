@@ -65,7 +65,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
 
     // we make sure that the object dictionary is there
     // before registering the object with the GC
-    _PyObject_GetDictPtr((PyObject*)result);
     PyObject_GC_Track(result);
 
     return (PyObject *) result;
@@ -1236,28 +1235,35 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
     PyObject *result = NULL;
 
     if (strcmp(name, "connection") == 0) {
-        if (!self->connection && self->request_rec->connection)
+        if (!self->connection && self->request_rec->connection) {
             self->connection = MpConn_FromConn(self->request_rec->connection);
+        }
         result = self->connection;
     }
     else if (strcmp(name, "server") == 0) {
-        if (!self->server && self->request_rec->server) 
+        if (!self->server && self->request_rec->server) {
             self->server = MpServer_FromServer(self->request_rec->server);
+        }
         result = self->server;
     }
     else if (strcmp(name, "next") == 0) {
-        if (!self->next && self->request_rec->next)
+        if (!self->next && self->request_rec->next) {
             self->next = MpRequest_FromRequest(self->request_rec->next);
+            ((requestobject*)self->next)->prev = self;
+        }
         result = self->next;
     }
     else if (strcmp(name, "prev") == 0) {
-        if (!self->prev && self->request_rec->prev)
+        if (!self->prev && self->request_rec->prev) {
             self->prev = MpRequest_FromRequest(self->request_rec->prev);
+            ((requestobject*)self->prev)->next = self;
+        }
         result = self->prev;
     }
     else if (strcmp(name, "main") == 0) {
-        if (!self->main && self->request_rec->main)
+        if (!self->main && self->request_rec->main) {
             self->main = MpRequest_FromRequest(self->request_rec->main);
+        }
         result = self->main;
     }
 
@@ -1351,26 +1357,15 @@ static struct PyMemberDef request_members[] = {
  *
  */
 
-static void request_dealloc(requestobject *self)
+
+static void request_tp_dealloc(requestobject *self)
 {  
     // de-register the object from the GC
     // before its deallocation, to prevent the
     // GC to run on a partially de-allocated object
     PyObject_GC_UnTrack(self);
-
-    Py_XDECREF(self->dict);
-    Py_XDECREF(self->connection);
-    Py_XDECREF(self->server);
-    Py_XDECREF(self->next);
-    Py_XDECREF(self->prev);
-    Py_XDECREF(self->main);
-    Py_XDECREF(self->headers_in);
-    Py_XDECREF(self->headers_out);
-    Py_XDECREF(self->err_headers_out);
-    Py_XDECREF(self->subprocess_env);
-    Py_XDECREF(self->notes);
-    Py_XDECREF(self->phase);
-    Py_XDECREF(self->hlo);
+    
+    request_tp_clear(self);
 
     PyObject_GC_Del(self);
 }
@@ -1380,39 +1375,43 @@ static void request_dealloc(requestobject *self)
  **
  *    Traversal of the request object
  */
-static int request_tp_traverse(PyObject *self, visitproc visit, void *arg) {
-    PyObject *dict,*values,*item,*str;
-    int i,size;
+static int request_tp_traverse(requestobject* self, visitproc visit, void *arg) {
+    int result;
 
-    // only traverse its dictionary since other fields defined in request_rec_mbrs with type T_OBJECT
-    // cannot be the source of memory leaks (unless you really want it)
-    dict=*_PyObject_GetDictPtr(self);
-    if(dict) {
-        // this check is not needed, I guess, _PyObject_GetDictPtr always give a pointer to a dict object.
-        if(PyDict_Check(dict)) {
-            i = visit(dict,arg); 
-            if(i) {
-                ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, ((requestobject*)self)->request_rec, "%s:%i Call to visit() failed",__LINE__,__FILE__);
-                // no need to Py_DECREF(dict) since the reference is borrowed
-                return i;
-            }
-        }
-        else {
-            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, ((requestobject*)self)->request_rec, "%s:%i Expected a dictionary",__LINE__,__FILE__);  
-        }
-    }
-    else {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, ((requestobject*)self)->request_rec, "%s:%i Expected a dictionary",__LINE__,__FILE__);  
-    }
+    if(self->dict) {result = visit(self->dict,arg); if(result) return result;}
+    if(self->connection) {result = visit(self->connection,arg); if(result) return result;}
+    if(self->server) {result = visit(self->server,arg); if(result) return result;}
+    if(self->next) {result = visit(self->next,arg); if(result) return result;}
+    if(self->prev) {result = visit(self->prev,arg); if(result) return result;}
+    if(self->main) {result = visit(self->main,arg); if(result) return result;}
+    if(self->headers_in) {result = visit(self->headers_in,arg); if(result) return result;}
+    if(self->headers_out) {result = visit(self->headers_out,arg); if(result) return result;}
+    if(self->err_headers_out) {result = visit(self->err_headers_out,arg); if(result) return result;}
+    if(self->subprocess_env) {result = visit(self->subprocess_env,arg); if(result) return result;}
+    if(self->notes) {result = visit(self->notes,arg); if(result) return result;}
+    if(self->phase) {result = visit(self->phase,arg); if(result) return result;}
+    
     // no need to Py_DECREF(dict) since the reference is borrowed
     return 0;
 }
 
-static int request_tp_clear(PyObject *self) {
-    // No need to clear anything, as it is
-    // the object dictionary that will clear itself.
-    // Other fields defined in request_rec_mbrs with type T_OBJECT
-    // cannot be the source of memory leaks (unless you really want it)
+static int request_tp_clear(requestobject *self)
+{  
+    PyObject* tmp;
+    tmp=self->dict; self->dict=NULL; Py_XDECREF(tmp);
+    tmp=self->connection; self->connection=NULL; Py_XDECREF(tmp);
+    tmp=self->server; self->server=NULL; Py_XDECREF(tmp);
+    tmp=self->next; self->next=NULL; Py_XDECREF(tmp);
+    tmp=self->prev; self->prev=NULL; Py_XDECREF(tmp);
+    tmp=self->main; self->main=NULL; Py_XDECREF(tmp);
+    tmp=self->headers_in; self->headers_in=NULL; Py_XDECREF(tmp);
+    tmp=self->headers_out; self->headers_out=NULL; Py_XDECREF(tmp);
+    tmp=self->err_headers_out; self->err_headers_out=NULL; Py_XDECREF(tmp);
+    tmp=self->subprocess_env; self->subprocess_env=NULL; Py_XDECREF(tmp);
+    tmp=self->notes; self->notes=NULL; Py_XDECREF(tmp);
+    tmp=self->phase; self->phase=NULL; Py_XDECREF(tmp);
+    tmp=self->hlo; self->hlo=NULL; Py_XDECREF(tmp);
+    
     return 0;
 }
 
@@ -1425,43 +1424,43 @@ PyTypeObject MpRequest_Type = {
     "mp_request",
     sizeof(requestobject),
     0,
-    (destructor) request_dealloc,    /*tp_dealloc*/
-    0,                               /*tp_print*/
-    0,                               /*tp_getattr*/
-    0,                               /*tp_setattr*/
-    0,                               /*tp_compare*/
-    0,                               /*tp_repr*/
-    0,                               /*tp_as_number*/
-    0,                               /*tp_as_sequence*/
-    0,                               /*tp_as_mapping*/
-    0,                               /*tp_hash*/
-    0,                               /* tp_call */
-    0,                               /* tp_str */
-    PyObject_GenericGetAttr,         /* tp_getattro */
-    PyObject_GenericSetAttr,         /* tp_setattro */
-    0,                               /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT |
-    Py_TPFLAGS_BASETYPE|
-    Py_TPFLAGS_HAVE_GC ,             /* tp_flags */
-    request_doc,                     /* tp_doc */
-    request_tp_traverse,             /* tp_traverse */
-    request_tp_clear,                /* tp_clear */
-    0,                               /* tp_richcompare */
-    0,                               /* tp_weaklistoffset */
-    0,                               /* tp_iter */
-    0,                               /* tp_iternext */
-    request_methods,                 /* tp_methods */
-    request_members,                 /* tp_members */
-    request_getsets,                 /* tp_getset */
-    0,                               /* tp_base */
-    0,                               /* tp_dict */
-    0,                               /* tp_descr_get */
-    0,                               /* tp_descr_set */
-    offsetof(requestobject, dict),   /* tp_dictoffset */
-    0,                               /* tp_init */
-    0,                               /* tp_alloc */
-    0,                               /* tp_new */
-    (destructor)request_dealloc,     /* tp_free */
+    (destructor)request_tp_dealloc,       /*tp_dealloc*/
+    0,                                 /*tp_print*/
+    0,                                 /*tp_getattr*/
+    0,                                 /*tp_setattr*/
+    0,                                 /*tp_compare*/
+    0,                                 /*tp_repr*/
+    0,                                 /*tp_as_number*/
+    0,                                 /*tp_as_sequence*/
+    0,                                 /*tp_as_mapping*/
+    0,                                 /*tp_hash*/
+    0,                                 /* tp_call */
+    0,                                 /* tp_str */
+    PyObject_GenericGetAttr,           /* tp_getattro */
+    PyObject_GenericSetAttr,           /* tp_setattro */
+    0,                                 /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT |  
+    Py_TPFLAGS_BASETYPE|  
+    Py_TPFLAGS_HAVE_GC ,               /* tp_flags */
+    request_doc,                       /* tp_doc */
+    (traverseproc)request_tp_traverse, /* tp_traverse */
+    (inquiry)request_tp_clear,         /* tp_clear */
+    0,                                 /* tp_richcompare */
+    0,                                 /* tp_weaklistoffset */
+    0,                                 /* tp_iter */
+    0,                                 /* tp_iternext */
+    request_methods,                   /* tp_methods */
+    request_members,                   /* tp_members */
+    request_getsets,                   /* tp_getset */
+    0,                                 /* tp_base */
+    0,                                 /* tp_dict */
+    0,                                 /* tp_descr_get */
+    0,                                 /* tp_descr_set */
+    offsetof(requestobject, dict),     /* tp_dictoffset */
+    0,                                 /* tp_init */
+    0,                                 /* tp_alloc */
+    0,                                 /* tp_new */
+    0,                                 /* tp_free */
 };
 
 
