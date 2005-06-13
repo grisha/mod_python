@@ -361,7 +361,7 @@ class FileSession(BaseSession):
         if timeout:
             self._cleanup_timeout = timeout
         else:
-            self._cleanup_timeout = Session.DFT_TIMEOUT
+            self._cleanup_timeout = DFT_TIMEOUT
         
         BaseSession.__init__(self, req, sid=sid, secret=secret,
             timeout=timeout, lock=lock)
