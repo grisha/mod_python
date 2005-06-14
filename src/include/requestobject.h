@@ -50,6 +50,8 @@ extern "C" {
         char           * rbuff;       /* read bufer */
         int              rbuff_len;   /* read buffer size */
         int              rbuff_pos;   /* position into the buffer */
+        PyObject       * session;
+	
     } requestobject;
 
     extern DL_IMPORT(PyTypeObject) MpRequest_Type;
