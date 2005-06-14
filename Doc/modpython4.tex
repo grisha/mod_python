@@ -1880,7 +1880,7 @@ delay.)
 
 \subsection{Classes\label{pyapi-sess-classes}}
 
-\begin{funcdesc}{Session}{req\optional{, sid, secret, timeout, lock, lockfile}}
+\begin{funcdesc}{Session}{req\optional{, sid, secret, timeout, lock}}
   This function queries the MPM and based on that returns either a new
   instance of \class{DbmSession} or \class{MemorySession}. It takes
   same arguments as \class{BaseSession}.
@@ -1891,7 +1891,7 @@ delay.)
   this way). In all other cases \class{DbmSession} is used.
 \end{funcdesc}
 
-\begin{classdesc}{BaseSession}{req\optional{, sid, secret, timeout, lock, lockfile}}
+\begin{classdesc}{BaseSession}{req\optional{, sid, secret, timeout, lock}}
 
   This class is meant to be used as a base class for other classes
   that implement a session storage mechanism. \var{req} is a required
@@ -1930,8 +1930,7 @@ delay.)
 
   The \var{lock} argument (defaults to 1) indicates whether locking
   should be used. When locking is on, only one session object with a
-  particular session id can be instantiated at a time. \var{lockfile}
-  is the name of a file to be used for inter-process locks.
+  particular session id can be instantiated at a time.
 
   A session is in ``new'' state when the session id was just
   generated, as opposed to being passed in via cookies or the
