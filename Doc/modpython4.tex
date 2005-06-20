@@ -759,6 +759,9 @@ require valid-user
   API. \var{offset} defaults to 0, and \var{len} defaults to -1 (send
   the entire file). 
 
+  Returns the number of bytes sent, or raises an IOError exception
+  on failure.
+
   This function provides the most efficient way to send a file to the
   client.
 \end{methoddesc}
