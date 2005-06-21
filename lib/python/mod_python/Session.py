@@ -21,6 +21,7 @@ import apache, Cookie
 import _apache
 
 import os, os.path
+import stat
 import time
 import anydbm, whichdb
 import random
@@ -31,6 +32,7 @@ import traceback
 
 COOKIE_NAME="pysid"
 DFT_TIMEOUT=30*60 # 30 min
+DFT_LOCK = True
 CLEANUP_CHANCE=1000 # cleanups have 1 in CLEANUP_CHANCE chance
 
 tempdir = tempfile.gettempdir()
@@ -282,6 +284,7 @@ class DbmSession(BaseSession):
                  timeout=0, lock=1):
 
         if not dbm:
+            # FIXME - use session_directory
             opts = req.get_options()
             if opts.has_key("SessionDbm"):
                 dbm = opts["SessionDbm"]
@@ -346,6 +349,11 @@ class DbmSession(BaseSession):
 ###########################################################################
 ## FileSession
 
+DFT_FAST_CLEANUP = True 
+DFT_VERIFY_CLEANUP = False 
+DFT_GRACE_PERIOD = 240
+DFT_CLEANUP_TIME_LIMIT = 2
+
 # Credits : this was initially contributed by dharana <dharana@dharana.net>
 class FileSession(BaseSession):
 
@@ -353,11 +361,13 @@ class FileSession(BaseSession):
                 fast_cleanup=True, verify_cleanup=False, grace_period=240):
         
         opts = req.get_options()
-        self._sessdir = opts.get('FileSessionDir',tempdir)
-        
-        self._fast_cleanup = fast_cleanup
-        self._verify_cleanup = verify_cleanup
-        self._grace_period = grace_period
+        self._sessdir = os.path.join(opts.get('session_directory', tempdir), 'mp_sess')
+        self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
+        self._fast_cleanup = true_or_false(opts.get('fast_cleanup', DFT_FAST_CLEANUP))
+        self._verify_cleanup = true_or_false(opts.get('verify_cleanup', DFT_VERIFY_CLEANUP))
+        self._grace_period = int(opts.get('grace_period', DFT_GRACE_PERIOD))
+
+        # FIXME
         if timeout:
             self._cleanup_timeout = timeout
         else:
@@ -372,7 +382,9 @@ class FileSession(BaseSession):
                 'fast_cleanup':self._fast_cleanup, 
                 'verify_cleanup':self._verify_cleanup, 
                 'timeout':self._cleanup_timeout,
-                'grace_period':self._grace_period}
+                'grace_period':self._grace_period,
+                'cleanup_time_limit': self._cleanup_time_limit,
+               }
 
         self._req.register_cleanup(filesession_cleanup, data)
         self._req.log_error("FileSession: registered filesession cleanup.",
@@ -382,7 +394,8 @@ class FileSession(BaseSession):
         self.lock_file()
         try:
             try:
-                filename = os.path.join(self._sessdir, 'mp_sess_%s' % self._sid)
+                path = os.path.join(self._sessdir, self._sid[0:2])
+                filename = os.path.join(path, self._sid)
                 fp = file(filename,'rb')
                 try:
                     data = cPickle.load(fp)
@@ -407,7 +420,10 @@ class FileSession(BaseSession):
         self.lock_file()
         try:
             try:
-                filename = os.path.join(self._sessdir, 'mp_sess_%s' % self._sid)
+                path = os.path.join(self._sessdir, self._sid[0:2])
+                if not os.path.exists(path):
+                    make_filesession_dirs(self._sessdir)
+                filename = os.path.join(path, self._sid)
                 fp = file(filename, 'wb')
                 try:
                     cPickle.dump(dict, fp, 2)
@@ -425,7 +441,9 @@ class FileSession(BaseSession):
         self.lock_file()
         try:
             try:
-                os.unlink(os.path.join(self._sessdir, 'mp_sess_%s' % self._sid))
+                path = os.path.join(self._sessdir, self._sid[0:2])
+                filename = os.path.join(path, self._sid)
+                os.unlink(filename)
             except Exception:
                 pass
         finally:
@@ -444,7 +462,7 @@ class FileSession(BaseSession):
             _apache._global_unlock(self._req.server, self._sid)
             self._locked = 0
 
-
+FS_STAT_VERSION = 'MPFS_3.2'
 def filesession_cleanup(data):
     # There is a small chance that a the cleanup for a given session file
     # may occur at the exact time that the session is being accessed by
@@ -464,56 +482,109 @@ def filesession_cleanup(data):
     verify_cleanup = data['verify_cleanup']
     timeout = data['timeout']
     grace_period = data['grace_period']
+    cleanup_time_limit = data['cleanup_time_limit']
 
-    req.log_error('Sessions cleanup (fast=%s, verify=%s) ...'
-        % (fast_cleanup,verify_cleanup),
-        apache.APLOG_NOTICE)
+    req.log_error('FileSession cleanup: (fast=%s, verify=%s) ...'
+                    % (fast_cleanup,verify_cleanup),
+                    apache.APLOG_NOTICE)
 
     lockfile = os.path.join(sessdir,'.mp_sess.lck')
     try:
         lockfp = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0660) 
     except:
-        req.log_error('filesession_cleanup: another process is already running.') 
+        req.log_error('FileSession cleanup: another process is already running.'
+                        % (fast_cleanup,verify_cleanup),
+                        apache.APLOG_NOTICE)
         return
+
+    try:
+        status_file = file(os.path.join(sessdir, 'fs_status.txt'), 'r')
+        d = status_file.readline()
+        status_file.close()
+
+        if not d.startswith(FS_STAT_VERSION):
+            raise Exception, 'wrong status file version'
+
+        parts = d.split()
+        
+        stat_version = parts[0]
+        next_i = int(parts[1])
+        expired_file_count = int(parts[2])
+        total_file_count = int(parts[3])
+        total_time = float(parts[4])
+
+    except:
+        stat_version = FS_STAT_VERSION 
+        next_i = 0
+        expired_file_count = 0 
+        total_file_count =  0
+        total_time = 0.0 
 
     try:
         start_time = time.time()
         filelist =  os.listdir(sessdir)
-        count = 0
-        i = 0
-        for f in filelist:
-            if not f.startswith('mp_sess_'):
+        dir_index = range(0,256)[next_i:]
+        for i in dir_index:
+            path = '%s/%s' % (sessdir,'%02x' % i)
+            if not os.path.exists(path):
                 continue
-            try:
-                filename = os.path.join(sessdir, f)
-                if fast_cleanup:
-                    accessed = os.stat(filename).st_mtime
-                    if time.time() - accessed < (timeout + grace_period):
-                        continue
+        
+            filelist = os.listdir(path)
+            total_file_count += len(filelist)
 
-                if fast_cleanup and not verify_cleanup:        
-                    delete_session = True
-                else:
-                    try:
-                        fp = file(filename)
-                        dict = cPickle.load(fp)
-                        if (time.time() - dict['_accessed']) > (dict['_timeout'] + grace_period):
-                            delete_session = True
-                        else:
-                            delete_session = False
-                    finally:
-                        fp.close()
-                if delete_session:
-                    os.unlink(filename)
-                    count += 1
-            except:
-                s = cStringIO.StringIO()
-                traceback.print_exc(file=s)
-                s = s.getvalue()
-                req.log_error('Error while cleaning up the sessions : %s' % s)
+            for f in filelist:
+                try:
+                    filename = os.path.join(path,f)
+                    if fast_cleanup:
+                        accessed = os.stat(filename).st_mtime
+                        if time.time() - accessed < (timeout + grace_period):
+                            continue
 
-        elapsed_time = time.time() - start_time
-        req.log_error('filesession cleanup: %d of %d in %.4f seconds' % (count,len(filelist), elapsed_time))
+                    if fast_cleanup and not verify_cleanup:        
+                        delete_session = True
+                    else:
+                        try:
+                            fp = file(filename)
+                            dict = cPickle.load(fp)
+                            if (time.time() - dict['_accessed']) > (dict['_timeout'] + grace_period):
+                                delete_session = True
+                            else:
+                                delete_session = False
+                        finally:
+                            fp.close()
+                    if delete_session:
+                        os.unlink(filename)
+                        expired_file_count += 1
+                except:
+                    s = cStringIO.StringIO()
+                    traceback.print_exc(file=s)
+                    s = s.getvalue()
+                    req.log_error('FileSession cleanup error: %s'
+                                    % (s),
+                                    apache.APLOG_NOTICE)
+
+            next_i = (i + 1) % 256
+            time_used = time.time() - start_time 
+            if (cleanup_time_limit > 0) and (time_used > cleanup_time_limit):
+                break
+
+        total_time += time.time() - start_time
+        if next_i == 0:
+            # next_i can only be 0 when the full cleanup has run to completion
+            req.log_error("FileSession cleanup: deleted %d of %d in %.4f seconds"
+                            % (expired_file_count, total_file_count, total_time),
+                            apache.APLOG_NOTICE)
+            expired_file_count = 0
+            total_file_count = 0
+            total_time = 0.0
+        else:
+            req.log_error("FileSession cleanup incomplete: next cleanup will start at index %d (%02x)"
+                        % (next_i,),
+                        apache.APLOG_NOTICE)
+
+        status_file = file(os.path.join(sessdir, 'fs_status.txt'), 'w')
+        status_file.write('%s %d %d %d %f %d\n' % (stat_version,next_i,expired_file_count,total_file_count, total_time))
+        status_file.close()
    
         try:
             os.unlink(lockfile)
@@ -522,6 +593,13 @@ def filesession_cleanup(data):
 
     finally:
         os.close(lockfp)
+
+def make_filesession_dirs(sess_dir):
+    """Creates the directory structure used for storing session files"""
+    for i in range(0,256):
+        path = os.path.join(sess_dir, '%02x' % i)
+        if not os.path.exists(path):
+            os.makedirs(path,  stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP)
 
 ###########################################################################
 ## MemorySession
@@ -619,6 +697,12 @@ class TestSession(object):
     def load(self):
         pass
 
+def make_filesession_dirs(sess_dir):
+    """Creates the directory structure used for storing session files"""
+    for i in range(0,256):
+        path = os.path.join(sess_dir, '%02x' % i)
+        if not os.path.exists(path):
+            os.makedirs(path,  stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP)
 
 ###########################################################################
 ## create_session()
@@ -642,3 +726,22 @@ def create_session(req,sid):
     # TODO Add capability to load a user defined class
     # For now, just raise an exception.
     raise Exception, 'Unknown session type %s' % sess_type
+
+
+
+## helper functions
+def true_or_false(item):
+    """This function is used to assist in getting appropriate
+    values set with the PythonOption directive
+    """
+
+    try:
+        item = item.lower()
+    except:
+        pass
+    if item in ['yes','true', '1', 1, True]:
+        return True
+    elif item in ['no', 'false', '0', 0, None, False]:
+        return False
+    else:
+        raise Exception
