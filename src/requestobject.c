@@ -385,6 +385,7 @@ static PyObject *req_get_session(requestobject *self, PyObject *args)
 {
     PyObject *m;
     PyObject *sid;
+    PyObject *req;
     PyObject *result;
 
     if (!self->session) {
@@ -397,11 +398,23 @@ static PyObject *req_get_session(requestobject *self, PyObject *args)
          * req_internal_redirect() should have unlocked the session, so we do not
          * need to worry about session deadlocking as a result of the redirect.
          */ 
-        sid = PyObject_CallMethod(self->subprocess_env, "get", "(ss)","REDIRECT_PYSID", "");
+        req = (PyObject *)self;
         m = PyImport_ImportModule("mod_python.Session");
-        self->session = PyObject_CallMethod(m, "create_session", "(OO)", self, sid);
+        sid = PyObject_CallMethod(self->subprocess_env, "get", "(ss)","REDIRECT_PYSID", "");
+        self->session = PyObject_CallMethod(m, "create_session", "(OO)", req, sid);
         Py_DECREF(m);
         Py_DECREF(sid);
+
+        /* TODO
+         * Failure to DECREF req results in a serious memory leak.
+         * On the other hand, if the session created does not save 
+         * a reference to the request, we'll get a segfault.
+         * This should be documented for developers subclassing BaseSession.
+         * Maybe we should check self->session for the _req attribute
+         * and only do the decref if it exists? Or is there a better
+         * way to handle this? - Jim
+         */ 
+        Py_DECREF(req);
         if (self->session == NULL)
             return NULL;
     }
@@ -1442,7 +1455,6 @@ static struct PyMemberDef request_members[] = {
  **
  *
  */
-
 
 static void request_tp_dealloc(requestobject *self)
 {  
