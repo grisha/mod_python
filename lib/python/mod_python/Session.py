@@ -620,11 +620,25 @@ class TestSession(object):
         pass
 
 
-# create_session() is called by req.get_session() to create a new
-# session instance.
-# For now it's just returning a TestSession object but in the future
-# it will get the session configuration specified in the apache config
-# and return the appropriate session object.
+###########################################################################
+## create_session()
+# This function is called by req.get_session() to create a new
+# session instance. The type of session to create is set in the apache
+# configuration file. eg.
+# PythonOption session FileSession
 
 def create_session(req,sid):
-    return TestSession(req,sid)
+    opts = req.get_options()
+    sess_type = opts.get('session','Session')
+    if sess_type == 'FileSession':
+        return FileSession(req,sid)
+    elif sess_type == 'DbmSession':
+        return DbmSession(req,sid)
+    elif sess_type == 'MemorySession':
+        return MemorySession(req,sid)
+    elif sess_type == 'Session':
+        return Session(req,sid)
+
+    # TODO Add capability to load a user defined class
+    # For now, just raise an exception.
+    raise Exception, 'Unknown session type %s' % sess_type
