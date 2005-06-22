@@ -20,7 +20,6 @@
  # 
  # $Id$
 
-# -*- coding: CP1252 -*-
 from threading import Lock
 from os import fstat
 from time import time, strptime
