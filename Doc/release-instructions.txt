@@ -1,0 +1,20 @@
+# release reminder
+# 1. version/date in src/include/version.h
+#
+# 2.
+# cd Doc
+# make dist
+#
+# 4. cvs ci 
+# 5. cvs tag release-2-7-3 
+# 6. cvs export -r release-2-7-3 -d mod_python-2.7.3 mod_python
+# 7. cp -r doc-html mod_python-2.7.3
+#
+# 8. tar czvf mod_python-2.7.3.tgz mod_python_2.7.3
+#
+# 9. on the website:
+#        make pdf
+#        put modpython.pdf on the web in live
+#
+# To sign: gpg -a -b mod_python-3.1.0a.win32-py2.3.exe
+#
