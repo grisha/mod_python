@@ -1,20 +1,52 @@
-# release reminder
-# 1. version/date in src/include/version.h
-#
-# 2.
-# cd Doc
-# make dist
-#
-# 4. cvs ci 
-# 5. cvs tag release-2-7-3 
-# 6. cvs export -r release-2-7-3 -d mod_python-2.7.3 mod_python
-# 7. cp -r doc-html mod_python-2.7.3
-#
-# 8. tar czvf mod_python-2.7.3.tgz mod_python_2.7.3
-#
-# 9. on the website:
-#        make pdf
-#        put modpython.pdf on the web in live
-#
-# To sign: gpg -a -b mod_python-3.1.0a.win32-py2.3.exe
-#
+Release Instructions
+====================
+
+Notes
+-----
+
+The following instructions are appropriate for version 3.2.0.
+Adjust accordingly for a different version.
+
+The current version/date is in src/include/version.h
+
+REPOS=http://svn.apache.org/repos/asf/httpd/mod_python
+
+Instructions
+------------
+
+1. Create the new branch for the release in svn repository.
+   svn copy --username USER  --password PASS $REPOS/trunk $REPOS/tags/release-3-2-0
+
+2. Checkout a working copy of the new branch.
+   cd /tmp
+   svn co $REPOS/tags/release-3-2-0 mod_python
+
+3. Generate the html docs.
+   cd mod_python
+   ./configure --with-apxs=`which apxs` --with-python-src=/path/to/python/src
+   cd Doc
+   make dist
+
+4. Export a working copy to a release copy.
+   cd /tmp 
+   svn export mod_python mod_python-3.2.0
+
+5. Copy the html docs generated in step 3 from your working copy to
+   your release copy.
+   cp -r mod_python/doc-html/ mod_python-3.2.0/
+
+6. Create a tarball for the release.
+   tar czvf mod_python-3.2.0.tgz mod_python-3.2.0
+
+7. Generate the pdf file for the website
+   cd mod_python/Doc
+   make pdf
+
+8. Send Doc/modpython.pdf to the mod_python.org website admin.
+
+
+Hints
+-----
+
+To sign: gpg -a -b mod_python-3.2.0.win32-py2.3.exe
+
