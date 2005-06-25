@@ -22,7 +22,8 @@
  #
 
 # You need to set this manually
-PYTHON_SRC=
+# or ./configure --with-python-src=path/to/python/src
+PYTHON_SRC=@PYTHON_SRC@
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
