@@ -2028,19 +2028,6 @@ if sess.is_new():
 
 \end{classdesc}
 
-\begin{classdesc}{MemorySession}{req, \optional{, sid, secret, dbmtype, timeout, lock}}
-
-  This class provides session storage using a global dictionary. This
-  class provides by far the best performance, but cannot be used in a
-  multi-process configuration, and also consumes memory for every
-  active session.
-
-  Note that using this class directly is not cross-platform. For best
-  compatibility across platforms, always use the \function{Session()}
-  function to create sessions.
-
-\end{classdesc}
-
 \begin{classdesc}{DbmSession}{req, \optional{, dbm, sid, secret, dbmtype, timeout, lock}}
 
   This class provides session storage using a dbm file. Generally, dbm
@@ -2061,6 +2048,19 @@ if sess.is_new():
   default to \module{dbhash} on most systems. If you need to use a
   specific dbm implementation (e.g. \module{gdbm}), you can pass that
   module as \var{dbmtype}.
+
+  Note that using this class directly is not cross-platform. For best
+  compatibility across platforms, always use the \function{Session()}
+  function to create sessions.
+
+\end{classdesc}
+
+\begin{classdesc}{MemorySession}{req, \optional{, sid, secret, dbmtype, timeout, lock}}
+
+  This class provides session storage using a global dictionary. This
+  class provides by far the best performance, but cannot be used in a
+  multi-process configuration, and also consumes memory for every
+  active session.
 
   Note that using this class directly is not cross-platform. For best
   compatibility across platforms, always use the \function{Session()}
