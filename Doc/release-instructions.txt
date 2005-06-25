@@ -9,13 +9,16 @@ Adjust accordingly for a different version.
 
 The current version/date is in src/include/version.h
 
-REPOS=http://svn.apache.org/repos/asf/httpd/mod_python
+You will need to have TeTeX installed and the python source code 
+to produce the documentation.
 
 Instructions
 ------------
 
+REPOS=http://svn.apache.org/repos/asf/httpd/mod_python
+
 1. Create the new branch for the release in svn repository.
-   svn copy --username USER  --password PASS $REPOS/trunk $REPOS/tags/release-3-2-0
+   svn copy --username USER  --password PASS $REPOS/trunk $REPOS/tags/release-3-2-0 -m "Tagged for release"
 
 2. Checkout a working copy of the new branch.
    cd /tmp
