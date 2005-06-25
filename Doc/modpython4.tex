@@ -2055,6 +2055,13 @@ if sess.is_new():
 
 \end{classdesc}
 
+\begin{classdesc}{FileSession}{req, \optional{, sid, secret, timeout, lock, fast_cleanup, verify_cleanup, grace_period}}
+
+  This class provides session storage using a separate file for each 
+  session.
+
+\end{classdesc}
+
 \begin{classdesc}{MemorySession}{req, \optional{, sid, secret, dbmtype, timeout, lock}}
 
   This class provides session storage using a global dictionary. This
