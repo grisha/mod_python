@@ -277,6 +277,20 @@ AC_SUBST(MP_VERSION)
 MP_VERSION=`awk '/MPV_STRING/ {print $3}' src/include/mpversion.h`
 MP_VERSION=`echo $MP_VERSION | sed s/\\"//g`                                      
 
+# get --with-python-src. The python src is required to generate the documentation
+# It is not required to compile or install mod_python itself
+AC_SUBST(PYTHON_SRC)
+AC_MSG_CHECKING(for --with-python-src)
+AC_ARG_WITH(python-src, [--with-python-src=PATH	Path to python src - required to generate documenation],
+[
+  PYTHON_SRC="$withval"
+  AC_MSG_RESULT($PYTHON_SRC)
+],
+AC_MSG_RESULT(no))
+if test -z "$PYTHON_SRC"; then
+  PYTHON_SRC=""
+fi
+
 AC_OUTPUT(Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py dist/Makefile)
 
 
