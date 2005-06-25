@@ -98,6 +98,20 @@ autoconf stuff, \program{./configure} does the following:
   \end{verbatim}                      
   %$ keep emacs happy
 
+\item
+  \index{python-src}
+  The python source is required to build the mod_python documentation.
+
+  \indexii{./configure}{\longprogramopt{with-python-src}} You can safely
+  ignore this option unless you want to build the the documentation. If
+  you want to build the documentation, specify the path to your python
+  source with the \longprogramopt{with-python-src} option, eg.
+
+  \begin{verbatim}
+    $ ./configure --with-python-src=/usr/src/python2.3
+  \end{verbatim}                      
+  %$ keep emacs happy
+
 \end{itemize}
 
 \subsection{Running make\label{inst-make}}
