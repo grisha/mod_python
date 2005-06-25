@@ -1364,7 +1364,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
         # this must be last so its error_log is not overwritten
-        perRequestSuite.addTest(PerRequestTestCase("test_internal"))
+        # perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)
         self.startHttpd()

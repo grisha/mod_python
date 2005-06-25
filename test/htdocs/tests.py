@@ -682,7 +682,7 @@ def req_sendfile(req):
 
     req.sendfile(fname, 2, 7)
 
-    os.remove(fname)
+    # os.remove(fname)
     return apache.OK
 
 def srv_register_cleanup(req):
