@@ -380,6 +380,14 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
                           s->process->pool);
     
+    if ((index >= (glb->nlocks)) || (index < -1)) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+                     "Index %d is out of range for number of global mutex locks", index);
+        PyErr_SetString(PyExc_ValueError,
+                        "Lock index is out of range for number of global mutex locks");
+        return NULL;
+    }
+    
     if (index == -1) {
 
         int hash = PyObject_Hash(key);
@@ -446,7 +454,15 @@ static PyObject *_global_trylock(PyObject *self, PyObject *args)
 
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
                           s->process->pool);
-    
+
+    if ((index >= (glb->nlocks)) || (index < -1)) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+                     "Index %d is out of range for number of global mutex locks", index);
+        PyErr_SetString(PyExc_ValueError,
+                        "Lock index is out of range for number of global mutex locks");
+        return NULL;
+    }
+   
     if (index == -1) {
 
         int hash = PyObject_Hash(key);
@@ -521,7 +537,15 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
 
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
                           s->process->pool);
-    
+
+    if ((index >= (glb->nlocks)) || (index < -1)) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+                     "Index %d is out of range for number of global mutex locks", index);
+        PyErr_SetString(PyExc_ValueError,
+                        "Lock index is out of range for number of global mutex locks");
+        return NULL;
+    }
+   
     if (index == -1) {
 
         int hash = PyObject_Hash(key);
