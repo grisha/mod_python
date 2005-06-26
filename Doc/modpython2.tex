@@ -65,7 +65,8 @@ autoconf stuff, \program{./configure} does the following:
 
 \item
   \index{apxs}
-  \indexii{./configure}{\longprogramopt{with-apxs}}
+  \index{./configure!\longprogramopt{with-apxs}}
+  %\indexii{./configure}{\longprogramopt{with-apxs}}
   Finds out whether a program called \program{apxs} is available. This
   program is part of the standard Apache distribution, and is necessary
   for DSO compilation. If apxs cannot be found in your \envvar{PATH} or in
@@ -88,13 +89,14 @@ autoconf stuff, \program{./configure} does the following:
   your Python binary. By default, it will use the \program{python}
   program found in your \envvar{PATH}.
 
-  \indexii{./configure}{\longprogramopt{with-python}} If the first Python
-  binary in the path is not suitable or not the one desired for
-  mod_python, you can specify an alternative location with the
-  \longprogramopt{with-python} options, e.g:
+  \index{./configure!\longprogramopt{with-python}}
+  %\indexii{./configure}{\longprogramopt{with-python}}
+  If the first Python binary in the path is not suitable or not the one
+  desired for mod_python, you can specify an alternative location with the
+  \longprogramopt{with-python} option, e.g:
 
   \begin{verbatim}
-    $ ./configure --with-python=/usr/local/bin/python2.2
+    $ ./configure --with-python=/usr/local/bin/python2.3
   \end{verbatim}                      
   %$ keep emacs happy
 
@@ -117,7 +119,7 @@ autoconf stuff, \program{./configure} does the following:
   %\indexii{./configure}{\longprogramopt{with-flex}}
   If the first flex binary in the path is not suitable or not the one desired
   you can specify an alternative location with the \longprogramopt{with-flex}
-  options, e.g:
+  option, e.g:
  
   \begin{verbatim}
     $ ./configure --with-flex=/usr/local/bin/flex
@@ -128,10 +130,11 @@ autoconf stuff, \program{./configure} does the following:
   \index{python-src}
   The python source is required to build the mod_python documentation.
 
-  \indexii{./configure}{\longprogramopt{with-python-src}} You can safely
-  ignore this option unless you want to build the the documentation. If
-  you want to build the documentation, specify the path to your python
-  source with the \longprogramopt{with-python-src} option, eg.
+  \index{./configure!\longprogramopt{with-python-src}}
+  %\indexii{./configure}{\longprogramopt{with-python-src}}
+  You can safely ignore this option unless you want to build the the
+  documentation. If you want to build the documentation, specify the path
+  to your python source with the \longprogramopt{with-python-src} option, eg.
 
   \begin{verbatim}
     $ ./configure --with-python-src=/usr/src/python2.3
