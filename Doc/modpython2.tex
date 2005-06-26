@@ -99,6 +99,32 @@ autoconf stuff, \program{./configure} does the following:
   %$ keep emacs happy
 
 \item
+  \index{flex}
+  Attempts to locate \program{flex} and determine its version. 
+  If \program{flex} cannot be found in your \envvar{PATH} \program{configure}
+  will fail.  If the wrong version is found \program{configure} will generate a warning.
+  You can generally ignore this warning unless you need to re-create
+  \filenq{src/psp_parser.c}.
+ 
+  The parser used by psp (See \ref{pyapi-psp}) is written in C generated using 
+  \program{flex}. This requires a reentrant version of \program{flex} which
+  at this time is 2.5.31. Most platforms however ship with version 2.5.4
+  which is not suitable, so a pre-generated copy of psp_parser.c is included
+  with the source. If you do need to compile \filenq{src/psp_parser.c} you 
+  must get the correct \program{flex} version.
+ 
+  \index{./configure!\longprogramopt{with-flex}}
+  %\indexii{./configure}{\longprogramopt{with-flex}}
+  If the first flex binary in the path is not suitable or not the one desired
+  you can specify an alternative location with the \longprogramopt{with-flex}
+  options, e.g:
+ 
+  \begin{verbatim}
+    $ ./configure --with-flex=/usr/local/bin/flex
+  \end{verbatim}
+  %$ keep emacs happy
+
+\item
   \index{python-src}
   The python source is required to build the mod_python documentation.
 

@@ -21,7 +21,7 @@ APXS=@APXS@
 MKDEP=@MKDEP@
 
 # requires flex 2.5.31 for reentrant support
-LEX=/usr/local/bin/flex
+LEX=@LEX@
 INCLUDES=@INCLUDES@
 LIBS=@LIBS@
 LDFLAGS=@LDFLAGS@

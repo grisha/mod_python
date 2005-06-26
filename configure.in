@@ -290,6 +290,43 @@ AC_MSG_RESULT(no))
 if test -z "$PYTHON_SRC"; then
   PYTHON_SRC=""
 fi
+# check for correct flex version
+# requires flex 2.5.31 for reentrant support
+
+AC_SUBST(LEX)
+
+AC_MSG_CHECKING(for --with-flex)
+AC_ARG_WITH(flex, [--with-flex=PATH	Path to specific flex binary],
+[
+  LEX="$withval"
+  AC_MSG_RESULT($LEX)
+],
+AC_MSG_RESULT(no))
+
+# check for flex executable
+if test -z "$LEX"; then
+  AC_PATH_PROG(LEX, flex)
+  if test -z "$LEX"; then
+    AC_MSG_ERROR(flex binary not found in path)
+  fi
+fi
+
+if test "$LEX" && test -x "$LEX"; then
+  AC_MSG_RESULT([found $LEX, we'll use this. Use --with-flex to specify another.])
+else
+  AC_MSG_ERROR([flex $LEX not found,  Use --with-flex to specify another.])
+fi
+
+AC_MSG_CHECKING(flex version)
+FlexVERSION=`$LEX --version | sed 's/version//g' | awk '/flex/ {print $2}'`
+Flex_MAJOR_VER=`echo $FlexVERSION| awk -F .  '{print $1}'`
+Flex_MINOR_VER=`echo $FlexVERSION| awk -F .  '{print $2}'`
+Flex_SUB_VER=`echo $FlexVERSION| awk -F .  '{print $3}'`
+if test "$Flex_MAJOR_VER" -eq "2" && test "$Flex_MINOR_VER" -eq "5" && test "$Flex_SUB_VER" -ge "31"; then
+  AC_MSG_RESULT([$FlexVERSION. Good])
+else
+  AC_MSG_WARN([Flex version 2.5.31 or greater is required.  The one you have seems to be $FlexVERSION. Use --with-flex to specify another.])
+fi
 
 AC_OUTPUT(Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py dist/Makefile)
 
