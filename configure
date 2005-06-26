@@ -272,7 +272,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="src/mod_python.c"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN PY_STD_LIB INCLUDES TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN PY_STD_LIB INCLUDES TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC LEX LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -803,6 +803,7 @@ Optional Packages:
 --with-apache=DIR 	Path to Apache sources
 --with-python=DIR	Path to specific Python binary
 --with-python-src=PATH	Path to python src - required to generate documenation
+--with-flex=PATH	Path to specific flex binary
 
 Some influential environment variables:
   CC          C compiler command
@@ -2998,6 +2999,97 @@ fi;
 if test -z "$PYTHON_SRC"; then
   PYTHON_SRC=""
 fi
+# check for correct flex version
+# requires flex 2.5.31 for reentrant support
+
+
+
+echo "$as_me:$LINENO: checking for --with-flex" >&5
+echo $ECHO_N "checking for --with-flex... $ECHO_C" >&6
+
+# Check whether --with-flex or --without-flex was given.
+if test "${with_flex+set}" = set; then
+  withval="$with_flex"
+
+  LEX="$withval"
+  echo "$as_me:$LINENO: result: $LEX" >&5
+echo "${ECHO_T}$LEX" >&6
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi;
+
+# check for flex executable
+if test -z "$LEX"; then
+  # Extract the first word of "flex", so it can be a program name with args.
+set dummy flex; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_LEX+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $LEX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LEX="$LEX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LEX="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+LEX=$ac_cv_path_LEX
+
+if test -n "$LEX"; then
+  echo "$as_me:$LINENO: result: $LEX" >&5
+echo "${ECHO_T}$LEX" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  if test -z "$LEX"; then
+    { { echo "$as_me:$LINENO: error: flex binary not found in path" >&5
+echo "$as_me: error: flex binary not found in path" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+fi
+
+if test "$LEX" && test -x "$LEX"; then
+  echo "$as_me:$LINENO: result: found $LEX, we'll use this. Use --with-flex to specify another." >&5
+echo "${ECHO_T}found $LEX, we'll use this. Use --with-flex to specify another." >&6
+else
+  { { echo "$as_me:$LINENO: error: flex $LEX not found,  Use --with-flex to specify another." >&5
+echo "$as_me: error: flex $LEX not found,  Use --with-flex to specify another." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+echo "$as_me:$LINENO: checking flex version" >&5
+echo $ECHO_N "checking flex version... $ECHO_C" >&6
+FlexVERSION=`$LEX --version | sed 's/version//g' | awk '/flex/ {print $2}'`
+Flex_MAJOR_VER=`echo $FlexVERSION| awk -F .  '{print $1}'`
+Flex_MINOR_VER=`echo $FlexVERSION| awk -F .  '{print $2}'`
+Flex_SUB_VER=`echo $FlexVERSION| awk -F .  '{print $3}'`
+if test "$Flex_MAJOR_VER" -eq "2" && test "$Flex_MINOR_VER" -eq "5" && test "$Flex_SUB_VER" -ge "31"; then
+  echo "$as_me:$LINENO: result: $FlexVERSION. Good" >&5
+echo "${ECHO_T}$FlexVERSION. Good" >&6
+else
+  { echo "$as_me:$LINENO: WARNING: Flex version 2.5.31 or greater is required.  The one you have seems to be $FlexVERSION. Use --with-flex to specify another." >&5
+echo "$as_me: WARNING: Flex version 2.5.31 or greater is required.  The one you have seems to be $FlexVERSION. Use --with-flex to specify another." >&2;}
+fi
 
                                                             ac_config_files="$ac_config_files Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py dist/Makefile"
 cat >confcache <<\_ACEOF
@@ -3669,6 +3761,7 @@ s,@TEST_SERVER_ROOT@,$TEST_SERVER_ROOT,;t t
 s,@MOD_PYTHON_SO@,$MOD_PYTHON_SO,;t t
 s,@MP_VERSION@,$MP_VERSION,;t t
 s,@PYTHON_SRC@,$PYTHON_SRC,;t t
+s,@LEX@,$LEX,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
