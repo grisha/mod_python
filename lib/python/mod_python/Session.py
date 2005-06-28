@@ -116,8 +116,10 @@ class BaseSession(dict):
             else:
                 cookies = Cookie.get_cookies(req)
 
-            if cookies.has_key(COOKIE_NAME):
-                self._sid = cookies[COOKIE_NAME].value
+            session_cookie_name = req.get_options().get("session_cookie_name",COOKIE_NAME)
+
+            if cookies.has_key(session_cookie_name):
+                self._sid = cookies[session_cookie_name].value
 
         self.init_lock()
 
@@ -146,12 +148,13 @@ class BaseSession(dict):
             self.cleanup()
 
     def make_cookie(self):
+        session_cookie_name = self._req.get_options().get("session_cookie_name",COOKIE_NAME)
 
         if self._secret:
-            c = Cookie.SignedCookie(COOKIE_NAME, self._sid,
+            c = Cookie.SignedCookie(session_cookie_name, self._sid,
                                     secret=self._secret)
         else:
-            c = Cookie.Cookie(COOKIE_NAME, self._sid)
+            c = Cookie.Cookie(session_cookie_name, self._sid)
 
         config = self._req.get_options()
         if config.has_key("ApplicationPath"):
