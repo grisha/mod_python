@@ -24,7 +24,7 @@ This module is a mod_python handler that can be used to test the configuration.
 """
 
 from mod_python import apache, util
-import sys, os.path
+import sys, os
 
 class bounded_buffer(object):
     """
@@ -117,10 +117,16 @@ def handler(req):
         'Apache document root',
         req.document_root()
     ))
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code> (<a href="?view_log=1" target="_new">view last 100 lines</a>)</td></tr>\n'%(
-        'Apache error log',
-        os.path.join(apache.server_root(),req.server.error_fname)
-    ))
+    if req.server.error_fname:
+        req.write('<tr><td><code>%s</code></td><td><code>%s</code> (<a href="?view_log=1" target="_new">view last 100 lines</a>)</td></tr>\n'%(
+            'Apache error log',
+            os.path.join(apache.server_root(),req.server.error_fname)
+        ))
+    else:
+        req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+            'Apache error log',
+            'None'
+        ))
     req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
         'Python sys.version',
         sys.version
