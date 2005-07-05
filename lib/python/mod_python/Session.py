@@ -20,7 +20,7 @@
 import apache, Cookie
 import _apache
 
-import os, os.path
+import os
 import stat
 import time
 import anydbm, whichdb
