@@ -108,6 +108,8 @@ class BaseSession(dict):
         
         dict.__init__(self)
 
+        session_cookie_name = req.get_options().get("session_cookie_name",COOKIE_NAME)
+
         if not self._sid:
             # check to see if cookie exists
             if secret:  
@@ -115,8 +117,6 @@ class BaseSession(dict):
                                              secret=self._secret)
             else:
                 cookies = Cookie.get_cookies(req)
-
-            session_cookie_name = req.get_options().get("session_cookie_name",COOKIE_NAME)
 
             if cookies.has_key(session_cookie_name):
                 self._sid = cookies[session_cookie_name].value
@@ -128,6 +128,8 @@ class BaseSession(dict):
             self.lock()
             if self.load():
                 self._new = 0
+                if not req.headers_out.has_key("Set-Cookie"):
+                    Cookie.add_cookie(self._req, Cookie.Cookie(session_cookie_name, self._sid))
 
         if self._new:
             # make a new session
