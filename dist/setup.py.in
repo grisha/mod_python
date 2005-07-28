@@ -85,7 +85,7 @@ def getapache_libdir():
     """returns apache lib directory"""
     apache_srcdir = getapache_srcdir()
     if apache_srcdir is None:
-        return ""
+        return getapxs_option("LIBDIR")
     else:
         return os.path.join(apache_srcdir, "lib")
 
@@ -152,6 +152,17 @@ else:
     # mpso = "../src/mod_python.so"
     scripts = []
     data_files = []
+
+import string
+from distutils import sysconfig
+
+if sys.platform == "darwin":
+    sysconfig._config_vars["LDSHARED"] = \
+            string.replace(sysconfig.get_config_var("LDSHARED"), \
+            " -bundle "," -bundle -flat_namespace -undefined suppress ")
+    sysconfig._config_vars["BLDSHARED"] = \
+            string.replace(sysconfig.get_config_var("BLDSHARED"), \
+            " -bundle "," -bundle -flat_namespace -undefined suppress ")
 
 setup(name="mod_python",
       version=VER,
