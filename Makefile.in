@@ -52,6 +52,7 @@ no_static:
 install: src/.install
 	@if test "`cat src/.install`" = "dso"; then \
 		$(MAKE) install_dso; \
+		$(MAKE) install_py_lib; \
 	else $(MAKE) install_static; fi
 
 install_dso:	dso
@@ -60,7 +61,6 @@ install_dso:	dso
 	@echo
 	$(INSTALL) -d $(DESTDIR)$(LIBEXECDIR)
 	$(INSTALL) src/mod_python.so $(DESTDIR)$(LIBEXECDIR)
-	@$(MAKE) install_py_lib
 	@echo
 	@echo "Now don't forget to edit your main config and add"
 	@echo "    LoadModule python_module $(LIBEXECDIR)/mod_python.so"
