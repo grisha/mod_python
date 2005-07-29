@@ -190,7 +190,10 @@ class PSP:
         # does this code use session?
         session = None
         if "session" in code.co_names:
-            session = req.get_session() 
+            if hasattr(req, 'session'):
+                session = req.session
+            else:
+                session = Session.Session(req) 
 
         # does this code use form?
         form = None
