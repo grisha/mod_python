@@ -383,6 +383,10 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
 
 static PyObject *req_get_session(requestobject *self, PyObject *args)
 {
+#ifdef ENABLE_GET_SESSION
+    /* get_session is not ready for mod_python 3.2 release
+     * We'll leave the code intact but raise an error
+     */
     PyObject *m;
     PyObject *sid;
     PyObject *req;
@@ -421,6 +425,11 @@ static PyObject *req_get_session(requestobject *self, PyObject *args)
     result = self->session;
     Py_INCREF(result);
     return result;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "get_session is not implemented");
+    return NULL;
+#endif
 }
 
 /**
@@ -431,12 +440,15 @@ static PyObject *req_get_session(requestobject *self, PyObject *args)
 static PyObject * req_internal_redirect(requestobject *self, PyObject *args)
 {
     char *new_uri;
+#ifdef ENABLE_GET_SESSION
     PyObject *sid;
     PyObject *rc;
+#endif
 
     if (! PyArg_ParseTuple(args, "z", &new_uri))
         return NULL; /* error */
 
+#ifdef ENABLE_GET_SESSION
     if (self->session){
         /* A session exists, so save and unlock it before the redirect.
          * The session instance is not preserved across the ap_internal_direct()
@@ -479,7 +491,8 @@ static PyObject * req_internal_redirect(requestobject *self, PyObject *args)
             Py_DECREF(rc);
         }
     }
-    
+#endif
+
     Py_BEGIN_ALLOW_THREADS
     ap_internal_redirect(new_uri, self->request_rec);
     Py_END_ALLOW_THREADS
