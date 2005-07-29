@@ -679,46 +679,6 @@ def Session(req, sid=0, secret=None, timeout=0, lock=1):
     return sess(req, sid=sid, secret=secret,
                          timeout=timeout, lock=lock)
 
-###########################################################################
-## TestSession
-
-# TestSession is here to test the req_get_session method in requestobject.c
-# and will likely disappear in the near future.
-   
-class TestSession(object):
-
-    def __init__(self, req, sid=0, secret=None, timeout=0, lock=1):
-        #req.log_error("TestSession.__init__")
-        # Circular Reference causes problem
-        self._req = req
-        self._lock = 1
-        self._locked = 0
-        self._sid = _new_sid(req)
-        self.lock()
-        self.unlock()
-
-    def lock(self):
-        if self._lock:
-            _apache._global_lock(self._req.server, self._sid)
-            self._locked = 1
-
-    def unlock(self):
-        if self._lock and self._locked:
-            _apache._global_unlock(self._req.server, self._sid)
-            self._locked = 0
-
-    def is_new(self):
-        return True
-
-    def id(self):
-        return self._sid
-
-    def save(self):
-        pass
-
-    def load(self):
-        pass
-
 def make_filesession_dirs(sess_dir):
     """Creates the directory structure used for storing session files"""
     for i in range(0,256):
