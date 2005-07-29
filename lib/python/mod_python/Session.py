@@ -650,18 +650,35 @@ class MemorySession(BaseSession):
 
 def Session(req, sid=0, secret=None, timeout=0, lock=1):
 
-    threaded = _apache.mpm_query(apache.AP_MPMQ_IS_THREADED)
-    forked = _apache.mpm_query(apache.AP_MPMQ_IS_FORKED)
-    daemons =  _apache.mpm_query(apache.AP_MPMQ_MAX_DAEMONS)
-
-    if (threaded and ((not forked) or (daemons == 1))):
-        return MemorySession(req, sid=sid, secret=secret,
-                             timeout=timeout, lock=lock)
+    opts = req.get_options()
+    if opts.has_key('session'):
+        # Check the apache config for the type of session
+        sess_type = opts['session']
     else:
-        return DbmSession(req, sid=sid, secret=secret,
-                          timeout=timeout, lock=lock)
+        # no session class in config so get the default for the platform
+        threaded = _apache.mpm_query(apache.AP_MPMQ_IS_THREADED)
+        forked = _apache.mpm_query(apache.AP_MPMQ_IS_FORKED)
+        daemons =  _apache.mpm_query(apache.AP_MPMQ_MAX_DAEMONS)
 
-    
+        if (threaded and ((not forked) or (daemons == 1))):
+            sess_type = 'MemorySession'
+        else:
+            sess_type = 'DbmSession'
+
+    if sess_type == 'FileSession':
+        sess =  FileSession
+    elif sess_type == 'DbmSession':
+        sess = DbmSession
+    elif sess_type == 'MemorySession':
+        sess = MemorySession
+    else:
+        # TODO Add capability to load a user defined class
+        # For now, just raise an exception.
+        raise Exception, 'Unknown session type %s' % sess_type
+
+    return sess(req, sid=sid, secret=secret,
+                         timeout=timeout, lock=lock)
+
 ###########################################################################
 ## TestSession
 
@@ -708,31 +725,6 @@ def make_filesession_dirs(sess_dir):
         path = os.path.join(sess_dir, '%02x' % i)
         if not os.path.exists(path):
             os.makedirs(path,  stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP)
-
-###########################################################################
-## create_session()
-# This function is called by req.get_session() to create a new
-# session instance. The type of session to create is set in the apache
-# configuration file. eg.
-# PythonOption session FileSession
-
-def create_session(req,sid):
-    opts = req.get_options()
-    sess_type = opts.get('session','Session')
-    if sess_type == 'FileSession':
-        return FileSession(req,sid)
-    elif sess_type == 'DbmSession':
-        return DbmSession(req,sid)
-    elif sess_type == 'MemorySession':
-        return MemorySession(req,sid)
-    elif sess_type == 'Session':
-        return Session(req,sid)
-
-    # TODO Add capability to load a user defined class
-    # For now, just raise an exception.
-    raise Exception, 'Unknown session type %s' % sess_type
-
-
 
 ## helper functions
 def true_or_false(item):
