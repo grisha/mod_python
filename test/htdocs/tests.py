@@ -693,6 +693,14 @@ def srv_register_cleanup(req):
 
     return apache.OK
 
+def apache_register_cleanup(req):
+
+    req.cleanup_data = "test 2 ok"
+    apache.register_cleanup(cleanup, req)
+    req.write("registered server cleanup that will write to log")
+
+    return apache.OK
+
 def util_fieldstorage(req):
 
     from mod_python import util

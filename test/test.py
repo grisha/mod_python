@@ -1425,11 +1425,41 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         if log.find("test ok") == -1:
             self.fail("Could not find test message in error_log")
 
+    def test_apache_register_cleanup(self):
+
+        print "\n* Testing apache.register_cleanup()..."
+
+        c = Directory(DOCUMENT_ROOT,
+                      SetHandler("mod_python"),
+                      PythonHandler("tests::apache_register_cleanup"),
+                      PythonDebug("On"))
+
+        self.makeConfig(str(c))
+
+        self.startHttpd()
+
+        f = urllib.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f.read()
+        f.close()
+
+        time.sleep(2)
+
+        self.stopHttpd()
+
+        # see what's in the log now
+        time.sleep(2)
+        f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
+        log = f.read()
+        f.close()
+        if log.find("test 2 ok") == -1:
+            self.fail("Could not find test message in error_log")
+
 def suite():
 
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(PerInstanceTestCase("testLoadModule"))
     mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
+    mpTestSuite.addTest(PerInstanceTestCase("test_apache_register_cleanup"))
     # XXX comment out until ab is fixed, or we have another way
 ##     mpTestSuite.addTest(PerInstanceTestCase("test_global_lock"))
     mpTestSuite.addTest(PerInstanceTestCase("testPerRequestTests"))
