@@ -599,6 +599,60 @@ static PyObject *mpm_query(PyObject *self, PyObject *code)
     return PyInt_FromLong(result);
 }
 
+/**
+ ** register_cleanup(interpreter, server, handler, data)
+ **
+ *    more low level version of request.register_cleanup where it is
+ *    necessary to specify the actual interpreter name. the server pool
+ *    is used. the server pool gets destroyed before the child dies or
+ *    when the whole process dies in multithreaded situations.
+ */
+
+static PyObject *register_cleanup(PyObject *self, PyObject *args)
+{
+
+    cleanup_info *ci;
+    char *interpreter = NULL;
+    serverobject *server = NULL;
+    PyObject *handler = NULL;
+    PyObject *data = NULL;
+
+    if (! PyArg_ParseTuple(args, "sOO|O", &interpreter, &server, &handler, &data))
+        return NULL; 
+
+    if (! MpServer_Check(server)) {
+        PyErr_SetString(PyExc_ValueError, 
+                        "second argument must be a server object");
+        return NULL;
+    }
+    else if(!PyCallable_Check(handler)) {
+        PyErr_SetString(PyExc_ValueError, 
+                        "third argument must be a callable object");
+        return NULL;
+    }
+    
+    ci = (cleanup_info *)malloc(sizeof(cleanup_info));
+    ci->request_rec = NULL;
+    ci->server_rec = server->server;
+    Py_INCREF(handler);
+    ci->handler = handler;
+    ci->interpreter = strdup(interpreter);
+    if (data) {
+        Py_INCREF(data);
+        ci->data = data;
+    }
+    else {
+        Py_INCREF(Py_None);
+        ci->data = Py_None;
+    }
+    
+    apr_pool_cleanup_register(child_init_pool, ci, python_cleanup, 
+                              apr_pool_cleanup_null);
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
     {"config_tree",               (PyCFunction)config_tree,      METH_NOARGS},
@@ -607,6 +661,7 @@ struct PyMethodDef _apache_module_methods[] = {
     {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
     {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
     {"server_root",               (PyCFunction)server_root,      METH_NOARGS},
+    {"register_cleanup",          (PyCFunction)register_cleanup, METH_VARARGS},
     {"_global_lock",              (PyCFunction)_global_lock,     METH_VARARGS},
     {"_global_trylock",           (PyCFunction)_global_trylock,  METH_VARARGS},
     {"_global_unlock",            (PyCFunction)_global_unlock,   METH_VARARGS},

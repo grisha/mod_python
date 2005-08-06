@@ -75,7 +75,7 @@ static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
  *      the reference to obCallBack.
  */
 
-static PyObject * make_obcallback(server_rec *s)
+static PyObject * make_obcallback(char *name, server_rec *s)
 {
 
     PyObject *m;
@@ -101,7 +101,7 @@ static PyObject * make_obcallback(server_rec *s)
         fflush(stderr); 
     }
     
-    if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, NULL)))) {
+    if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, "sO", name, MpServer_FromServer(s))))) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
                      "make_obcallback: could not call %s.\n", (!INITFUNC) ? "<null>" : INITFUNC);
         PyErr_Print();
@@ -176,7 +176,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 
     if (!idata->obcallback) {
 
-        idata->obcallback = make_obcallback(srv);
+        idata->obcallback = make_obcallback((char*)name,srv);
 
         if (!idata->obcallback) 
         {

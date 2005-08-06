@@ -731,10 +731,21 @@ def restore_nocgi(sav_env, si, so):
     sys.stdout = si
     sys.stdin = so
 
-def init():
+_interpreter = None
+_server = None
+
+def register_cleanup(handler,args=None):
+    _apache.register_cleanup(_interpreter,_server,handler,args)
+
+def init(name,server):
     """
         This function is called by the server at startup time
     """
+
+    global _interpreter
+    global _server
+    _interpreter = name
+    _server = server
 
     return CallBack()
 
