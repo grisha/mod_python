@@ -734,8 +734,8 @@ def restore_nocgi(sav_env, si, so):
 _interpreter = None
 _server = None
 
-def register_cleanup(handler,args=None):
-    _apache.register_cleanup(_interpreter,_server,handler,args)
+def register_cleanup(handler,data=None):
+    _apache.register_cleanup(_interpreter,_server,handler,data)
 
 def init(name,server):
     """
