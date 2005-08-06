@@ -167,7 +167,7 @@ version: ../src/include/mpversion.h
 	DATE="`date +'%B %d, %Y'`"; \
 	VERSION="`awk '/MPV_STRING/ {print $$3}' ../src/include/mpversion.h`"; \
 	VERSION="`echo $$VERSION | sed s/\\"//g`"; \
-	cat modpython.tex | sed s/\\release.*/\\release\{$$VERSION\}/ >modpython.tex2; \
+	cat modpython.tex | sed "s/\\\release.*/\\\release\{$$VERSION\}/" >modpython.tex2; \
 	cat modpython.tex2 | sed s/\\date.*/\\date\{"$$DATE"\}/ >modpython.tex
 
 
