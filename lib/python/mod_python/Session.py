@@ -368,12 +368,12 @@ class FileSession(BaseSession):
         opts = req.get_options()
 
         if fast_cleanup == -1:
-            self._fast_cleanup = true_or_false(opts.get('fast_cleanup', DFT_FAST_CLEANUP))
+            self._fast_cleanup = true_or_false(opts.get('session_fast_cleanup', DFT_FAST_CLEANUP))
         else:
             self._fast_cleanup = fast_cleanup
 
         if verify_cleanup == -1:
-            self._verify_cleanup = true_or_false(opts.get('verify_cleanup', DFT_VERIFY_CLEANUP))
+            self._verify_cleanup = true_or_false(opts.get('session_verify_cleanup', DFT_VERIFY_CLEANUP))
         else:
             
         self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
