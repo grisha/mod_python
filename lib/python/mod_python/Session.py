@@ -355,7 +355,7 @@ class DbmSession(BaseSession):
 ## FileSession
 
 DFT_FAST_CLEANUP = True 
-DFT_VERIFY_CLEANUP = False 
+DFT_VERIFY_CLEANUP = True 
 DFT_GRACE_PERIOD = 240
 DFT_CLEANUP_TIME_LIMIT = 2
 
