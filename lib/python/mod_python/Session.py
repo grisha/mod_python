@@ -363,7 +363,7 @@ DFT_CLEANUP_TIME_LIMIT = 2
 class FileSession(BaseSession):
 
     def __init__(self, req, sid=0, secret=None, timeout=0, lock=1,
-                fast_cleanup=-1, verify_cleanup=-1, grace_period=-1):
+                fast_cleanup=-1, verify_cleanup=-1):
         
         opts = req.get_options()
 
@@ -376,11 +376,7 @@ class FileSession(BaseSession):
             self._verify_cleanup = true_or_false(opts.get('verify_cleanup', DFT_VERIFY_CLEANUP))
         else:
             
-        if grace_period == -1:
-            self._grace_period = int(opts.get('grace_period', DFT_GRACE_PERIOD))
-        else:
-            self._grace_period = grace_period
-
+        self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
         self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
 
         # FIXME
