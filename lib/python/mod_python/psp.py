@@ -322,19 +322,19 @@ def dbm_cache_type(dbmfile):
 def dbm_cache_store(srv, dbmfile, filename, mtime, val):
     
     dbm_type = dbm_cache_type(dbmfile)
-    _apache._global_lock(srv, "pspcache")
+    _apache._global_lock(srv, None, 0)
     try:
         dbm = dbm_type.open(dbmfile, 'c')
         dbm[filename] = "%d %s" % (mtime, code2str(val))
     finally:
         try: dbm.close()
         except: pass
-        _apache._global_unlock(srv, "pspcache")
+        _apache._global_unlock(srv, None, 0)
 
 def dbm_cache_get(srv, dbmfile, filename, mtime):
 
     dbm_type = dbm_cache_type(dbmfile)
-    _apache._global_lock(srv, "pspcache")
+    _apache._global_lock(srv, None, 0)
     try:
         dbm = dbm_type.open(dbmfile, 'c')
         try:
@@ -347,7 +347,7 @@ def dbm_cache_get(srv, dbmfile, filename, mtime):
     finally:
         try: dbm.close()
         except: pass
-        _apache._global_unlock(srv, "pspcache")
+        _apache._global_unlock(srv, None, 0)
 
 
 class HitsCache:
