@@ -379,7 +379,7 @@ class FileSession(BaseSession):
             
         self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
         self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
-        self._sessdir = opts.get('session_directory', tempdir)
+        self._sessdir = os.path.join(opts.get('session_directory', tempdir), 'mp_sess')
 
         # FIXME
         if timeout:
