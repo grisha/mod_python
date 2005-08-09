@@ -505,8 +505,7 @@ def filesession_cleanup(data):
     try:
         lockfp = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0660) 
     except:
-        req.log_error('FileSession cleanup: another process is already running.'
-                        % (fast_cleanup,verify_cleanup),
+        req.log_error('FileSession cleanup: another process is already running.',
                         apache.APLOG_NOTICE)
         return
 
@@ -596,7 +595,7 @@ def filesession_cleanup(data):
                         apache.APLOG_NOTICE)
 
         status_file = file(os.path.join(sessdir, 'fs_status.txt'), 'w')
-        status_file.write('%s %d %d %d %f %d\n' % (stat_version,next_i,expired_file_count,total_file_count, total_time))
+        status_file.write('%s %d %d %d %f\n' % (stat_version, next_i, expired_file_count, total_file_count, total_time))
         status_file.close()
    
         try:
