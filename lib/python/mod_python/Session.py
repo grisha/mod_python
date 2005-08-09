@@ -289,12 +289,11 @@ class DbmSession(BaseSession):
                  timeout=0, lock=1):
 
         if not dbm:
-            # FIXME - use session_directory
             opts = req.get_options()
             if opts.has_key("SessionDbm"):
                 dbm = opts["SessionDbm"]
             else:
-                dbm = os.path.join(tempdir, "mp_sess.dbm")
+                dbm = os.path.join(opts.get('session_directory', tempdir), 'mp_sess.dbm')
 
         self._dbmfile = dbm
         self._dbmtype = dbmtype
