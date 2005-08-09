@@ -320,8 +320,25 @@ def dbm_cache_type(dbmfile):
         return anydbm
 
 def dbm_cache_store(srv, dbmfile, filename, mtime, val):
-    
+   
     dbm_type = dbm_cache_type(dbmfile)
+
+    # NOTE: acquiring a lock for the dbm file (also applies to dbm_cache_get)
+    # See http://issues.apache.org/jira/browse/MODPYTHON-69
+    # In mod_python versions < 3.2 "pspcache" was used as the lock key.
+    # ie.  _apache._global_lock(srv, key, index)
+    # Assuming there are 32 mutexes (the default in 3.1.x), "pspcache"
+    # will hash to one of  31 mutexes (index 0 is reserved). Therefore
+    # there is a 1 in 31 chance for a hash collision if a session is
+    # used in the same request, which would result in a deadlock. This
+    # has been confirmed by testing.
+    # We can avoid this by using index 0 and setting the key to None.
+    # Lock index 0 is also used by DbmSession for locking it's dbm file, 
+    # but since the lock is not held for the duration of the request there
+    # should not be any additional deadlock issues. Likewise, the lock
+    # here is only held for a short time, so it will not interfere
+    # with DbmSession file locking.
+  
     _apache._global_lock(srv, None, 0)
     try:
         dbm = dbm_type.open(dbmfile, 'c')
