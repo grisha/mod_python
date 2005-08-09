@@ -290,8 +290,8 @@ class DbmSession(BaseSession):
 
         if not dbm:
             opts = req.get_options()
-            if opts.has_key("SessionDbm"):
-                dbm = opts["SessionDbm"]
+            if opts.has_key("session_dbm"):
+                dbm = opts["session_dbm"]
             else:
                 dbm = os.path.join(opts.get('session_directory', tempdir), 'mp_sess.dbm')
 

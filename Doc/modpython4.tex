@@ -2043,8 +2043,10 @@ if sess.is_new():
   server restarts). By default the session information is stored in a
   dbmfile named \file{mp_sess.dbm} and stored in a temporary directory
   returned by \code{tempfile.gettempdir()} standard library
-  function. It can be overridden by setting \code{PythonOption
-  SessionDbm filename}.
+  function. An alternative directory can be specified with the  
+  \code{PythonOption session_directory} directive.  
+  The path and filename can can be overridden by setting \code{PythonOption
+  session_dbm filename}.
 
   The implementation uses Python \module{anydbm} module, which will
   default to \module{dbhash} on most systems. If you need to use a
