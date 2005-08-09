@@ -375,9 +375,11 @@ class FileSession(BaseSession):
         if verify_cleanup == -1:
             self._verify_cleanup = true_or_false(opts.get('session_verify_cleanup', DFT_VERIFY_CLEANUP))
         else:
+            self._verify_cleanup = verify_cleanup
             
         self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
         self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
+        self._sessdir = opts.get('session_directory', tempdir)
 
         # FIXME
         if timeout:
