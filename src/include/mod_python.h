@@ -93,8 +93,8 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define MAIN_INTERPRETER "main_interpreter"
 
 /* used in python_directive_handler */
-#define SILENT 0
-#define NOTSILENT 1
+#define SILENT 1
+#define NOTSILENT 0
 
 /* hopefully this will go away */
 #define MAX_LOCKS 32

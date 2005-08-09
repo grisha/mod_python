@@ -1664,7 +1664,16 @@ static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
     python_directive_handler(cmd, mconfig, "PythonLogHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonCleanupHandler", val, SILENT);
 
+    /*
+     * XXX There is a bug here with PythonConnectionHandler which can
+     * cause an infinite loop when the handler is added to the handler
+     * list. Cause is unknown so simply disable it for now. If someone
+     * really needs a connection handler, they can use the directive
+     * PythonConnectionHandler explicitly still and not rely on the
+     * PythonHandlerModule directive doing it automatically.
+     *
     python_directive_handler(cmd, srv_conf, "PythonConnectionHandler", val, SILENT);
+    */
 
     return NULL;
 }
