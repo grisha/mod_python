@@ -272,7 +272,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="src/mod_python.c"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN PY_STD_LIB INCLUDES TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC LEX LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN PY_STD_LIB INCLUDES TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC LEX MAX_LOCKS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -804,6 +804,7 @@ Optional Packages:
 --with-python=DIR	Path to specific Python binary
 --with-python-src=PATH	Path to python src - required to generate documenation
 --with-flex=PATH	Path to specific flex binary
+--with-max-locks=INTEGER	Maximum number of locks
 
 Some influential environment variables:
   CC          C compiler command
@@ -3091,7 +3092,36 @@ else
 echo "$as_me: WARNING: Flex version 2.5.31 or greater is required.  The one you have seems to be $FlexVERSION. Use --with-flex to specify another." >&2;}
 fi
 
-                                                            ac_config_files="$ac_config_files Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py dist/Makefile"
+
+# configure the MAX_LOCKS for number of mutex locks
+
+
+
+echo "$as_me:$LINENO: checking for --with-max-locks" >&5
+echo $ECHO_N "checking for --with-max-locks... $ECHO_C" >&6
+
+# Check whether --with-max-locks or --without-max-locks was given.
+if test "${with_max_locks+set}" = set; then
+  withval="$with_max_locks"
+
+  MAX_LOCKS="$withval"
+  echo "$as_me:$LINENO: result: $MAX_LOCKS" >&5
+echo "${ECHO_T}$MAX_LOCKS" >&6
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi;
+
+
+if test -z "$MAX_LOCKS"; then
+  MAX_LOCKS="8"
+fi
+
+echo "$as_me:$LINENO: result: Using $MAX_LOCKS MAX_LOCKS." >&5
+echo "${ECHO_T}Using $MAX_LOCKS MAX_LOCKS." >&6
+
+                                                                      ac_config_files="$ac_config_files Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/testconf.py dist/setup.py dist/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -3646,6 +3676,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "Doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES Doc/Makefile" ;;
+  "src/include/mod_python.h" ) CONFIG_FILES="$CONFIG_FILES src/include/mod_python.h" ;;
   "test/testconf.py" ) CONFIG_FILES="$CONFIG_FILES test/testconf.py" ;;
   "dist/setup.py" ) CONFIG_FILES="$CONFIG_FILES dist/setup.py" ;;
   "dist/Makefile" ) CONFIG_FILES="$CONFIG_FILES dist/Makefile" ;;
@@ -3762,6 +3793,7 @@ s,@MOD_PYTHON_SO@,$MOD_PYTHON_SO,;t t
 s,@MP_VERSION@,$MP_VERSION,;t t
 s,@PYTHON_SRC@,$PYTHON_SRC,;t t
 s,@LEX@,$LEX,;t t
+s,@MAX_LOCKS@,$MAX_LOCKS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

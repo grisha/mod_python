@@ -21,7 +21,7 @@
  *
  * mod_python.h 
  *
- * $Id$
+ * $Id: mod_python.h 231054 2005-08-09 15:37:04Z jgallacher $
  *
  * See accompanying documentation and source code comments 
  * for details.
@@ -100,7 +100,7 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 /* MAX_LOCKS can now be set as a configure option
  * ./configure --with-max-locks=INTEGER
  */
-#define MAX_LOCKS 8 
+#define MAX_LOCKS @MAX_LOCKS@ 
 
 /* python 2.3 no longer defines LONG_LONG, it defines PY_LONG_LONG */
 #ifndef LONG_LONG
