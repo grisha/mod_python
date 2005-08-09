@@ -328,7 +328,27 @@ else
   AC_MSG_WARN([Flex version 2.5.31 or greater is required.  The one you have seems to be $FlexVERSION. Use --with-flex to specify another.])
 fi
 
-AC_OUTPUT(Makefile src/Makefile Doc/Makefile test/testconf.py dist/setup.py dist/Makefile)
+
+# configure the MAX_LOCKS for number of mutex locks
+AC_SUBST(MAX_LOCKS)
+
+
+AC_MSG_CHECKING(for --with-max-locks)
+AC_ARG_WITH(max-locks, [--with-max-locks=INTEGER	Maximum number of locks],
+[
+  MAX_LOCKS="$withval"
+  AC_MSG_RESULT($MAX_LOCKS)
+],
+AC_MSG_RESULT(no))
+
+
+if test -z "$MAX_LOCKS"; then
+  MAX_LOCKS="8"
+fi
+
+AC_MSG_RESULT([Using $MAX_LOCKS MAX_LOCKS.])
+
+AC_OUTPUT(Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/testconf.py dist/setup.py dist/Makefile)
 
 
 

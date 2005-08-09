@@ -101,6 +101,23 @@ autoconf stuff, \program{./configure} does the following:
   %$ keep emacs happy
 
 \item
+  \index{./configure!\longprogramopt{with-max-locks}}
+  %\indexii{./configure}{\longprogramopt{with-max-locks}}
+  Sets the maximum number of locks reserved by mod_python.
+
+  The mutexes used for locking are a limited resource on some
+  systems. Increasing the maximum number of locks may increase performance
+  when using session locking.  The default is 8. A reasonable number for 
+  higher performance would be 32.
+  Use \longprogramopt{with-max-locks} option, e.g:
+
+  \begin{verbatim}
+    $ ./configure --with-max-locks=32
+  \end{verbatim}                      
+
+  New in version 3.2.0
+
+\item
   \index{flex}
   Attempts to locate \program{flex} and determine its version. 
   If \program{flex} cannot be found in your \envvar{PATH} \program{configure}
@@ -126,6 +143,8 @@ autoconf stuff, \program{./configure} does the following:
   \end{verbatim}
   %$ keep emacs happy
 
+  New in version 3.2.0
+
 \item
   \index{python-src}
   The python source is required to build the mod_python documentation.
@@ -140,6 +159,8 @@ autoconf stuff, \program{./configure} does the following:
     $ ./configure --with-python-src=/usr/src/python2.3
   \end{verbatim}                      
   %$ keep emacs happy
+
+  New in version 3.2.0
 
 \end{itemize}
 
