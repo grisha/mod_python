@@ -492,7 +492,7 @@ static PyObject * req_internal_redirect(requestobject *self, PyObject *args)
         }
     }
 #endif
-
+    
     Py_BEGIN_ALLOW_THREADS
     ap_internal_redirect(new_uri, self->request_rec);
     Py_END_ALLOW_THREADS
@@ -1235,6 +1235,15 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
+    else if (strcmp(name, "path_info") == 0) {
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "path_info must be a string");
+            return -1;
+        }
+        self->request_rec->path_info = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
+    }
     
     return PyMember_SetOne((char*)self->request_rec, 
                            find_memberdef(request_rec_mbrs, (char*)name),
@@ -1433,7 +1442,7 @@ static PyGetSetDef request_getsets[] = {
     {"uri",           (getter)getreq_recmbr, NULL, "The path portion of URI", "uri"},
     {"filename",      (getter)getreq_recmbr, (setter)setreq_recmbr, "The file name on disk that this request corresponds to", "filename"},
     {"canonical_filename", (getter)getreq_recmbr, NULL, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
-    {"path_info",     (getter)getreq_recmbr, NULL, "Path_info, if any", "path_info"},
+    {"path_info",     (getter)getreq_recmbr, (setter)setreq_recmbr, "Path_info, if any", "path_info"},
     {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
     {"finfo",         (getter)getreq_rec_fi, NULL, "File information", "finfo"},
     {"parsed_uri",    (getter)getreq_rec_uri, NULL, "Components of URI", "parsed_uri"},
