@@ -33,7 +33,7 @@ import util
 
 import sys
 import os
-from os.path import isabs, normpath, split, isfile, join, dirname
+from os.path import exists, isabs, normpath, split, isfile, join, dirname
 import imp
 import re
 import base64
@@ -113,10 +113,9 @@ def handler(req):
     if req.method not in ["GET", "POST", "HEAD"]:
         raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
-    # if the file exists, req.finfo is not None
-    if req.finfo:
+    if exists(req.filename):
         
-        # The file exists, so we have a request of the form :
+        # The file or directory exists, so we have a request of the form :
         # /directory/[module][/func_path]
         
         # we check whether there is a file name or not
@@ -131,6 +130,7 @@ def handler(req):
 
             # we don't have a path info, or it's just a slash,
             # so we'll call index
+            # TODO: now that req.path_info is writable, why not change it ?
             func_path = 'index'
 
         else:
@@ -385,27 +385,45 @@ re_charset = re.compile(r"charset\s*=\s*([^\s;]+)",re.I);
 
 def publish_object(req, object):
     if callable(object):
+        
+        # To publish callables, we call them an recursively publish the result
+        # of the call (as done by util.apply_fs_data)
+        
         req.form = util.FieldStorage(req, keep_blank_values=1)
         return publish_object(req,util.apply_fs_data(object, req.form, req=req))
+    
     elif hasattr(object,'__iter__'):
+    
+        # To publish iterables, we recursively publish each item
+        # This way, generators can be published
         result = False
         for item in object:
             result |= publish_object(req,item)
         return result
+        
     else:
         if object is None:
+            
+            # Nothing to publish
             return False
+            
         elif isinstance(object,UnicodeType):
-            # We try to detect the character encoding
+            
+            # We've got an Unicode string to publish, so we have to encode
+            # it to bytes. We try to detect the character encoding
             # from the Content-Type header
             if req._content_type_set:
+
                 charset = re_charset.search(req.content_type)
                 if charset:
                     charset = charset.group(1)
                 else:
+                    # If no character encoding was set, we use UTF8
                     charset = 'UTF8'
                     req.content_type += '; charset=UTF8'
+
             else:
+                # If no character encoding was set, we use UTF8
                 charset = 'UTF8'
                 
             result = object.encode(charset)
@@ -423,9 +441,13 @@ def publish_object(req, object):
             else:
                 req.content_type = 'text/plain'
             if charset is not None:
-                req.content_type += '; charset=UTF8'
+                req.content_type += '; charset=%s'%charset
         
         if req.method!='HEAD':
+            
+            # TODO : the problem is that a handler can still use req.write
+            # and break the assumption that nothing should be written with the
+            # HEAD method.
             req.write(result)
 
         return True
