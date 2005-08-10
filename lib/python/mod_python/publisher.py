@@ -80,30 +80,30 @@ page_cache = PageCache()
 
 ####################### Interface to the published page cache ##################    
 
-def get_page(req, path):
-    """
-        This imports a published page. If the path is absolute it is used as is.
-        If it is a relative path it is relative to the published page
-        where the request is really handled (not relative to the path
-        given in the URL).
-        
-        Warning : in order to maintain consistency in case of module reloading,
-        do not store the resulting module in a place that outlives the request
-        duration.
-    """
-    
-    real_filename = req.filename
-    
-    try:
-        if isabs(path):
-            req.filename = path
-        else:
-            req.filename = normpath(join(dirname(req.filename), path))
-        
-        return page_cache[req]
-    
-    finally:
-        req.filename = real_filename
+# def get_page(req, path):
+#     """
+#         This imports a published page. If the path is absolute it is used as is.
+#         If it is a relative path it is relative to the published page
+#         where the request is really handled (not relative to the path
+#         given in the URL).
+#         
+#         Warning : in order to maintain consistency in case of module reloading,
+#         do not store the resulting module in a place that outlives the request
+#         duration.
+#     """
+#     
+#     real_filename = req.filename
+#     
+#     try:
+#         if isabs(path):
+#             req.filename = path
+#         else:
+#             req.filename = normpath(join(dirname(req.filename), path))
+#         
+#         return page_cache[req]
+#     
+#     finally:
+#         req.filename = real_filename
 
 ####################### The publisher handler himself ##########################    
 
