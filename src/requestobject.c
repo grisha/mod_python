@@ -71,6 +71,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     return (PyObject *) result;
 }
 
+
 /* Methods */
 
 /**
@@ -1473,6 +1474,34 @@ static struct PyMemberDef request_members[] = {
 };
 
 /**
+ ** request_tp_clear
+ **
+ *    
+ */
+static int request_tp_clear(requestobject *self)
+{   
+    PyObject* tmp;
+    /* TODO: create a macro for the following repetitive code */ 
+    tmp=self->dict; self->dict=NULL; Py_XDECREF(tmp);
+    tmp=self->connection; self->connection=NULL; Py_XDECREF(tmp);
+    tmp=self->server; self->server=NULL; Py_XDECREF(tmp);
+    tmp=self->next; self->next=NULL; Py_XDECREF(tmp);
+    tmp=self->prev; self->prev=NULL; Py_XDECREF(tmp);
+    tmp=self->main; self->main=NULL; Py_XDECREF(tmp);
+    tmp=self->headers_in; self->headers_in=NULL; Py_XDECREF(tmp);
+    tmp=self->headers_out; self->headers_out=NULL; Py_XDECREF(tmp);
+    tmp=self->err_headers_out; self->err_headers_out=NULL; Py_XDECREF(tmp);
+    tmp=self->subprocess_env; self->subprocess_env=NULL; Py_XDECREF(tmp);
+    tmp=self->notes; self->notes=NULL; Py_XDECREF(tmp);
+    tmp=self->phase; self->phase=NULL; Py_XDECREF(tmp);
+    tmp=self->hlo; self->hlo=NULL; Py_XDECREF(tmp);
+    tmp=self->session; self->session=NULL; Py_XDECREF(tmp);
+    
+    return 0;
+}
+
+
+/**
  ** request_dealloc
  **
  *
@@ -1515,28 +1544,6 @@ static int request_tp_traverse(requestobject* self, visitproc visit, void *arg) 
     // no need to Py_DECREF(dict) since the reference is borrowed
     return 0;
 }
-
-static int request_tp_clear(requestobject *self)
-{  
-    PyObject* tmp;
-    tmp=self->dict; self->dict=NULL; Py_XDECREF(tmp);
-    tmp=self->connection; self->connection=NULL; Py_XDECREF(tmp);
-    tmp=self->server; self->server=NULL; Py_XDECREF(tmp);
-    tmp=self->next; self->next=NULL; Py_XDECREF(tmp);
-    tmp=self->prev; self->prev=NULL; Py_XDECREF(tmp);
-    tmp=self->main; self->main=NULL; Py_XDECREF(tmp);
-    tmp=self->headers_in; self->headers_in=NULL; Py_XDECREF(tmp);
-    tmp=self->headers_out; self->headers_out=NULL; Py_XDECREF(tmp);
-    tmp=self->err_headers_out; self->err_headers_out=NULL; Py_XDECREF(tmp);
-    tmp=self->subprocess_env; self->subprocess_env=NULL; Py_XDECREF(tmp);
-    tmp=self->notes; self->notes=NULL; Py_XDECREF(tmp);
-    tmp=self->phase; self->phase=NULL; Py_XDECREF(tmp);
-    tmp=self->hlo; self->hlo=NULL; Py_XDECREF(tmp);
-    tmp=self->session; self->session=NULL; Py_XDECREF(tmp);
-    
-    return 0;
-}
-
 static char request_doc[] =
 "Apache request_rec structure\n";
 
