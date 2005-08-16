@@ -452,12 +452,16 @@ def import_module(module_name, autoreload=1, log=0, path=None):
                     s = "mod_python: (Re)importing module '%s'" % module_name
                 _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
 
+            parent = None
             parts = module_name.split('.')
             for i in range(len(parts)):
                 f, p, d = imp.find_module(parts[i], path)
                 try:
                     mname = ".".join(parts[:i+1])
                     module = imp.load_module(mname, f, p, d)
+                    if parent:
+                        setattr(parent,parts[i],module)
+                    parent = module
                 finally:
                     if f: f.close()
                 if hasattr(module, "__path__"):
