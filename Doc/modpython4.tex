@@ -2083,7 +2083,8 @@ if sess.is_new():
   \var{PythonOption session_cleanup_time_limit}.
 
   \begin{itemize}
-  \item[\var{fast_cleanup}]
+  \item
+   \var{fast_cleanup}
     A boolean value used to turn on FileSession cleanup optimization.
     Default is \var{True} and will result in reduced cleanup time when
     there are a large number of session files.
@@ -2110,7 +2111,8 @@ if sess.is_new():
     The value of \var{fast_cleanup} can also be set using
     \code{PythonOption session_fast_cleanup}.
     
-  \item[\var{verify_cleanup}]
+  \item
+   \var{verify_cleanup}
     Boolean value used to optimize the FileSession cleanup process.
     Default is \code{True}.
     
@@ -2129,7 +2131,8 @@ if sess.is_new():
     The value of \var{verify_cleanup} can also be set using
     \code{PythonOption session_verify_cleanup}
     
-  \item[\var{PythonOption session_cleanup_time_limit [value]}]
+  \item
+   \var{PythonOption session_cleanup_time_limit [value]}
     Integer value in seconds. Default is 2 seconds.
 
     Session cleanup could potentially take a long time and be both cpu
@@ -2144,7 +2147,8 @@ if sess.is_new():
     feature and filesession_cleanup will run to completion each time it
     is called.
 
-  \item[\var{PythonOption session_grace_period [value]}]
+  \item
+    \var{PythonOption session_grace_period [value]}
     Integer value in seconds. Default is 240 seconds. This value is added
     to the session timeout in determining if a session file should be 
     deleted.
