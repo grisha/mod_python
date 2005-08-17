@@ -19,3 +19,6 @@
 
 __all__ = ["apache", "cgihandler", "psp",
            "publisher", "util"]
+
+
+version = "3.2.0-BETA-20050816"
