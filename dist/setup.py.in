@@ -157,12 +157,13 @@ import string
 from distutils import sysconfig
 
 if sys.platform == "darwin":
-    sysconfig._config_vars["LDSHARED"] = \
-            string.replace(sysconfig.get_config_var("LDSHARED"), \
-            " -bundle "," -bundle -flat_namespace -undefined suppress ")
-    sysconfig._config_vars["BLDSHARED"] = \
-            string.replace(sysconfig.get_config_var("BLDSHARED"), \
-            " -bundle "," -bundle -flat_namespace -undefined suppress ")
+    if not '-undefined' in sysconfig.get_config_var("LDSHARED").split():
+        sysconfig._config_vars["LDSHARED"] = \
+                string.replace(sysconfig.get_config_var("LDSHARED"), \
+                " -bundle "," -bundle -flat_namespace -undefined suppress ")
+        sysconfig._config_vars["BLDSHARED"] = \
+                string.replace(sysconfig.get_config_var("BLDSHARED"), \
+                " -bundle "," -bundle -flat_namespace -undefined suppress ")
 
 setup(name="mod_python",
       version=VER,
