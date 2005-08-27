@@ -113,75 +113,92 @@ def handler(req):
     if req.method not in ["GET", "POST", "HEAD"]:
         raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
 
-    if exists(req.filename):
-        
-        # The file or directory exists, so we have a request of the form :
-        # /directory/[module][/func_path]
-        
-        # we check whether there is a file name or not
-        path, filename = split(req.filename)
-        if not filename:
-            
-            # if not, we look for index.py
-            req.filename = join(path, 'index.py')
+    # Derive the name of the actual module which will be
+    # loaded. In older version of mod_python.publisher
+    # you can't actually have a code file name which has
+    # an embedded '.' in it except for that used by the
+    # extension. This is because the standard Python
+    # module import system which is used will think that
+    # you are importing a submodule of a package. In
+    # this code, because the standard Python module
+    # import system isn't used and the actual file is
+    # opened directly by name, an embedded '.' besides
+    # that used for the extension will technically work.
 
-        # Now we build the function path
-        if not req.path_info or req.path_info=='/':
+    path,module_name =  os.path.split(req.filename)
 
-            # we don't have a path info, or it's just a slash,
-            # so we'll call index
-            # TODO: now that req.path_info is writable, why not change it ?
-            func_path = 'index'
+    # If the request is against a directory, fallback to
+    # looking for the 'index' module. This is determined
+    # by virtue of the fact that Apache will always add
+    # a trailing slash to 'req.filename' when it matches
+    # a directory. This will mean that the calculated
+    # module name will be empty.
 
+    if not module_name:  
+        module_name = 'index'
+
+    # Now need to strip off any special extension which
+    # was used to trigger this handler in the first place.
+
+    suffixes = ['py']
+    suffixes += req.get_addhandler_exts().split()
+    if req.extension:
+        suffixes.append(req.extension[1:])
+
+    exp = '\\.' + '$|\\.'.join(suffixes) + '$'
+    suff_matcher = re.compile(exp)
+    module_name = suff_matcher.sub('',module_name)
+
+    # Next need to determine the path for the function
+    # which will be called from 'req.path_info'. The
+    # leading slash and possibly any trailing slash are
+    # eliminated. There would normally be at most one
+    # trailing slash as Apache eliminates duplicates
+    # from the original URI.
+
+    func_path = ''
+
+    if req.path_info:
+        func_path = req.path_info[1:]
+        if func_path[-1:] == '/':
+            func_path = func_path[:-1]
+
+    # Now determine the actual Python module code file
+    # to load. This will first try looking for the file
+    # '/path/<module_name>.py'. If this doesn't exist,
+    # will try fallback of using the 'index' module,
+    # ie., look for '/path/index.py'. In doing this, the
+    # 'func_path' gets adjusted so the lead part is what
+    # 'module_name' was set to.
+
+    req.filename = path + '/' + module_name + '.py'
+
+    if not exists(req.filename):
+        if func_path:
+            func_path = module_name + '/' + func_path
         else:
+            func_path = module_name
 
-            # we have a path_info, so we use it, removing the first slash
-            func_path = req.path_info[1:]
-    
-    else:
-        
-        # First we check if there is a Python module with that name
-        # just by adding a .py extension
-        if isfile(req.filename+'.py'):
+        module_name = 'index' 
+        req.filename = path + '/' + module_name + '.py'
 
-            req.filename += '.py'
-            
-            # Now we build the function path
-            if not req.path_info or req.path_info=='/':
-    
-                # we don't have a path info, or it's just a slash,
-                # so we'll call index
-                func_path = 'index'
-    
-            else:
-    
-                # we have a path_info, so we use it, removing the first slash
-                func_path = req.path_info[1:]
-        else:
+        if not exists(req.filename):
+            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
-            # The file does not exist, so it seems we are in the
-            # case of a request in the form :
-            # /directory/func_path
-    
-            # we'll just insert the module name index.py in the middle
-            path, func_path = split(req.filename)
-            req.filename = join(path, 'index.py')
-    
-            # I don't know if it's still possible to have a path_info
-            # but if we have one, we append it to the filename which
-            # is considered as a path_info.
-            if req.path_info:
-                func_path = func_path + req.path_info
+    # Default to looking for the 'index' function if no
+    # function path definition was supplied.
 
-    # Normalize the filename to save us from insanity on Win32.
+    if not func_path:
+        func_path = 'index'
+
+    # Turn slashes into dots.
+
+    func_path = func_path.replace('/', '.')
+
+    # Normalise req.filename to avoid Win32 issues.
+
     req.filename = normpath(req.filename)
 
-    # Now we turn slashes into dots
-    func_path = func_path.replace('/', '.')
-    
-    # We remove the last dot if any
-    if func_path[-1:] == ".":
-        func_path = func_path[:-1] 
 
     # We use the page cache to load the module
     module = page_cache[req]
