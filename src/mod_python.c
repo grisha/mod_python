@@ -598,16 +598,35 @@ static void *python_create_srv_config(apr_pool_t *p, server_rec *srv)
     return conf;
 }
 
+/*
+code begin
+*/
+/**
+ ** modpython_table_overlap
+ **
+ * Replaces the apr_table_overlap() function using a specific pool
+ * for the resulting table.
+ */
+
+static apr_table_t *modpython_table_overlap(apr_pool_t *p,
+                                            apr_table_t *current_table,
+                                            apr_table_t *new_table)
+{
+    apr_table_t *merge = apr_table_overlay(p, current_table, new_table);
+    apr_table_compress(merge, APR_OVERLAP_TABLES_SET);
+    return merge;
+}
+
 /**
  ** python_merge_dir_config
  **
  */
 
-static void *python_merge_config(apr_pool_t *p, void *current_conf, 
+static void *python_merge_config(apr_pool_t *p, void *current_conf,
                                  void *new_conf)
 {
 
-    py_config *merged_conf = 
+    py_config *merged_conf =
         (py_config *) apr_pcalloc(p, sizeof(py_config));
     py_config *cc = (py_config *) current_conf;
     py_config *nc = (py_config *) new_conf;
@@ -622,20 +641,19 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
      */
 
     /** create **/
-    merged_conf->directives = apr_table_make(p, 4);
-    merged_conf->options = apr_table_make(p, 4);
     merged_conf->hlists = apr_hash_make(p);
     merged_conf->in_filters = apr_hash_make(p);
     merged_conf->out_filters = apr_hash_make(p);
 
-    /** copy current **/
+    /** merge directives and options **/
+    merged_conf->directives = modpython_table_overlap(p, cc->directives,
+                                                         nc->directives);
+    merged_conf->options = modpython_table_overlap(p, cc->options,
+                                                      nc->options);
 
+    /** copy current **/
     merged_conf->authoritative = cc->authoritative;
     merged_conf->config_dir = apr_pstrdup(p, cc->config_dir);
-    apr_table_overlap(merged_conf->directives, cc->directives,
-                      APR_OVERLAP_TABLES_SET);
-    apr_table_overlap(merged_conf->options, cc->options,
-                      APR_OVERLAP_TABLES_SET);
 
     for (hi = apr_hash_first(p, cc->hlists); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
@@ -659,11 +677,6 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
     if (nc->config_dir)
         merged_conf->config_dir = apr_pstrdup(p, nc->config_dir);
 
-    apr_table_overlap(merged_conf->directives, nc->directives,
-                      APR_OVERLAP_TABLES_SET);
-    apr_table_overlap(merged_conf->options, nc->options,
-                      APR_OVERLAP_TABLES_SET);
-
     for (hi = apr_hash_first(p, nc->hlists); hi; hi=apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
         apr_hash_set(merged_conf->hlists, key, klen, (void *)hle);
@@ -681,6 +694,11 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
 
     return (void *) merged_conf;
 }
+
+/*
+code end
+*/
+
 
 /**
  ** python_directive
