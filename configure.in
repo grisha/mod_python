@@ -290,13 +290,33 @@ AC_MSG_RESULT(no))
 if test -z "$PYTHON_SRC"; then
   PYTHON_SRC=""
 fi
-# check for correct flex version
-# requires flex 2.5.31 for reentrant support
 
+# configure the MAX_LOCKS for number of mutex locks
+AC_SUBST(MAX_LOCKS)
+AC_MSG_CHECKING(for --with-max-locks)
+AC_ARG_WITH(max-locks, [--with-max-locks=INTEGER	Maximum number of locks],
+[
+  MAX_LOCKS="$withval"
+  AC_MSG_RESULT($MAX_LOCKS)
+],
+AC_MSG_RESULT(no))
+
+if test -z "$MAX_LOCKS"; then
+  MAX_LOCKS="8"
+fi
+AC_MSG_RESULT([Using $MAX_LOCKS MAX_LOCKS.])
+
+# Check for correct flex version
+# Requires flex 2.5.31 for reentrant support
+# See README for more details
 AC_SUBST(LEX)
 
 AC_MSG_CHECKING(for --with-flex)
-AC_ARG_WITH(flex, [--with-flex=PATH	Path to specific flex binary],
+AC_ARG_WITH(flex, [--with-flex=PATH	Path to specific flex binary.
+	Flex Version 2.5.31 or greater is required to regenerate psp_parser.c
+	from psp_parse.l. A prepared psp_parser.c file is included with the
+	source, so you will only need flex if you make changes to psp_parser.l
+    	See the README for more information.],
 [
   LEX="$withval"
   AC_MSG_RESULT($LEX)
@@ -306,47 +326,34 @@ AC_MSG_RESULT(no))
 # check for flex executable
 if test -z "$LEX"; then
   AC_PATH_PROG(LEX, flex)
-  if test -z "$LEX"; then
-    AC_MSG_ERROR(flex binary not found in path)
-  fi
 fi
 
 if test "$LEX" && test -x "$LEX"; then
   AC_MSG_RESULT([found $LEX, we'll use this. Use --with-flex to specify another.])
+
+  AC_MSG_CHECKING(flex version)
+  FlexVERSION=`$LEX --version | sed 's/version//g' | awk '/flex/ {print $2}'`
+  Flex_MAJOR=`echo $FlexVERSION| awk -F .  '{print $1}'`
+  Flex_MINOR=`echo $FlexVERSION| awk -F .  '{print $2}'`
+  Flex_PATCH=`echo $FlexVERSION| awk -F .  '{print $3}'`
+  
+  if test "$Flex_MAJOR" -eq "2" && test "$Flex_MINOR" -eq "5" && test "$Flex_PATCH" -ge "31"; then
+    AC_MSG_RESULT([$FlexVERSION. Good])
+  else
+    AC_MSG_WARN([Flex version $FlexVERSION found.
+    Version 2.5.31 or greater is required.  You can generally ignore this
+    warning unless you need to regenerate psp_parser.c from psp_parse.l.
+    If you do need regenerate psp_parser.c, use --with-flex to specify the
+    location of the correct flex version. See the README for more information.])
+  fi
+
 else
-  AC_MSG_ERROR([flex $LEX not found,  Use --with-flex to specify another.])
+  AC_MSG_WARN([flex $LEX not found
+  You can generally ignore this warning unless you need to regenerate
+  psp_parser.c from psp_parse.l.  If you do need regenerate psp_parser.c,
+  use --with-flex to specify the location of flex.
+  See the README for more information.])
 fi
-
-AC_MSG_CHECKING(flex version)
-FlexVERSION=`$LEX --version | sed 's/version//g' | awk '/flex/ {print $2}'`
-Flex_MAJOR_VER=`echo $FlexVERSION| awk -F .  '{print $1}'`
-Flex_MINOR_VER=`echo $FlexVERSION| awk -F .  '{print $2}'`
-Flex_SUB_VER=`echo $FlexVERSION| awk -F .  '{print $3}'`
-if test "$Flex_MAJOR_VER" -eq "2" && test "$Flex_MINOR_VER" -eq "5" && test "$Flex_SUB_VER" -ge "31"; then
-  AC_MSG_RESULT([$FlexVERSION. Good])
-else
-  AC_MSG_WARN([Flex version 2.5.31 or greater is required.  The one you have seems to be $FlexVERSION. Use --with-flex to specify another.])
-fi
-
-
-# configure the MAX_LOCKS for number of mutex locks
-AC_SUBST(MAX_LOCKS)
-
-
-AC_MSG_CHECKING(for --with-max-locks)
-AC_ARG_WITH(max-locks, [--with-max-locks=INTEGER	Maximum number of locks],
-[
-  MAX_LOCKS="$withval"
-  AC_MSG_RESULT($MAX_LOCKS)
-],
-AC_MSG_RESULT(no))
-
-
-if test -z "$MAX_LOCKS"; then
-  MAX_LOCKS="8"
-fi
-
-AC_MSG_RESULT([Using $MAX_LOCKS MAX_LOCKS.])
 
 AC_OUTPUT(Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/testconf.py dist/setup.py dist/Makefile)
 
