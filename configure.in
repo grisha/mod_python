@@ -73,10 +73,21 @@ if test -z "$APXS"; then
   fi
 fi
 
-# last resort
+# second last resort
 if test -z "$APXS"; then
   AC_MSG_CHECKING(for apxs in your PATH)
   AC_PATH_PROG(APXS, apxs)
+  if test -n "$APXS"; then
+    AC_MSG_RESULT([found $APXS, we'll use this. Use --with-apxs to specify another.])
+  fi
+fi  
+
+# last resort
+# some linux distributions use apxs2 for apache2 installations,
+# so check for apxs2 before we give up.
+if test -z "$APXS"; then
+  AC_MSG_CHECKING(for apxs2 in your PATH)
+  AC_PATH_PROG(APXS, apxs2)
   if test -n "$APXS"; then
     AC_MSG_RESULT([found $APXS, we'll use this. Use --with-apxs to specify another.])
   fi
