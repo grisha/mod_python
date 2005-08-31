@@ -1886,10 +1886,19 @@ delay.)
 \subsection{Classes\label{pyapi-sess-classes}}
 
 \begin{funcdesc}{Session}{req\optional{, sid, secret, timeout, lock}}
-  This function queries the MPM and based on that returns either a new
-  instance of \class{DbmSession} or \class{MemorySession}. It takes
-  same arguments as \class{BaseSession}.
 
+  \function{Session()} takes the same arguments as \class{BaseSession}.
+
+  This function returns a instance of the default session class. The
+  the session class to be used can be specified using 
+  \var{PythonOption session value}, where \var{value} is one of
+  \class{DbmSession}, \class{MemorySession} or \class{FileSession}. Specifying
+  custom session classes using PythonOption session is not yet supported.
+
+  If \var{PythonOption session} is not found, the function queries
+  the MPM and based on that returns either a new instance of
+  \class{DbmSession} or \class{MemorySession}.
+  
   \class{MemorySession} will be used if the MPM is threaded and not
   forked (such is the case on Windows), or if it threaded, forked, but
   only one process is allowed (the worker MPM can be configured to run
