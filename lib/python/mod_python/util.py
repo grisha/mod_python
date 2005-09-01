@@ -371,20 +371,6 @@ def apply_fs_data(object, fs, **args):
    then call the object, return the result.
    """
 
-   # add form data to args
-   for field in fs.list:
-       if field.filename:
-           val = field
-       else:
-           val = field.value
-       args.setdefault(field.name, []).append(val)
-
-   # replace lists with single values
-   for arg in args:
-       if ((type(args[arg]) is ListType) and
-           (len(args[arg]) == 1)):
-           args[arg] = args[arg][0]
-
    # we need to weed out unexpected keyword arguments
    # and for that we need to get a list of them. There
    # are a few options for callable objects here:
@@ -409,8 +395,26 @@ def apply_fs_data(object, fs, **args):
        expected = []
    elif hasattr(object, '__call__'):
        # callable object
-       fc = object.__call__.im_func.func_code
-       expected = fc.co_varnames[1:fc.co_argcount]
+       if type(object.__call__) is MethodType:
+           fc = object.__call__.im_func.func_code
+           expected = fc.co_varnames[1:fc.co_argcount]
+       else:
+           # abuse of objects to create hierarchy
+           return apply_fs_data(object.__call__, fs, **args)
+
+   # add form data to args
+   for field in fs.list:
+       if field.filename:
+           val = field
+       else:
+           val = field.value
+       args.setdefault(field.name, []).append(val)
+
+   # replace lists with single values
+   for arg in args:
+       if ((type(args[arg]) is ListType) and
+           (len(args[arg]) == 1)):
+           args[arg] = args[arg][0]
 
    # remove unexpected args unless co_flags & 0x08,
    # meaning function accepts **kw syntax
