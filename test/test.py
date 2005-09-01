@@ -1224,7 +1224,7 @@ class PerRequestTestCase(unittest.TestCase):
         if status != 403:
             self.fail('Vulnerability : built-in type publishing (%i)\n%s' % (status, response))
 
-    def test_publisher_iterator(self):
+    def test_publisher_iterator_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
                         DocumentRoot(DOCUMENT_ROOT),
@@ -1243,6 +1243,35 @@ class PerRequestTestCase(unittest.TestCase):
 
         rsp = self.vhost_get("test_publisher", path="/tests.py/test_generator")
         if (rsp != "0123456789"):
+            self.fail(`rsp`)
+
+    def test_publisher_hierarchy_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher_hierarchy"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_publisher_hierarchy(self):
+        print "\n  * Testing mod_python.publisher hierarchy"
+
+        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root")
+        if (rsp != "Called root"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root/page1")
+        if (rsp != "Called page1"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root/page1/subpage1")
+        if (rsp != "Called subpage1"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root/page2")
+        if (rsp != "Called page2"):
             self.fail(`rsp`)
 
     def test_publisher_old_style_instance_conf(self):
@@ -1385,6 +1414,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_hierarchy"))
         # this must be last so its error_log is not overwritten
         # perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 

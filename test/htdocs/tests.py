@@ -870,6 +870,18 @@ class InstanceTest(object):
         return "test traversable instance ok"
 instance = InstanceTest()
 
+# Hierarchy traversal tests
+class Mapping(object):
+    def __init__(self,name):
+        self.name = name
+
+    def __call__(self,req):
+        return "Called %s"%self.name
+hierarchy_root = Mapping("root");
+hierarchy_root.page1 = Mapping("page1")
+hierarchy_root.page1.subpage1 = Mapping("subpage1")
+hierarchy_root.page2 = Mapping("page2")
+
 def _test_table():
 
     log = apache.log_error
