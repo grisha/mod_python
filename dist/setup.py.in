@@ -140,18 +140,24 @@ class ModPyExtension(Extension):
         # this is a hack to prevent build_ext from trying to append "initmod_python" to the export symbols
         self.export_symbols = finallist(self.export_symbols)
 
-ModPyModule = ModPyExtension(getmp_srcdir(), [getmp_includedir(), getapache_includedir()], [getapache_libdir()])
 
 if winbuild:
+
+    # build mod_python.so
+    ModPyModule = ModPyExtension(getmp_srcdir(), [getmp_includedir(), getapache_includedir()], [getapache_libdir()])
+
     scripts = ["win32_postinstall.py"]
     # put the mod_python.so file in the Python root ...
     # win32_postinstall.py will pick it up from there...
     # data_files = [("", [(os.path.join(getmp_srcdir(), 'Release', 'mod_python.so'))])]
     data_files = []
+    ext_modules = [ModPyModule, PSPModule]
+
 else:
-    # mpso = "../src/mod_python.so"
+
     scripts = []
     data_files = []
+    ext_modules = [PSPModule]
 
 import string
 from distutils import sysconfig
@@ -175,7 +181,7 @@ setup(name="mod_python",
       package_dir={'mod_python': os.path.join(getmp_rootdir(), 'lib', 'python', 'mod_python')},
       scripts=scripts,
       data_files=data_files,
-      ext_modules=[ModPyModule, PSPModule])
+      ext_modules=ext_modules)
 
 # makes emacs go into python mode
 ### Local Variables:
