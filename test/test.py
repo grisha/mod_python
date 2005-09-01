@@ -1262,8 +1262,16 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "Called root"):
             self.fail(`rsp`)
 
+        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root_2")
+        if (rsp != "test ok, interpreter=test_publisher_hierarchy"):
+            self.fail(`rsp`)
+
         rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root/page1")
         if (rsp != "Called page1"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root_2/page1")
+        if (rsp != "test ok, interpreter=test_publisher_hierarchy"):
             self.fail(`rsp`)
 
         rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root/page1/subpage1")
@@ -1272,6 +1280,10 @@ class PerRequestTestCase(unittest.TestCase):
 
         rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root/page2")
         if (rsp != "Called page2"):
+            self.fail(`rsp`)
+
+        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root_2/page2")
+        if (rsp != "test ok, interpreter=test_publisher_hierarchy"):
             self.fail(`rsp`)
 
     def test_publisher_old_style_instance_conf(self):
