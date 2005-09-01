@@ -882,6 +882,13 @@ hierarchy_root.page1 = Mapping("page1")
 hierarchy_root.page1.subpage1 = Mapping("subpage1")
 hierarchy_root.page2 = Mapping("page2")
 
+class Mapping2:
+    pass
+hierarchy_root_2 = Mapping2()
+hierarchy_root_2.__call__ = index
+hierarchy_root_2.page1 = index
+hierarchy_root_2.page2 = index
+
 def _test_table():
 
     log = apache.log_error
