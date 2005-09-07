@@ -149,6 +149,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
             idata->obcallback = NULL; 
             p = PyCObject_FromVoidPtr((void *) idata, NULL);
             PyDict_SetItemString(interpreters, (char *)name, p);
+            Py_DECREF(p);
         }
     }
     else {
