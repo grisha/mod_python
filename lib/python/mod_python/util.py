@@ -119,14 +119,14 @@ class FieldStorage:
        else:
            ctype = req.headers_in["content-type"]
 
-       if ctype == "application/x-www-form-urlencoded":
+       if ctype.startswith("application/x-www-form-urlencoded"):
            pairs = parse_qsl(req.read(clen), keep_blank_values)
            for pair in pairs:
                file = cStringIO.StringIO(pair[1])
                self.list.append(Field(pair[0], file, "text/plain", {}, None, {}))
            return
 
-       if ctype[:10] != "multipart/":
+       if not ctype.startswith("multipart/"):
            # we don't understand this content-type
            raise apache.SERVER_RETURN, apache.HTTP_NOT_IMPLEMENTED
 
