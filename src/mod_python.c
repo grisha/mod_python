@@ -31,7 +31,9 @@
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
 
+#ifdef WITH_THREAD
 static apr_thread_mutex_t* interpreters_lock = 0;
+#endif
 
 apr_pool_t *child_init_pool = NULL;
 
