@@ -31,7 +31,7 @@
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
 
-#ifdef WITH_THREAD
+#if defined(WITH_THREAD) && defined(APR_HAS_THREADS)
 static apr_thread_mutex_t* interpreters_lock = 0;
 #endif
 
@@ -130,7 +130,9 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
         name = MAIN_INTERPRETER;
 
 #ifdef WITH_THREAD
-    apr_thread_mutex_lock(interpreters_lock);
+    #ifdef APR_HAS_THREADS
+        apr_thread_mutex_lock(interpreters_lock);
+    #endif
     PyEval_AcquireLock();
 #endif
 
@@ -160,7 +162,9 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 
 #ifdef WITH_THREAD
     PyEval_ReleaseLock();
-    apr_thread_mutex_unlock(interpreters_lock);
+    #ifdef APR_HAS_THREADS
+        apr_thread_mutex_unlock(interpreters_lock);
+    #endif
 #endif
 
     if (! idata) {
@@ -516,7 +520,9 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         Py_Initialize();
 
 #ifdef WITH_THREAD
-        apr_thread_mutex_create(&interpreters_lock,APR_THREAD_MUTEX_UNNESTED,p);
+        #ifdef APR_HAS_THREADS
+            apr_thread_mutex_create(&interpreters_lock,APR_THREAD_MUTEX_UNNESTED,p);
+        #endif
         /* create and acquire the interpreter lock */
         PyEval_InitThreads();
 #endif
