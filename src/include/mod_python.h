@@ -57,7 +57,13 @@
 #include "Python.h"
 #include "structmember.h"
 
-#if defined(WIN32) && !defined(WITH_THREAD)
+#if(defined(WITH_THREAD) && APR_HAS_THREADS)
+    #define MOD_PYTHON_WITH_THREAD_SUPPORT 1
+#else
+    #define MOD_PYTHON_WITH_THREAD_SUPPORT 0
+#endif
+
+#if defined(WIN32) && !MOD_PYTHON_WITH_THREAD_SUPPORT
 #error Python threading must be enabled on Windows
 #endif
 
