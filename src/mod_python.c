@@ -31,7 +31,7 @@
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
 
-#if defined(WITH_THREAD) && APR_HAS_THREADS
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
 static apr_thread_mutex_t* interpreters_lock = 0;
 #endif
 
@@ -129,10 +129,8 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
     if (! name)
         name = MAIN_INTERPRETER;
 
-#ifdef WITH_THREAD
-    #if APR_HAS_THREADS
-        apr_thread_mutex_lock(interpreters_lock);
-    #endif
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
+    apr_thread_mutex_lock(interpreters_lock);
     PyEval_AcquireLock();
 #endif
 
@@ -160,11 +158,9 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
         idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
     }
 
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
     PyEval_ReleaseLock();
-    #if APR_HAS_THREADS
-        apr_thread_mutex_unlock(interpreters_lock);
-    #endif
+    apr_thread_mutex_unlock(interpreters_lock);
 #endif
 
     if (! idata) {
@@ -175,7 +171,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 
     /* create thread state and acquire lock */
     tstate = PyThreadState_New(idata->istate);
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
     PyEval_AcquireThread(tstate);
 #else
     PyThreadState_Swap(tstate);
@@ -187,7 +183,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 
         if (!idata->obcallback) 
         {
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
             PyEval_ReleaseThread(tstate);
 #endif
             PyThreadState_Delete(tstate);
@@ -211,7 +207,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 static void release_interpreter(void) 
 {
     PyThreadState *tstate = PyThreadState_Get();
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
     PyEval_ReleaseThread(tstate);
 #endif
     PyThreadState_Delete(tstate);
@@ -519,10 +515,8 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* initialze the interpreter */
         Py_Initialize();
 
-#ifdef WITH_THREAD
-        #if APR_HAS_THREADS
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
             apr_thread_mutex_create(&interpreters_lock,APR_THREAD_MUTEX_UNNESTED,p);
-        #endif
         /* create and acquire the interpreter lock */
         PyEval_InitThreads();
 #endif
@@ -538,7 +532,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
             exit(1);
         }
         
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
         /* release the lock; now other threads can run */
         PyEval_ReleaseLock();
 #endif
@@ -1796,7 +1790,7 @@ static apr_status_t python_finalize(void *data)
 
         Py_Finalize();
 
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
         PyEval_ReleaseLock();
 #endif
 
@@ -1821,11 +1815,11 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
     /* accordig Py C Docs we must do this after forking */
 
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
     PyEval_AcquireLock();
 #endif
     PyOS_AfterFork();
-#ifdef WITH_THREAD
+#if MOD_PYTHON_WITH_THREAD_SUPPORT
     PyEval_ReleaseLock();
 #endif
 
