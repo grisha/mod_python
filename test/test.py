@@ -189,11 +189,6 @@ class HttpdCtrl:
         # where other modules might be
         modpath = LIBEXECDIR
 
-        if sys.platform != 'win32':
-            lockfile = LockFile("logs/accept.lock")
-        else:
-            lockfile = ''
-
         s = Container(
             IfModule("prefork.c",
                      StartServers("3"),
@@ -227,7 +222,7 @@ class HttpdCtrl:
             LogLevel("debug"),
             LogFormat(r'"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined'),
             CustomLog("logs/access_log combined"),
-            lockfile,
+            LockFile("logs/accept.lock"),
             TypesConfig("conf/mime.types"),
             PidFile("logs/httpd.pid"),
             ServerName("127.0.0.1"),

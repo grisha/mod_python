@@ -130,7 +130,11 @@ class LogFormat(Directive):
 
 class LockFile(Directive):
     def __init__(self, val):
-        Directive.__init__(self, self.__class__.__name__, val)
+        import sys
+        if sys.platform!='win32':
+            Directive.__init__(self, self.__class__.__name__, val)
+        else:
+            Directive.__init__(self, '#'+self.__class__.__name__, val)
 
 class MaxClients(Directive):
     def __init__(self, val):
