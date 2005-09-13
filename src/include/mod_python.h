@@ -28,6 +28,16 @@
  *
  */
 
+/*
+ * NOTE - NOTE - NOTE - NOTE
+ *
+ * If you are looking at mod_python.h, it is an auto-generated file on
+ * UNIX.  This file is kept around for the Win32 platform which
+ * doesnot use autoconf. Any changes to mod_python.h must also be
+ * reflected in mod_python.h.in.
+ */
+
+
 /* Apache headers */
 #include "httpd.h"
 #define CORE_PRIVATE
@@ -57,13 +67,7 @@
 #include "Python.h"
 #include "structmember.h"
 
-#if(defined(WITH_THREAD) && APR_HAS_THREADS)
-    #define MOD_PYTHON_WITH_THREAD_SUPPORT 1
-#else
-    #define MOD_PYTHON_WITH_THREAD_SUPPORT 0
-#endif
-
-#if defined(WIN32) && !MOD_PYTHON_WITH_THREAD_SUPPORT
+#if defined(WIN32) && !defined(WITH_THREAD)
 #error Python threading must be enabled on Windows
 #endif
 
@@ -174,3 +178,10 @@ typedef struct
 apr_status_t python_cleanup(void *data);
 
 #endif /* !Mp_MOD_PYTHON_H */
+
+/*
+# makes emacs go into C mode
+### Local Variables:
+### mode:c
+### End:
+*/
