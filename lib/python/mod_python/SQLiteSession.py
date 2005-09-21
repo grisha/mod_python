@@ -19,6 +19,12 @@
 from Session import *
 from time import time
 
+ISOLATION_LEVEL = None
+
+# TODO : solve the problem with an exception being raised when
+# the database file is locked and wee try to read/write to it. This
+# could be solved by carefully selecting an ISOLATION_LEVEL.
+
 try:
     # If this code is included into Session.py,
     # we don't want to add a dependency to SQLite
@@ -47,7 +53,7 @@ else:
             self.filename = filename
     
             # check whether the sessions table exists, and create it if not
-            db = sqlite.connect(self.filename)
+            db = sqlite.connect(self.filename, isolation_level=ISOLATION_LEVEL)
             try:
                 try:
                     cur = db.cursor()
@@ -73,7 +79,7 @@ else:
                                  timeout=timeout, lock=lock)
 
         def count(self):
-            db = sqlite.connect(self.filename)
+            db = sqlite.connect(self.filename, isolation_level=ISOLATION_LEVEL)
             try:
                 try:
                     cur = db.cursor()
@@ -85,7 +91,7 @@ else:
                 db.close()
 
         def do_cleanup(self):
-            db = sqlite.connect(self.filename)
+            db = sqlite.connect(self.filename, isolation_level=ISOLATION_LEVEL)
             try:
                 try:
                     cur = db.cursor()
@@ -100,7 +106,7 @@ else:
                 db.close()
     
         def do_load(self):
-            db = sqlite.connect(self.filename)
+            db = sqlite.connect(self.filename, isolation_level=ISOLATION_LEVEL)
             try:
                 try:
                     cur = db.cursor()
@@ -119,7 +125,7 @@ else:
                 db.close()
     
         def do_save(self, dict):
-            db = sqlite.connect(self.filename)
+            db = sqlite.connect(self.filename, isolation_level=ISOLATION_LEVEL)
             try:
                 try:
                     cur = db.cursor()
@@ -136,7 +142,7 @@ else:
                 db.close()
     
         def do_delete(self):
-            db = sqlite.connect(self.filename)
+            db = sqlite.connect(self.filename, isolation_level=ISOLATION_LEVEL)
             try:
                 try:
                     cur = db.cursor()
