@@ -1024,7 +1024,7 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS
     status=apr_stat(&finfo, fname,
-                    APR_READ, self->request_rec->pool);
+                    APR_FINFO_NORM, self->request_rec->pool);
     Py_END_ALLOW_THREADS
     if (status != APR_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Could not stat file for reading");
