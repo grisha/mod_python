@@ -20,7 +20,6 @@
  # 
  # $Id$
 
-from threading import Lock
 from os import fstat
 from time import time, strptime
 from calendar import timegm
@@ -28,6 +27,16 @@ import urllib2
 import re
 import weakref
 import new
+
+
+try:
+    from threading import Lock
+except ImportError:
+    class Lock(object):
+        def acquire(self):
+            pass
+        def release(self):
+            pass
 
 NOT_INITIALIZED = object()
 
