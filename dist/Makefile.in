@@ -44,10 +44,10 @@ mod_python.so:
 	exit 1
 
 mod_python:
-	ln -s ../lib/python/mod_python
+	ln -s ../lib/python/mod_python mod_python
 
 src:
-	ln -s ../src
+	ln -s ../src src
 
 clean:
 	rm -rf mod_python build dist
