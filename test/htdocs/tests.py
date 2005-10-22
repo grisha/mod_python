@@ -687,7 +687,6 @@ def req_sendfile(req):
 
 def req_sendfile2(req):
 
-    print "doing sendfile2"
     import tempfile
     fname  = tempfile.mktemp("txt")
     f = open(fname, "w")
