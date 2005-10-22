@@ -686,12 +686,6 @@ def Session(req, sid=0, secret=None, timeout=0, lock=1):
     return sess(req, sid=sid, secret=secret,
                          timeout=timeout, lock=lock)
 
-def make_filesession_dirs(sess_dir):
-    """Creates the directory structure used for storing session files"""
-    for i in range(0,256):
-        path = os.path.join(sess_dir, '%02x' % i)
-        if not os.path.exists(path):
-            os.makedirs(path,  stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP)
 
 ## helper functions
 def true_or_false(item):
