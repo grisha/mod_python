@@ -24,28 +24,44 @@ REPOS=http://svn.apache.org/repos/asf/httpd/mod_python
    cd /tmp
    svn co $REPOS/tags/release-3-2-0 mod_python
 
-3. Generate the html docs.
+3. Update the version information.
+   cd /tmp/mod_python/src/include/
+     Change the following in mpversion.h: 
+       MPV_MAJOR
+       MPV_MINOR
+       MVP_PATCH 
+       MVP_STRING
+
+   cd /tmp/mod_python/lib/python/mod_python
+     In __init__.py change
+       version
+   
+   Once you've update the version information, checkin the changes with
+   cd /tmp/mod_python
+   svn ci -m "updated version infomation"
+
+4. Generate the html docs.
    cd mod_python
    ./configure --with-apxs=`which apxs` --with-python-src=/path/to/python/src
    cd Doc
    make dist
 
-4. Export a working copy to a release copy.
+5. Export a working copy to a release copy.
    cd /tmp 
    svn export mod_python mod_python-3.2.0
 
-5. Copy the html docs generated in step 3 from your working copy to
+6. Copy the html docs generated in step 3 from your working copy to
    your release copy.
    cp -r mod_python/doc-html/ mod_python-3.2.0/
 
-6. Create a tarball for the release.
+7. Create a tarball for the release.
    tar czvf mod_python-3.2.0.tgz mod_python-3.2.0
 
-7. Generate the pdf file for the website
+8. Generate the pdf file for the website
    cd mod_python/Doc
    make pdf
 
-8. Send Doc/modpython.pdf to the mod_python.org website admin.
+9. Send Doc/modpython.pdf to the mod_python.org website admin.
 
 
 Hints
