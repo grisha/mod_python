@@ -646,6 +646,31 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "0123456789"*100):
             self.fail(`rsp`)
 
+    def test_req_sendfile3_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_sendfile3"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_sendfile3"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_req_sendfile3(self):
+
+        if os.name == 'posix':
+
+            print "\n  * Testing req.sendfile() for a file which is a symbolic link"
+
+            rsp = self.vhost_get("test_req_sendfile3")
+
+            if (rsp != "0123456789"*100):
+                self.fail(`rsp`)
+        else:
+            print "\n  * Skipping req.sendfile() for a file which is a symbolic link"
+
     def test_PythonOption_conf(self):
 
         c = VirtualHost("*",
@@ -1426,6 +1451,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_headers_out"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile2"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile3"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_override"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove"))
