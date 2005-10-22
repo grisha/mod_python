@@ -687,6 +687,7 @@ def req_sendfile(req):
 
 def req_sendfile2(req):
 
+    print "doing sendfile2"
     import tempfile
     fname  = tempfile.mktemp("txt")
     f = open(fname, "w")
@@ -696,6 +697,24 @@ def req_sendfile2(req):
     req.sendfile(fname)
 
     # os.remove(fname)
+    return apache.OK
+ 
+def req_sendfile3(req):
+    """Check if sendfile handles symlinks properly.
+       This is only valid on posix systems.
+    """
+
+    import tempfile
+    # note mktemp is deprecated in python 2.3. Should use mkstemp instead.
+    fname  = tempfile.mktemp("txt")
+    f = open(fname, "w")
+    f.write("0123456789"*100);
+    f.close()
+    fname_symlink =  '%s.lnk' % fname
+    os.symlink(fname, fname_symlink)
+    req.sendfile(fname_symlink)
+    os.remove(fname_symlink)
+    os.remove(fname)
     return apache.OK
 
 def srv_register_cleanup(req):
