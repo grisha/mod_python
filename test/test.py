@@ -618,11 +618,32 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_req_sendfile(self):
 
-        print "\n  * Testing req.sendfile()"
+        print "\n  * Testing req.sendfile() with offset and length"
 
         rsp = self.vhost_get("test_req_sendfile")
 
         if (rsp != "test ok"):
+            self.fail(`rsp`)
+
+    def test_req_sendfile2_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_sendfile2"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_sendfile2"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_req_sendfile2(self):
+
+        print "\n  * Testing req.sendfile() without offset and length"
+
+        rsp = self.vhost_get("test_req_sendfile2")
+
+        if (rsp != "0123456789"*100):
             self.fail(`rsp`)
 
     def test_PythonOption_conf(self):
@@ -1404,6 +1425,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_headers_out"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile2"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_override"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove"))

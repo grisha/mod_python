@@ -685,6 +685,19 @@ def req_sendfile(req):
     # os.remove(fname)
     return apache.OK
 
+def req_sendfile2(req):
+
+    import tempfile
+    fname  = tempfile.mktemp("txt")
+    f = open(fname, "w")
+    f.write("0123456789"*100);
+    f.close()
+
+    req.sendfile(fname)
+
+    # os.remove(fname)
+    return apache.OK
+
 def srv_register_cleanup(req):
 
     req.cleanup_data = "test ok"
