@@ -32,11 +32,7 @@ import new
 try:
     from threading import Lock
 except ImportError:
-    class Lock(object):
-        def acquire(self):
-            pass
-        def release(self):
-            pass
+    from dummy_threading import Lock
 
 NOT_INITIALIZED = object()
 
