@@ -801,8 +801,8 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
 --with-apxs=PATH 	Path to apxs
 --with-apache=DIR 	Path to Apache sources
---with-python=DIR	Path to specific Python binary
---with-python-src=PATH	Path to python src - required to generate documenation
+--with-python=PATH	Path to specific Python binary
+--with-python-src=DIR	Path to python sources - required if you want to generate the documenation
 --with-max-locks=INTEGER	Maximum number of locks
 --with-flex=PATH	Path to specific flex binary.
 	Flex Version 2.5.31 or greater is required to regenerate psp_parser.c

@@ -182,7 +182,7 @@ fi
 
 AC_SUBST(PYTHON_BIN)
 AC_MSG_CHECKING(for --with-python)
-AC_ARG_WITH(python, [--with-python=DIR	Path to specific Python binary],
+AC_ARG_WITH(python, [--with-python=PATH	Path to specific Python binary],
 [
   PYTHON_BIN="$withval"
   AC_MSG_RESULT($PYTHON_BIN)
@@ -292,7 +292,7 @@ MP_VERSION=`echo $MP_VERSION | sed s/\\"//g`
 # It is not required to compile or install mod_python itself
 AC_SUBST(PYTHON_SRC)
 AC_MSG_CHECKING(for --with-python-src)
-AC_ARG_WITH(python-src, [--with-python-src=PATH	Path to python src - required to generate documenation],
+AC_ARG_WITH(python-src, [--with-python-src=DIR	Path to python sources - required if you want to generate the documenation],
 [
   PYTHON_SRC="$withval"
   AC_MSG_RESULT($PYTHON_SRC)
