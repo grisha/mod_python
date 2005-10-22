@@ -189,6 +189,8 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
         {
 #ifdef WITH_THREAD
             PyEval_ReleaseThread(tstate);
+#else
+            PyThreadState_Swap(NULL);
 #endif
             PyThreadState_Delete(tstate);
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
@@ -213,6 +215,8 @@ static void release_interpreter(void)
     PyThreadState *tstate = PyThreadState_Get();
 #ifdef WITH_THREAD
     PyEval_ReleaseThread(tstate);
+#else
+    PyThreadState_Swap(NULL);
 #endif
     PyThreadState_Delete(tstate);
 }
