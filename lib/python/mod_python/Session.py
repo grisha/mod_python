@@ -505,7 +505,20 @@ def filesession_cleanup(data):
     try:
         lockfp = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0660) 
     except:
-        req.log_error('FileSession cleanup: another process is already running.',
+        # check if it's a stale lockfile
+        mtime = os.stat(lockfile).st_mtime
+        if mtime < (time.time() - 3600):
+            # lockfile is over an hour old so it's likely stale.
+            # Even though there may not be another cleanup process running,
+            # we are going to defer running the cleanup at this time.
+            # Short circuiting this cleanup just makes the code a little cleaner.
+            req.log_error('FileSession cleanup: stale lockfile found - deleting it',
+                        apache.APLOG_NOTICE)
+            # Remove the stale lockfile so the next call to filesession_cleanup
+            # can proceed.
+            os.remove(lockfile)
+        else:
+            req.log_error('FileSession cleanup: another process is already running',
                         apache.APLOG_NOTICE)
         return
 
