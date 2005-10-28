@@ -99,6 +99,18 @@
       Potential deadlock in psp cache handling fixed
     \item
       Fixed bug where sessions are used outside <Directory> directive.
+    \item 
+      Fixed compile problem on IRIX. ln -s requires both TARGET and LINK_NAME
+      on IRIX. ie. ln -s TARGET LINK_NAME
+    \item
+      Fixed ./configure problem on SuSE Linux 9.2 (x86-64). Python libraries
+      are in lib64/ for this platform.
+    \item
+      Fixed req.sendfile() problem where sendfile(filename) the sends incorrect
+      number of bytes when filename is a symlink. 
+    \item
+      Fixed problem where util.FieldStorage was not correctly checking the mime
+      types of POSTed entities
 \end{itemize}
 
 \chapter{Changes from Previous Major Version (2.x)\label{app-changes}}
