@@ -2887,12 +2887,15 @@ echo "${ECHO_T}$PyEXEC_INSTALLDIR" >&6
 
 # this is where the Python libraries will get installed
 
-PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
-
+echo "$as_me:$LINENO: checking checking where python libraries are installed" >&5
+echo $ECHO_N "checking checking where python libraries are installed... $ECHO_C" >&6
+PY_STD_LIB=`$PYTHON_BIN -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib=1)'`
+echo "$as_me:$LINENO: result: $PY_STD_LIB" >&5
+echo "${ECHO_T}$PY_STD_LIB" >&6
 # set python std library variable
 
 
-PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
+PyLIBP=${PY_STD_LIB}
 PyLIBPL=${PyLIBP}/config
 PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
 PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
