@@ -215,12 +215,13 @@ AC_MSG_RESULT($PyEXEC_INSTALLDIR)
 
 # this is where the Python libraries will get installed
 AC_SUBST(PY_STD_LIB)
-PY_STD_LIB=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
-
+AC_MSG_CHECKING(checking where python libraries are installed)
+PY_STD_LIB=`$PYTHON_BIN -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib=1)'`
+AC_MSG_RESULT($PY_STD_LIB)
 # set python std library variable
 AC_SUBST(LIBS)
 
-PyLIBP=${PyEXEC_INSTALLDIR}/lib/python${PyVERSION}
+PyLIBP=${PY_STD_LIB}
 PyLIBPL=${PyLIBP}/config
 PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
 PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
