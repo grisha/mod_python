@@ -1462,7 +1462,7 @@ class. This class is similar to the standard library module
     provides the additional \member{value} attribute for compatibility
     with standard library \module{cgi} module.
   \item
-    An instances of a \class{Field} class, if the input is a file upload.
+    An instance of a \class{Field} class, if the input is a file upload.
   \item
     A list of \class{StringField} and/or \class{Field} objects. This is
     when multiple values exist, such as for a \code{<select>} HTML form
@@ -1526,7 +1526,11 @@ class. This class is similar to the standard library module
   \end{memberdesc}
 
   \begin{memberdesc}{file}
-    This is a file object. For file uploads it points to a temporary file.
+    This is a file-like object. For file uploads it points to a 
+    \class{TemporaryFile} instance. (For more information see the TemporaryFile
+    class in the standard python
+    \citetitle[http://docs.python.org/lib/module-tempfile.html]{tempfile} module).
+
     For simple values, it is a \class{StringIO} object, so you can read
     simple string values via this attribute instead of using the \member{value}
     attribute as well.
