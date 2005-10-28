@@ -128,8 +128,6 @@ class BaseSession(dict):
             self.lock()
             if self.load():
                 self._new = 0
-                if not req.headers_out.has_key("Set-Cookie"):
-                    Cookie.add_cookie(self._req, Cookie.Cookie(session_cookie_name, self._sid))
 
         if self._new:
             # make a new session
