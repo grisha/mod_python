@@ -759,7 +759,31 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail(`rsp`)
+            self.fail('1 MB file upload failed, its contents was corrupted (%s)'%rsp)
+
+        try:
+            ugh = file('ugh.pdf','rb')
+            content = ugh.read()
+            ugh.close()
+        except:
+            print "  * Skipping the test for The UNIX-HATERS handbook file upload."
+            print "    To make this test, you need to download ugh.pdf from"
+            print "    http://research.microsoft.com/~daniel/uhh-download.html"
+            print "    into this script's directory."
+        else:
+            print "  * Testing The UNIX-HATERS handbook file upload support"
+    
+            digest = md5.new(content).hexdigest()
+    
+            rsp = self.vhost_post_multipart_form_data(
+                "test_fileupload",
+                variables={'test':'abcd'},
+                files={'testfile':('ugh.pdf',content)},
+            )
+    
+            
+            if (rsp != digest):
+                self.fail('The UNIX-HATERS handbook file upload failed, its contents was corrupted (%s)'%rsp)
 
     def test_PythonOption_conf(self):
 
