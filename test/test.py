@@ -127,6 +127,8 @@ import time
 import socket
 import tempfile
 import base64
+import random
+from cStringIO import StringIO
 
 HTTPD = testconf.HTTPD
 TESTHOME = testconf.TESTHOME
@@ -282,6 +284,66 @@ class PerRequestTestCase(unittest.TestCase):
         conn.putrequest("GET", path, skip_host=1)
         conn.putheader("Host", "%s:%s" % (vhost, PORT))
         conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        return rsp
+
+    def vhost_post_multipart_form_data(self, vhost, path="/tests.py",variables={}, files={}):
+        # variables is a { name : value } dict
+        # files is a { name : (filename, content) } dict
+
+        # build the POST entity
+        entity = StringIO()
+        # This is the MIME boundary
+        boundary = "============"+''.join(random.choice('0123456789') for x in range(10))+'=='
+        # A part for each variable
+        for name, value in variables.iteritems():
+            entity.write('--')
+            entity.write(boundary)
+            entity.write('\r\n')
+            entity.write('Content-Type: text/plain\r\n')
+            entity.write('Content-Disposition: form-data; name="%s"\r\n'%name)
+            entity.write('\r\n')
+            entity.write(str(value))
+            entity.write('\r\n')
+
+        # A part for each file
+        for name, filespec in files.iteritems():
+            filename, content = filespec
+            # if content is readable, read it
+            try:
+                content = content.read()
+            except:
+                pass
+
+            entity.write('--')
+            entity.write(boundary)
+            entity.write('\r\n')
+
+            entity.write('Content-Type: application/octet-stream\r\n')
+            entity.write('Content-Disposition: form-data; name="%s"; filename="%s"\r\n'%(name,filename))
+            entity.write('\r\n')
+            entity.write(content)
+            entity.write('\r\n')
+
+        # The final boundary
+        entity.write('--')
+        entity.write(boundary)
+        entity.write('--\r\n')
+        
+        entity = entity.getvalue()
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        # conn.set_debuglevel(1000)
+        conn.putrequest("POST", path, skip_host=1)
+        conn.putheader("Host", "%s:%s" % (vhost, PORT))
+        conn.putheader("Content-Type", 'multipart/form-data; boundary="%s"'%boundary)
+        conn.putheader("Content-Length", '%s'%(len(entity)))
+        conn.endheaders()
+
+        conn.send(entity)
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
@@ -670,6 +732,34 @@ class PerRequestTestCase(unittest.TestCase):
                 self.fail(`rsp`)
         else:
             print "\n  * Skipping req.sendfile() for a file which is a symbolic link"
+
+    def test_fileupload_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_fileupload"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::fileupload"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_fileupload(self):
+        print "\n  * Testing 1 MB file upload support"
+
+        content = ''.join(chr(random.choice(xrange(256))) for x in xrange(1024*1024))
+        import md5
+        digest = md5.new(content).hexdigest()
+
+        rsp = self.vhost_post_multipart_form_data(
+            "test_fileupload",
+            variables={'test':'abcd'},
+            files={'testfile':('test.txt',content)},
+        )
+
+        if (rsp != digest):
+            self.fail(`rsp`)
 
     def test_PythonOption_conf(self):
 
@@ -1452,7 +1542,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile2"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile3"))
-        perRequestSuite.addTest(PerRequestTestCase("test_PythonOption"))
+        perRequestSuite.addTest(PerRequestTestCase("test_fileupload"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_override"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove2"))

@@ -716,6 +716,15 @@ def req_sendfile3(req):
     os.remove(fname)
     return apache.OK
 
+def fileupload(req):
+    from mod_python import util
+    import md5
+    fields = util.FieldStorage(req)
+    f = fields.getfirst('testfile')
+    
+    req.write(md5.new(f.file.read()).hexdigest())
+    return apache.OK
+
 def srv_register_cleanup(req):
 
     req.cleanup_data = "test ok"
