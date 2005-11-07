@@ -761,6 +761,23 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != digest):
             self.fail('1 MB file upload failed, its contents was corrupted (%s)'%rsp)
 
+        print "  * Testing tricky file upload support"
+        content = (
+            'a'*100 + '\r\n'
+            + 'b'*(65368-1) + '\r' # trick !
+            + 'ccc' + 'd'*100 + '\r\n'
+        )
+        digest = md5.new(content).hexdigest()
+        
+        rsp = self.vhost_post_multipart_form_data(
+            "test_fileupload",
+            variables={'test':'abcd'},
+            files={'testfile':('test.txt',content)},
+        )
+
+        if (rsp != digest):
+            self.fail('tricky file upload failed, its contents was corrupted (%s)'%rsp)
+
         try:
             ugh = file('ugh.pdf','rb')
             content = ugh.read()
