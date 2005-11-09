@@ -128,6 +128,7 @@ import socket
 import tempfile
 import base64
 import random
+import md5
 from cStringIO import StringIO
 
 HTTPD = testconf.HTTPD
@@ -140,7 +141,16 @@ SERVER_ROOT = TESTHOME
 CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
 DOCUMENT_ROOT = os.path.join(TESTHOME, "htdocs")
 PORT = 0 # this is set in fundUnusedPort()
-
+ 
+    
+# readBlockSize is required for the test_fileupload_* tests.
+# We can't import mod_python.util.readBlockSize from a cmd line
+# interpreter, so we'll hard code it here.
+# If util.readBlockSize changes, it MUST be changed here as well.
+# Maybe we should set up a separate test to query the server to 
+# get the correct readBlockSize?
+# 
+readBlockSize = 65368
 
 def findUnusedPort():
 
@@ -297,7 +307,7 @@ class PerRequestTestCase(unittest.TestCase):
         # build the POST entity
         entity = StringIO()
         # This is the MIME boundary
-        boundary = "============"+''.join(random.choice('0123456789') for x in range(10))+'=='
+        boundary = "------------"+''.join( [ random.choice('0123456789') for x in range(10) ] )+'--'
         # A part for each variable
         for name, value in variables.iteritems():
             entity.write('--')
@@ -746,10 +756,10 @@ class PerRequestTestCase(unittest.TestCase):
         return str(c)
 
     def test_fileupload(self):
+    
         print "\n  * Testing 1 MB file upload support"
 
-        content = ''.join(chr(random.choice(xrange(256))) for x in xrange(1024*1024))
-        import md5
+        content = ''.join( [ chr(random.choice(xrange(256))) for x in xrange(1024*1024) ] )
         digest = md5.new(content).hexdigest()
 
         rsp = self.vhost_post_multipart_form_data(
@@ -759,12 +769,31 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail('1 MB file upload failed, its contents was corrupted (%s)'%rsp)
+            self.fail('1 MB file upload failed, its contents were corrupted (%s)'%rsp)
+   
+    def test_fileupload_embedded_cr_conf(self):
 
-        print "  * Testing tricky file upload support"
+        c = VirtualHost("*",
+                        ServerName("test_fileupload"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::fileupload"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_fileupload_embedded_cr(self):
+        # Strange things can happen if there is a '\r' character at position
+        # readBlockSize of a line being read by FieldStorage.read_to_boundary 
+        # where the line length is > readBlockSize.
+        # This test will expose this problem.
+        
+        print "\n  * Testing file upload with \\r char in a line at position == readBlockSize"
+        
         content = (
             'a'*100 + '\r\n'
-            + 'b'*(65368-1) + '\r' # trick !
+            + 'b'*(readBlockSize-1) + '\r' # trick !
             + 'ccc' + 'd'*100 + '\r\n'
         )
         digest = md5.new(content).hexdigest()
@@ -776,8 +805,13 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail('tricky file upload failed, its contents was corrupted (%s)'%rsp)
+            self.fail('file upload embedded \\r test failed, its contents were corrupted (%s)'%rsp)
 
+        # The UNIX-HATERS handbook illustrates this problem. Once we've done some additional
+        # investigation to make sure that our synthetic file used above is correct,
+        # we can likely remove this conditional test. Also, there is no way to be sure
+        # that ugh.pdf will always be the same in the future so the test may not be valid
+        # over the long term.
         try:
             ugh = file('ugh.pdf','rb')
             content = ugh.read()
@@ -801,6 +835,47 @@ class PerRequestTestCase(unittest.TestCase):
             
             if (rsp != digest):
                 self.fail('The UNIX-HATERS handbook file upload failed, its contents was corrupted (%s)'%rsp)
+
+    def test_fileupload_split_boundary_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_fileupload"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::fileupload"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_fileupload_split_boundary(self):
+        # This test is similar to test_fileupload_embedded_cr, but it is possible to
+        # write an implementation of FieldStorage.read_to_boundary that will pass
+        # that test but fail this one.
+        # 
+        # Strange things can happen if the last line in the file being uploaded 
+        # has length == readBlockSize -1. The boundary string marking the end of the
+        # file (eg. '\r\n--myboundary') will be split between the leading '\r' and the
+        # '\n'. Some implementations of read_to_boundary we've tried assume that this
+        # '\r' character is part of the file, instead of the boundary string. The '\r'
+        # will be appended to the uploaded file, leading to a corrupted file.
+
+        print "\n  * Testing file upload where length of last line == readBlockSize - 1"
+
+        content = (
+            'a'*100 + '\r\n'
+            + 'b'*(readBlockSize-1)  # trick !
+        )
+        digest = md5.new(content).hexdigest()
+        
+        rsp = self.vhost_post_multipart_form_data(
+            "test_fileupload",
+            variables={'test':'abcd'},
+            files={'testfile':('test.txt',content)},
+        )
+
+        if (rsp != digest):
+            self.fail('file upload long line test failed, its contents were corrupted (%s)'%rsp)
 
     def test_PythonOption_conf(self):
 
@@ -1584,6 +1659,8 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile2"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile3"))
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload"))
+        perRequestSuite.addTest(PerRequestTestCase("test_fileupload_embedded_cr"))
+        perRequestSuite.addTest(PerRequestTestCase("test_fileupload_split_boundary"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_override"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove2"))
