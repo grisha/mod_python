@@ -271,6 +271,22 @@ class HttpdCtrl:
         print "    ", cmd
         os.system(cmd)
         time.sleep(1)
+
+        # Wait for apache to stop by checking for the existence of pid the 
+        # file. If pid file still exists after 20 seconds raise an error.
+        # This check is here to facilitate testing on the qemu emulator.
+        # Qemu will run about 1/10 the native speed, so 1 second may
+        # not be long enough for apache to shut down.
+        count = 0
+        pid_file = os.path.join(os.getcwd(), 'logs/httpd.pid')
+        while os.path.exists(pid_file):
+            time.sleep(1)
+            count += 1
+            if count > 20:
+                # give up - apache refuses to die - or died a horrible
+                # death and never removed the pid_file.
+                raise RuntimeError, "  Trouble stopping apache"
+
         self.httpd_running = 0
 
 class PerRequestTestCase(unittest.TestCase):
