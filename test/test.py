@@ -1269,6 +1269,55 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp[-8:] != "test ok\n"):
             self.fail(`rsp`)
 
+    def test_psp_parser_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_psp_parser"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.psp"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_psp_parser(self):
+
+        print "\n  * Testing mod_python.psp parser"
+                # lines in psp_parser.psp should look like:
+        #   test:<char>:<test_string>$
+        #
+        # For example:
+        #   test:n:\n$
+        #   test:t:\t$
+        
+        rsp = self.vhost_get("test_psp_parser", path="/psp_parser.psp")
+        lines = [ line.strip() for line in rsp.split('$') if line ]
+        failures = []
+        for line in lines:
+            parts =  line.split(':', 2)
+            if len(parts) < 3:
+                continue
+
+            t, test_case, test_string = parts[0:3]
+            if not t.strip().startswith('test'):
+                continue
+            expected_result = test_case
+            # do the substitutions in expected_result
+            for ss, rs in [('-', '\\'),('CR', '\r'), ('LF', '\n'), ('TB', '\t')]:
+                expected_result = expected_result.replace(ss, rs)
+            
+            if expected_result != test_string:
+                print '       FAIL',  
+                failures.append(test_case)
+            else:
+                print '       PASS', 
+            print 'expect{%s} got{%s}' % (expected_result, test_string)
+
+        if failures:
+            msg = 'psp_parser parse errors for: %s' % (', '.join(failures))
+            self.fail(msg)
+        f.close()
+
     def test_Cookie_Cookie_conf(self):
 
         c = VirtualHost("*",
@@ -1689,6 +1738,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))
         perRequestSuite.addTest(PerRequestTestCase("test_cgihandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_psphandler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_psp_parser"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_Cookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_MarshalCookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Session_Session"))
