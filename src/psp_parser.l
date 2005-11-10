@@ -47,17 +47,29 @@
 %%
 
 \r\n|\n {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(r\"\"\"")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
     yyless(0);
     BEGIN TEXT;
 }
 
 . {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(r\"\"\"")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
     yyless(0);
     BEGIN TEXT;
+}
+
+<TEXT>"\\n" {
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\\n"));
+}
+
+<TEXT>"\\r" {
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\\r"));
+}
+
+<TEXT>"\\t" {
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\\t"));
 }
 
 <TEXT>"<%=" {    /* expression */
@@ -87,16 +99,11 @@
 }
 
 <TEXT>. {
-    /*   " no longer needs to be escaped */
-    psp_string_appendc(&PSP_PG(pycode), yytext[0]);
-}
-
-<TEXT>"\"\"\"" {
-    /* close python triplequoted string, put in a triple quote enclosed
-     * itself by single quotes, then restart the python triplequoted
-     * string. */
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\" +'\"\"\"'+ r\"\"\""));
-
+    if (yytext[0] == '"') {
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\""));
+    } else {
+        psp_string_appendc(&PSP_PG(pycode), yytext[0]);
+    }
 }
 
 <TEXT><<EOF>> {
@@ -122,7 +129,7 @@
 <PYCODE>"%>" {
 
     if (PSP_PG(is_psp_echo)) {
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("),0); req.write(r\"\"\""));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("),0); req.write(\"\"\""));
         PSP_PG(is_psp_echo) = 0;
     } 
     else {
@@ -138,7 +145,7 @@
             PSP_PG(after_colon) = 0;
         }
         OUTPUT_WHITESPACE(&PSP_PG(whitespace));
-        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(r\"\"\""));
+        psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
     }
     
     BEGIN TEXT;
