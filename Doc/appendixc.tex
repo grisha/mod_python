@@ -6,9 +6,9 @@
 
   \begin{itemize}
     \item
-      New apache.register_cleanup() method.
+      New \code{apache.register_cleanup()} method.
     \item
-      New apache.exists_config_define() method.
+      New \code{apache.exists_config_define()} method.
     \item
       New file-based session manager class.
     \item
@@ -27,7 +27,7 @@
 
   \begin{itemize}
     \item
-      Autoreload of a module using apache.import_module() now works if
+      Autoreload of a module using \code{apache.import_module()} now works if
       modification time for the module is different from the file.
       Previously, the module was only reloaded if the the modification 
       time of the file was more recent. This allows for a more graceful
@@ -40,13 +40,13 @@
     \item
       Objects hierarchy a la CherryPy can now be published.
     \item
-      mod_python.c now logs reason for a 500 error
+      \code{mod_python.c} now logs reason for a 500 error
     \item
-      Calls to PyErr_Print in mod_python.c are now followed by fflush()
+      Calls to \code{PyErr_Print} in \code{mod_python.c} are now followed by \code{fflush()}
     \item
       Using an empty value with PythonOption will unset a PythonOption key.
     \item
-      req.path_info is now a read/write member.
+      \code{req.path_info} is now a read/write member.
     \item
       Improvements to FieldStorage allow uploading of large files. Uploaded
       files are now streamed to disk, not to memory.
@@ -86,18 +86,18 @@
       mod_python.publisher loading wrong module and giving no
       warning/error
     \item
-      apply_fs_data() now works with "new style" objects
+      \code{apply_fs_data()} now works with "new style" objects
     \item
-      File descriptor fd closed after ap_send_fd() in req_sendfile()
+      File descriptor fd closed after \code{ap_send_fd()} in \code{req_sendfile()}
     \item
       Bug in mem_cleanup in MemorySession fixed.
     \item
-      Fixed bug in _apache._global_lock() which could cause a segfault 
+      Fixed bug in \code{_apache._global_lock()} which could cause a segfault 
       if the lock index parameter is greater number of mutexes created
       at mod_python startup.
     \item
-      Fixed bug where local_ip and local_host in connection object 
-      were returning remote_ip and remote_host instead
+      Fixed bug where \code{local_ip} and \code{local_host} in connection object 
+      were returning \code{remote_ip} and \code{remote_host} instead
     \item
       Fixed install_dso Makefile rule so it only installs the dso, not the
       python files
@@ -106,17 +106,19 @@
     \item
       Fixed bug where sessions are used outside <Directory> directive.
     \item 
-      Fixed compile problem on IRIX. ln -s requires both TARGET and LINK_NAME
-      on IRIX. ie. ln -s TARGET LINK_NAME
+      Fixed compile problem on IRIX. \code{ln -s} requires both TARGET and LINK_NAME
+      on IRIX. ie. \code{ln -s TARGET LINK_NAME}
     \item
-      Fixed ./configure problem on SuSE Linux 9.2 (x86-64). Python libraries
+      Fixed \code{./configure} problem on SuSE Linux 9.2 (x86-64). Python libraries
       are in lib64/ for this platform.
     \item
-      Fixed req.sendfile() problem where sendfile(filename) sends the incorrect
+      Fixed \code{req.sendfile()} problem where \code{sendfile(filename)} sends the incorrect
       number of bytes when filename is a symlink. 
     \item
       Fixed problem where util.FieldStorage was not correctly checking the mime
       types of POSTed entities
+    \item
+      Fixed \code{conn.local_addr} and \code{conn.remote_addr} for a better IPv6 support. 
 \end{itemize}
 
 \chapter{Changes from Previous Major Version (2.x)\label{app-changes}}
