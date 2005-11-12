@@ -292,12 +292,19 @@ static void conn_dealloc(connobject *self)
 
 static PyObject *makeipaddr(struct apr_sockaddr_t *addr)
 {
-    long x = ntohl(addr->sa.sin.sin_addr.s_addr);
-    char buf[100];
-    sprintf(buf, "%d.%d.%d.%d",
-            (int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
-            (int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
-    return PyString_FromString(buf);
+    char *str = NULL;
+    apr_status_t rc;
+    PyObject *ret = NULL;
+
+    rc = apr_sockaddr_ip_get( &str, addr );
+    if (rc==APR_SUCCESS) {
+        ret = PyString_FromString( str );
+    }
+    else {
+        PyErr_SetString(PyExc_SystemError,"apr_sockaddr_ip_get failure");
+    }
+    
+    return ret; 
 }
 
 /**
@@ -311,7 +318,13 @@ static PyObject *makesockaddr(struct apr_sockaddr_t *addr)
     PyObject *addrobj = makeipaddr(addr);
     PyObject *ret = NULL;
     if (addrobj) {
-        ret = Py_BuildValue("Oi", addrobj, ntohs(addr->sa.sin.sin_port));
+        apr_port_t port;
+        if(apr_sockaddr_port_get(&port, addr)==APR_SUCCESS) {
+            ret = Py_BuildValue("Oi", addrobj, port );
+        }
+        else {
+            PyErr_SetString(PyExc_SystemError,"apr_sockaddr_port_get failure");
+        }
         Py_DECREF(addrobj);
     }
     return ret;
