@@ -251,12 +251,12 @@ class HttpdCtrl:
         f.write("\n# --APPENDED-- \n\n"+append)
         f.close()
 
-    def startHttpd(self):
+    def startHttpd(self,extra=''):
 
         print "  Starting Apache...."
         httpd = quoteIfSpace(HTTPD)
         config = quoteIfSpace(CONFIG)
-        cmd = '%s -k start -f %s' % (httpd, config)
+        cmd = '%s %s -k start -f %s' % (httpd, extra, config)
         print "    ", cmd
         os.system(cmd)
         time.sleep(1)
@@ -1686,6 +1686,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.failUnless(server_hdr.find("Python") > -1,
                         "%s does not appear to load, Server header does not contain Python"
                         % MOD_PYTHON_SO)
+
     def test_global_lock(self):
 
         print "\n  * Testing _global_lock"
@@ -1722,7 +1723,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         t2 = time.time()
         if (t2 - t1) < 5:
             self.fail("global_lock is broken (too quick)")
-         
+
     def testPerRequestTests(self):
 
         print "\n* Running the per-request test suite..."
@@ -1838,12 +1839,46 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         if log.find("test 2 ok") == -1:
             self.fail("Could not find test message in error_log")
 
+    def test_apache_exists_config_define(self):
+
+        print "\n* Testing apache.exists_config_define()..."
+
+        c = Directory(DOCUMENT_ROOT,
+                      SetHandler("mod_python"),
+                      PythonHandler("tests::apache_exists_config_define"),
+                      PythonDebug("On"))
+
+        self.makeConfig(str(c))
+
+        self.startHttpd()
+
+        f = urllib.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        rsp = f.read()
+        f.close()
+
+        self.stopHttpd()
+        
+        if rsp != 'NO_FOOBAR':
+            self.fail('Failure on apache.exists_config_define() : %s'%rsp)
+
+        self.startHttpd(extra="-DFOOBAR")
+
+        f = urllib.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        rsp = f.read()
+        f.close()
+
+        self.stopHttpd()
+        
+        if rsp != 'FOOBAR':
+            self.fail('Failure on apache.exists_config_define() : %s'%rsp)
+
 def suite():
 
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(PerInstanceTestCase("testLoadModule"))
     mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
     mpTestSuite.addTest(PerInstanceTestCase("test_apache_register_cleanup"))
+    mpTestSuite.addTest(PerInstanceTestCase("test_apache_exists_config_define"))
     # XXX comment out until ab is fixed, or we have another way
 ##     mpTestSuite.addTest(PerInstanceTestCase("test_global_lock"))
     mpTestSuite.addTest(PerInstanceTestCase("testPerRequestTests"))

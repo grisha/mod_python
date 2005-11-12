@@ -653,18 +653,43 @@ static PyObject *register_cleanup(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+/**
+ ** exists_config_define(name)
+ **
+ *  Check for a definition from the server command line.
+ */
+
+static PyObject *exists_config_define(PyObject *self, PyObject *args)
+{
+
+    char *name = NULL;
+
+    if (! PyArg_ParseTuple(args, "s", &name))
+        return NULL; 
+
+    if(ap_exists_config_define(name)) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    else {
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+}
+
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
-    {"config_tree",               (PyCFunction)config_tree,      METH_NOARGS},
-    {"log_error",                 (PyCFunction)mp_log_error,     METH_VARARGS},
-    {"mpm_query",                 (PyCFunction)mpm_query,        METH_O},
-    {"parse_qs",                  (PyCFunction)parse_qs,         METH_VARARGS},
-    {"parse_qsl",                 (PyCFunction)parse_qsl,        METH_VARARGS},
-    {"server_root",               (PyCFunction)server_root,      METH_NOARGS},
-    {"register_cleanup",          (PyCFunction)register_cleanup, METH_VARARGS},
-    {"_global_lock",              (PyCFunction)_global_lock,     METH_VARARGS},
-    {"_global_trylock",           (PyCFunction)_global_trylock,  METH_VARARGS},
-    {"_global_unlock",            (PyCFunction)_global_unlock,   METH_VARARGS},
+    {"config_tree",           (PyCFunction)config_tree,          METH_NOARGS},
+    {"log_error",             (PyCFunction)mp_log_error,         METH_VARARGS},
+    {"mpm_query",             (PyCFunction)mpm_query,            METH_O},
+    {"parse_qs",              (PyCFunction)parse_qs,             METH_VARARGS},
+    {"parse_qsl",             (PyCFunction)parse_qsl,            METH_VARARGS},
+    {"server_root",           (PyCFunction)server_root,          METH_NOARGS},
+    {"register_cleanup",      (PyCFunction)register_cleanup,     METH_VARARGS},
+    {"exists_config_define",  (PyCFunction)exists_config_define, METH_VARARGS},
+    {"_global_lock",          (PyCFunction)_global_lock,         METH_VARARGS},
+    {"_global_trylock",       (PyCFunction)_global_trylock,      METH_VARARGS},
+    {"_global_unlock",        (PyCFunction)_global_unlock,       METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
