@@ -1336,7 +1336,6 @@ class PerRequestTestCase(unittest.TestCase):
         if failures:
             msg = 'psp_parser parse errors for: %s' % (', '.join(failures))
             self.fail(msg)
-        f.close()
 
     def test_Cookie_Cookie_conf(self):
 
