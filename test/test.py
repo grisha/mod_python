@@ -1214,6 +1214,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("tests"),
+                                  PythonOption('PythonOptionTest ""'),
                                   PythonOption("testing 123"),
                                   PythonDebug("On")))
         return str(c)
@@ -1771,7 +1772,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_hierarchy"))
         # this must be last so its error_log is not overwritten
-        # perRequestSuite.addTest(PerRequestTestCase("test_internal"))
+        perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)
         self.startHttpd()
