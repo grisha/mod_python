@@ -140,7 +140,7 @@ class FieldStorage:
        except ValueError:
            raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
 
-       #read until boundary
+       # read until boundary
        self.skip_to_boundary(req, boundary)
 
        while True:
@@ -223,52 +223,46 @@ class FieldStorage:
                sline = ''
 
    def read_to_boundary(self, req, boundary, file):
-       #
-       # Although technically possible for the boundary to be split by the read, this will
-       # not happen because the readBlockSize is set quite high - far longer than any boundary line
-       # will ever contain.
-       #
-       # lastCharCarried is used to detect the situation where the \r\n is split across the end of
-       # a read block.
-       #
-       delim = ''
-       lastCharCarried = False
-       last_bound = boundary + '--'
-       roughBoundaryLength = len(last_bound) + 128
-       line = req.readline(readBlockSize)
-       lineLength = len(line)
-       if lineLength < roughBoundaryLength:
-           sline = line.strip()
-       else:
-           sline = ''
-       while lineLength > 0 and sline != boundary and sline != last_bound:
-           if not lastCharCarried:
-               file.write(delim)
-               delim = ''
-           else:
-               lastCharCarried = False
-           cutLength = 0
-           if lineLength == readBlockSize:
-               if line[-1:] == '\r':
-                   delim = '\r'
-                   cutLength = -1
-                   lastCharCarried = True
-           if line[-2:] == '\r\n':
-               delim += '\r\n'
-               cutLength = -2
-           elif line[-1:] == '\n':
-               delim += '\n'
-               cutLength = -1
-           if cutLength != 0:
-               file.write(line[:cutLength])
-           else:
-               file.write(line)
-           line = req.readline(readBlockSize)
-           lineLength = len(line)
-           if lineLength < roughBoundaryLength:
-               sline = line.strip()
-           else:
-               sline = ''
+        previous_delimiter = ''
+        bound_length = len(boundary)
+        while 1:
+            line = req.readline(readBlockSize)
+            
+            if line[:bound_length] == boundary:
+                # the line is the boundary, so we bail out
+                return line
+
+            if line[-2:] == '\r\n':
+                # the line ends with a \r\n, which COULD be part
+                # of the boundary. We write the previous line delimiter
+                # then we write the line without \r\n and save it for the next
+                # iteration if it was not part of the boundary
+                if file is not None:
+                    file.write(previous_delimiter)
+                    file.write(line[:-2])
+                previous_delimiter = '\r\n'
+    
+            elif line[-1:] == '\r':
+                # the line ends with \r, which is only possible if
+                # readBlockSize bytes have been read. In that case the
+                # \r COULD be part of the boundary, so we save it for the next
+                # iteration
+                assert len(line) == readBlockSize
+                if file is not None:
+                    file.write(previous_delimiter)
+                    file.write(line[:-1])
+                previous_delimiter = '\r'
+    
+            elif line == '\n' and previous_delimiter == '\r':
+                # the line us a single \n and we were in the middle of a \r\n,
+                # so we complete the delimiter
+                previous_delimiter = '\r\n'
+    
+            else:
+                if file is not None:
+                    file.write(previous_delimiter)
+                    file.write(line)
+                previous_delimiter = ''
 
    def __getitem__(self, key):
        """Dictionary style indexing."""
