@@ -8,6 +8,8 @@
     \item
       New apache.register_cleanup() method.
     \item
+      New apache.exists_config_define() method.
+    \item
       New file-based session manager class.
     \item
       Session cookie name can be specified.
@@ -34,13 +36,17 @@
     \item
       Iterable return values are now correctly published
     \item
-      Fixed the traversal security issue
+      Fixed the publisher traversal security issue
+    \item
+      Objects hierarchy a la CherryPy can now be published.
     \item
       mod_python.c now logs reason for a 500 error
     \item
       Calls to PyErr_Print in mod_python.c are now followed by fflush()
     \item
       Using an empty value with PythonOption will unset a PythonOption key.
+    \item
+      req.path_info is now a read/write member.
     \item
       Improvements to FieldStorage allow uploading of large files. Uploaded
       files are now streamed to disk, not to memory.
