@@ -383,7 +383,7 @@ class SimpleTestCase(unittest.TestCase):
 
         log("req.get_options(): %s" % `req.get_options()`)
         if req.get_options() != apache.table({"testing":"123"}):
-            self.fail("get_options() should contain 'testing':'123'")
+            self.fail("get_options() should contain 'testing':'123', contains %s"%req.get_options().items())
 
     def test_req_get_remote_host(self):
 
