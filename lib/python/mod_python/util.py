@@ -165,6 +165,7 @@ class FieldStorage:
               end_of_stream = (not line) or (match.group(1) is not None)
               continue
         
+           skip_this_part = False
            while line not in ('\r','\r\n'):
                # we read the headers until we reach an empty line
                # NOTE : a single \n would mean the entity is malformed, but
@@ -192,9 +193,13 @@ class FieldStorage:
                   # we continue to the next part if we reached a simple boundary
                   # in either case this would mean the entity is malformed, but we're
                   # tolerating it anyway.
+                  skip_this_part = True
                   end_of_stream = (not line) or (match.group(1) is not None)
-                  continue
-
+                  break
+           
+           if skip_this_part:
+               continue
+           
            if disp_options.has_key("name"):
                name = disp_options["name"]
            else:
