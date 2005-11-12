@@ -53,6 +53,9 @@
     \item
       Path to flex is now discovered at configuration time or can be
       specifed using \code{configure --with-flex=/path/to/flex}.
+    \item
+      \code{sys.argv} is now initialized to \code{["mod_python"]} so that modules
+      like numarray and pychart can work properly.
   \end{itemize}
 
   Bug Fixes
