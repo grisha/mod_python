@@ -815,7 +815,7 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
         return PyErr_NoMemory();
 
     line = req_readline(self, rlargs);
-    while (line && !(strcmp(PyString_AsString(line), "") == 0)) {
+    while (line && (PyString_Size(line)>0)) {
         PyList_Append(result, line);
         size += PyString_Size(line);
         if ((sizehint != -1) && (size >= size))
