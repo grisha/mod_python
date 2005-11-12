@@ -751,6 +751,8 @@ def init(name,server):
     _interpreter = name
     _server = server
 
+    sys.argv = ["mod_python"]
+    
     return CallBack()
 
 ## Some functions made public

@@ -872,6 +872,11 @@ def Session_Session(req):
         req.write("test ok")
 
     return apache.OK
+
+def test_sys_argv(req):
+    import sys
+    req.write(repr(sys.argv))
+    return apache.OK
         
 def PythonOption_items(req):
     options = req.get_options().items()

@@ -913,6 +913,27 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != digest):
             self.fail('file upload long line test failed, its contents were corrupted (%s)'%rsp)
 
+    def test_sys_argv_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_sys_argv"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::test_sys_argv"),
+                                  PythonDebug("On")))
+
+        return str(c)
+
+    def test_sys_argv(self):
+
+        print "\n  * Testing sys.argv definition"
+
+        rsp = self.vhost_get("test_sys_argv")
+
+        if (rsp != "['mod_python']"):
+            self.fail(`rsp`)
+
     def test_PythonOption_conf(self):
 
         c = VirtualHost("*",
@@ -1747,6 +1768,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload"))
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload_embedded_cr"))
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload_split_boundary"))
+        perRequestSuite.addTest(PerRequestTestCase("test_sys_argv"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_override"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove"))
         perRequestSuite.addTest(PerRequestTestCase("test_PythonOption_remove2"))
