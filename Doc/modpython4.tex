@@ -394,6 +394,19 @@ objects. For a more in-depth look at Apache internals, see the
 
 \end{funcdesc}
 
+\begin{funcdesc}{exists_config_define}{name}
+    This function returns True if the Apache server was launched
+    with the definition with the given \var{name}. This means
+    that you can test whether Apache was launched with the \code{-DFOOBAR}
+    parameter by calling \code{apache.exists_config_define('FOOBAR')}.
+\end{funcdesc}
+
+\begin{methoddesc}[server]{register_cleanup}{handler\optional{, data}}
+  Registers a cleanup. Equivalent to \function{req.register_cleanup()}
+  or \function{req.server.register_cleanup()}, except that a server or request
+  object is not required.
+\end{methoddesc}
+
 \begin{funcdesc}{config_tree}{}
   Returns the server-level configuration tree. This tree does not
   include directives from .htaccess files. This is a \emph{copy} of
