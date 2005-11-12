@@ -1713,7 +1713,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         print "    ", time.ctime()
         ab = quoteIfSpace(AB)
         if os.name == "nt":
-            cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > null' \
+            cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > NUL:' \
                   % (ab, PORT)
         else:
             cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > /dev/null' \
@@ -1880,8 +1880,7 @@ def suite():
     mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
     mpTestSuite.addTest(PerInstanceTestCase("test_apache_register_cleanup"))
     mpTestSuite.addTest(PerInstanceTestCase("test_apache_exists_config_define"))
-    # XXX comment out until ab is fixed, or we have another way
-##     mpTestSuite.addTest(PerInstanceTestCase("test_global_lock"))
+    mpTestSuite.addTest(PerInstanceTestCase("test_global_lock"))
     mpTestSuite.addTest(PerInstanceTestCase("testPerRequestTests"))
     return mpTestSuite
 
