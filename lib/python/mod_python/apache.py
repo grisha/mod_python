@@ -760,6 +760,7 @@ table = _apache.table
 config_tree = _apache.config_tree
 server_root = _apache.server_root
 mpm_query = _apache.mpm_query
+exists_config_define = _apache.exists_config_define
 
 ## Some constants
 

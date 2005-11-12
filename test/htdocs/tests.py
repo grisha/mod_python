@@ -741,6 +741,13 @@ def apache_register_cleanup(req):
 
     return apache.OK
 
+def apache_exists_config_define(req):
+    if apache.exists_config_define('FOOBAR'):
+        req.write('FOOBAR')
+    else:
+        req.write('NO_FOOBAR')
+    return apache.OK
+
 def util_fieldstorage(req):
 
     from mod_python import util
