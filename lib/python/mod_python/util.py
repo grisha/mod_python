@@ -22,6 +22,7 @@ import _apache
 import apache
 import cStringIO
 import tempfile
+import re
 
 from types import *
 from exceptions import *
@@ -122,6 +123,7 @@ class FieldStorage:
        if ctype.startswith("application/x-www-form-urlencoded"):
            pairs = parse_qsl(req.read(clen), keep_blank_values)
            for pair in pairs:
+               # TODO : isn't this a bit heavyweight just for form fields ?
                file = cStringIO.StringIO(pair[1])
                self.list.append(Field(pair[0], file, "text/plain", {}, None, {}))
            return
@@ -136,15 +138,16 @@ class FieldStorage:
            boundary = ctype[i+9:]
            if len(boundary) >= 2 and boundary[0] == boundary[-1] == '"':
                boundary = boundary[1:-1]
-           boundary = "--" + boundary
+           boundary = re.compile("--" + re.escape(boundary) + "(--)?\r?\n") 
+
        except ValueError:
            raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
 
        # read until boundary
-       self.skip_to_boundary(req, boundary)
+       self.read_to_boundary(req, boundary, None)
 
-       while True:
-
+       end_of_stream = False
+       while not end_of_stream:
            ## parse headers
 
            ctype, type_options = "text/plain", {}
@@ -152,11 +155,20 @@ class FieldStorage:
            headers = apache.make_table()
 
            line = req.readline(readBlockSize)
-           sline = line.strip()
-           if not line or sline == (boundary + "--"):
-               break
-
-           while line and line not in ["\n", "\r\n"]:
+           match = boundary.match(line)
+           if (not line) or match:
+              # we stop if we reached the end of the stream or a stop boundary
+              # (which means '--' after the boundary)
+              # we continue to the next part if we reached a simple boundary
+              # in either case this would mean the entity is malformed, but we're
+              # tolerating it anyway.
+              end_of_stream = (not line) or (match.group(1) is not None)
+              continue
+        
+           while line not in ('\r','\r\n'):
+               # we read the headers until we reach an empty line
+               # NOTE : a single \n would mean the entity is malformed, but
+               # we're tolerating it anyway
                h, v = line.split(":", 1)
                headers.add(h, v)
                h = h.lower()
@@ -165,13 +177,23 @@ class FieldStorage:
                elif h == "content-type":
                    ctype, type_options = parse_header(v)
                    #
-                   # NOTE: FIX up binary rubbish sent as content type from Microsoft IE 6.0
-                   # when sending a file which does not have a suffix.
+                   # NOTE: FIX up binary rubbish sent as content type
+                   # from Microsoft IE 6.0 when sending a file which
+                   # does not have a suffix.
                    #
                    if ctype.find('/') == -1:
                        ctype = 'application/octet-stream'
+            
                line = req.readline(readBlockSize)
-               sline = line.strip()
+               match = boundary.match(line)
+               if (not line) or match:
+                  # we stop if we reached the end of the stream or a stop boundary
+                  # (which means '--' after the boundary)
+                  # we continue to the next part if we reached a simple boundary
+                  # in either case this would mean the entity is malformed, but we're
+                  # tolerating it anyway.
+                  end_of_stream = (not line) or (match.group(1) is not None)
+                  continue
 
            if disp_options.has_key("name"):
                name = disp_options["name"]
@@ -191,7 +213,7 @@ class FieldStorage:
                    file = self.make_field()
 
            # read it in
-           self.read_to_boundary(req, boundary, file)
+           end_of_stream = self.read_to_boundary(req, boundary, file)
            file.seek(0)
 
            # make a Field
@@ -205,51 +227,41 @@ class FieldStorage:
    def make_field(self):
        return cStringIO.StringIO()
 
-   def skip_to_boundary(self, req, boundary):
-       last_bound = boundary + "--"
-       roughBoundaryLength = len(last_bound) + 128
-       line = req.readline(readBlockSize)
-       lineLength = len(line)
-       if lineLength < roughBoundaryLength:
-           sline = line.strip()
-       else:
-           sline = ''
-       while line and sline != boundary and sline != last_bound:
-           line = req.readline(readBlockSize)
-           lineLength = len(line)
-           if lineLength < roughBoundaryLength:
-               sline = line.strip()
-           else:
-               sline = ''
-
    def read_to_boundary(self, req, boundary, file):
-        previous_delimiter = ''
-        bound_length = len(boundary)
-        while 1:
+        previous_delimiter = None
+        while True:
             line = req.readline(readBlockSize)
             
-            if line[:bound_length] == boundary:
+            if not line:
+                # end of stream
+                if file is not None and previous_delimiter is not None:
+                    file.write(previous_delimiter)
+                return True                
+            
+            match = boundary.match(line)
+            if match:
                 # the line is the boundary, so we bail out
-                return line
+                # if the two last chars are '--' it is the end of the entity
+                return match.group(1) is not None
 
             if line[-2:] == '\r\n':
                 # the line ends with a \r\n, which COULD be part
-                # of the boundary. We write the previous line delimiter
+                # of the next boundary. We write the previous line delimiter
                 # then we write the line without \r\n and save it for the next
                 # iteration if it was not part of the boundary
                 if file is not None:
-                    file.write(previous_delimiter)
+                    if previous_delimiter is not None: file.write(previous_delimiter)
                     file.write(line[:-2])
                 previous_delimiter = '\r\n'
     
             elif line[-1:] == '\r':
                 # the line ends with \r, which is only possible if
                 # readBlockSize bytes have been read. In that case the
-                # \r COULD be part of the boundary, so we save it for the next
+                # \r COULD be part of the next boundary, so we save it for the next
                 # iteration
                 assert len(line) == readBlockSize
                 if file is not None:
-                    file.write(previous_delimiter)
+                    if previous_delimiter is not None: file.write(previous_delimiter)
                     file.write(line[:-1])
                 previous_delimiter = '\r'
     
@@ -260,9 +272,9 @@ class FieldStorage:
     
             else:
                 if file is not None:
-                    file.write(previous_delimiter)
+                    if previous_delimiter is not None: file.write(previous_delimiter)
                     file.write(line)
-                previous_delimiter = ''
+                previous_delimiter = None
 
    def __getitem__(self, key):
        """Dictionary style indexing."""
