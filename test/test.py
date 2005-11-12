@@ -323,7 +323,7 @@ class PerRequestTestCase(unittest.TestCase):
         # build the POST entity
         entity = StringIO()
         # This is the MIME boundary
-        boundary = "------------"+''.join( [ random.choice('0123456789') for x in range(10) ] )+'--'
+        boundary = "============="+''.join( [ random.choice('0123456789') for x in range(10) ] )+'=='
         # A part for each variable
         for name, value in variables.iteritems():
             entity.write('--')
@@ -369,10 +369,12 @@ class PerRequestTestCase(unittest.TestCase):
         conn.putheader("Content-Length", '%s'%(len(entity)))
         conn.endheaders()
 
+        start = time.time()
         conn.send(entity)
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
+        print '    --> Send + process + receive took %.3f s'%(time.time()-start)
 
         return rsp
 
@@ -881,6 +883,24 @@ class PerRequestTestCase(unittest.TestCase):
         content = (
             'a'*100 + '\r\n'
             + 'b'*(readBlockSize-1)  # trick !
+        )
+        digest = md5.new(content).hexdigest()
+        
+        rsp = self.vhost_post_multipart_form_data(
+            "test_fileupload",
+            variables={'test':'abcd'},
+            files={'testfile':('test.txt',content)},
+        )
+
+        if (rsp != digest):
+            self.fail('file upload long line test failed, its contents were corrupted (%s)'%rsp)
+
+        print "  * Testing file upload where length of last line == readBlockSize - 1 with an extra \\r"
+
+        content = (
+            'a'*100 + '\r\n'
+            + 'b'*(readBlockSize-1)
+            + '\r'  # second trick !
         )
         digest = md5.new(content).hexdigest()
         
