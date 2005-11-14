@@ -777,7 +777,7 @@ class PerRequestTestCase(unittest.TestCase):
     
         print "\n  * Testing 1 MB file upload support"
 
-        content = ''.join( [ chr(random.choice(xrange(256))) for x in xrange(1024*1024) ] )
+        content = ''.join( [ chr(random.randrange(256)) for x in xrange(1024*1024) ] )
         digest = md5.new(content).hexdigest()
 
         rsp = self.vhost_post_multipart_form_data(
