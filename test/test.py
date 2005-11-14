@@ -397,7 +397,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.document_root()"
         rsp = self.vhost_get("test_req_document_root")
 
-        if rsp != DOCUMENT_ROOT.replace("\\", "/"):
+        if rsp.upper() != DOCUMENT_ROOT.replace("\\", "/").upper():
             self.fail(`rsp`)
 
     def test_req_add_handler_conf(self):
@@ -1042,17 +1042,17 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing interpreter per directive"
 
-        interpreter_name = DOCUMENT_ROOT.replace('\\', '/')+'/'
+        interpreter_name = (DOCUMENT_ROOT.replace('\\', '/')+'/').upper()
 
-        rsp = self.vhost_get("test_interpreter_per_directive")
+        rsp = self.vhost_get("test_interpreter_per_directive").upper()
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directive", '/subdir/foo.py')
+        rsp = self.vhost_get("test_interpreter_per_directive", '/subdir/foo.py').upper()
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directive", '/subdir/')
+        rsp = self.vhost_get("test_interpreter_per_directive", '/subdir/').upper()
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
@@ -1074,18 +1074,18 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "\n  * Testing interpreter per directory"
 
-        interpreter_name = DOCUMENT_ROOT.replace('\\', '/')+'/'
+        interpreter_name = (DOCUMENT_ROOT.replace('\\', '/')+'/').upper()
 
-        rsp = self.vhost_get("test_interpreter_per_directory")
+        rsp = self.vhost_get("test_interpreter_per_directory").upper()
         if (rsp != interpreter_name):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directory", '/subdir/foo.py')
-        if (rsp != interpreter_name+'subdir/'):
+        rsp = self.vhost_get("test_interpreter_per_directory", '/subdir/foo.py').upper()
+        if (rsp != interpreter_name+'SUBDIR/'):
             self.fail(`rsp`)
 
-        rsp = self.vhost_get("test_interpreter_per_directory", '/subdir/')
-        if (rsp != interpreter_name+'subdir/'):
+        rsp = self.vhost_get("test_interpreter_per_directory", '/subdir/').upper()
+        if (rsp != interpreter_name+'SUBDIR/'):
             self.fail(`rsp`)
 
     def test_util_fieldstorage_conf(self):
