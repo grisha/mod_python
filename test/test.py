@@ -135,8 +135,6 @@ HTTPD = testconf.HTTPD
 TESTHOME = testconf.TESTHOME
 MOD_PYTHON_SO = testconf.MOD_PYTHON_SO
 LIBEXECDIR = testconf.LIBEXECDIR
-AB = os.path.join(os.path.split(HTTPD)[0], "ab")
-
 SERVER_ROOT = TESTHOME
 CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
 DOCUMENT_ROOT = os.path.join(TESTHOME, "htdocs")
@@ -163,6 +161,17 @@ def findUnusedPort():
     s.close()
 
     return port
+
+def get_ab_path():
+    """ Find the location of the ab (apache benchmark) program """
+    ab = None
+    for name in ['ab', 'ab2']:
+        path = quoteIfSpace(os.path.join(os.path.split(HTTPD)[0], name))
+        if os.path.exists(path):
+            ab = path
+            break
+
+    return ab
 
 def quoteIfSpace(s):
 
@@ -1728,9 +1737,13 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
             self.fail(`rsp`)
 
         # if the mutex works, this test will take at least 5 secs
+        ab = get_ab_path() 
+        if not ab:
+            print "    Can't find ab. Skipping _global_lock test"
+            return
+
         t1 = time.time()
         print "    ", time.ctime()
-        ab = quoteIfSpace(AB)
         if os.name == "nt":
             cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > NUL:' \
                   % (ab, PORT)
