@@ -668,10 +668,8 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_headers_out"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
-                                  AddHandler("mod_python .py"),
-                                  DirectoryIndex("/tests.py"),
+                                  SetHandler("mod_python"),
                                   PythonHandler("tests::req_headers_out"),
-                                  PythonAccessHandler("tests::req_headers_out_access"),
                                   PythonDebug("On")))
         return str(c)
 
@@ -680,7 +678,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.headers_out"
 
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
-        conn.putrequest("GET", "/", skip_host=1)
+        conn.putrequest("GET", "/test.py", skip_host=1)
         conn.putheader("Host", "test_req_headers_out:%s" % PORT)
         conn.endheaders()
         response = conn.getresponse()
