@@ -166,9 +166,9 @@ def get_ab_path():
     """ Find the location of the ab (apache benchmark) program """
     ab = None
     for name in ['ab', 'ab2']:
-        path = quoteIfSpace(os.path.join(os.path.split(HTTPD)[0], name))
+        path = os.path.join(os.path.split(HTTPD)[0], name)
         if os.path.exists(path):
-            ab = path
+            ab = quoteIfSpace(path)
             break
 
     return ab
