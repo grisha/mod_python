@@ -19,7 +19,29 @@ rem $Id$
 rem
 rem This script builds the installer for Windows
 
+rem Test for APACHESRC
+if "%APACHESRC%"=="" GOTO NOAPACHESRC
+if not exist "%APACHESRC%\include" GOTO BADAPACHESRC
+
+rem Cleanup
 rmdir /s /q build
 del ..\src\*.obj ..\src\*.lib ..\src\*.exp ..\src\*.res
+
+rem Build
 python setup.py.in bdist_wininst --install-script win32_postinstall.py
-upx.exe -9 dist\*.exe || echo UPX is not installed, skipping compression
+
+rem Compress the installer if possible
+upx.exe --no-color --no-progress --best dist\*.exe
+GOTO END
+
+:BADAPACHESRC
+echo Currently APACHESRC points to %APACHESRC%
+echo This value seems wrong as we could not find a proper Apache installation here.
+
+:NOAPACHESRC
+echo Please set the APACHESRC variable to point to your Apache setup
+echo E.g. set APACHESRC=c:\apache
+echo This can be a binary distribution, no need for the Apache sources.
+GOTO END
+
+:END
