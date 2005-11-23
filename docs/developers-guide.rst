@@ -43,6 +43,10 @@ on the python-dev mailing list. Subscribe to the python-dev@httpd.apache.org
 list by mailing python-dev-subscribe@httpd.apache.org.  This is a advanced
 topic list for people who are versed in C and Apache httpd internals. 
 
+The mailing list archive is available from gmane.org. See
+http://dir.gmane.org/gmane.comp.apache.mod-python.devel
+
+
 *(I borrowed this bit from the website. I think we could re-phrase this to 
 be a little less intimidating. People with good python skills but no knowledge
 of apache internals or C can still make valuable contributions. -jg)*
@@ -50,13 +54,15 @@ of apache internals or C can still make valuable contributions. -jg)*
 Issue Tracking
 ==============
 
-The mod_python project uses JIRA for `issue tracking`_. The best way to ensure
+The mod_python project uses JIRA. The best way to ensure
 your improvements, suggestions or bug reports are not lost in the noise of the
 mailing list is to create a new issue in JIRA. Likewise, if you have a patch
 you want to submit it is best to attach it to the appropriate JIRA issue rather
 than sending it to directly to the mailing list. The python-dev mailing list
 automatically receives a message when a JIRA issue is created or modified so
 you can be assured your issue will get noticed.
+
+See http://issues.apache.org/jira/browse/MODPYTHON.
 
 .. _issue tracking: http://issues.apache.org/jira/browse/MODPYTHON
 
