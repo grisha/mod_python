@@ -1,9 +1,55 @@
+Running the test suite
+======================
 
-Most likely you don't need anything in this directory.
+1) Requirements
 
-This directory contains test scripts for mod_python. These are poorly
-written and used during development, are not for general consumption,
-your mileage will vary.
+- You must have a valid Apache 2 installation, responding to start and stop
+commands. The test suite will launch an Apache instance with its own
+configuration file, on its own TCP/IP port, so hopefully it won't break
+anything on your Apache setup.
 
-If you insist on running this, the idea is that you run the test.py
-script.
+- The only trick is that you'll have to stop your Apache server before launching
+the test, as the start/stop command can only apply to one single Apache instance. 
+
+- You must have at least ran the configure script found at the root of the
+mod_python source distribution.
+
+- If you're under Win32, then running the configure script
+may be too much of a hassle, we advise you to copy testconf.py.in to
+testconf.py and edit this file as described in the comments.
+
+- The best way to ensure that the test suite will run is to install the target 
+mod_python binaries on your system. Running your own version of mod_python 
+without installing it is possible and useful if you cannot be root, but 
+you're a bit on your own, sorry. You'll have to make sure testconf.py points to 
+the right version of mod_python.so and tweak Apache user's PYTHONPATH
+environment variable so that mod_python can find its Python modules.
+
+2) Running the test
+
+In the current directory, just launch the test.py script :
+
+python test.py
+
+You should see a bunch of text scrolling by as the tests unfold. If everything
+goes well, you should see two lines around the end of the unput, one with :
+
+8<---8<---8<---8<---8<---
+Ran 43 tests in 17.955s
+
+OK
+8<---8<---8<---8<---8<---
+
+and the other with :
+
+8<---8<---8<---8<---8<---
+Ran 6 tests in 70.942s
+
+OK
+8<---8<---8<---8<---8<---
+
+Of course the number of tests will vary in the future, but what's important here
+are the two shiny "OK". This means the tests were successful. Now you can report
+your success to python-dev@httpd.apache.org !
+
+Thanks for your time spent of running those tests !
