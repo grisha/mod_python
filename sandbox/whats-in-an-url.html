@@ -1,0 +1,534 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta name="generator" content="HTML Tidy for Windows (vers 1 September 2005), see www.w3.org">
+<meta http-equiv="CONTENT-TYPE" content="text/html; charset=windows-1252">
+<title>What's in an URL ?</title>
+<meta name="GENERATOR" content="OOo-dev 2.0 (Win32)">
+<meta name="AUTHOR" content="Nicolas Lehuen <nicolas@lehuen.com>">
+<style type="text/css">
+<!-- 
+BODY, TD { font-family:"Arial"; font-size:x-small }
+ -->
+</style>
+</head>
+<body>
+<table frame="BOX" cellspacing="0" border="1">
+<tr>
+<td colspan="2" rowspan="2" width="370" height="34" align="center">Source</td>
+<td rowspan="2" width="574" align="center">Remarks</td>
+<td colspan="22" width="2101" align="center">The request</td>
+</tr>
+<tr>
+<td align="left">GET</td>
+<td align="left"><br></td>
+<td align="left">http</td>
+<td align="left">://</td>
+<td align="left">user</td>
+<td align="left">:</td>
+<td align="left">password</td>
+<td align="left">@</td>
+<td align="left">servername</td>
+<td align="left">:</td>
+<td align="left">port</td>
+<td align="left">/script_path</td>
+<td align="left">/</td>
+<td align="left">path_info</td>
+<td align="left">;</td>
+<td align="left">path_parameters</td>
+<td align="left">?</td>
+<td align="left">query_string</td>
+<td align="left">#</td>
+<td align="left">fragment</td>
+<td align="left"><br></td>
+<td align="left">HTTP/1.1</td>
+</tr>
+<tr>
+<td rowspan="2" height="36" align="center" valign="middle">Python</td>
+<td align="center" valign="middle"><a href="http://docs.python.org/lib/module-urlparse.html#l2h-3540">urlparse.urlparse</a></td>
+<td align="left"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFFF00">0 : scheme</td>
+<td align="center"><br></td>
+<td colspan="7" align="center" bgcolor="#FFFF00">1 : netloc</td>
+<td colspan="3" align="center" bgcolor="#FFFF00">2 : path</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFFF00">3 : parameters</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFFF00">4 : query</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFFF00">5 : fragment</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center" valign="middle"><a href="http://docs.python.org/lib/module-urlparse.html#l2h-3542">urlparse.urlsplit</a></td>
+<td align="left"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFFF00">0 : scheme</td>
+<td align="center"><br></td>
+<td colspan="7" align="center" bgcolor="#FFFF00">1 : netloc</td>
+<td colspan="5" align="center" bgcolor="#FFFF00">2 : path_and_parameters</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFFF00">3 : query</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFFF00">4 : fragment</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td height="17" align="center" valign="middle">HTTP</td>
+<td align="center" valign="middle">Headers</td>
+<td align="left" valign="middle"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="3" align="center" bgcolor="#CCFFCC">Authorization</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#CCFFCC">Host</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td height="18" align="center" valign="middle">Apache Configuration</td>
+<td align="center" valign="middle">Directive</td>
+<td align="left" valign="middle">Used for SERVER_NAME and SERVER_PORT if UseCanonicalName is On</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FF6600">ServerName</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FF6600">Port</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td rowspan="11" height="208" align="center" valign="middle">Environment variables</td>
+<td align="center" valign="middle"><a href="http://httpd.apache.org/docs/2.0/en/mod/mod_cgi.html">Standard CGI environment variables</a></td>
+<td align="left"><br></td>
+<td align="center" bgcolor="#FFCC00">REQUEST_METHOD</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFCC00">REMOTE_USER</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFCC00">SERVER_PORT</td>
+<td align="center" bgcolor="#FFCC00">SCRIPT_NAME</td>
+<td colspan="2" align="center" bgcolor="#FFCC00">PATH_INFO</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFCC00">QUERY_STRING</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFCC00">SERVER_PROTOCOL</td>
+</tr>
+<tr>
+<td align="center" valign="middle">HTTP headers environment variable</td>
+<td align="left" valign="middle"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFCC00">HTTP_HOST</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center" valign="middle">Apache extra environment variables</td>
+<td align="left"><a href="http://httpd.apache.org/docs/2.0/en/mod/core.html#usecanonicalname">Depends on the value of the UseCanonicalName directive.</a></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFCC00">SERVER_NAME</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center" valign="middle"><a href="http://httpd.apache.org/docs/2.0/mod/mod_ssl.html#envvars">SSL environment variables</a></td>
+<td align="left"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#99CCFF">HTTPS</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td rowspan="7" align="center" valign="middle"><a href="http://httpd.apache.org/docs/2.0/mod/mod_rewrite.html#EnvVar">mod_rewrite environment variables</a></td>
+<td rowspan="5" align="left" valign="middle">Those variables seems to be available only in rewrite conditions and rules, and not available to mod_python</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="14" align="center" bgcolor="#99CCFF">SCRIPT_URI</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="5" align="center" bgcolor="#99CCFF">SCRIPT_URL</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="18" align="center" bgcolor="#99CCFF">REQUEST_URI (if the client sent an absolute URL)</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="9" align="center" bgcolor="#99CCFF">REQUEST_URI (if the client sent a relative URL)</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td colspan="22" align="center" bgcolor="#99CCFF">THE_REQUEST</td>
+</tr>
+<tr>
+<td align="left"><a href="http://httpd.apache.org/docs/2.0/mod/mod_rewrite.html#rewritecond">The HTTPS environment variable is also provided by mod_rewrite, even if mod_ssl is absent.</a></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#99CCFF">HTTPS</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="left" valign="middle">Those variables are made available to mod_python after the redirect is done, and contain information about the request before the redirect is done.</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="3" align="center" bgcolor="#FFCC00">REDIRECT_URL</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#FFCC00">REDIRECT_QUERY_STRING</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td rowspan="8" height="171" align="center" valign="middle">mod_python</td>
+<td rowspan="6" align="center" valign="middle">Request object</td>
+<td align="left" valign="middle"><br></td>
+<td align="center" bgcolor="#00FF00">req.method</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#00FF00">req.hostname</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="2" align="center" bgcolor="#00FF00">req.path_info</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#00FF00">req.args</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#23FF23">req.protocol</td>
+</tr>
+<tr>
+<td align="left" valign="middle">req.get_basic_auth() is only valid for Basic authtication. The documentation says that it must be called before req.user is valid.</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#00FF00">req.user</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#00FF00">req.get_basic_auth_pw()</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><br></td>
+<td colspan="22" align="center" bgcolor="#00FF00">req.the_request</td>
+</tr>
+<tr>
+<td align="left" valign="middle"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="18" align="center" bgcolor="#00FF00">req.unparsed_uri (if the client sent an absolute URL)</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="9" align="center" bgcolor="#00FF00">req.unparsed_uri (if the client sent a relative URL)</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td colspan="3" align="center" bgcolor="#00FF00">req.uri</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center" valign="middle">Server object</td>
+<td align="left" valign="middle"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#00FF00">server.server_hostname</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td align="center" valign="middle">Connection object</td>
+<td align="left" valign="middle">connection.local_addr[0] is the IP address of the server on which the request has been received ; usually it's not the server name we need.</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#00FF00">connection.local_addr[0]</td>
+<td align="center"><br></td>
+<td align="center" bgcolor="#00FF00">connection.local_addr[1]</td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+<td align="center"><br></td>
+</tr>
+<tr>
+<td height="17" align="left">Apache API</td>
+<td align="left"><br></td>
+<td align="left">TODO</td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+<td align="left"><br></td>
+</tr>
+</table>
+<center><p>Revision information :
+<script type="text/javascript">
+    var version = '$Id$';
+    document.write(version.substring(5,version.length-1));
+</script>
+</p></center>
+</body>
+</html>
