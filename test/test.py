@@ -113,15 +113,56 @@
      o Add the test to the suite in test.suite() method
 
 """
-import testconf
+
+import sys
+import os
+
+### Testing the testconf module
+try:
+    import testconf
+except:
+    print (
+        "Cannot find the testconf module. Either you didn't "
+        "launch the configure script, or you're running this script "
+        "in a Win32 environment. You have to copy testconf.py.in to "
+        "testconf.py and change the variables HTTPD, TESTHOME, MOD_PYTHON_SO "
+        "and LIBEXECDIR according to their description in the file.\n"
+    )  
+    sys.exit()
+else:
+    def testpath(variable,isfile):
+        value = getattr(testconf,variable,'<undefined>')
+
+        if isfile:
+            if os.path.isfile(value):
+                return True
+        else:
+            if os.path.isdir(value):
+                return True
+        print 'Bad value for testconf.%s : %s'%(
+            variable,
+            value
+        )
+        return False
+            
+    good = testpath('HTTPD',True)
+    good = testpath('TESTHOME',False) and good
+    good = testpath('LIBEXECDIR',False) and good
+    good = testpath('MOD_PYTHON_SO',True) and good
+    if not good:
+        print "Please check your testconf.py file"
+        sys.exit()
+
+    del testpath
+    del good
+
+
 from httpdconf import *
 
 import unittest
 import commands
 import urllib
 import httplib
-import os
-import sys
 import shutil
 import time
 import socket
@@ -250,7 +291,7 @@ class HttpdCtrl:
             Listen(PORT),
             PythonOption('PythonOptionTest sample_value'),
             DocumentRoot(DOCUMENT_ROOT),
-            LoadModule("python_module %s" % MOD_PYTHON_SO),
+            LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)),
             IfModule("!mod_auth.c",
                      LoadModule("auth_module %s" %
                                 quoteIfSpace(os.path.join(modpath, "mod_auth.so")))))
