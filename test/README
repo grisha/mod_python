@@ -9,8 +9,11 @@ commands. The test suite will launch an Apache instance with its own
 configuration file, on its own TCP/IP port, so hopefully it won't break
 anything on your Apache setup.
 
-- The only trick is that you'll have to stop your Apache server before launching
-the test, as the start/stop command can only apply to one single Apache instance. 
+- If you're running the Apache Monitor under Win32 (the tray icon that shows the
+state of the Apache Server), you'll notice that it will show the status of the
+test server during the tests. Unfortunately once the tests are over the monitor
+does not revert back to showing the status of your Apache server. The server
+itself is still running, though.
 
 2) Setting up mod_python source code
 ------------------------------------
