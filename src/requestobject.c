@@ -1422,7 +1422,6 @@ static PyGetSetDef request_getsets[] = {
     {"bytes_sent",   (getter)getreq_recmbr_off, NULL, "Bytes sent", "bytes_sent"},
     {"mtime",        (getter)getreq_recmbr_time, NULL, "Time resource was last modified", "mtime"},
     {"chunked",      (getter)getreq_recmbr, NULL, "Sending chunked transfer-coding", "chunked"},
-    {"boundary",     (getter)getreq_recmbr, NULL, "Multipart/byteranges boundary", "boundary"},
     {"range",        (getter)getreq_recmbr, NULL, "The Range: header", "range"},
     {"clength",      (getter)getreq_recmbr_off, NULL, "The \"real\" contenct length", "clength"},
     {"remaining",    (getter)getreq_recmbr_off, NULL, "Bytes left to read", "remaining"},
