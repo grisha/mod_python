@@ -408,16 +408,18 @@ def publish_object(req, object):
         
         req.form = util.FieldStorage(req, keep_blank_values=1)
         return publish_object(req,util.apply_fs_data(object, req.form, req=req))
-    
-    elif hasattr(object,'__iter__'):
-    
-        # To publish iterables, we recursively publish each item
-        # This way, generators can be published
-        result = False
-        for item in object:
-            result |= publish_object(req,item)
-        return result
-        
+
+# TODO : we removed this as of mod_python 3.2, let's see if we can put it back
+# in mod_python 3.3    
+#     elif hasattr(object,'__iter__'):
+#     
+#         # To publish iterables, we recursively publish each item
+#         # This way, generators can be published
+#         result = False
+#         for item in object:
+#             result |= publish_object(req,item)
+#         return result
+#         
     else:
         if object is None:
             
