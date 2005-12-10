@@ -205,14 +205,12 @@ def findUnusedPort():
 
 def get_ab_path():
     """ Find the location of the ab (apache benchmark) program """
-    ab = None
-    for name in ['ab', 'ab2']:
+    for name in ['ab', 'ab2', 'ab.exe', 'ab2.exe']:
         path = os.path.join(os.path.split(HTTPD)[0], name)
         if os.path.exists(path):
-            ab = quoteIfSpace(path)
-            break
+            return quoteIfSpace(path)
 
-    return ab
+    return None
 
 def quoteIfSpace(s):
 
@@ -1843,7 +1841,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_old_style_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
-        perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
+        # perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_hierarchy"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
