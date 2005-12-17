@@ -206,7 +206,7 @@ static PyObject *getsrv_recmbr_ah(serverobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(server_rec_mbrs, name);
     apr_array_header_t *ah = 
-        (apr_array_header_t *)((char *)self->server + md->offset);
+        *(apr_array_header_t **)((char *)self->server + md->offset);
 
     return tuple_from_array_header(ah);
 }

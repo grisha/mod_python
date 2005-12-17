@@ -43,8 +43,7 @@ PyObject * tuple_from_array_header(const apr_array_header_t *ah)
 
     if (ah == NULL)
     {
-        Py_INCREF(Py_None);
-        return Py_None;
+        t = PyTuple_New(0);
     }
     else
     {
@@ -54,8 +53,8 @@ PyObject * tuple_from_array_header(const apr_array_header_t *ah)
         for (i = 0; i < ah->nelts; i++) {
             PyTuple_SetItem(t, i, PyString_FromString(s[i]));
         }
-        return t;
     }
+    return t;
 }
 
 /**
@@ -72,8 +71,7 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
     char **methods;
 
     if ((l->method_list == NULL) || (l->method_list->nelts == 0)) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        t = PyTuple_New(0);
     }
     else {
         t = PyTuple_New(l->method_list->nelts);
@@ -82,8 +80,8 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
         for (i = 0; i < l->method_list->nelts; ++i) {
             PyTuple_SetItem(t, i, PyString_FromString(methods[i]));
         }
-        return t;
     }
+    return t;
 }
 
 /**
