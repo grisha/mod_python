@@ -215,8 +215,8 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("req.allowed_xmethods should be an empty tuple")
             
         log("    req.allowed_methods: %s" % `req.allowed_methods`)
-        if req.allowed_methods:
-            self.fail("req.allowed_methods should be None")
+        if req.allowed_methods != ():
+            self.fail("req.allowed_methods should be an empty tuple")
             
         log("    req.sent_bodyct: %s" % `req.sent_bodyct`)
         if req.sent_bodyct != 0:
@@ -311,6 +311,10 @@ class SimpleTestCase(unittest.TestCase):
         log("    req.content_encoding: %s" % `req.content_encoding`)
         if req.content_encoding:
             self.fail("req.content_encoding should be None")
+             
+        log("    req.content_languages: %s" % `req.content_languages`)
+        if req.content_languages != ():
+            self.fail("req.content_languages should be an empty tuple")
             
         log("    req.vlist_validator: %s" % `req.vlist_validator`)
         if req.vlist_validator:
@@ -472,6 +476,15 @@ class SimpleTestCase(unittest.TestCase):
         log("    server.limit_req_fields: %s" % `server.limit_req_fields`)
         if server.limit_req_fields != 100:
             self.fail("server.limit_req_fields should be 100")
+  
+        log("    server.names: %s" % `server.names`)
+        if server.names != ():
+            self.fail("server.names should be an empty tuple")           
+ 
+        log("    server.wild_names: %s" % `server.wild_names`)
+        if server.wild_names != ():
+            self.fail("server.wild_names should be an empty tuple")
+            
 
     def test_connection_members(self):
 

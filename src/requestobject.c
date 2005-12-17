@@ -1296,7 +1296,7 @@ static PyObject *getreq_rec_ah(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
     apr_array_header_t *ah = 
-        (apr_array_header_t *)((char *)self->request_rec + md->offset);
+        *(apr_array_header_t **)((char *)self->request_rec + md->offset);
 
     return tuple_from_array_header(ah);
 }
@@ -1311,7 +1311,7 @@ static PyObject *getreq_rec_ml(requestobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(request_rec_mbrs, (char*)name);
     ap_method_list_t *ml = 
-        (ap_method_list_t *)((char *)self->request_rec + md->offset);
+        *(ap_method_list_t **)((char *)self->request_rec + md->offset);
 
     return tuple_from_method_list(ml);
 }
