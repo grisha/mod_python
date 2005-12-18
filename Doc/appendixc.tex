@@ -123,6 +123,10 @@
     \item
       Fixed \code{psp_parser.l} to properly escape \code{backslash-n}, \code{backslash-t}
       and \code{backslash-r} character sequences. 
+    \item
+      Fixed segfault bug when accessing some request object members 
+      (allowed_methods, allowed_xmethods, content_languages) and some server
+      object members (names, wild_names).
 \end{itemize}
 
 \chapter{Changes from Previous Major Version (2.x)\label{app-changes}}
