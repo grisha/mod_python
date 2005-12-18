@@ -796,6 +796,7 @@ require valid-user
   meaningless.
 \end{methoddesc}
 
+
 \subsubsection{Request Members\label{pyapi-mprequest-mem}}
 
 \begin{memberdesc}[request]{connection}
@@ -1011,6 +1012,10 @@ require valid-user
   publisher handler uses this flag in the following way: when
   \member{content_type} isn't explicitly set, it attempts to guess the
   content type by examining the first few bytes of the output.
+\end{memberdesc}
+
+\begin{memberdesc}[request]{content_languages}
+  Tuple. List of strings representing the content languages. 
 \end{memberdesc}
 
 \begin{memberdesc}[request]{handler}
@@ -1343,6 +1348,17 @@ server) serving the request.
 
 \begin{memberdesc}[server]{server_hostname}
   Value of the \code{ServerName} directive. Same as CGI \envvar{SERVER_NAME}.\emph{(Read-Only})
+\end{memberdesc}
+
+\begin{memberdesc}[server]{names}
+  Tuple. List of normal server names specified in the \code{ServerAlias} 
+  directive.  This list does not include wildcarded names, which are listed
+  separately in \code{wild_names}. \emph{(Read-Only)}
+\end{memberdesc}
+
+\begin{memberdesc}[server]{wild_names}
+  Tuple. List of wildcarded server names specified in the \code{ServerAlias}
+  directive. \emph{(Read-Only)}
 \end{memberdesc}
 
 \begin{memberdesc}[server]{port}
