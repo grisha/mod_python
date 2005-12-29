@@ -737,6 +737,7 @@ def restore_nocgi(sav_env, si, so):
 
 _interpreter = None
 _server = None
+_callback = None
 
 def register_cleanup(handler,data=None):
     _apache.register_cleanup(_interpreter,_server,handler,data)
@@ -752,8 +753,10 @@ def init(name,server):
     _server = server
 
     sys.argv = ["mod_python"]
-    
-    return CallBack()
+
+    global _callback
+    _callback = CallBack()
+    return _callback
 
 ## Some functions made public
 make_table = _apache.table
