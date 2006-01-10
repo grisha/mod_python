@@ -1092,12 +1092,18 @@ static int python_handler(request_rec *req, char *phase)
     if (ext) 
         request_obj->extension = apr_pstrdup(req->pool, ext);
 
-    /* create a hahdler list object */
-    request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
+    if (!hle) {
+        /* create a handler list object from dynamically registered handlers */
+        request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(dynhle);
+    }
+    else {
+        /* create a handler list object */
+        request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
 
-    /* add dynamically registered handlers, if any */
-    if (dynhle) {
-        MpHList_Append(request_obj->hlo, dynhle);
+        /* add dynamically registered handlers, if any */
+        if (dynhle) {
+            MpHList_Append(request_obj->hlo, dynhle);
+        }
     }
 
     /* 
