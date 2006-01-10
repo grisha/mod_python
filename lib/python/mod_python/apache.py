@@ -306,7 +306,10 @@ class CallBack:
                         break
 
                 elif hlist.silent:
-                    result = DECLINED
+                    # A faulty handler marked as silent will only 
+                    # propagate DECLINED if it is the first and only handler.
+                    if result != OK:
+                        result = DECLINED
 
                 hlist.next()
 
