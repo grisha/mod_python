@@ -815,7 +815,7 @@ static const char *python_directive_handler(cmd_parms *cmd, py_config* conf,
  */
 
 static const char *python_directive_flag(void * mconfig, 
-                                         char *key, int val)
+                                         char *key, int val, int set)
 {
     py_config *conf;
 
@@ -825,7 +825,12 @@ static const char *python_directive_flag(void * mconfig,
         apr_table_set(conf->directives, key, "1");
     }
     else {
-        apr_table_unset(conf->directives, key);
+        if (set) {
+            apr_table_set(conf->directives, key, "0");
+        }
+        else {
+            apr_table_unset(conf->directives, key);
+        }
     }
 
     return NULL;
@@ -1501,13 +1506,13 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
  */
 static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
                                          int val) {
-    const char *rc = python_directive_flag(mconfig, "PythonDebug", val);
+    const char *rc = python_directive_flag(mconfig, "PythonDebug", val, 0);
 
     if (!rc) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
 
-        return python_directive_flag(conf, "PythonDebug", val);
+        return python_directive_flag(conf, "PythonDebug", val, 0);
     }
     return rc;
 }
@@ -1520,12 +1525,12 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
  */
 static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
                                              int val) {
-    const char *rc = python_directive_flag(mconfig, "PythonEnablePdb", val);
+    const char *rc = python_directive_flag(mconfig, "PythonEnablePdb", val, 0);
 
     if (!rc) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
-        return python_directive_flag(conf, "PythonEnablePdb", val);
+        return python_directive_flag(conf, "PythonEnablePdb", val, 0);
     }
     return rc;
 }
@@ -1539,12 +1544,12 @@ static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
 
 static const char *directive_PythonInterpPerDirective(cmd_parms *cmd, 
                                                       void *mconfig, int val) {
-    const char *rc = python_directive_flag(mconfig, "PythonInterpPerDirective", val);
+    const char *rc = python_directive_flag(mconfig, "PythonInterpPerDirective", val, 0);
 
     if (!rc) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
-        return python_directive_flag(conf, "PythonInterpPerDirective", val);
+        return python_directive_flag(conf, "PythonInterpPerDirective", val, 0);
     }
     return rc;
 }
@@ -1558,7 +1563,7 @@ static const char *directive_PythonInterpPerDirective(cmd_parms *cmd,
 
 static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd, 
                                                       void *mconfig, int val) {
-    return python_directive_flag(mconfig, "PythonInterpPerDirectory", val);
+    return python_directive_flag(mconfig, "PythonInterpPerDirectory", val, 0);
 }
 
 /**
@@ -1570,12 +1575,12 @@ static const char *directive_PythonInterpPerDirectory(cmd_parms *cmd,
 
 static const char *directive_PythonAutoReload(cmd_parms *cmd, 
                                               void *mconfig, int val) {
-    const char *rc = python_directive_flag(mconfig, "PythonAutoReload", val);
+    const char *rc = python_directive_flag(mconfig, "PythonAutoReload", val, 1);
 
     if (!rc) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
-        return python_directive_flag(conf, "PythonAutoReload", val);
+        return python_directive_flag(conf, "PythonAutoReload", val, 1);
     }
     return rc;
 }
