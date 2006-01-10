@@ -462,11 +462,11 @@ def publish_object(req, object):
             if charset is not None:
                 req.content_type += '; charset=%s'%charset
         
-        if req.method!='HEAD':
-            
-            # TODO : the problem is that a handler can still use req.write
-            # and break the assumption that nothing should be written with the
-            # HEAD method.
-            req.write(result)
+        # Write result even if req.method == 'HEAD'
+        # Apache will truncate the output if necessary.
+        # Truncating output here if req.method is HEAD is likely the 
+        # wrong thing to do # as it may cause problems for any output filters.
+        # See MODPYTHON-105 for details.
+        req.write(result)
 
         return True
