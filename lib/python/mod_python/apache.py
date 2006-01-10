@@ -251,7 +251,7 @@ class CallBack:
         try:
             hlist = req.hlist
 
-            while hlist.handler:
+            while hlist.handler is not None:
 
                 # split module::handler
                 l = hlist.handler.split('::', 1)
