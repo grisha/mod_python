@@ -467,6 +467,81 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail(`rsp`)
 
+    def test_req_add_bad_handler_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_add_bad_handler"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_add_bad_handler"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_add_bad_handler(self):
+        # adding a non-existent handler with req.add_handler should raise
+        # an exception.
+
+        print """\n  * Testing req.add_handler("PythonHandler", "bad_handler")"""
+        rsp = self.vhost_get("test_req_add_bad_handler")
+
+        # look for evidence of the exception in the error log 
+        time.sleep(1)
+        f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
+        log = f.read()
+        f.close()
+        if log.find("contains no 'bad_handler'") == -1:
+            self.fail("""Could not find "contains no 'bad_handler'" in error_log""")
+
+    def test_req_add_empty_handler_string_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_add_empty_handler_string"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_add_empty_handler_string"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_add_empty_handler_string(self):
+        # Adding an empty string as the handler in req.add_handler
+        # should raise an exception
+
+        print """\n  * Testing req.add_handler("PythonHandler","")"""
+        rsp = self.vhost_get("test_req_add_empty_handler_string")
+
+        # look for evidence of the exception in the error log 
+        time.sleep(1)
+        f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
+        log = f.read()
+        f.close()
+        if log.find("contains no 'handler'") == -1:
+            self.fail("""Could not find "contains no 'handler'" in error_log""")
+
+    def test_accesshandler_add_handler_to_empty_hl_conf(self):
+        # Note that there is no PythonHandler specified in the the VirtualHost
+        # config. We want to see if req.add_handler will work when the 
+        # handler list is empty.
+
+        #PythonHandler("tests::req_add_empty_handler_string"),
+        c = VirtualHost("*",
+                        ServerName("test_accesshandler_add_handler_to_empty_hl"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonAccessHandler("tests::accesshandler_add_handler_to_empty_hl"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_accesshandler_add_handler_to_empty_hl(self):
+
+        print """\n  * Testing req.add_handler() when handler list is empty"""
+        rsp = self.vhost_get("test_accesshandler_add_handler_to_empty_hl")
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_req_allow_methods_conf(self):
 
         c = VirtualHost("*",
@@ -1803,6 +1878,9 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite = unittest.TestSuite()
         perRequestSuite.addTest(PerRequestTestCase("test_req_document_root"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_add_bad_handler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_add_empty_handler_string"))
+        perRequestSuite.addTest(PerRequestTestCase("test_accesshandler_add_handler_to_empty_hl"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_requires"))
