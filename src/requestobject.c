@@ -147,7 +147,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
 
         /* then just append to hlist */
         hlist_append(self->request_rec->pool, self->hlo->head,
-                     handler, dir, 0);
+                     handler, dir, NOTSILENT);
     }
     else {
         /* this is a phase that we're not in */
@@ -163,11 +163,11 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
         hle = apr_hash_get(req_config->dynhls, phase, APR_HASH_KEY_STRING);
 
         if (! hle) {
-            hle = hlist_new(self->request_rec->pool, handler, dir, 0);
+            hle = hlist_new(self->request_rec->pool, handler, dir, NOTSILENT);
             apr_hash_set(req_config->dynhls, phase, APR_HASH_KEY_STRING, hle);
         }
         else {
-            hlist_append(self->request_rec->pool, hle, handler, dir, 0);
+            hlist_append(self->request_rec->pool, hle, handler, dir, NOTSILENT);
         }
     }
     
