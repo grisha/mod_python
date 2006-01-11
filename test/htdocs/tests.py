@@ -594,6 +594,36 @@ def simple_handler(req):
         
     return apache.OK
 
+def req_add_bad_handler(req):
+    # bad_handler does not exist so adding it should 
+    # should raise an AttributeError exception
+    
+    req.log_error("req_add_bad_handler")
+    req.add_handler("PythonHandler", "tests::bad_handler")
+    req.write("test ok")
+
+    return apache.OK
+
+def req_add_empty_handler_string(req):
+    # Adding an empty string as a handler should should 
+    # should raise an exception
+    
+    req.log_error("req_add_empty_handler_string")
+    req.add_handler("PythonHandler", "")
+    req.write("check error_log")
+
+    return apache.OK
+
+def accesshandler_add_handler_to_empty_hl(req):
+    # Prior to version 3.2.6, adding a python handler 
+    # to and empty handler list would cause a segfault
+ 
+    req.secret_message = "foo"
+    req.log_error("accesshandler_add_handler_to_empty_hl")
+    req.add_handler("PythonHandler", "tests::simple_handler")
+
+    return apache.OK
+
 def req_allow_methods(req):
 
     req.allow_methods(["PYTHONIZE"])
