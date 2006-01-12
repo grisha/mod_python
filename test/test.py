@@ -511,13 +511,8 @@ class PerRequestTestCase(unittest.TestCase):
         print """\n  * Testing req.add_handler("PythonHandler","")"""
         rsp = self.vhost_get("test_req_add_empty_handler_string")
 
-        # look for evidence of the exception in the error log 
-        time.sleep(1)
-        f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
-        log = f.read()
-        f.close()
-        if log.find("contains no 'handler'") == -1:
-            self.fail("""Could not find "contains no 'handler'" in error_log""")
+        if (rsp == "no exception"):
+            self.fail("Expected an exception")
 
     def test_accesshandler_add_handler_to_empty_hl_conf(self):
         # Note that there is no PythonHandler specified in the the VirtualHost
