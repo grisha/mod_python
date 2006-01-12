@@ -610,7 +610,7 @@ def req_add_empty_handler_string(req):
     
     req.log_error("req_add_empty_handler_string")
     req.add_handler("PythonHandler", "")
-    req.write("check error_log")
+    req.write("no exception")
 
     return apache.OK
 
