@@ -127,6 +127,11 @@
       Fixed segfault bug when accessing some request object members 
       (allowed_methods, allowed_xmethods, content_languages) and some server
       object members (names, wild_names).
+    \item
+      Fixed request.add_handler() segfault bug when adding a handler to an empty
+      handler list.
+    \item
+      Fixed PythonAutoReload directive so that AutoReload can be turned off.
 \end{itemize}
 
 \chapter{Changes from Previous Major Version (2.x)\label{app-changes}}
