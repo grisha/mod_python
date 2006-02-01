@@ -21,6 +21,11 @@ import sys
 import re
 import os.path
 
+try:
+  __file__
+except NameError:
+  __file__ = '.'
+
 def getmp_rootdir():
     """gets the root directory of the mod_python source tree..."""
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

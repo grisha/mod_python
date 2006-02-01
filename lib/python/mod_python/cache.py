@@ -20,14 +20,17 @@
  # 
  # $Id$
 
+# Loads Python 2.2 compatibility module
+from python22 import *
+
 from os import fstat
-from time import time, strptime
+from time import time, mktime
+from rfc822 import parsedate
 from calendar import timegm
 import urllib2
 import re
 import weakref
 import new
-
 
 try:
     from threading import Lock
@@ -274,7 +277,7 @@ class FileCache(Cache):
             opened.close()
 
 def parseRFC822Time(t):
-    return timegm(strptime(t, "%a, %d %b %Y %H:%M:%S %Z"))
+    return mktime(parsedate(t))
 
 re_max_age=re.compile('max-age\s*=\s*(\d+)', re.I)
 

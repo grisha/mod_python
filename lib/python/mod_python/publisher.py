@@ -28,6 +28,9 @@
   5. Does not give special meaning to '.' and '..'.
 """
 
+# Loads Python 2.2 compatibility module
+from python22 import *
+
 import apache
 import util
 

@@ -17,6 +17,9 @@
  #
  # $Id$
 
+# Loads Python 2.2 compatibility module
+from python22 import *
+
 """
 
 This module is a mod_python handler that can be used to test the configuration.
