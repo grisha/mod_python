@@ -40,6 +40,9 @@ Max-Age and Version) could be a waste of cookie space...
 
 """
 
+# Loads Python 2.2 compatibility module
+from python22 import *
+
 import time
 import re
 import hmac

@@ -1,6 +1,6 @@
  #
- # Copyright 2004 Apache Software Foundation 
- # 
+ # Copyright 2004 Apache Software Foundation
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -17,8 +17,11 @@
  #
  # $Id$
 
-__all__ = ["apache", "cgihandler", "psp",
-           "publisher", "util", "python22"]
+# This file contains a bunch of hacks used to support Python 2.2
 
-version = "3.2.6"
+from __future__ import generators
 
+import sys
+if sys.version < '2.3':
+  # Enumerate does not exists in Python 2.2
+  enumerate = lambda x : zip(range(len(x)),x)

@@ -57,6 +57,9 @@
 
 # mod_python tests
 
+from __future__ import generators
+from mod_python.python22 import *
+
 from mod_python import apache
 import unittest
 import re
