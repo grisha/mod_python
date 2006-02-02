@@ -135,7 +135,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
             _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
             buffer = PyString_AS_STRING((PyStringObject *) result);
-            buffer += HUGE_STRING_LEN;
+            buffer += bufsize;
             bufsize += HUGE_STRING_LEN;
         }
 
