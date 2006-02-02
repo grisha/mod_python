@@ -353,8 +353,9 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     (period) to find the last one we're looking for.
     """
     parts = object_str.split('.')
-        
-    for i, obj_str in enumerate(parts):
+
+    first_object = True        
+    for obj_str in parts:
         # path components starting with an underscore are forbidden
         if obj_str[0]=='_':
             req.log_error('Cannot traverse %s in %s because '
@@ -362,9 +363,10 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
                           % (obj_str, req.unparsed_uri), apache.APLOG_WARNING)
             raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
-        # if we're not in the first object (which is the module)
-        if i>0:
-        
+        if first_object:
+            first_object = False
+        else:
+            # if we're not in the first object (which is the module)
             # we're going to check whether be can traverse this type or not
             rule = tp_rules.get(type(obj), default_tp_rule)
             if not rule[0]:
