@@ -23,7 +23,7 @@
 # Loads Python 2.2 compatibility module
 from python22 import *
 
-from os import fstat
+from os import stat
 from time import time, mktime
 from rfc822 import parsedate
 from calendar import timegm
@@ -254,19 +254,16 @@ class FileCache(Cache):
         self.mode=mode
     
     def check(self, key, name, entry):
-        opened = file(key, self.mode)
-
-        timestamp = fstat(opened.fileno())[-2]
+        timestamp = stat(key).st_mtime 
 
         if entry._value is NOT_INITIALIZED:
             entry._timestamp = timestamp
-            return opened
+            return file(key, self.mode)
         else:
             if entry._timestamp != timestamp:
                 entry._timestamp = timestamp
-                return opened
+                return file(key, self.mode)
             else:
-                opened.close()
                 return None
 
     def build(self, key, name, opened, entry):
@@ -380,7 +377,7 @@ class ModuleCache(FileCache):
             opened.close()
 
 class HttpModuleCache(HTTPCache):
-    """ A module cache. Give it a file name, it returns a module
+    """ A module cache. Give it an HTTP URL, it returns a module
         which results from the execution of the Python script it contains.
         This module is not inserted into sys.modules.
     """

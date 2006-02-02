@@ -1803,6 +1803,62 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test traversable instance ok"):
             self.fail(`rsp`)
 
+    def test_publisher_cache_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+    
+    def test_publisher_cache(self):
+        print "\n  * Testing mod_python.publisher cache"
+        
+        def write_published():
+            published = file('htdocs/temp.py','wb')
+            published.write('import time\n')
+            published.write('LOAD_TIME = time.clock()\n')
+            published.write('def index(req):\n')
+            published.write('    return "OK %f"%LOAD_TIME\n')
+            published.close()
+        
+        write_published()
+        try:
+            rsp = self.vhost_get("test_publisher", path="/temp.py")
+            
+            if not rsp.startswith('OK '):
+                self.fail(`rsp`)
+            
+            rsp2 = self.vhost_get("test_publisher", path="/temp.py")
+            if rsp != rsp2:
+                self.fail(
+                    "The publisher cache has reloaded a published module"
+                    " even though it wasn't modified !"
+                )
+            
+            # We wait three seconds to be sure we won't be annoyed
+            # by any lack of resolution of the stat().st_mtime member.
+            time.sleep(3)
+            write_published()
+    
+            rsp2 = self.vhost_get("test_publisher", path="/temp.py")
+            if rsp == rsp2:
+                self.fail(
+                    "The publisher cache has not reloaded a published module"
+                    " even though it was modified !"
+                )
+    
+            rsp = self.vhost_get("test_publisher", path="/temp.py")
+            if rsp != rsp2:
+                self.fail(
+                    "The publisher cache has reloaded a published module"
+                    " even though it wasn't modified !"
+                )
+        finally:        
+            os.remove('htdocs/temp.py')
+
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
     # restart of httpd (e.g. we're using a fancy config)
@@ -1916,6 +1972,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
         # perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_hierarchy"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_cache"))
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
