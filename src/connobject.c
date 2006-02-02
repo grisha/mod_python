@@ -74,14 +74,16 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
     bufsize = len == 0 ? HUGE_STRING_LEN : len;
 
-    Py_BEGIN_ALLOW_THREADS;
-    rc = ap_get_brigade(c->input_filters, bb, mode, APR_BLOCK_READ, bufsize);
-    Py_END_ALLOW_THREADS;
+    while (APR_BRIGADE_EMPTY(bb)) {
+        Py_BEGIN_ALLOW_THREADS;
+        rc = ap_get_brigade(c->input_filters, bb, mode, APR_BLOCK_READ, bufsize);
+        Py_END_ALLOW_THREADS;
 
-    if (! APR_STATUS_IS_SUCCESS(rc)) {
-        PyErr_SetObject(PyExc_IOError, 
-                        PyString_FromString("Connection read error"));
-        return NULL;
+        if (! APR_STATUS_IS_SUCCESS(rc)) {
+            PyErr_SetObject(PyExc_IOError, 
+                            PyString_FromString("Connection read error"));
+            return NULL;
+        }
     }
 
     /* 
