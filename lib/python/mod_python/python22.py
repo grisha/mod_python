@@ -19,9 +19,9 @@
 
 # This file contains a bunch of hacks used to support Python 2.2
 
-from __future__ import generators
-
 import sys
 if sys.version < '2.3':
-  # Enumerate does not exists in Python 2.2
-  enumerate = lambda x : zip(range(len(x)),x)
+    import __builtin__ as hack
+    
+    # Enumerate does not exists in Python 2.2
+    hack.enumerate = lambda s : zip(xrange(len(s)),s)

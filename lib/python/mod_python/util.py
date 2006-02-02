@@ -18,9 +18,6 @@
 #
 # $Id$
 
-# Loads Python 2.2 compatibility module
-from python22 import *
-
 import _apache
 import apache
 import cStringIO

@@ -20,9 +20,6 @@
  # 
  # $Id$
 
-# Loads Python 2.2 compatibility module
-from python22 import *
-
 from os import stat
 from time import time, mktime
 from rfc822 import parsedate

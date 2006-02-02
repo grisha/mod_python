@@ -17,9 +17,6 @@
  #
  # $Id$
 
-# Loads Python 2.2 compatibility module
-from python22 import *
-
 import apache, Session, util, _psp
 import _apache
 
