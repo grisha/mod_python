@@ -1825,7 +1825,7 @@ class PerRequestTestCase(unittest.TestCase):
         def write_published():
             published = file('htdocs/temp.py','wb')
             published.write('import time\n')
-            published.write('LOAD_TIME = time.clock()\n')
+            published.write('LOAD_TIME = time.time()\n')
             published.write('def index(req):\n')
             published.write('    return "OK %f"%LOAD_TIME\n')
             published.close()
