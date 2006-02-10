@@ -287,7 +287,7 @@ MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 # get the mod_python version
 AC_SUBST(MP_VERSION)
 MP_VERSION=`awk '/MPV_STRING/ {print $3}' src/include/mpversion.h`
-MP_VERSION=`echo $MP_VERSION | sed s/\\"//g`                                      
+MP_VERSION=`echo $MP_VERSION | sed 's/["]//g'`
 
 # get --with-python-src. The python src is required to generate the documentation
 # It is not required to compile or install mod_python itself
