@@ -178,7 +178,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
                                   APR_BLOCK_READ, self->readbytes);
         Py_END_ALLOW_THREADS;
 
-        if (!APR_STATUS_IS_EAGAIN(self->rc) && !APR_STATUS_IS_SUCCESS(self->rc)) {
+        if (!APR_STATUS_IS_EAGAIN(self->rc) && !(self->rc == APR_SUCCESS)) {
             PyErr_SetObject(PyExc_IOError, 
                             PyString_FromString("Input filter read error"));
             return NULL;

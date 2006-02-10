@@ -220,6 +220,32 @@ def quoteIfSpace(s):
         s = '"%s"' % s
     return s
 
+def get_apache_version():
+
+    print "Checking Apache version...."
+    httpd = quoteIfSpace(HTTPD)
+    cmd = '%s -v' % (httpd)
+    (stdin,stdout) = os.popen2(cmd)
+
+    version_str = None
+    for line in stdout:
+        if line.startswith('Server version'):
+             version_str = line.strip()
+             break
+
+    if version_str:
+        version_str = version_str.split('/')[1]
+        major,minor,patch = version_str.split('.',3)
+        version = '%s.%s' % (major,minor)
+    else:
+        
+        print "Can't determine Apache version. Assuming 2.0"
+        version = '2.0'
+    print version
+    return version
+
+APACHE_VERSION = get_apache_version()
+
 class HttpdCtrl:
     # a mixin providing ways to control httpd
 
@@ -289,14 +315,26 @@ class HttpdCtrl:
             Listen(PORT),
             PythonOption('PythonOptionTest sample_value'),
             DocumentRoot(DOCUMENT_ROOT),
-            LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)),
-            IfModule("!mod_auth.c",
+            LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
+
+        if APACHE_VERSION == '2.2':
+            # mod_auth has been split into mod_auth_basic and some other modules
+            s.append(IfModule("!mod_auth_basic.c",
+                     LoadModule("auth_basic_module %s" %
+                                quoteIfSpace(os.path.join(modpath, "mod_auth_basic.so")))))
+
+            # Default KeepAliveTimeout is 5 for apache 2.2, but 15 in apache 2.0
+            # Explicitly set the value so it's the same as 2.0
+            s.append(KeepAliveTimeout("15"))
+        else:
+            s.append(IfModule("!mod_auth.c",
                      LoadModule("auth_module %s" %
                                 quoteIfSpace(os.path.join(modpath, "mod_auth.so")))))
 
+        s.append("\n# --APPENDED-- \n\n"+append)
+
         f = open(CONFIG, "w")
         f.write(str(s))
-        f.write("\n# --APPENDED-- \n\n"+append)
         f.close()
 
     def startHttpd(self,extra=''):
@@ -595,7 +633,26 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_req_requires_conf(self):
 
-        c = VirtualHost("*",
+        if APACHE_VERSION == '2.2':
+            # Apache 2.2 needs AuthBasicAuthoritative Off 
+            # This is necessary when combining mod_auth_basic with third-party
+            # modules that are not configured with the AuthBasicProvider  
+            # directive. 
+            c = VirtualHost("*",
+                        ServerName("test_req_requires"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  AuthName("blah"),
+                                  AuthType("basic"),
+                                  Require("valid-user"),
+                                  AuthBasicAuthoritative("Off"),
+                                  PythonAuthenHandler("tests::req_requires"),
+                                  PythonDebug("On")))
+
+        else:
+            # This configuration is suitable for Apache 2.0
+            c = VirtualHost("*",
                         ServerName("test_req_requires"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
@@ -605,6 +662,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   Require("valid-user"),
                                   PythonAuthenHandler("tests::req_requires"),
                                   PythonDebug("On")))
+
         return str(c)
 
     def test_req_requires(self):

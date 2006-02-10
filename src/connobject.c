@@ -79,7 +79,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         rc = ap_get_brigade(c->input_filters, bb, mode, APR_BLOCK_READ, bufsize);
         Py_END_ALLOW_THREADS;
 
-        if (! APR_STATUS_IS_SUCCESS(rc)) {
+        if (rc != APR_SUCCESS) {
             PyErr_SetObject(PyExc_IOError, 
                             PyString_FromString("Connection read error"));
             return NULL;
@@ -319,14 +319,14 @@ static PyObject *makesockaddr(struct apr_sockaddr_t *addr)
 {
     PyObject *addrobj = makeipaddr(addr);
     PyObject *ret = NULL;
+
+    /* apr_sockaddr_port_get was deprecated and removed in apr 1.x
+     * Access the port directly instead
+     */
     if (addrobj) {
         apr_port_t port;
-        if(apr_sockaddr_port_get(&port, addr)==APR_SUCCESS) {
-            ret = Py_BuildValue("Oi", addrobj, port );
-        }
-        else {
-            PyErr_SetString(PyExc_SystemError,"apr_sockaddr_port_get failure");
-        }
+        port = addr->port; 
+        ret = Py_BuildValue("Oi", addrobj, port );
         Py_DECREF(addrobj);
     }
     return ret;
