@@ -37,8 +37,11 @@ class Directive:
 class Container:
     
     def __init__(self, *args):
-        self.args = args
+        self.args = list(args)
         self.indent = 0
+    
+    def append(self, value):
+        self.args.append(value)
 
     def __str__(self):
 
@@ -80,6 +83,16 @@ class AddOutputFilter(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class AuthBasicAuthoritative(Directive):
+    # New in Apache 2.2
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class AuthBasicProvider(Directive):
+    # New in Apache 2.2
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class AuthType(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
@@ -111,6 +124,10 @@ class ErrorLog(Directive):
 class IfModule(ContainerTag):
     def __init__(self, dir, *args):
         ContainerTag.__init__(self, self.__class__.__name__, dir, args)
+
+class KeepAliveTimeout(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
 
 class Listen(Directive):
     def __init__(self, val):
