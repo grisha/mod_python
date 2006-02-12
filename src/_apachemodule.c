@@ -481,21 +481,27 @@ static PyObject *_global_trylock(PyObject *self, PyObject *args)
         index = (hash % (glb->nlocks-1)+1);
     }
 
-//      ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-//                "_global_trylock at index %d from pid %d", index, getpid());
+    /*  
+     * ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+     *           "_global_trylock at index %d from pid %d", index, getpid());
+     */
     Py_BEGIN_ALLOW_THREADS
     rv = apr_global_mutex_trylock(glb->g_locks[index]);        
     Py_END_ALLOW_THREADS
     
     if (rv == APR_SUCCESS) {
-//      ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-//                "_global_trylock DONE at index %d from pid %d", index, getpid());
+        /*
+         * ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+         *         "_global_trylock DONE at index %d from pid %d", index, getpid());
+         */
         Py_INCREF(Py_True);
         return Py_True;
     }
     else if(APR_STATUS_IS_EBUSY(rv)) {
-//      ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-//                "_global_trylock BUSY at index %d from pid %d", index, getpid());
+        /*
+         * ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+         *         "_global_trylock BUSY at index %d from pid %d", index, getpid());
+         */
         Py_INCREF(Py_False);
         return Py_False;
     }
