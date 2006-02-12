@@ -1478,24 +1478,32 @@ static struct PyMemberDef request_members[] = {
  **
  *    
  */
+
+#ifndef CLEAR_REQUEST_MEMBER 
+#define CLEAR_REQUEST_MEMBER(member)\
+    tmp = member;\
+    member = NULL;\
+    Py_XDECREF(tmp)
+#endif
+
 static int request_tp_clear(requestobject *self)
 {   
     PyObject* tmp;
-    /* TODO: create a macro for the following repetitive code */ 
-    tmp=self->dict; self->dict=NULL; Py_XDECREF(tmp);
-    tmp=self->connection; self->connection=NULL; Py_XDECREF(tmp);
-    tmp=self->server; self->server=NULL; Py_XDECREF(tmp);
-    tmp=self->next; self->next=NULL; Py_XDECREF(tmp);
-    tmp=self->prev; self->prev=NULL; Py_XDECREF(tmp);
-    tmp=self->main; self->main=NULL; Py_XDECREF(tmp);
-    tmp=self->headers_in; self->headers_in=NULL; Py_XDECREF(tmp);
-    tmp=self->headers_out; self->headers_out=NULL; Py_XDECREF(tmp);
-    tmp=self->err_headers_out; self->err_headers_out=NULL; Py_XDECREF(tmp);
-    tmp=self->subprocess_env; self->subprocess_env=NULL; Py_XDECREF(tmp);
-    tmp=self->notes; self->notes=NULL; Py_XDECREF(tmp);
-    tmp=self->phase; self->phase=NULL; Py_XDECREF(tmp);
-    tmp=self->hlo; self->hlo=NULL; Py_XDECREF(tmp);
-    tmp=self->session; self->session=NULL; Py_XDECREF(tmp);
+
+    CLEAR_REQUEST_MEMBER(self->dict);
+    CLEAR_REQUEST_MEMBER(self->connection);
+    CLEAR_REQUEST_MEMBER(self->server);
+    CLEAR_REQUEST_MEMBER(self->next);
+    CLEAR_REQUEST_MEMBER(self->prev);
+    CLEAR_REQUEST_MEMBER(self->main);
+    CLEAR_REQUEST_MEMBER(self->headers_in);	
+    CLEAR_REQUEST_MEMBER(self->headers_out);
+    CLEAR_REQUEST_MEMBER(self->err_headers_out);
+    CLEAR_REQUEST_MEMBER(self->subprocess_env);
+    CLEAR_REQUEST_MEMBER(self->notes);
+    CLEAR_REQUEST_MEMBER(self->phase);
+    CLEAR_REQUEST_MEMBER(self->hlo);
+    CLEAR_REQUEST_MEMBER(self->session);
     
     return 0;
 }
