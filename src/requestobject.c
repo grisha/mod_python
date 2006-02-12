@@ -1525,22 +1525,30 @@ static void request_tp_dealloc(requestobject *self)
  **
  *    Traversal of the request object
  */
+#ifndef VISIT_REQUEST_MEMBER 
+#define VISIT_REQUEST_MEMBER(member, visit, arg)\
+    if (member) {\
+        result = visit(member, arg);\
+        if (result)\
+            return result;\
+    }
+#endif
+
 static int request_tp_traverse(requestobject* self, visitproc visit, void *arg) {
     int result;
-
-    if(self->dict) {result = visit(self->dict,arg); if(result) return result;}
-    if(self->connection) {result = visit(self->connection,arg); if(result) return result;}
-    if(self->server) {result = visit(self->server,arg); if(result) return result;}
-    if(self->next) {result = visit(self->next,arg); if(result) return result;}
-    if(self->prev) {result = visit(self->prev,arg); if(result) return result;}
-    if(self->main) {result = visit(self->main,arg); if(result) return result;}
-    if(self->headers_in) {result = visit(self->headers_in,arg); if(result) return result;}
-    if(self->headers_out) {result = visit(self->headers_out,arg); if(result) return result;}
-    if(self->err_headers_out) {result = visit(self->err_headers_out,arg); if(result) return result;}
-    if(self->subprocess_env) {result = visit(self->subprocess_env,arg); if(result) return result;}
-    if(self->notes) {result = visit(self->notes,arg); if(result) return result;}
-    if(self->phase) {result = visit(self->phase,arg); if(result) return result;}
-    if(self->session) {result = visit(self->session,arg); if(result) return result;}
+    VISIT_REQUEST_MEMBER(self->dict, visit, arg);
+    VISIT_REQUEST_MEMBER(self->connection, visit, arg);
+    VISIT_REQUEST_MEMBER(self->server, visit, arg);
+    VISIT_REQUEST_MEMBER(self->next, visit, arg);
+    VISIT_REQUEST_MEMBER(self->prev, visit, arg);
+    VISIT_REQUEST_MEMBER(self->main, visit, arg);
+    VISIT_REQUEST_MEMBER(self->headers_in, visit, arg);
+    VISIT_REQUEST_MEMBER(self->headers_out, visit, arg);
+    VISIT_REQUEST_MEMBER(self->err_headers_out, visit, arg);
+    VISIT_REQUEST_MEMBER(self->subprocess_env, visit, arg);
+    VISIT_REQUEST_MEMBER(self->notes, visit, arg);
+    VISIT_REQUEST_MEMBER(self->phase, visit, arg);
+    VISIT_REQUEST_MEMBER(self->session, visit, arg);
     
     /* no need to Py_DECREF(dict) since the reference is borrowed */
     return 0;
