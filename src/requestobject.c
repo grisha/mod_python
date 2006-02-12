@@ -64,8 +64,9 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->rbuff_len = 0;
     result->session = NULL;
 
-    // we make sure that the object dictionary is there
-    // before registering the object with the GC
+    /* we make sure that the object dictionary is there
+     * before registering the object with the GC
+     */
     PyObject_GC_Track(result);
 
     return (PyObject *) result;
@@ -1508,9 +1509,10 @@ static int request_tp_clear(requestobject *self)
 
 static void request_tp_dealloc(requestobject *self)
 {  
-    // de-register the object from the GC
-    // before its deallocation, to prevent the
-    // GC to run on a partially de-allocated object
+    /* de-register the object from the GC
+     * before its deallocation, to prevent the
+     * GC to run on a partially de-allocated object
+     */
     PyObject_GC_UnTrack(self);
     
     request_tp_clear(self);
@@ -1540,7 +1542,7 @@ static int request_tp_traverse(requestobject* self, visitproc visit, void *arg) 
     if(self->phase) {result = visit(self->phase,arg); if(result) return result;}
     if(self->session) {result = visit(self->session,arg); if(result) return result;}
     
-    // no need to Py_DECREF(dict) since the reference is borrowed
+    /* no need to Py_DECREF(dict) since the reference is borrowed */
     return 0;
 }
 static char request_doc[] =
