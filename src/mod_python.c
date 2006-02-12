@@ -611,9 +611,6 @@ static void *python_create_srv_config(apr_pool_t *p, server_rec *srv)
     return conf;
 }
 
-/*
-code begin
-*/
 /**
  ** modpython_table_overlap
  **
@@ -707,10 +704,6 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
 
     return (void *) merged_conf;
 }
-
-/*
-code end
-*/
 
 
 /**
