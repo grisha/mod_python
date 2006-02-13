@@ -367,7 +367,7 @@ else
   See the README for more information.])
 fi
 
-AC_OUTPUT(Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/testconf.py dist/setup.py dist/Makefile)
+AC_OUTPUT(Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/Makefile test/testconf.py dist/setup.py dist/Makefile)
 
 
 

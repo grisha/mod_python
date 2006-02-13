@@ -3187,7 +3187,7 @@ echo "$as_me: WARNING: flex $LEX not found
   See the README for more information." >&2;}
 fi
 
-                                                                      ac_config_files="$ac_config_files Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/testconf.py dist/setup.py dist/Makefile"
+                                                                                ac_config_files="$ac_config_files Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/Makefile test/testconf.py dist/setup.py dist/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -3743,6 +3743,7 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "Doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES Doc/Makefile" ;;
   "src/include/mod_python.h" ) CONFIG_FILES="$CONFIG_FILES src/include/mod_python.h" ;;
+  "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/testconf.py" ) CONFIG_FILES="$CONFIG_FILES test/testconf.py" ;;
   "dist/setup.py" ) CONFIG_FILES="$CONFIG_FILES dist/setup.py" ;;
   "dist/Makefile" ) CONFIG_FILES="$CONFIG_FILES dist/Makefile" ;;
