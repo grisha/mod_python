@@ -23,8 +23,7 @@ If you can't read instructions:
 	$ su
 	# make install
 
-	Edit httpd.conf like instructions at the end of "make install"
-	tell you.
+	Edit httpd.conf as instructed at the end of "make install".
 
 	If the above worked - read the tutorial in the doc directory.
 
