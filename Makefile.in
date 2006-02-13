@@ -83,3 +83,5 @@ distclean: clean
 	rm -rf Makefile config.h config.status config.cache config.log \
 		test/testconf.py 
 
+check:
+	cd test && $(MAKE) check
