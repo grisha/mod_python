@@ -1,0 +1,90 @@
+Running the test suite
+======================
+
+1) Setting up Apache
+--------------------
+
+- You must have a valid Apache 2 installation, responding to start and stop
+commands. The test suite will launch an Apache instance with its own
+configuration file, on its own TCP/IP port, so hopefully it won't break
+anything on your Apache setup.
+
+- If you're running the Apache Monitor under Win32 (the tray icon that shows the
+state of the Apache Server), you'll notice that it will show the status of the
+test server during the tests. Unfortunately once the tests are over the monitor
+does not revert back to showing the status of your Apache server. The server
+itself is still running, though.
+
+2) Setting up mod_python source code
+------------------------------------
+
+- The source code is required because the unit test aren't provided in the
+binary distributions.
+
+- Get it from http://www.modpython.org/ or using SVN from :
+    http://svn.apache.org/repos/asf/httpd/mod_python/trunk 
+
+- We'll suppose you've extracted or checked it out in a directory
+named MOD_PYTHON.
+
+- Either you run the MOD_PYTHON/configure script...
+
+- ..or if you're under Win32, then running the configure script
+may be too much of a hassle. We advise you to copy
+MOD_PYTHON/test/testconf.py.in to MOD_PYTHON/test/testconf.py
+and edit this file as described in the comments.
+
+3) Building and/or installing mod_python binaries
+------------------------------------------------- 
+
+- If you're really adventurous, you may want to build mod_python from source.
+Then it's either "./configure; make; make install" on Unix, or running 
+MOD_PYTHON/dist/build_installer.bat on Win32.
+
+- The best way to ensure that the test suite will run is to install the target 
+mod_python binaries on your system. The complete list of binaries (including
+Win32 ones) can be found following the "Other Binaries" link on :
+    http://httpd.apache.org/modules/python-download.cgi
+
+- Running your own version of mod_python without installing it is possible and 
+useful if you cannot be root, but you're a bit on your own, sorry. You'll have 
+to make sure MOD_PYTHON/testconf.py points to the right version of 
+mod_python.so and tweak Apache user's PYTHONPATH environment variable so that
+mod_python can find its Python modules.
+
+4) Running the test suite
+-------------------------
+
+In the current directory, just launch the test.py script :
+
+python test.py
+
+You should see a bunch of text scrolling by as the tests unfold. If everything
+goes well, you should see two lines around the end of the unput, one with :
+
+8<---8<---8<---8<---8<---
+Ran 43 tests in 17.955s
+
+OK
+8<---8<---8<---8<---8<---
+
+and the other with :
+
+8<---8<---8<---8<---8<---
+Ran 6 tests in 70.942s
+
+OK
+8<---8<---8<---8<---8<---
+
+Of course the number of tests will vary in the future, but what's important here
+are the two shiny "OK". This means the tests were successful.
+
+5) Report the results
+---------------------
+
+Now you can report your success to python-dev@httpd.apache.org ! Of course if
+it's not successful and you're sure it's not due to a problem in your setup,
+we're also interested. Send us the full output of the test suite, or at least
+the stack trace of the failed tests.
+
+Thanks for your time spent of running those tests !
