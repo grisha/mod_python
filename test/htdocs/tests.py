@@ -696,7 +696,7 @@ def req_readlines(req):
 
 def req_register_cleanup(req):
 
-    req.cleanup_data = "test ok"
+    req.cleanup_data = "req_register_cleanup test ok"
     req.register_cleanup(cleanup, req)
     req.write("registered cleanup that will write to log")
 
@@ -778,14 +778,14 @@ def fileupload(req):
 
 def srv_register_cleanup(req):
 
-    req.server.register_cleanup(req, server_cleanup, "test ok")
+    req.server.register_cleanup(req, server_cleanup, "srv_register_cleanup test ok")
     req.write("registered server cleanup that will write to log")
 
     return apache.OK
 
 def apache_register_cleanup(req):
 
-    apache.register_cleanup(req.interpreter, req.server, server_cleanup, "test 2 ok")
+    apache.register_cleanup(req.interpreter, req.server, server_cleanup, "apache_register_cleanup test ok")
     req.write("registered server cleanup that will write to log")
 
     return apache.OK
