@@ -835,7 +835,7 @@ class PerRequestTestCase(unittest.TestCase):
         f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
         log = f.read()
         f.close()
-        if log.find("test ok") == -1:
+        if log.find("req_register_cleanup test ok") == -1:
             self.fail("Could not find test message in error_log")
 
     def test_req_headers_out_conf(self):
@@ -2079,7 +2079,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
         log = f.read()
         f.close()
-        if log.find("test ok") == -1:
+        if log.find("srv_register_cleanup test ok") == -1:
             self.fail("Could not find test message in error_log")
 
     def test_apache_register_cleanup(self):
@@ -2108,7 +2108,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
         log = f.read()
         f.close()
-        if log.find("test 2 ok") == -1:
+        if log.find("apache_register_cleanup test ok") == -1:
             self.fail("Could not find test message in error_log")
 
     def test_apache_exists_config_define(self):
