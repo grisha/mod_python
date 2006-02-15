@@ -707,6 +707,11 @@ def cleanup(data):
 
     data.log_error(data.cleanup_data)
 
+def server_cleanup(data):
+    # for srv_register_cleanup and apache_register_cleanup below
+
+    apache.log_error(data)
+
 def req_headers_out(req):
 
     req.headers_out["X-Test-Header"] = "test ok"
@@ -773,16 +778,14 @@ def fileupload(req):
 
 def srv_register_cleanup(req):
 
-    req.cleanup_data = "test ok"
-    req.server.register_cleanup(req, cleanup, req)
+    req.server.register_cleanup(req, server_cleanup, "test ok")
     req.write("registered server cleanup that will write to log")
 
     return apache.OK
 
 def apache_register_cleanup(req):
 
-    req.cleanup_data = "test 2 ok"
-    apache.register_cleanup(cleanup, req)
+    apache.register_cleanup(req.interpreter, req.server, server_cleanup, "test 2 ok")
     req.write("registered server cleanup that will write to log")
 
     return apache.OK
