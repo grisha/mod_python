@@ -401,10 +401,14 @@ objects. For a more in-depth look at Apache internals, see the
     parameter by calling \code{apache.exists_config_define('FOOBAR')}.
 \end{funcdesc}
 
-\begin{methoddesc}[server]{register_cleanup}{handler\optional{, data}}
-  Registers a cleanup. Equivalent to \function{req.register_cleanup()}
-  or \function{req.server.register_cleanup()}, except that a server or request
-  object is not required.
+\begin{funcdesc}{register_cleanup}{interpreter, server, callable\optional{, data}}
+  Registers a cleanup that will be performed at child shutdown time. Equivalent to 
+  \function{Server.register_cleanup()}, except that a request object is not required.
+  Instead, an interpreter name must be given.
+  \emph{Warning:} do not pass directly or indirectly a request object in the data parameter.
+  Since the callable will be called at server shutdown time, the request object
+  won't exist anymore and any manipulation of it in the handler will give
+  undefined behaviour.
 \end{methoddesc}
 
 \begin{funcdesc}{config_tree}{}
@@ -1323,7 +1327,14 @@ server) serving the request.
 \begin{methoddesc}[server]{register_cleanup}{request, callable\optional{, data}}
   Registers a cleanup. Very similar to \function{req.register_cleanup()}, except
   this cleanup will be executed at child termination time. This function
-  requires one extra argument - the request object.
+  requires uses the request object to infer the interpreter name.
+  If you don't have any request object at hand, then you must use the
+  \function{apache.register_cleanup} variant, but you'll have to provide an
+  interpreter name.
+  \emph{Warning:} do not pass directly or indirectly a request object in the
+  data parameter. Since the callable will be called at server shutdown time,
+  the request object won't exist anymore and any manipulation of it in the
+  callable will give undefined behaviour.
 \end{methoddesc}
 
 \subsubsection{Server Members\label{pyapi-mpsrv-mem}}
