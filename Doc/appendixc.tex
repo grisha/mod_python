@@ -1,3 +1,17 @@
+\chapter{Changes from Version (3.2.7)\label{app-changes}}
+
+\indexii{Changes from}{version 3.2.7}
+
+  Security Fix 
+
+  \begin{itemize}
+    \item
+    Fixed possible directory traversal attack in FileSession. The session
+    id is now checked to ensure it only contains valid characters. This
+    check is performed for all sessions derived from the BaseSession 
+    class.
+  \end{itemize}
+ 
 \chapter{Changes from Version (3.1.4)\label{app-changes}}
 
 \indexii{Changes from}{version 3.1.4}
