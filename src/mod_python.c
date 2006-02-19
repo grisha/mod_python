@@ -114,6 +114,28 @@ static PyObject * make_obcallback(char *name, server_rec *s)
 }
 
 /**
+ ** save_interpreter
+ **
+ *      Save away the interpreter.
+ */
+
+static interpreterdata *save_interpreter(const char *name, PyInterpreterState *istate)
+{
+    PyObject *p;
+    interpreterdata *idata = NULL;
+
+    idata = (interpreterdata *)malloc(sizeof(interpreterdata));
+    idata->istate = istate;
+    /* obcallback will be created on first use */
+    idata->obcallback = NULL; 
+    p = PyCObject_FromVoidPtr((void *) idata, NULL);
+    PyDict_SetItemString(interpreters, (char *)name, p);
+    Py_DECREF(p);
+
+    return idata;
+}
+
+/**
  ** get_interpreter
  **
  *      Get interpreter given its name. 
@@ -146,15 +168,9 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
     if (!p)
     {
         PyInterpreterState *istate = make_interpreter(name, srv);
-        if (istate) {
-            idata = (interpreterdata *)malloc(sizeof(interpreterdata));
-            idata->istate = istate;
-            /* obcallback will be created on first use */
-            idata->obcallback = NULL; 
-            p = PyCObject_FromVoidPtr((void *) idata, NULL);
-            PyDict_SetItemString(interpreters, (char *)name, p);
-            Py_DECREF(p);
-        }
+
+        if (istate)
+            idata = save_interpreter(name, istate);
     }
     else {
         idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
@@ -492,7 +508,19 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     const char *userdata_key = "python_init";
     apr_status_t rc;
 
-    /* fudge for Mac OS X with Apache 1.3 where Py_IsInitialized() broke */
+    /* The "initialized" flag is a fudge for Mac OS X. It
+     * addresses two issues. The first is that when an Apache
+     * "restart" is performed, Apache will unload the mod_python
+     * shared object, but not the Python framework. This means
+     * that when "python_init()" is called after the restart,
+     * the mod_python initialization will not run if only the
+     * initialized state of Python is checked, because Python
+     * is already initialized. The second problem is that for
+     * some older revisions of Mac OS X, even on the initial
+     * startup of Apache, the "Py_IsInitialized()" function
+     * would return true and mod_python wouldn't initialize
+     * itself correctly and would crash.
+     */
     static int initialized = 0;
 
     apr_pool_userdata_get(&data, userdata_key, s->process->pool);
@@ -530,9 +558,6 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* create and acquire the interpreter lock */
         PyEval_InitThreads();
 #endif
-        /* Release the thread state because we will never use 
-         * the main interpreter, only sub interpreters created later. */
-        PyThreadState_Swap(NULL); 
 
         /* create the obCallBack dictionary */
         interpreters = PyDict_New();
@@ -541,12 +566,11 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
                          "python_init: PyDict_New() failed! No more memory?");
             exit(1);
         }
-        
+
 #ifdef WITH_THREAD
         /* release the lock; now other threads can run */
         PyEval_ReleaseLock();
 #endif
-
     }
     return OK;
 }
@@ -1833,6 +1857,11 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     PyEval_AcquireLock();
 #endif
     PyOS_AfterFork();
+
+    save_interpreter(MAIN_INTERPRETER, PyThreadState_Get()->interp);
+
+    PyThreadState_Swap(NULL);
+
 #ifdef WITH_THREAD
     PyEval_ReleaseLock();
 #endif
