@@ -609,7 +609,6 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   AuthName("blah"),
                                   AuthType("basic"),
-                                  PythonAuthenHandler("tests::req_get_basic_auth_pw"),
                                   PythonHandler("tests::req_get_basic_auth_pw"),
                                   PythonDebug("On")))
         return str(c)

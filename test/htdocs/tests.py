@@ -634,9 +634,9 @@ def req_allow_methods(req):
 
 def req_get_basic_auth_pw(req):
 
-    if (req.phase == "PythonAuthenHandler"):
-        if req.user != "spam":
-            return apache.HTTP_UNAUTHORIZED
+    pw = req.get_basic_auth_pw()
+    if req.user != "spam" or pw != "eggs":
+        req.write("test failed")
     else:
         req.write("test ok")
 
