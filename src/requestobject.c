@@ -24,6 +24,19 @@
 
 #include "mod_python.h"
 
+/* mod_ssl.h is not safe for inclusion in 2.0, so duplicate the
+ * optional function declarations. */
+APR_DECLARE_OPTIONAL_FN(char *, ssl_var_lookup,
+                        (apr_pool_t *, server_rec *,
+                         conn_rec *, request_rec *,
+                         char *));
+APR_DECLARE_OPTIONAL_FN(int, ssl_is_https, (conn_rec *));
+
+/* Optional functions imported from mod_ssl when loaded: */
+static APR_OPTIONAL_FN_TYPE(ssl_var_lookup) *optfn_ssl_var_lookup = NULL;
+static APR_OPTIONAL_FN_TYPE(ssl_is_https) *optfn_is_https = NULL;
+
+
 /**
  **     MpRequest_FromRequest
  **
@@ -231,6 +244,61 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+
+
+/**
+ ** request.is_https(self)
+ **
+ * mod_ssl ssl_is_https() wrapper
+ */
+
+static PyObject * req_is_https(requestobject *self)
+{
+    int is_https;
+    PyObject *result;
+
+    if (!optfn_is_https)
+        optfn_is_https = APR_RETRIEVE_OPTIONAL_FN(ssl_is_https);
+
+    is_https = optfn_is_https && optfn_is_https(self->request_rec->connection);
+
+    return PyInt_FromLong(is_https);
+}
+
+
+/**
+ ** request.ssl_var_lookup(self, string variable_name)
+ **
+ * mod_ssl ssl_var_lookup() wrapper
+ */
+
+static PyObject * req_ssl_var_lookup(requestobject *self, PyObject *args)
+{
+    PyObject *result;
+    char *var_name;
+
+    if (! PyArg_ParseTuple(args, "s", &var_name))
+        return NULL; /* error */
+
+    if (!optfn_ssl_var_lookup)
+        optfn_ssl_var_lookup = APR_RETRIEVE_OPTIONAL_FN(ssl_var_lookup);
+
+    if (optfn_ssl_var_lookup) {
+        const char *val;
+        val = optfn_ssl_var_lookup(self->request_rec->pool,
+                               self->request_rec->server,
+                               self->request_rec->connection,
+                               self->request_rec,
+                               var_name);
+        if (val)
+            return PyString_FromString(val);
+    }
+
+    /* variable not found, or mod_ssl is not loaded */
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 
 /**
  ** request.document_root(self)
@@ -1074,6 +1142,7 @@ static PyMethodDef request_methods[] = {
     {"get_session",           (PyCFunction) req_get_session,           METH_VARARGS},
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     {"internal_redirect",     (PyCFunction) req_internal_redirect,     METH_VARARGS},
+    {"is_https",              (PyCFunction) req_is_https,              METH_NOARGS},
     {"log_error",             (PyCFunction) req_log_error,             METH_VARARGS},
     {"meets_conditions",      (PyCFunction) req_meets_conditions,      METH_NOARGS},
     {"read",                  (PyCFunction) req_read,                  METH_VARARGS},
@@ -1084,6 +1153,7 @@ static PyMethodDef request_methods[] = {
     {"send_http_header",      (PyCFunction) req_send_http_header,      METH_NOARGS},
     {"sendfile",              (PyCFunction) req_sendfile,              METH_VARARGS},
     {"set_content_length",    (PyCFunction) req_set_content_length,    METH_VARARGS},
+    {"ssl_var_lookup",        (PyCFunction) req_ssl_var_lookup,        METH_VARARGS},
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
