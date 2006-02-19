@@ -414,7 +414,7 @@ objects. For a more in-depth look at Apache internals, see the
 
 \begin{funcdesc}{register_cleanup}{interpreter, server, callable\optional{, data}}
   Registers a cleanup that will be performed at child shutdown time. Equivalent to 
-  \function{Server.register_cleanup()}, except that a request object is not required.
+  \function{server.register_cleanup()}, except that a request object is not required.
   Instead, an interpreter name must be given.
   \emph{Warning:} do not pass directly or indirectly a request object in the data parameter.
   Since the callable will be called at server shutdown time, the request object
@@ -585,6 +585,14 @@ else:
 
   \var{methods} is a sequence of strings. If \var{reset} is 1, then
   the list of methods is first cleared.
+\end{methoddesc}
+
+\begin{methoddesc}[request]{auth_name}{}
+  Returns AuthName setting.
+\end{methoddesc}
+
+\begin{methoddesc}[request]{auth_type}{}
+  Returns AuthType setting.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{document_root}{}
@@ -1107,7 +1115,6 @@ require valid-user
 
 \begin{memberdesc}[request]{ap_auth_type}
   Authentication type. Same as CGI \envvar{AUTH_TYPE}.
-  \emph{(Read-Only})
 \end{memberdesc}
 
 \begin{memberdesc}[request]{no_cache}

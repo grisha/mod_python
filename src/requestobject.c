@@ -336,6 +336,28 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.auth_name(self)
+ **
+ *  ap_auth_name wrapper
+ */
+
+static PyObject *req_auth_name(requestobject *self)
+{
+    return PyString_FromString(ap_auth_name(self->request_rec));
+}
+
+/**
+ ** request.auth_type(self)
+ **
+ *  ap_auth_type wrapper
+ */
+
+static PyObject *req_auth_type(requestobject *self)
+{
+    return PyString_FromString(ap_auth_type(self->request_rec));
+}
+
+/**
  ** request.get_addhandler_exts(request self)
  **
  *     Returns file extentions that were given as argument to AddHandler mod_mime
@@ -1132,11 +1154,13 @@ static PyMethodDef request_methods[] = {
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
+    {"auth_name",             (PyCFunction) req_auth_name,             METH_NOARGS},
+    {"auth_type",             (PyCFunction) req_auth_type,             METH_NOARGS},
+    {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"document_root",         (PyCFunction) req_document_root,         METH_NOARGS},
     {"flush",                 (PyCFunction) req_flush,                 METH_NOARGS},
     {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_NOARGS},
     {"get_addhandler_exts",   (PyCFunction) req_get_addhandler_exts,   METH_NOARGS},
-    {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"get_remote_host",       (PyCFunction) req_get_remote_host,       METH_VARARGS},
     {"get_options",           (PyCFunction) req_get_options,           METH_NOARGS},
     {"get_session",           (PyCFunction) req_get_session,           METH_VARARGS},
@@ -1295,6 +1319,15 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             return -1;
         }
         self->request_rec->user = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
+    }
+    else if (strcmp(name, "ap_auth_type") == 0) {
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "ap_auth_type must be a string");
+            return -1;
+        }
+        self->request_rec->ap_auth_type = 
             apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
@@ -1506,7 +1539,7 @@ static PyGetSetDef request_getsets[] = {
     {"content_languages", (getter)getreq_rec_ah, NULL, "Content languages", "content_languages"},
     {"vlist_validator", (getter)getreq_recmbr, NULL, "Variant list validator (if negotiated)", "vlist_validator"},
     {"user",          (getter)getreq_recmbr, (setter)setreq_recmbr, "If authentication check was made, the user name", "user"},
-    {"ap_auth_type",  (getter)getreq_recmbr, NULL, "If authentication check was made, auth type", "ap_auth_type"},
+    {"ap_auth_type",  (getter)getreq_recmbr, (setter)setreq_recmbr, "If authentication check was made, auth type", "ap_auth_type"},
     {"no_cache",      (getter)getreq_recmbr, NULL, "This response in non-cacheable", "no_cache"},
     {"no_local_copy", (getter)getreq_recmbr, NULL, "There is no local copy of the response", "no_local_copy"},
     {"unparsed_uri",  (getter)getreq_recmbr, NULL, "The URI without any parsing performed", "unparsed_uri"},
