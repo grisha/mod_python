@@ -1,10 +1,16 @@
-\chapter{Changes from Version (3.1.4)\label{app-changes}}
+\chapter{Changes from Version (3.2.7)\label{app-changes}}
 
-\indexii{Changes from}{version 3.1.4}
+\indexii{Changes from}{version 3.2.7}
   
   New Features
 
   \begin{itemize}
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-94]{MODPYTHON-94})
+      New \code{req.is_https()} and \code{req.ssl_var_lookup()} methods.
+      These communicate direct with the Apache mod_ssl module, allowing
+      it to be determined if the connection is using SSL/TLS and what the
+      values of internal ssl variables are.
   \end{itemize}
 
   Improvements
