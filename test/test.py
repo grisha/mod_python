@@ -630,6 +630,36 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail(`rsp`)
 
+    def test_req_auth_type_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_auth_type"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  AuthName("blah"),
+                                  AuthType("dummy"),
+                                  Require("valid-user"),
+                                  PythonAuthenHandler("tests::req_auth_type"),
+                                  PythonHandler("tests::req_auth_type"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_auth_type(self):
+
+        print "\n  * Testing req.auth_type()"
+        
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_req_auth_type", PORT))
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_req_requires_conf(self):
 
         if APACHE_VERSION == '2.2':
@@ -1997,6 +2027,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_accesshandler_add_handler_to_empty_hl"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_auth_type"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_requires"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
