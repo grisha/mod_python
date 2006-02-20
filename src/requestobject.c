@@ -358,6 +358,24 @@ static PyObject *req_auth_type(requestobject *self)
 }
 
 /**
+ ** request.construct_url(self)
+ **
+ *  ap_construct_url wrapper
+ */
+
+static PyObject *req_construct_url(requestobject *self, PyObject *args)
+{
+    PyObject *result;
+    char *uri;
+
+    if (! PyArg_ParseTuple(args, "s", &uri))
+        return NULL;
+
+    return PyString_FromString(ap_construct_url(self->request_rec->pool,
+                               uri, self->request_rec));
+}
+
+/**
  ** request.get_addhandler_exts(request self)
  **
  *     Returns file extentions that were given as argument to AddHandler mod_mime
@@ -1156,6 +1174,7 @@ static PyMethodDef request_methods[] = {
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
     {"auth_name",             (PyCFunction) req_auth_name,             METH_NOARGS},
     {"auth_type",             (PyCFunction) req_auth_type,             METH_NOARGS},
+    {"construct_url",         (PyCFunction) req_construct_url,         METH_VARARGS},
     {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"document_root",         (PyCFunction) req_document_root,         METH_NOARGS},
     {"flush",                 (PyCFunction) req_flush,                 METH_NOARGS},

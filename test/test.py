@@ -733,6 +733,25 @@ class PerRequestTestCase(unittest.TestCase):
         if rsp != "test ok":
             self.fail("internal_redirect")
 
+    def test_req_construct_url_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_construct_url"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_construct_url"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_construct_url(self):
+
+        print "\n  * Testing req.construct_url()"
+        rsp = self.vhost_get("test_req_construct_url")
+
+        if rsp != "test ok":
+            self.fail("construct_url")
+
     def test_req_read_conf(self):
 
         c = str(Timeout("5")) + \
@@ -2030,6 +2049,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_auth_type"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_requires"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_construct_url"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
