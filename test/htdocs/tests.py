@@ -697,6 +697,17 @@ def req_internal_redirect_int(req):
 
     return apache.OK
 
+def req_construct_url(req):
+
+    url = req.construct_url("/index.html")
+
+    if not re.match("^http://test_req_construct_url:[0-9]+/index.html$",url):
+        req.write("test failed")
+    else:
+        req.write("test ok")
+
+    return apache.OK
+
 def req_read(req):
 
     s = req.read()

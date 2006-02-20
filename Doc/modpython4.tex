@@ -595,6 +595,18 @@ else:
   Returns AuthType setting.
 \end{methoddesc}
 
+\begin{methoddesc}[request]{construct_url}{uri}
+  This function returns a fully qualified URI string from the path specified
+  by uri, using the information stored in the request to determine the scheme,
+  server name and port. The port number is not included in the string if it
+  is the same as the default port 80.
+
+  For example, imagine that the current request is directed to the virtual
+  server www.modpython.org at port 80. Then supplying \samp{/index.html} will
+  yield the string \samp{http://www.modpython.org/index.html}.
+
+\end{methoddesc}
+
 \begin{methoddesc}[request]{document_root}{}
   Returns DocumentRoot setting.
 \end{methoddesc}
