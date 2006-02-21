@@ -33,6 +33,11 @@
       Interpreter Lock (GIL), as described in PEP 311, can now be used. The
       only requirement is that such modules can only be used in the context
       of the \samp{main_interpreter}.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-125]{MODPYTHON-125})
+      The \code{req.handler} attribute is now writable. This allows a handler
+      executing in a phase prior to the response phase to specify which
+      Apache module will be responsible for generating the content.
   \end{itemize}
 
   Bug Fixes

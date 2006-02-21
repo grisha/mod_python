@@ -213,6 +213,10 @@ class PythonTransHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class PythonFixupHandler(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class PythonImport(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)

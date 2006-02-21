@@ -1102,9 +1102,23 @@ require valid-user
 \end{memberdesc}
 
 \begin{memberdesc}[request]{handler}
-  The name of the handler currently being processed. This is the handler
-  set by mod_mime, not the mod_python handler. In most cases it will be
-  "\samp{mod_python}. \emph{(Read-Only})
+  The symbolic name of the content handler (as in module, not mod_python
+  handler) that will service the request during the response phase. When
+  the SetHandler/AddHandler directives are used to trigger mod_python, this
+  will be set to \samp{mod_python} by mod_mime. A mod_python handler executing
+  prior to the response phase may also set this to \samp{mod_python} along
+  with calling \samp{req.add_handler()} to register a mod_python handler
+  for the response phase.
+
+  \begin{verbatim}
+def typehandler(req):
+    if os.path.splitext(req.filename)[1] == ".py":
+        req.handler = "mod_python"
+        req.add_handler("PythonHandler", "mod_python.publisher")
+        return apache.OK
+    return apache.DECLINED
+  \end{verbatim}                              
+
 \end{memberdesc}
 
 \begin{memberdesc}[request]{content_encoding}
