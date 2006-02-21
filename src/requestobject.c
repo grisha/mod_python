@@ -1368,6 +1368,15 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
+    else if (strcmp(name, "handler") == 0) {
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "handler must be a string");
+            return -1;
+        }
+        self->request_rec->handler = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
+    }
     
     return PyMember_SetOne((char*)self->request_rec, 
                            find_memberdef(request_rec_mbrs, (char*)name),
@@ -1553,7 +1562,7 @@ static PyGetSetDef request_getsets[] = {
     {"read_chunked", (getter)getreq_recmbr, NULL, "Reading chunked transfer-coding", "read_chunked"},
     {"expecting_100", (getter)getreq_recmbr, NULL, "Is client waitin for a 100 response?", "expecting_100"},
     {"content_type",  (getter)getreq_recmbr, (setter)setreq_recmbr, "Content type", "content_type"},
-    {"handler",       (getter)getreq_recmbr, NULL, "The handler string", "handler"},
+    {"handler",       (getter)getreq_recmbr, (setter)setreq_recmbr, "The handler string", "handler"},
     {"content_encoding", (getter)getreq_recmbr, NULL, "How to encode the data", "content_encoding"},
     {"content_languages", (getter)getreq_rec_ah, NULL, "Content languages", "content_languages"},
     {"vlist_validator", (getter)getreq_recmbr, NULL, "Variant list validator (if negotiated)", "vlist_validator"},

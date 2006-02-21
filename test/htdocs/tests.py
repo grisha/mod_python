@@ -804,6 +804,18 @@ def req_sendfile3(req):
     os.remove(fname)
     return apache.OK
 
+def req_handler(req):
+    if req.phase == "PythonFixupHandler":
+        req.handler = "mod_python"
+        req.add_handler("PythonHandler","tests::req_handler")
+        return apache.OK
+    elif req.phase == "PythonHandler":
+        req.write('test ok')
+        return apache.OK
+    else:
+        req.write('test failed')
+        return apache.OK
+
 def fileupload(req):
     from mod_python import util
     import md5
