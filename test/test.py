@@ -1398,7 +1398,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing TransHandler"
         rsp = self.vhost_get("test_trans")
 
-        if (rsp[3:5] != "=="): # first line in tests.py
+        if (rsp[0:2] != " #"): # first line in tests.py
             self.fail(`rsp`)
             
     def test_import_conf(self):
