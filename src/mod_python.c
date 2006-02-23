@@ -910,6 +910,8 @@ static requestobject *get_request_object(request_rec *req, const char *interp_na
         req_config = apr_pcalloc(req->pool, sizeof(py_req_config));
         req_config->request_obj = request_obj;
         req_config->dynhls = apr_hash_make(req->pool);
+        req_config->in_filters = apr_hash_make(req->pool);
+        req_config->out_filters = apr_hash_make(req->pool);
         ap_set_module_config(req->request_config, &python_module, req_config);
 
         /* register the clean up directive handler */
@@ -1351,6 +1353,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     interpreterdata *idata;
     requestobject *request_obj;
     py_config * conf;
+    py_req_config * req_config;
     const char * interp_name = NULL;
     request_rec *req;
     filterobject *filter;
@@ -1368,7 +1371,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     else {
         ctx = (python_filter_ctx *) f->ctx;
     }
-        
+
     /* are we in transparent mode? transparent mode is on after an error,
        so a fitler can spit out an error without causing infinite loop */
     if (ctx->transparent) {
@@ -1381,6 +1384,8 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     /* get configuration */
     conf = (py_config *) ap_get_module_config(req->per_dir_config, 
                                                   &python_module);
+    req_config = (py_req_config *) ap_get_module_config(req->request_config,
+                                                        &python_module);
 
     /* determine interpreter to use */
     interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, is_input);
@@ -1397,12 +1402,22 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     /* create/acquire request object */
     request_obj = get_request_object(req, interp_name, 
                                      is_input?"PythonInputFilter":"PythonOutputFilter");
-    
+
     /* the name of python function to call */
-    if (is_input)
-        fh = apr_hash_get(conf->in_filters, f->frec->name, APR_HASH_KEY_STRING);
-    else
-        fh = apr_hash_get(conf->out_filters, f->frec->name, APR_HASH_KEY_STRING);
+    if (ctx->name) {
+        if (is_input)
+            fh = apr_hash_get(req_config->in_filters, ctx->name, APR_HASH_KEY_STRING);  
+        else
+            fh = apr_hash_get(req_config->out_filters, ctx->name, APR_HASH_KEY_STRING);
+    } else {
+        if (is_input) 
+            fh = apr_hash_get(conf->in_filters, f->frec->name, APR_HASH_KEY_STRING);
+        else    
+            fh = apr_hash_get(conf->out_filters, f->frec->name, APR_HASH_KEY_STRING);
+    }
+
+    if (!fh)
+        return DECLINED;
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
@@ -2070,6 +2085,12 @@ static void python_register_hooks(apr_pool_t *p)
     /* [11] logger */ 
     ap_hook_log_transaction(PythonLogHandler,
                             NULL, NULL, APR_HOOK_MIDDLE);
+
+    /* dynamic input/output filter entry points */
+    ap_register_input_filter(FILTER_NAME, python_input_filter, NULL,
+                             AP_FTYPE_RESOURCE);
+    ap_register_output_filter(FILTER_NAME, python_output_filter, NULL,
+                              AP_FTYPE_RESOURCE);
 
     /* process initializer */ 
     ap_hook_child_init(PythonChildInitHandler,
