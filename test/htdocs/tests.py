@@ -855,6 +855,24 @@ def simplehandler(req):
 
     return apache.OK
 
+def req_add_output_filter(req):
+
+    req.add_output_filter("MP_TEST_FILTER")
+
+    req.write("test ok")
+
+    return apache.OK
+
+def req_register_output_filter(req):
+
+    req.register_output_filter("MP_TEST_FILTER","tests::outputfilter")
+
+    req.add_output_filter("MP_TEST_FILTER")
+
+    req.write("test ok")
+
+    return apache.OK
+
 def connectionhandler(conn):
 
     # read whatever

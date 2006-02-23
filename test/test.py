@@ -1449,6 +1449,45 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "TEST OK"):
             self.fail(`rsp`)
 
+    def test_req_add_output_filter_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_add_output_filter"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        SetHandler("mod_python"),
+                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonHandler("tests::req_add_output_filter"),
+                        PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
+                        PythonDebug("On"))
+        return str(c)
+
+    def test_req_add_output_filter(self):
+
+        print "\n  * Testing req.add_output_filter"
+        rsp = self.vhost_get("test_req_add_output_filter")
+
+        if (rsp != "TEST OK"):
+            self.fail(`rsp`)
+
+    def test_req_register_output_filter_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_register_output_filter"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        SetHandler("mod_python"),
+                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonHandler("tests::req_register_output_filter"),
+                        PythonDebug("On"))
+        return str(c)
+
+    def test_req_register_output_filter(self):
+
+        print "\n  * Testing req.register_output_filter"
+        rsp = self.vhost_get("test_req_register_output_filter")
+
+        if (rsp != "TEST OK"):
+            self.fail(`rsp`)
+
     def test_connectionhandler_conf(self):
 
         self.conport = findUnusedPort()
@@ -2095,6 +2134,8 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_postreadrequest"))
         perRequestSuite.addTest(PerRequestTestCase("test_trans"))
         perRequestSuite.addTest(PerRequestTestCase("test_outputfilter"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_add_output_filter"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_register_output_filter"))
         perRequestSuite.addTest(PerRequestTestCase("test_connectionhandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_import"))
         perRequestSuite.addTest(PerRequestTestCase("test_pipe_ext"))

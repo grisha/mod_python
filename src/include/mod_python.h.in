@@ -101,6 +101,7 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define MAIN_INTERPRETER "main_interpreter"
+#define FILTER_NAME "MOD_PYTHON"
 
 /* used in python_directive_handler */
 #define SILENT 1
@@ -159,11 +160,17 @@ typedef struct
     requestobject *request_obj;
     apr_hash_t    *dynhls;     /* dynamically registered handlers
                                   for this request */
+    apr_hash_t   *in_filters;  /* dynamically registered input filters
+                                  for this request */
+    apr_hash_t   *out_filters; /* dynamically registered output filters
+                                  for this request */
+
 } py_req_config;
 
 /* filter context */
 typedef struct
 {
+    char *name;
     int transparent;
 } python_filter_ctx;
 

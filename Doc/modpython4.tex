@@ -572,6 +572,30 @@ else:
     If you pass this function an invalid handler, an exception will be
     generated at the time an attempt is made to find the handler. 
   \end{notice}
+
+\end{methoddesc}
+
+\begin{methoddesc}[request]{add_input_filter}{filter_name}
+  Adds the named filter into the input filter chain for the current request.
+  The filter should be added before the first attempt to read any data from
+  the request.
+\end{methoddesc}
+
+\begin{methoddesc}[request]{add_output_filter}{filter_name}
+  Adds the named filter into the output filter chain for the current request.
+  The filter should be added before the first attempt to write any data for
+  the response.
+
+  Provided that all data written is being buffered and not flushed, this
+  could be used to add the "CONTENT_LENGTH" filter into the chain of
+  output filters. The purpose of the "CONTENT_LENGTH" filter is to add a
+  \code{Content-Length:} header to the response.
+
+  \begin{verbatim}
+    req.add_output_filter("CONTENT_LENGTH")
+    req.write("content",0)
+  \end{verbatim}                              
+
 \end{methoddesc}
 
 \begin{methoddesc}[request]{allow_methods}{methods\optional{, reset}}
@@ -812,6 +836,38 @@ require valid-user
 
   If the server is shut down before the cleanup had a chance to run,
   it's possible that it will not be executed.
+
+\end{methoddesc}
+
+\begin{methoddesc}[request]{register_input_filter}{filter_name, filter\optional{, dir}}
+
+  Allows dynamic registration of mod_python input filters. \var{filter_name}
+  is a string which would then subsequently be used to identify the filter.
+  \var{filter} is a string containing the name of the module and the filter
+  function.  Optional \var{dir} is a string containing the name of the
+  directory to be added to the pythonpath. If there is a \code{PythonPath}
+  directive in effect, then \code{sys.path} will be set exactly according
+  to it (no directories added, the \var{dir} argument is ignored).
+
+  The registration of the filter this way only persists for the life of the
+  request. To actually add the filter into the chain of input filters for
+  the current request \code{req.add_input_filter()} would be used.
+
+\end{methoddesc}
+
+\begin{methoddesc}[request]{register_output_filter}{filter_name, filter\optional{, dir}}
+
+  Allows dynamic registration of mod_python output filters. \var{filter_name}
+  is a string which would then subsequently be used to identify the filter.
+  \var{filter} is a string containing the name of the module and the filter
+  function. Optional \var{dir} is a string containing the name of the directory
+  to be added to the pythonpath. If there is a \code{PythonPath} directive in
+  effect, then \code{sys.path} will be set exactly according to it (no
+  directories added, the \var{dir} argument is ignored).
+
+  The registration of the filter this way only persists for the life of the
+  request. To actually add the filter into the chain of output filters for
+  the current request \code{req.add_output_filter()} would be used.
 
 \end{methoddesc}
 

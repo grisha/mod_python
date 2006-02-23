@@ -190,6 +190,140 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.add_input_filter(request self, string name)
+ **
+ *     Specifies that a pre registered filter be added to input filter chain.
+ */
+
+static PyObject *req_add_input_filter(requestobject *self, PyObject *args)
+{
+    char *name;
+    py_req_config *req_config;
+    python_filter_ctx *ctx;
+
+    if (! PyArg_ParseTuple(args, "s", &name)) 
+        return NULL;
+
+    req_config = (py_req_config *) ap_get_module_config(
+                  self->request_rec->request_config, &python_module);
+
+    if (apr_hash_get(req_config->in_filters, name, APR_HASH_KEY_STRING)) {
+        ctx = (python_filter_ctx *) apr_pcalloc(self->request_rec->pool,
+                                                sizeof(python_filter_ctx));
+        ctx->name = apr_pstrdup(self->request_rec->pool, name);
+
+        ap_add_input_filter(FILTER_NAME, ctx, self->request_rec,
+                            self->request_rec->connection);
+    } else {
+        ap_add_input_filter(name, NULL, self->request_rec,
+                            self->request_rec->connection);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** request.add_output_filter(request self, string name)
+ **
+ *     Specifies that a pre registered filter be added to output filter chain.
+ */
+
+static PyObject *req_add_output_filter(requestobject *self, PyObject *args)
+{
+    char *name;
+    py_req_config *req_config;
+    python_filter_ctx *ctx;
+
+    if (! PyArg_ParseTuple(args, "s", &name)) 
+        return NULL;
+
+    req_config = (py_req_config *) ap_get_module_config(
+                  self->request_rec->request_config, &python_module);
+
+    if (apr_hash_get(req_config->out_filters, name, APR_HASH_KEY_STRING)) {
+        ctx = (python_filter_ctx *) apr_pcalloc(self->request_rec->pool,
+                                                sizeof(python_filter_ctx));
+        ctx->name = apr_pstrdup(self->request_rec->pool, name);
+
+        ap_add_output_filter(FILTER_NAME, ctx, self->request_rec,
+                             self->request_rec->connection);
+    } else {
+        ap_add_output_filter(name, NULL, self->request_rec,
+                             self->request_rec->connection);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** request.register_input_filter(request self, string name, string handler, list dir)
+ **
+ *     Registers an input filter active for life of the request.
+ */
+
+static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
+{
+    char *name;
+    char *handler;
+    const char *dir = NULL;
+    py_req_config *req_config;
+    py_handler *fh;
+
+    if (! PyArg_ParseTuple(args, "ss|s", &name, &handler, &dir)) 
+        return NULL;
+
+    req_config = (py_req_config *) ap_get_module_config(
+                  self->request_rec->request_config, &python_module);
+
+    fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
+                                    sizeof(py_handler));
+    fh->handler = apr_pstrdup(self->request_rec->pool, handler);
+    if (dir) fh->dir = apr_pstrdup(self->request_rec->pool, dir);
+
+    apr_hash_set(req_config->in_filters,
+                 apr_pstrdup(self->request_rec->pool, name),
+                 APR_HASH_KEY_STRING, fh);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** request.register_output_filter(request self, string name, string handler, list dir)
+ **
+ *     Registers an output filter active for life of the request.
+ */
+
+static PyObject *req_register_output_filter(requestobject *self, PyObject *args)
+{
+    char *name;
+    char *handler;
+    const char *dir = NULL;
+    py_req_config *req_config;
+    py_handler *fh;
+
+    if (! PyArg_ParseTuple(args, "ss|s", &name, &handler, &dir)) 
+        return NULL;
+
+    req_config = (py_req_config *) ap_get_module_config(
+                  self->request_rec->request_config, &python_module);
+
+    fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
+                                    sizeof(py_handler));
+    fh->handler = apr_pstrdup(self->request_rec->pool, handler);
+    if (dir) fh->dir = apr_pstrdup(self->request_rec->pool, dir);
+
+    apr_hash_set(req_config->out_filters,
+                 apr_pstrdup(self->request_rec->pool, name),
+                 APR_HASH_KEY_STRING, fh);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
  ** request.allow_methods(request self, list methods, reset=0)
  **
  *  a wrapper around ap_allow_methods. (used for the "allow:" header
@@ -1171,6 +1305,8 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
 static PyMethodDef request_methods[] = {
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
+    {"add_input_filter",      (PyCFunction) req_add_input_filter,      METH_VARARGS},
+    {"add_output_filter",     (PyCFunction) req_add_output_filter,     METH_VARARGS},
     {"allow_methods",         (PyCFunction) req_allow_methods,         METH_VARARGS},
     {"auth_name",             (PyCFunction) req_auth_name,             METH_NOARGS},
     {"auth_type",             (PyCFunction) req_auth_type,             METH_NOARGS},
@@ -1192,6 +1328,8 @@ static PyMethodDef request_methods[] = {
     {"readline",              (PyCFunction) req_readline,              METH_VARARGS},
     {"readlines",             (PyCFunction) req_readlines,             METH_VARARGS},
     {"register_cleanup",      (PyCFunction) req_register_cleanup,      METH_VARARGS},
+    {"register_input_filter", (PyCFunction) req_register_input_filter, METH_VARARGS},
+    {"register_output_filter", (PyCFunction) req_register_output_filter, METH_VARARGS},
     {"requires",              (PyCFunction) req_requires,              METH_NOARGS},
     {"send_http_header",      (PyCFunction) req_send_http_header,      METH_NOARGS},
     {"sendfile",              (PyCFunction) req_sendfile,              METH_VARARGS},
@@ -1627,7 +1765,7 @@ static int request_tp_clear(requestobject *self)
     CLEAR_REQUEST_MEMBER(self->next);
     CLEAR_REQUEST_MEMBER(self->prev);
     CLEAR_REQUEST_MEMBER(self->main);
-    CLEAR_REQUEST_MEMBER(self->headers_in);	
+    CLEAR_REQUEST_MEMBER(self->headers_in);
     CLEAR_REQUEST_MEMBER(self->headers_out);
     CLEAR_REQUEST_MEMBER(self->err_headers_out);
     CLEAR_REQUEST_MEMBER(self->subprocess_env);
