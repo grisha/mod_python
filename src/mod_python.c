@@ -159,7 +159,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 
     if (!interpreters) {
          ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
-                       "python_handler: interpreters dictionary not initialised.");
+                       "get_interpreter: interpreters dictionary not initialised.");
         return NULL;
     }
 
@@ -209,7 +209,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 #endif
             PyThreadState_Delete(tstate);
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
-                      "python_handler: no interpreter callback found.");
+                      "get_interpreter: no interpreter callback found.");
             return NULL;
         }
     }
@@ -1292,7 +1292,7 @@ static apr_status_t python_connection(conn_rec *con)
 
     if (!idata) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server,
-                      "python_handler: Can't get/create interpreter.");
+                      "python_connection: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
     
@@ -1395,7 +1395,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
    
     if (!idata) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-                      "python_handler: Can't get/create interpreter.");
+                      "python_filter: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
