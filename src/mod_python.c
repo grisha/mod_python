@@ -926,11 +926,11 @@ static requestobject *get_request_object(request_rec *req, const char *interp_na
         request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
 
     /* make a note of which phase we are in right now */
-    Py_XDECREF(request_obj->phase);
     if (phase)
+    {
+        Py_XDECREF(request_obj->phase);
         request_obj->phase = PyString_FromString(phase);
-    else
-        request_obj->phase = PyString_FromString("");
+    }
 
     return request_obj;
 }
@@ -1131,7 +1131,11 @@ static int python_handler(request_rec *req, char *phase)
      */
     resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch", "O", 
                                        request_obj);
-     
+
+    /* clear phase from request object */
+    Py_XDECREF(request_obj->phase);
+    request_obj->phase = NULL;
+
     /* release the lock and destroy tstate*/
     release_interpreter();
 
@@ -1400,8 +1404,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     }
 
     /* create/acquire request object */
-    request_obj = get_request_object(req, interp_name, 
-                                     is_input?"PythonInputFilter":"PythonOutputFilter");
+    request_obj = get_request_object(req, interp_name, 0);
 
     /* the name of python function to call */
     if (ctx->name) {

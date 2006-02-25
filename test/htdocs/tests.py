@@ -851,7 +851,15 @@ def outputfilter(filter):
 
 def simplehandler(req):
 
+    if req.phase != "PythonHandler":
+        req.write("test failed")
+        return apache.OK
+
     req.write("test ok")
+
+    if req.phase != "PythonHandler":
+        req.write("test failed")
+        return apache.OK
 
     return apache.OK
 
