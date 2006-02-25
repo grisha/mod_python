@@ -49,6 +49,11 @@
   Bug Fixes
 
   \begin{itemize}
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-112]{MODPYTHON-112})
+      The \code{req.phase} attribute is no longer overwritten by an input
+      or output filter. The \code{filter.is_input} member should be used
+      to determine if a filter is an input or output filter.
   \end{itemize}
 
 \chapter{Changes from Version (3.1.4)\label{app-changes}}
