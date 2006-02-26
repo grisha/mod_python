@@ -252,7 +252,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 i = list(func_code.co_names).index("__auth__")
                 __auth__ = func_code.co_consts[i+1]
                 if hasattr(__auth__, "co_name"):
-                    __auth__ = new.function(__auth__, globals())
+                    __auth__ = new.function(__auth__, object.func_globals)
                 found_auth = 1
 
             if "__access__" in func_code.co_names:
@@ -260,7 +260,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 i = list(func_code.co_names).index("__access__")
                 __access__ = func_code.co_consts[i+1]
                 if hasattr(__access__, "co_name"):
-                    __access__ = new.function(__access__, globals())
+                    __access__ = new.function(__access__, object.func_globals)
                 found_access = 1
 
             if "__auth_realm__" in func_code.co_names:

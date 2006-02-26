@@ -54,6 +54,11 @@
       The \code{req.phase} attribute is no longer overwritten by an input
       or output filter. The \code{filter.is_input} member should be used
       to determine if a filter is an input or output filter.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-43]{MODPYTHON-43})
+      Nested \code{__auth__()} functions in mod_python.publisher now execute
+      in context of globals from the file the function is in and not that
+      of mod_python.publisher itself.
   \end{itemize}
 
 \chapter{Changes from Version (3.1.4)\label{app-changes}}

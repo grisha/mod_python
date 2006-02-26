@@ -1778,7 +1778,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
         return str(c)
-    
+
     def test_publisher(self):
         print "\n  * Testing mod_python.publisher"
 
@@ -1804,6 +1804,32 @@ class PerRequestTestCase(unittest.TestCase):
 
         rsp = self.vhost_get("test_publisher", path="/tests")
         if (rsp != "test ok, interpreter=test_publisher"):
+            self.fail(`rsp`)
+
+    def test_publisher_auth_nested_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher_auth_nested"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_publisher_auth_nested(self):
+        print "\n  * Testing mod_python.publisher auth nested"
+        
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py/test_publisher_auth_nested", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_publisher_auth_nested", PORT))
+        auth = base64.encodestring("spam:eggs").strip()
+        conn.putheader("Authorization", "Basic %s" % auth)
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if (rsp != "test ok, interpreter=test_publisher_auth_nested"):
             self.fail(`rsp`)
 
     def test_publisher_security_conf(self):
@@ -2148,6 +2174,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_nested"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_old_style_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
