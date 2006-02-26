@@ -979,6 +979,12 @@ def index(req):
 def test_publisher(req):
     return "test ok, interpreter=%s" % req.interpreter
 
+def test_publisher_auth_nested(req):
+    def __auth__(req, user, password):
+        test_globals = test_publisher
+        return user == "spam" and password == "eggs"
+    return "test ok, interpreter=%s" % req.interpreter
+
 class OldStyleClassTest:
     def __init__(self):
         pass
