@@ -45,6 +45,7 @@ MPFILES=	modpython.tex \
 		modpython3.tex \
 		modpython5.tex \
 		modpython6.tex \
+		modpython7.tex \
 		appendixa.tex \
 		appendixb.tex
 
