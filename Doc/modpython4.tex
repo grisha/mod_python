@@ -1820,10 +1820,11 @@ class. This class is similar to the standard library module
   If this function is called after the headers have already been sent,
   an \exception{IOError} is raised.
 
-  This function raises \exception{apache.SERVER_RETURN} exception to
-  abandon any further processing of the handle. If you do not want
-  this, you can wrap the call to \function{redirect} in a try/except
-  block catching the \exception{apache.SERVER_RETURN}.
+  This function raises \exception{apache.SERVER_RETURN} exception with
+  a value of \constant{apache.DONE} to ensuring that any later phases or
+  stacked handlers do not run. If you do not want this, you can wrap the
+  call to \function{redirect} in a try/except block catching the
+  \exception{apache.SERVER_RETURN}.
 \end{funcdesc}
 
 \section{\module{Cookie} -- HTTP State Management\label{pyapi-cookie}}

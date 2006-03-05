@@ -459,4 +459,4 @@ def redirect(req, location, permanent=0, text=None):
    else:
        req.write(text)
 
-   raise apache.SERVER_RETURN, apache.OK
+   raise apache.SERVER_RETURN, apache.DONE

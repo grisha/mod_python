@@ -1008,6 +1008,38 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail(`rsp`)
 
+    def test_util_redirect_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_util_redirect"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  PythonFixupHandler("tests::util_redirect"),
+                                  PythonHandler("tests::util_redirect"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_util_redirect(self):
+
+        print "\n  * Testing util.redirect()"
+        
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_util_redirect", PORT))
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if response.status != 302:
+            self.fail('did not receive 302 status response')
+
+        if response.getheader("location", None) != "/dummy":
+            self.fail('did not receive correct location for redirection')
+        
+        if rsp != "test ok":
+            self.fail(`rsp`)
+
     def test_req_server_get_config_conf(self):
 
         c = VirtualHost("*",
@@ -2193,6 +2225,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile2"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile3"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_handler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_util_redirect"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_server_get_config"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_server_get_options"))
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload"))
