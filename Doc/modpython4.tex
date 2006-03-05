@@ -1468,8 +1468,10 @@ server) serving the request.
 \subsubsection{Server Methods\label{pyapi-mpsrv-meth}}
 
 \begin{methoddesc}[server]{get_config}{}
-  Similar to \code{req.get_config()}, but returns a config pointed to
-  by \code{server->module_config} Apache config vector. 
+  Similar to \code{req.get_config()}, but returns a table object holding
+  only the mod_python configuration defined at global scope within the
+  Apache configuration. That is, outside of the context of any VirtualHost,
+  Location, Directory or Files directives.
 \end{methoddesc}
 
 \begin{methoddesc}[server]{register_cleanup}{request, callable\optional{, data}}

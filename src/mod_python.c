@@ -1513,7 +1513,7 @@ static const char *directive_PythonPath(cmd_parms *cmd, void *mconfig,
 
     const char *rc = python_directive(cmd, mconfig, "PythonPath", val);
 
-    if (!rc) {
+    if (!cmd->path) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
         return python_directive(cmd, conf, "PythonPath", val);
@@ -1531,7 +1531,7 @@ static const char *directive_PythonInterpreter(cmd_parms *cmd, void *mconfig,
                                                const char *val) {
     const char *rc = python_directive(cmd, mconfig, "PythonInterpreter", val);
 
-    if (!rc) {
+    if (!cmd->path) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
         return python_directive(cmd, conf, "PythonInterpreter", val);
@@ -1549,7 +1549,7 @@ static const char *directive_PythonDebug(cmd_parms *cmd, void *mconfig,
                                          int val) {
     const char *rc = python_directive_flag(mconfig, "PythonDebug", val, 0);
 
-    if (!rc) {
+    if (!cmd->path) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
 
@@ -1568,7 +1568,7 @@ static const char *directive_PythonEnablePdb(cmd_parms *cmd, void *mconfig,
                                              int val) {
     const char *rc = python_directive_flag(mconfig, "PythonEnablePdb", val, 0);
 
-    if (!rc) {
+    if (!cmd->path) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
         return python_directive_flag(conf, "PythonEnablePdb", val, 0);
@@ -1587,7 +1587,7 @@ static const char *directive_PythonInterpPerDirective(cmd_parms *cmd,
                                                       void *mconfig, int val) {
     const char *rc = python_directive_flag(mconfig, "PythonInterpPerDirective", val, 0);
 
-    if (!rc) {
+    if (!cmd->path) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
         return python_directive_flag(conf, "PythonInterpPerDirective", val, 0);
@@ -1618,7 +1618,7 @@ static const char *directive_PythonAutoReload(cmd_parms *cmd,
                                               void *mconfig, int val) {
     const char *rc = python_directive_flag(mconfig, "PythonAutoReload", val, 1);
 
-    if (!rc) {
+    if (!cmd->path) {
         py_config *conf = ap_get_module_config(cmd->server->module_config,
                                                &python_module);
         return python_directive_flag(conf, "PythonAutoReload", val, 1);
