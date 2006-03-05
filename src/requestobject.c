@@ -1515,6 +1515,15 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
+    else if (strcmp(name, "uri") == 0) {
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "uri must be a string");
+            return -1;
+        }
+        self->request_rec->uri = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
+    }
     
     return PyMember_SetOne((char*)self->request_rec, 
                            find_memberdef(request_rec_mbrs, (char*)name),
@@ -1675,7 +1684,7 @@ static PyGetSetDef request_getsets[] = {
     {"main",       (getter)getmakeobj, NULL, "If subrequest, pointer to the main request", "main"},
     {"the_request", (getter)getreq_recmbr, NULL, "First line of request", "the_request"},
     {"assbackwards", (getter)getreq_recmbr, (setter)setreq_recmbr, "HTTP/0.9 \"simple\" request", "assbackwards"},
-    {"proxyreq",     (getter)getreq_recmbr, NULL, "A proxy request: one of apache.PROXYREQ_* values", "proxyreq"},
+    {"proxyreq",     (getter)getreq_recmbr, (setter)setreq_recmbr, "A proxy request: one of apache.PROXYREQ_* values", "proxyreq"},
     {"header_only",  (getter)getreq_recmbr, NULL, "HEAD request, as oppsed to GET", "header_only"},
     {"protocol",     (getter)getreq_recmbr, NULL, "Protocol as given to us, or HTTP/0.9", "protocol"},
     {"proto_num",    (getter)getreq_recmbr, NULL, "Protocol version. 1.1 = 1001", "proto_num"},
@@ -1709,7 +1718,7 @@ static PyGetSetDef request_getsets[] = {
     {"no_cache",      (getter)getreq_recmbr, NULL, "This response in non-cacheable", "no_cache"},
     {"no_local_copy", (getter)getreq_recmbr, NULL, "There is no local copy of the response", "no_local_copy"},
     {"unparsed_uri",  (getter)getreq_recmbr, NULL, "The URI without any parsing performed", "unparsed_uri"},
-    {"uri",           (getter)getreq_recmbr, NULL, "The path portion of URI", "uri"},
+    {"uri",           (getter)getreq_recmbr, (setter)setreq_recmbr, "The path portion of URI", "uri"},
     {"filename",      (getter)getreq_recmbr, (setter)setreq_recmbr, "The file name on disk that this request corresponds to", "filename"},
     {"canonical_filename", (getter)getreq_recmbr, NULL, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
     {"path_info",     (getter)getreq_recmbr, (setter)setreq_recmbr, "Path_info, if any", "path_info"},

@@ -50,6 +50,11 @@
       The \code{req.handler} attribute is now writable. This allows a handler
       executing in a phase prior to the response phase to specify which
       Apache module will be responsible for generating the content.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-141]{MODPYTHON-141})
+      The \code{req.proxyreq} and \code{req.uri} attributes are now writable.
+      This allows a handler to setup these values and trigger proxying of the
+      current request to a remote server.
   \end{itemize}
 
   Bug Fixes
