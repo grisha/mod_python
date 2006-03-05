@@ -67,6 +67,21 @@ static PyObject * server_get_config(serverobject *self)
 }
 
 /**
+ ** server.get_options(server self)
+ **
+ *     Returns the options set through PythonOption directives.
+ *     unlike req.get_options, this one returns the per-server config
+ */
+
+static PyObject * server_get_options(serverobject *self)
+{
+    py_config *conf =
+        (py_config *) ap_get_module_config(self->server->module_config,
+                                           &python_module);
+    return MpTable_FromTable(conf->options);
+}
+
+/**
  ** server.register_cleanup(req, handler, data)
  **
  *    same as request.register_cleanup, except the server pool is used.
@@ -120,6 +135,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
 
 static PyMethodDef server_methods[] = {
     {"get_config",           (PyCFunction) server_get_config,        METH_NOARGS},
+    {"get_options",          (PyCFunction) server_get_options,       METH_NOARGS},
     {"register_cleanup",     (PyCFunction) server_register_cleanup,  METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };

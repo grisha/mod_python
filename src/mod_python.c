@@ -1638,9 +1638,11 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
     if(val!=NULL) {
         apr_table_set(conf->options, key, val);
 
-        conf = ap_get_module_config(cmd->server->module_config,
-                                    &python_module);
-        apr_table_set(conf->options, key, val);
+        if (!cmd->path) {
+            conf = ap_get_module_config(cmd->server->module_config,
+                                        &python_module);
+            apr_table_set(conf->options, key, val);
+        }
     }
     else {
     	/** We don't remove the value, but set it
@@ -1649,9 +1651,11 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
     	    an entry string precisely means 'remove the value' */
         apr_table_set(conf->options, key, "");
 
-        conf = ap_get_module_config(cmd->server->module_config,
-                                    &python_module);
-        apr_table_set(conf->options, key, "");
+        if (!cmd->path) {
+            conf = ap_get_module_config(cmd->server->module_config,
+                                        &python_module);
+            apr_table_set(conf->options, key, "");
+        }
     }
 
     return NULL;
