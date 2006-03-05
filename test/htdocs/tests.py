@@ -777,6 +777,19 @@ def req_handler(req):
         req.write('test failed')
         return apache.OK
 
+def util_redirect(req):
+    from mod_python import util
+    if req.main:
+        # Sub request for ErrorDocument.
+        req.write("test failed")
+        return apache.DONE
+    else:
+        if req.phase == "PythonFixupHandler":
+            util.redirect(req,location="/dummy",text="test ok")
+        else:
+            req.write('test failed')
+            return apache.OK
+
 def req_server_get_config(req):
 
     if req.server.get_config().get("PythonDebug","0") != "1" or \

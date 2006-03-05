@@ -74,6 +74,12 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-134]{MODPYTHON-134})
       Setting \code{PythonDebug} to \code{Off}, wasn't overriding \code{On}
       setting in parent scope.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-140]{MODPYTHON-140})
+      The \code{util.redirect()} function should be returning server status of
+      \code{apache.DONE} and not \code{apache.OK} otherwise it will not give
+      desired result if used in non content handler phase or where there are
+      stacked content handlers.
   \end{itemize}
 
 \chapter{Changes from Version (3.1.4)\label{app-changes}}
