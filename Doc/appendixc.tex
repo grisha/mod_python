@@ -28,6 +28,12 @@
       \code{req.register_output_fiter()}, \code{req.register_input_filter()}
       methods. These allows the dynamic registration of filters and the
       attaching of filters to the current request.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-137]{MODPYTHON-137})
+      New \code{req.server.get_options()} method. This returns the subset
+      of Python options set at global scope within the Apache configuration.
+      That is, outside of the context of any VirtualHost, Location, Directory
+      or Files directives.
   \end{itemize}
 
   Improvements
