@@ -1013,16 +1013,16 @@ class PerRequestTestCase(unittest.TestCase):
         c = VirtualHost("*",
                         ServerName("test_req_server_get_config"),
                         DocumentRoot(DOCUMENT_ROOT),
-                        PythonDebug("Off"),
+                        PythonDebug("On"),
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_server_get_config"),
-                                  PythonDebug("On")))
+                                  PythonDebug("Off")))
         return str(c)
 
     def test_req_server_get_config(self):
 
-        print "\n  * Testing req.server.get_config"
+        print "\n  * Testing req.server.get_config()"
 
         rsp = self.vhost_get("test_req_server_get_config")
         if (rsp != "test ok"):

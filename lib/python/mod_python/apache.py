@@ -100,7 +100,7 @@ class CallBack:
             if object:
 
                 # call the object
-                if config.has_key("PythonEnablePdb"):
+                if int(config.get("PythonEnablePdb", 0)):
                     result = pdb.runcall(object, conn)
                 else:
                     result = object(conn)
@@ -181,7 +181,7 @@ class CallBack:
             if object:
 
                 # call the object
-                if config.has_key("PythonEnablePdb"):
+                if int(config.get("PythonEnablePdb", 0)):
                     pdb.runcall(object, filter)
                 else:
                     object(filter)
@@ -293,7 +293,7 @@ class CallBack:
                 if object:
 
                     # call the object
-                    if config.has_key("PythonEnablePdb"):
+                    if int(config.get("PythonEnablePdb", 0)):
                         result = pdb.runcall(object, req)
                     else:
                         result = object(req)

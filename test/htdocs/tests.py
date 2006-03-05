@@ -779,8 +779,8 @@ def req_handler(req):
 
 def req_server_get_config(req):
 
-    if req.server.get_config().get("PythonDebug","0") != "0" or \
-            req.get_config().get("PythonDebug","0") != "1":
+    if req.server.get_config().get("PythonDebug","0") != "1" or \
+            req.get_config().get("PythonDebug","0") != "0":
         req.write('test failed')
     else:
         req.write('test ok')
