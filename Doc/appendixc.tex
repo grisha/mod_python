@@ -1,3 +1,23 @@
+\chapter{Changes from Version (3.2.8)\label{app-changes}}
+
+\indexii{Changes from}{version 3.2.8}
+
+  New Features
+
+  \begin{itemize}
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-78]{MODPYTHON-78})
+      Added support for Apache 2.2.
+  \end{itemize}
+ 
+  Bug Fixes
+
+  \begin{itemize}
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-122]{MODPYTHON-122})
+      Fixed configure problem when using bash 3.1.x.
+  \end{itemize}
+   
 \chapter{Changes from Version (3.2.7)\label{app-changes}}
 
 \indexii{Changes from}{version 3.2.7}
@@ -6,10 +26,12 @@
 
   \begin{itemize}
     \item
+    (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-135]{MODPYTHON-135})
+
     Fixed possible directory traversal attack in FileSession. The session
     id is now checked to ensure it only contains valid characters. This
     check is performed for all sessions derived from the BaseSession 
-    class.
+    class. 
   \end{itemize}
  
 \chapter{Changes from Version (3.1.4)\label{app-changes}}
