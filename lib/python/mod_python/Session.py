@@ -29,6 +29,7 @@ import md5
 import cPickle, cStringIO
 import tempfile
 import traceback
+import re
 
 COOKIE_NAME="pysid"
 DFT_TIMEOUT=30*60 # 30 min
@@ -82,6 +83,19 @@ def _new_sid(req):
     # Make a number based on current time, pid, remote ip
     # and two random ints, then hash with md5. This should
     # be fairly unique and very difficult to guess.
+    #
+    # WARNING
+    # The current implementation of _new_sid returns an
+    # md5 hexdigest string. To avoid a possible directory traversal
+    # attack in FileSession the sid is validated using
+    # the _check_sid() method and the compiled regex
+    # validate_sid_re. The sid will be accepted only if len(sid) == 32
+    # and it only contains the characters 0-9 and a-f. 
+    #
+    # If you change this implementation of _new_sid, make sure to also
+    # change the validation scheme, as well as the test_Session_illegal_sid()
+    # unit test in test/test.py.
+    # /WARNING
 
     t = long(time.time()*10000)
     pid = os.getpid()
@@ -92,6 +106,21 @@ def _new_sid(req):
 
     return md5.new("%d%d%d%d%s" % (t, pid, rnd1, rnd2, ip)).hexdigest()
     
+validate_sid_re = re.compile('[0-9a-f]{32}$')
+
+def _check_sid(sid):
+    ## Check the validity of the session id
+    # # The sid must be 32 characters long, and consisting of the characters
+    # 0-9 and a-f.
+    # 
+    # The sid may be passed in a cookie from the client and as such
+    # should not be trusted. This is particularly important in
+    # FileSession, where the session filename is derived from the sid.
+    # A sid containing '/' or '.' characters could result in a directory
+    # traversal attack
+    
+    return not not validate_sid_re.match(sid)
+
 class BaseSession(dict):
 
     def __init__(self, req, sid=None, secret=None, lock=1,
@@ -120,6 +149,14 @@ class BaseSession(dict):
 
             if cookies.has_key(session_cookie_name):
                 self._sid = cookies[session_cookie_name].value
+        
+        if self._sid:
+            # Validate the sid *before* locking the session
+            # _check_sid will raise an apache.SERVER_RETURN exception 
+            if not _check_sid(self._sid):
+                self._req.log_error("mod_python.Session warning: The session id contains invalid characters, valid characters are only 0-9 and a-f",
+                        apache.APLOG_WARNING)
+                raise apache.SERVER_RETURN, apache.HTTP_INTERNAL_SERVER_ERROR
 
         self.init_lock()
 

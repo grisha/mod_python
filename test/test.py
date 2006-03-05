@@ -1841,9 +1841,46 @@ class PerRequestTestCase(unittest.TestCase):
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
-
         if rsp != "test ok":
             self.fail("session did not accept our cookie")
+
+    def test_Session_illegal_sid_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_Session_Session"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::Session_Session"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_Session_illegal_sid(self):
+
+        print "\n  * Testing Session with illegal session id value"
+        bad_cookie = 'pysid=/path/traversal/attack/bad; path=/'
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.putheader("Cookie", bad_cookie)
+        conn.endheaders()
+        response = conn.getresponse()
+        status = response.status
+        conn.close()
+        if status != 500:
+            self.fail("session accepted a sid with illegal characters")
+
+        bad_cookie = 'pysid=%s; path=/' % ('abcdef'*64)
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.putheader("Cookie", bad_cookie)
+        conn.endheaders()
+        response = conn.getresponse()
+        status = response.status
+        conn.close()
+        if status != 500:
+            self.fail("session accepted a sid which is too long")
 
     def test_publisher_conf(self):
         c = VirtualHost("*",
@@ -2250,6 +2287,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_Cookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_MarshalCookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Session_Session"))
+        perRequestSuite.addTest(PerRequestTestCase("test_Session_illegal_sid"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
