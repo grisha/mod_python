@@ -1,6 +1,6 @@
-\chapter{Changes from Version (3.2.7)\label{app-changes}}
+\chapter{Changes from Version (3.2.8)\label{app-changes-from-3.2.8}}
 
-\indexii{Changes from}{version 3.2.7}
+\indexii{Changes from}{version 3.2.8}
   
   New Features
 
@@ -37,6 +37,9 @@
       of Python options set at global scope within the Apache configuration.
       That is, outside of the context of any VirtualHost, Location, Directory
       or Files directives.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-78]{MODPYTHON-78})
+      Added support for Apache 2.2
   \end{itemize}
 
   Improvements
@@ -88,9 +91,27 @@
       \code{apache.DONE} and not \code{apache.OK} otherwise it will not give
       desired result if used in non content handler phase or where there are
       stacked content handlers.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-122]{MODPYTHON-122})
+      Fixed configure problem when using bash 3.1.x.
   \end{itemize}
 
-\chapter{Changes from Version (3.1.4)\label{app-changes}}
+\chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
+
+\indexii{Changes from}{version 3.2.7}
+
+  Security Fix 
+
+  \begin{itemize}
+    \item
+    (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-135]{MODPYTHON-135})
+    Fixed possible directory traversal attack in FileSession. The session
+    id is now checked to ensure it only contains valid characters. This
+    check is performed for all sessions derived from the BaseSession 
+    class. 
+  \end{itemize}
+
+\chapter{Changes from Version (3.1.4)\label{app-changes-from-3.1.4}}
 
 \indexii{Changes from}{version 3.1.4}
   
@@ -230,7 +251,7 @@
       Fixed potential buffer corruption bug in connection object read().
 \end{itemize}
 
-\chapter{Changes from Previous Major Version (2.x)\label{app-changes}}
+\chapter{Changes from Previous Major Version (2.x)\label{app-changes-from-2.x}}
 
 \indexii{Changes from}{version 2.x}
 
