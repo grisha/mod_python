@@ -59,6 +59,11 @@
       Nested \code{__auth__()} functions in mod_python.publisher now execute
       in context of globals from the file the function is in and not that
       of mod_python.publisher itself.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-133]{MODPYTHON-133})
+      The table object returned by \code{req.server.get_config()} was not
+      being populated correctly to be the state of directives set at global
+      scope for the server.
   \end{itemize}
 
 \chapter{Changes from Version (3.1.4)\label{app-changes}}

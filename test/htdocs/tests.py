@@ -777,6 +777,16 @@ def req_handler(req):
         req.write('test failed')
         return apache.OK
 
+def req_server_get_config(req):
+
+    if req.server.get_config().get("PythonDebug","0") != "0" or \
+            req.get_config().get("PythonDebug","0") != "1":
+        req.write('test failed')
+    else:
+        req.write('test ok')
+
+    return apache.OK
+
 def fileupload(req):
     from mod_python import util
     import md5
