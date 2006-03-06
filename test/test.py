@@ -179,6 +179,7 @@ LIBEXECDIR = testconf.LIBEXECDIR
 SERVER_ROOT = TESTHOME
 CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
 DOCUMENT_ROOT = os.path.join(TESTHOME, "htdocs")
+TMP_DIR = os.path.join(TESTHOME, "tmp")
 PORT = 0 # this is set in fundUnusedPort()
  
     
@@ -259,6 +260,10 @@ class HttpdCtrl:
         if os.path.exists(logs):
             shutil.rmtree(logs)
         os.mkdir(logs)
+
+        if os.path.exists(TMP_DIR):
+            shutil.rmtree(TMP_DIR)
+        os.mkdir(TMP_DIR)
 
     def makeConfig(self, append=""):
 
@@ -1626,6 +1631,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::Session_Session"),
+                                  PythonOption('session_directory "%s"' % TMP_DIR),
                                   PythonDebug("On")))
         return str(c)
 
@@ -1664,6 +1670,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::Session_Session"),
+                                  PythonOption('session_directory "%s"' % TMP_DIR),
                                   PythonDebug("On")))
         return str(c)
 
