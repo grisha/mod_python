@@ -189,7 +189,8 @@ class CallBack:
                 # always flush the filter. without a FLUSH or EOS bucket,
                 # the content is never written to the network.
                 # XXX an alternative is to tell the user to flush() always
-                filter.flush()
+                if not filter.closed: 
+                    filter.flush()
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
