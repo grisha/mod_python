@@ -242,30 +242,37 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
     if hasattr(object, "__auth_realm__"):
         realm = object.__auth_realm__
 
+    func_object = None
+
     if type(object) is FunctionType:
+        func_object = object
+    elif type(object) == types.MethodType:
+        func_object = object.im_func
+
+    if func_object:
         # functions are a bit tricky
 
-        if hasattr(object, "func_code"):
-            func_code = object.func_code
+        func_code = func_object.func_code
+        func_globals = func_object.func_globals
 
-            if "__auth__" in func_code.co_names:
-                i = list(func_code.co_names).index("__auth__")
-                __auth__ = func_code.co_consts[i+1]
-                if hasattr(__auth__, "co_name"):
-                    __auth__ = new.function(__auth__, object.func_globals)
-                found_auth = 1
+        if "__auth__" in func_code.co_names:
+            i = list(func_code.co_names).index("__auth__")
+            __auth__ = func_code.co_consts[i+1]
+            if hasattr(__auth__, "co_name"):
+                __auth__ = new.function(__auth__, func_globals)
+            found_auth = 1
 
-            if "__access__" in func_code.co_names:
-                # first check the constant names
-                i = list(func_code.co_names).index("__access__")
-                __access__ = func_code.co_consts[i+1]
-                if hasattr(__access__, "co_name"):
-                    __access__ = new.function(__access__, object.func_globals)
-                found_access = 1
+        if "__access__" in func_code.co_names:
+            # first check the constant names
+            i = list(func_code.co_names).index("__access__")
+            __access__ = func_code.co_consts[i+1]
+            if hasattr(__access__, "co_name"):
+                __access__ = new.function(__access__, func_globals)
+            found_access = 1
 
-            if "__auth_realm__" in func_code.co_names:
-                i = list(func_code.co_names).index("__auth_realm__")
-                realm = func_code.co_consts[i+1]
+        if "__auth_realm__" in func_code.co_names:
+            i = list(func_code.co_names).index("__auth_realm__")
+            realm = func_code.co_consts[i+1]
 
     else:
         if hasattr(object, "__auth__"):
