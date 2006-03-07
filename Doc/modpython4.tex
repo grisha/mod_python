@@ -49,9 +49,20 @@ It is never destroyed and exists until the Apache process dies.
 You can find out the name of the interpreter under which you're
 running by peeking at \member{req.interpreter}.
 
+Note that if any third party module is being used which has a C code
+component that uses the simplified API for access to the Global
+Interpreter Lock (GIL) for Python extension modules, then the interpreter
+name must be forcibly set to be \samp{main_interpreter}. This is necessary
+as such a module will only work correctly if run within the context of
+the first Python interpreter created by the process. If not forced to
+run under the \samp{main_interpreter}, a range of Python errors can arise,
+each typically referring to code being run in \emph{restricted mode}.
+
 \begin{seealso}
   \seetitle[http://www.python.org/doc/current/api/api.html]
            {Python C Language API}{Python C Language API}
+  \seetitle[http://www.python.org/peps/pep-0311.html]
+           {PEP 0311 - Simplified Global Interpreter Lock Acquisition for Extensions}{PEP 0311 - Simplified Global Interpreter Lock Acquisition for Extensions}
 \end{seealso}
 
 \section{Overview of a Request Handler\label{pyapi-handler}}
