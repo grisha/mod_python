@@ -777,6 +777,11 @@ def req_handler(req):
         req.write('test failed')
         return apache.OK
 
+def req_no_cache(req):
+    req.no_cache = 1
+    req.write('test ok')
+    return apache.OK
+
 def util_redirect(req):
     from mod_python import util
     if req.main:
