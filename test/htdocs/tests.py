@@ -1029,7 +1029,20 @@ def test_publisher_auth_nested(req):
     def __auth__(req, user, password):
         test_globals = test_publisher
         return user == "spam" and password == "eggs"
+    def __access__(req, user):
+        return 1
     return "test ok, interpreter=%s" % req.interpreter
+
+class _test_publisher_auth_method_nested:
+    def method(self, req):
+        def __auth__(req, user, password):
+            test_globals = test_publisher
+            return user == "spam" and password == "eggs"
+        def __access__(req, user):
+            return 1
+        return "test ok, interpreter=%s" % req.interpreter
+
+test_publisher_auth_method_nested = _test_publisher_auth_method_nested()
 
 class OldStyleClassTest:
     def __init__(self):
