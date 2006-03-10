@@ -224,21 +224,6 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
 
     found_auth, found_access = 0, 0
 
-    # because ap_get_basic insists on making sure that AuthName and
-    # AuthType directives are specified and refuses to do anything
-    # otherwise (which is technically speaking a good thing), we
-    # have to do base64 decoding ourselves.
-    #
-    # to avoid needless header parsing, user and password are parsed
-    # once and the are received as arguments
-    if not user and req.headers_in.has_key("Authorization"):
-        try:
-            s = req.headers_in["Authorization"][6:]
-            s = base64.decodestring(s)
-            user, passwd = s.split(":", 1)
-        except:
-            raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
-
     if hasattr(object, "__auth_realm__"):
         realm = object.__auth_realm__
 
@@ -281,6 +266,22 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         if hasattr(object, "__access__"):
             __access__ = object.__access__
             found_access = 1
+
+    if found_auth or found_access:
+        # because ap_get_basic insists on making sure that AuthName and
+        # AuthType directives are specified and refuses to do anything
+        # otherwise (which is technically speaking a good thing), we
+        # have to do base64 decoding ourselves.
+        #
+        # to avoid needless header parsing, user and password are parsed
+        # once and the are received as arguments
+        if not user and req.headers_in.has_key("Authorization"):
+            try:
+                s = req.headers_in["Authorization"][6:]
+                s = base64.decodestring(s)
+                user, passwd = s.split(":", 1)
+            except:
+                raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
 
     if found_auth:
 
