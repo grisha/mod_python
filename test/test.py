@@ -2009,6 +2009,34 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok, interpreter=test_publisher_auth_method_nested"):
             self.fail(`rsp`)
 
+    def test_publisher_auth_digest_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_publisher_auth_digest"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.publisher"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_publisher_auth_digest(self):
+        print "\n  * Testing mod_python.publisher auth digest compatability"
+
+        # The contents of the authorization header is not relevant,
+        # as long as it looks valid.
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py/test_publisher", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_publisher_auth_digest", PORT))
+        conn.putheader("Authorization", 'Digest username="Mufasa", realm="testrealm@host.com", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", uri="/dir/index.html", qop=auth, nc=00000001, cnonce="0a4f113b", response="6629fae49393a05397450978507c4ef1", opaque="5ccc069c403ebaf9f0171e9517f40e41"')
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if (rsp != "test ok, interpreter=test_publisher_auth_digest"):
+            self.fail(`rsp`)
+
     def test_publisher_security_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
@@ -2358,6 +2386,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_nested"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_method_nested"))
+        perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_digest"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_old_style_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_instance"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))

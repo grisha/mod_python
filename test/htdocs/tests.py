@@ -1028,18 +1028,26 @@ def test_publisher(req):
 def test_publisher_auth_nested(req):
     def __auth__(req, user, password):
         test_globals = test_publisher
+        req.notes["auth_called"] = "1"
         return user == "spam" and password == "eggs"
     def __access__(req, user):
+        req.notes["access_called"] = "1"
         return 1
+    assert(int(req.notes.get("auth_called",0)))
+    assert(int(req.notes.get("access_called",0)))
     return "test ok, interpreter=%s" % req.interpreter
 
 class _test_publisher_auth_method_nested:
     def method(self, req):
         def __auth__(req, user, password):
             test_globals = test_publisher
+            req.notes["auth_called"] = "1"
             return user == "spam" and password == "eggs"
         def __access__(req, user):
+            req.notes["access_called"] = "1"
             return 1
+        assert(int(req.notes.get("auth_called",0)))
+        assert(int(req.notes.get("access_called",0)))
         return "test ok, interpreter=%s" % req.interpreter
 
 test_publisher_auth_method_nested = _test_publisher_auth_method_nested()
