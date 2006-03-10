@@ -1887,7 +1887,22 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
      * end the Python interpreter *after* all other cleanups.
      */
 
+    /*
+     * XXX Trying to cleanup Python on process shutdown causes
+     * problems as the child memory pool is destroyed within the
+     * context of a signal handler. If a request is still in the
+     * process of being handled when the signal handler is
+     * triggered the signal handler can block when trying to
+     * acquire the Python GIL. The signal handler will therefore
+     * never complete and thus Apache parent process is forced
+     * to kill the child process with a SIGKILL. As well as this
+     * it is also possible for the process simply to crash as
+     * doing complex things in a signal handler is never a safe
+     * thing to do anyway. Thus disable cleanup of Python when
+     * child processes are being shutdown. (MODPYTHON-109)
+     *
     apr_pool_cleanup_register(p, NULL, python_finalize, apr_pool_cleanup_null);
+     */
 
     /*
      * Reinit mutexes
