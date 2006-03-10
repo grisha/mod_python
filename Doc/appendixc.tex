@@ -121,6 +121,12 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-47]{MODPYTHON-47})
       Fixed mod_python.publisher so it will not return a HTTP Bad Request
       response when mod_auth is being used to provide Digest authentication.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-109]{MODPYTHON-109})
+      The \code{Py_Finalize()} function was being called on child process
+      shutdown. This was being done though from within the context of a
+      signal handler, which is generally unsafe and would cause the process
+      to lock up. This function is no longer called on child process shutdown.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}

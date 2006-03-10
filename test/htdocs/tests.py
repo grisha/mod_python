@@ -841,7 +841,7 @@ def srv_register_cleanup(req):
 
 def apache_register_cleanup(req):
 
-    apache.register_cleanup(req.interpreter, req.server, server_cleanup, "apache_register_cleanup test ok")
+    apache.register_cleanup(server_cleanup, "apache_register_cleanup test ok")
     req.write("registered server cleanup that will write to log")
 
     return apache.OK
