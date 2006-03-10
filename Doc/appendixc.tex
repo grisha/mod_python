@@ -74,6 +74,12 @@
       When using mod_python.publisher, the \code{__auth__()} and
       \code{__access__()} functions and the \code{__auth_realm__} string
       can now be nested within a class method as a well a normal function.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-107]{MODPYTHON-107})
+      Neither mod_python.publisher nor mod_python.psp explicitly flush
+      output after writing the content of the response back to the request
+      object. By not flushing output it is now possible to use the
+      "CONTENT_LENGTH" output filter to add a "Content-Length" header.
   \end{itemize}
 
   Bug Fixes

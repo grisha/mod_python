@@ -471,11 +471,14 @@ def publish_object(req, object):
             if charset is not None:
                 req.content_type += '; charset=%s'%charset
         
-        # Write result even if req.method == 'HEAD'
-        # Apache will truncate the output if necessary.
-        # Truncating output here if req.method is HEAD is likely the 
-        # wrong thing to do # as it may cause problems for any output filters.
-        # See MODPYTHON-105 for details.
-        req.write(result)
+        # Write result even if req.method is 'HEAD' as Apache
+        # will discard the final output anyway. Truncating
+        # output here if req.method is 'HEAD' is likely the
+        # wrong thing to do as it may cause problems for any
+        # output filters. See MODPYTHON-105 for details. We
+        # also do not flush output as that will prohibit use
+        # of 'CONTENT_LENGTH' filter to add 'Content-Length'
+        # header automatically. See MODPYTHON-107 for details.
+        req.write(result, 0)
 
         return True

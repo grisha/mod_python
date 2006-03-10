@@ -2572,11 +2572,13 @@ PythonOption PSPDbmCache ``/tmp/pspcache.dbm''
   cached in memory only. There is no option to cache in a dbm file at
   this time.
 
-  \begin{methoddesc}[PSP]{run}{\optional{vars}}
+  \begin{methoddesc}[PSP]{run}{\optional{vars, flush}}
     This method will execute the code (produced at object
     initialization time by parsing and compiling the PSP
     source). Optional argument \var{vars} is a dictionary keyed by
-    strings that will be passed in as global variables.
+    strings that will be passed in as global variables. Optional
+    argument \var{flush} is a boolean flag indicating whether output
+    should be flushed. The default is not to flush output.
 
     Additionally, the PSP code will be given global variables
     \code{req}, \code{psp}, \code{session} and \code{form}. A session
