@@ -183,7 +183,7 @@ class PSP:
 
         self.code = code
 
-    def run(self, vars={}):
+    def run(self, vars={}, flush=0):
 
         code, req = self.code, self.req
 
@@ -211,7 +211,8 @@ class PSP:
             global_scope.update(vars)      # passed in run()
             try:
                 exec code in global_scope
-                req.flush()
+                if flush:
+                    req.flush()
                 
                 # the mere instantiation of a session changes it
                 # (access time), so it *always* has to be saved
@@ -221,7 +222,7 @@ class PSP:
                 et, ev, etb = sys.exc_info()
                 if psp.error_page:
                     # run error page
-                    psp.error_page.run({"exception": (et, ev, etb)})
+                    psp.error_page.run({"exception": (et, ev, etb)}, flush)
                 else:
                     raise et, ev, etb
         finally:
