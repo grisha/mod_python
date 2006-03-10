@@ -18,3 +18,13 @@ PYTHON_BIN=@PYTHON_BIN@
 
 check:
 	$(PYTHON_BIN) test.py
+
+clean:
+	rm -f *.pyc *.pyo 
+	cd conf && rm -f test.conf
+	cd htdocs && rm -f *pyc *pyo
+	rm -rf logs
+	rm -rf tmp
+
+distclean: clean
+	rm -f Makefile testconf.py 

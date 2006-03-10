@@ -74,12 +74,14 @@ install_py_lib:
 clean:
 	cd src && $(MAKE) clean
 	cd dist && $(MAKE) clean
+	cd test && $(MAKE) clean
 	rm -f core
 
 distclean: clean
 	cd src && $(MAKE) distclean
 	cd Doc && $(MAKE) distclean
 	cd dist && $(MAKE) distclean
+	cd test && $(MAKE) distclean
 	rm -rf Makefile config.h config.status config.cache config.log \
 		test/testconf.py 
 
