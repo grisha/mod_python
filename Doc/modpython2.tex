@@ -101,6 +101,21 @@ autoconf stuff, \program{./configure} does the following:
   %$ keep emacs happy
 
 \item
+  \index{./configure!\longprogramopt{with-mutex-dir}}
+  %\indexii{./configure}{\longprogramopt{with-mutex-dir}}
+  Sets the directory for the apache mutex locks. The default is
+  \filenq{/tmp}. The directory must exist and be writable by the
+  owner of the apache process.
+
+  Use \longprogramopt{with-mutex-dir} option, e.g:
+
+  \begin{verbatim}
+    $ ./configure --with-mutex-dir=/var/run/mod_python
+  \end{verbatim}                      
+
+  New in version 3.3.0
+
+\item
   \index{./configure!\longprogramopt{with-max-locks}}
   %\indexii{./configure}{\longprogramopt{with-max-locks}}
   Sets the maximum number of locks reserved by mod_python.
