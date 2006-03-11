@@ -330,6 +330,12 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     int max_clients;
     int locks;
     int n;
+    char *val;
+    char *mutex_dir;
+    py_config *conf;
+    
+    conf = (py_config *) ap_get_module_config(s->module_config, 
+                                           &python_module);
 
     /* figure out maximum possible concurrent connections */
     /* MAX_DAEMON_USED seems to account for MaxClients, as opposed to
@@ -352,19 +358,31 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     max_clients = (((max_threads <= 0) ? 1 : max_threads) *
                    ((max_procs <= 0) ? 1 : max_procs));
 
-    /* XXX On some systems the locking mechanism chosen uses valuable
+    /* On some systems the locking mechanism chosen uses valuable
        system resources, notably on RH 8 it will use sysv ipc for
        which Linux by default provides only 128 semaphores
        system-wide, and on many other systems flock is used, which
-       results in a relatively large number of open files. So for now
-       we get by with MAX_LOCKS constant for lack of a better
-       solution.
+       results in a relatively large number of open files.
+
+       The maximum number of locks can be specified at
+       compile time using "./configure --with-max-locks value" or
+       at run time with "PythonOption mod_python.mutex_locks value".
+
+       If the PythonOption directive is used, it must be in a 
+       server config context, otherwise it will be ignored.
 
        The optimal number of necessary locks is not clear, perhaps a
        small number is more than sufficient - if someone took the
        time to run some research on this, that'd be most welcome!
     */
-    locks = (max_clients > MAX_LOCKS) ? MAX_LOCKS : max_clients; 
+    val = apr_table_get(conf->options, "mod_python.mutex_locks");
+    if (val) {
+        locks = atoi(val);
+    } else {
+        locks = MAX_LOCKS;
+    }
+
+    locks = (max_clients > locks) ? locks : max_clients; 
 
     ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
                  "mod_python: Creating %d session mutexes based "
@@ -376,14 +394,35 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     glb->nlocks = locks;
     glb->parent_pid = getpid();
 
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+    /* On some sytems a directory for the mutex lock files is required.
+       This mutex directory can be specifed at compile time using
+       "./configure --with-mutex-dir value" or at run time with
+       "PythonOption mod_python.mutex_directory value".
+     
+       If the PythonOption directive is used, it must be in a 
+       server config context, otherwise it will be ignored.
+
+       XXX Should we check if mutex_dir exists and has the correct
+       permissions?
+    */
+    mutex_dir = apr_table_get(conf->options, "mod_python.mutex_directory");
+    if (!mutex_dir)
+        mutex_dir = MUTEX_DIR;
+    
+    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
+                 "mod_python: using mutex_directory %s ",
+                 mutex_dir);
+#endif
+
     for (n=0; n<locks; n++) {
         apr_status_t rc;
         apr_global_mutex_t **mutex = glb->g_locks;
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
         char fname[255];
-
-        snprintf(fname, 255, "MUTEX_DIR/mpmtx%d%d", glb->parent_pid, n);
+        /* XXX What happens if len(mutex_dir) > 255 - len(mpmtx%d%d)? */   
+        snprintf(fname, 255, "%s/mpmtx%d%d", mutex_dir, glb->parent_pid, n);
 #else
         char *fname = NULL;
 #endif
@@ -394,7 +433,7 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
                          "mod_python: Failed to create global mutex %d of %d (%s).",
                          n, locks, (!fname) ? "<null>" : fname);
             if (n > 1) {
-                /* we were able to crate at least two, so lets just print a 
+                /* we were able to create at least two, so lets just print a 
                    warning/hint and proceed
                 */
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
@@ -440,13 +479,27 @@ static apr_status_t reinit_mutexes(server_rec *s, apr_pool_t *p, py_global_confi
 {
     int n;
 
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+    /* Determine the directory to use for mutex lock files. 
+       See init_mutexes function for more details.
+    */
+    char *mutex_dir;
+    py_config *conf;
+
+    conf = (py_config *) ap_get_module_config(s->module_config, 
+                                           &python_module);
+    mutex_dir = apr_table_get(conf->options, "mod_python.mutex_directory");
+    if (!mutex_dir)
+        mutex_dir = MUTEX_DIR;
+#endif
+
     for (n=0; n< glb->nlocks; n++) {
         apr_status_t rc;
         apr_global_mutex_t **mutex = glb->g_locks;
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
         char fname[255];
-        snprintf(fname, 255, "MUTEX_DIR/mpmtx%d%d", glb->parent_pid, n);
+        snprintf(fname, 255, "%s/mpmtx%d%d", mutex_dir, glb->parent_pid, n);
 #else
         char *fname = NULL;
 #endif

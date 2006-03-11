@@ -40,6 +40,15 @@
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-78]{MODPYTHON-78})
       Added support for Apache 2.2
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-131]{MODPYTHON-131})
+      The directory used for mutex locks can now be specified at 
+      at compile time using \code{./configure --with-mutex-dir value}
+      or at run time with \code{PythonOption mod_python.mutex_directory value}.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-145]{MODPYTHON-145})
+      The number of mutex locks can now be specified at at run time with
+      \code{PythonOption mod_python.mutex_directory /some/directory}.
   \end{itemize}
 
   Improvements
