@@ -331,7 +331,7 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     int locks;
     int n;
 
-    /* figre out maximum possible concurrent connections */
+    /* figure out maximum possible concurrent connections */
     /* MAX_DAEMON_USED seems to account for MaxClients, as opposed to
        MAX_DAEMONS, which is ServerLimit
     */
@@ -383,7 +383,7 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
         char fname[255];
 
-        snprintf(fname, 255, "/tmp/mpmtx%d%d", glb->parent_pid, n);
+        snprintf(fname, 255, "MUTEX_DIR/mpmtx%d%d", glb->parent_pid, n);
 #else
         char *fname = NULL;
 #endif
@@ -446,7 +446,7 @@ static apr_status_t reinit_mutexes(server_rec *s, apr_pool_t *p, py_global_confi
 
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
         char fname[255];
-        snprintf(fname, 255, "/tmp/mpmtx%d%d", glb->parent_pid, n);
+        snprintf(fname, 255, "MUTEX_DIR/mpmtx%d%d", glb->parent_pid, n);
 #else
         char *fname = NULL;
 #endif

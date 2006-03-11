@@ -303,6 +303,22 @@ if test -z "$PYTHON_SRC"; then
   PYTHON_SRC=""
 fi
 
+# configure the MUTEX_DIR for location of mutex locks
+AC_SUBST(MUTEX_DIR)
+AC_MSG_CHECKING(for --with-mutex-dir)
+AC_ARG_WITH(mutex-dir, [--with-mutex-dir=DIR	Mutex directory],
+[
+  MUTEX_DIR="$withval"
+  AC_MSG_RESULT($MUTEX_DIR)
+],
+AC_MSG_RESULT(no))
+
+if test -z "$MUTEX_DIR"; then
+  MUTEX_DIR="/tmp"
+fi
+# TODO - check if MUTEX_DIR is an absolute path 
+AC_MSG_RESULT([Using MUTEX_DIR $MUTEX_DIR])
+
 # configure the MAX_LOCKS for number of mutex locks
 AC_SUBST(MAX_LOCKS)
 AC_MSG_CHECKING(for --with-max-locks)
