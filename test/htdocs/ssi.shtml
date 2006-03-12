@@ -1,0 +1,3 @@
+<!--#python exec="
+filter.write('test')
+"--> <!--#python eval="'ok'" -->

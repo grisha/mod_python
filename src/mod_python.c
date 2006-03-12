@@ -26,6 +26,7 @@
  */
 
 #include "mod_python.h"
+#include "mod_include.h"
 
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
@@ -36,6 +37,11 @@ static apr_thread_mutex_t* interpreters_lock = 0;
 #endif
 
 apr_pool_t *child_init_pool = NULL;
+
+/* Optional functions imported from mod_include when loaded: */
+static APR_OPTIONAL_FN_TYPE(ap_register_include_handler) *optfn_register_include_handler;
+static APR_OPTIONAL_FN_TYPE(ap_ssi_get_tag_and_value)    *optfn_ssi_get_tag_and_value;
+static APR_OPTIONAL_FN_TYPE(ap_ssi_parse_string)         *optfn_ssi_parse_string;
 
 /**
  ** make_interpreter
@@ -1524,6 +1530,149 @@ static apr_status_t python_output_filter(ap_filter_t *f,
 
 
 /**
+ ** handle_python
+ **
+ *    handler function for mod_include tag
+ */
+
+static apr_status_t handle_python(include_ctx_t *ctx,
+                                  apr_bucket_brigade **bb,
+                                  request_rec *r_bogus,
+                                  ap_filter_t *f,
+                                  apr_bucket *head_ptr,
+                                  apr_bucket **inserted_head) {
+
+    py_config *conf;
+    const char *interp_name = NULL;
+    interpreterdata *idata;
+    requestobject *request_obj;
+    PyObject *resultobject = NULL;
+    filterobject *filter;
+    apr_bucket *tmp_buck;
+
+    char *file = f->r->filename;
+    char *tag = NULL;
+    char *tag_val = NULL;
+
+    PyObject *tagobject = NULL;
+    PyObject *codeobject = NULL;
+
+    /* prepare for 2.2 - get everything from f */
+    request_rec *req = f->r;
+
+    /* check for Options +IncludesNOEXEC */
+    if (ctx->flags & FLAG_PRINTING) {
+        if (ctx->flags & FLAG_NO_EXEC) {
+
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                          "#python used but not allowed in %s", file);
+
+            CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
+            release_interpreter();
+            return APR_SUCCESS;
+        }
+    }
+
+    /* process tags */
+    while (1) {
+        optfn_ssi_get_tag_and_value(ctx, &tag, &tag_val, 1);
+
+        if (!tag || !tag_val)
+            break;
+
+        if (!strlen(tag_val)) {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                          "empty value for '%s' parameter to tag 'python' in %s",
+                          tag, file);
+
+            CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
+            Py_XDECREF(tagobject);
+            Py_XDECREF(codeobject);
+            release_interpreter();
+            return APR_SUCCESS;
+        }
+
+        if (!strcmp(tag, "eval") || !strcmp(tag, "exec")) {
+            if (tagobject) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                              "multiple 'eval/exec' parameters to tag 'python' in %s",
+                              file);
+
+                CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
+                Py_XDECREF(tagobject);
+                Py_XDECREF(codeobject);
+                release_interpreter();
+                return APR_SUCCESS;
+            }
+
+            tagobject = PyString_FromString(tag);
+            codeobject = PyString_FromString(tag_val);
+        }
+    }
+
+    if (!tagobject) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                      "missing 'eval/exec' parameter to tag 'python' in %s",
+                      file);
+
+        CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
+        release_interpreter();
+        return APR_SUCCESS;
+    }
+
+    /* get configuration */
+    conf = (py_config *) ap_get_module_config(req->per_dir_config, 
+                                              &python_module);
+
+    /* determine interpreter to use */
+    interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, 0);
+
+    /* get/create interpreter */
+    idata = get_interpreter(interp_name, req->server);
+   
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                      "handle_python: Can't get/create interpreter.");
+
+        Py_XDECREF(tagobject);
+        Py_XDECREF(codeobject);
+        release_interpreter();
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    /* create/acquire request object */
+    request_obj = get_request_object(req, interp_name, 0);
+
+    /* create filter */
+    filter = (filterobject *)MpFilter_FromFilter(f, *bb, 0, 0, 0, 0, 0);
+
+    Py_INCREF(request_obj);
+    filter->request_obj = request_obj;
+
+    /* 
+     * Here is where we call into Python!
+     */
+    resultobject = PyObject_CallMethod(idata->obcallback,
+            "IncludeDispatch", "OOO", filter, tagobject, codeobject);
+
+    if (!resultobject)
+    {
+        CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
+        release_interpreter();
+        return APR_SUCCESS;
+    }
+
+    /* clean up */
+    Py_XDECREF(resultobject);
+
+    /* release interpreter */
+    release_interpreter();
+    
+    return filter->rc;
+}
+
+
+/**
  ** directive_PythonImport
  **
  *      This function called whenever PythonImport directive
@@ -1698,10 +1847,10 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
         }
     }
     else {
-    	/** We don't remove the value, but set it
-    	    to an empty string. There is no possibility
-    	    of colliding with an actual value, since
-    	    an entry string precisely means 'remove the value' */
+        /** We don't remove the value, but set it
+            to an empty string. There is no possibility
+            of colliding with an actual value, since
+            an entry string precisely means 'remove the value' */
         apr_table_set(conf->options, key, "");
 
         if (!cmd->path) {
@@ -1971,6 +2120,16 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
      * later in server.register_cleanup()
      */
     child_init_pool = p;
+
+    /* register python handler for mod_include. could probably
+     * also have done this in python_init() instead */
+    optfn_register_include_handler = APR_RETRIEVE_OPTIONAL_FN(ap_register_include_handler);
+    optfn_ssi_get_tag_and_value = APR_RETRIEVE_OPTIONAL_FN(ap_ssi_get_tag_and_value);
+    optfn_ssi_parse_string = APR_RETRIEVE_OPTIONAL_FN(ap_ssi_parse_string);
+    if (optfn_register_include_handler && optfn_ssi_get_tag_and_value &&
+        optfn_ssi_parse_string) {
+        optfn_register_include_handler("python", handle_python);
+    }
 
     /*
      * Now run PythonImports
