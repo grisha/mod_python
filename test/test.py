@@ -310,6 +310,9 @@ class HttpdCtrl:
             IfModule("!mod_dir.c",
                      LoadModule("dir_module %s" %
                                 quoteIfSpace(os.path.join(modpath, "mod_dir.so")))),
+            IfModule("!mod_include.c",
+                     LoadModule("include_module %s" %
+                                quoteIfSpace(os.path.join(modpath, "mod_include.so")))),
             ServerRoot(SERVER_ROOT),
             ErrorLog("logs/error_log"),
             LogLevel("debug"),
@@ -2268,6 +2271,27 @@ class PerRequestTestCase(unittest.TestCase):
         finally:        
             os.remove('htdocs/temp.py')
 
+    def test_server_side_include_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_server_side_include"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  AddType("text/html .shtml"),
+                                  AddOutputFilter("INCLUDES .shtml"),
+                                  Options("+Includes"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_server_side_include(self):
+
+        print "\n  * Testing server side include"
+        rsp = self.vhost_get("test_server_side_include", path="/ssi.shtml")
+
+        rsp = rsp.strip()
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
     # restart of httpd (e.g. we're using a fancy config)
@@ -2399,6 +2423,8 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         # and it man not be possible to get a reliable test for all
         # configurations, so disable it. 
         #perRequestSuite.addTest(PerRequestTestCase("test_publisher_cache"))
+
+        perRequestSuite.addTest(PerRequestTestCase("test_server_side_include"))
 
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))

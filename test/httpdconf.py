@@ -83,6 +83,10 @@ class AddOutputFilter(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class AddType(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class AuthBasicAuthoritative(Directive):
     # New in Apache 2.2
     def __init__(self, val):
@@ -178,6 +182,10 @@ class MinSpareThreads(Directive):
         Directive.__init__(self, self.__class__.__name__, val)
 
 class NumServers(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class Options(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 

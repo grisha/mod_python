@@ -355,6 +355,43 @@ class CallBack:
 
         return result
 
+    def IncludeDispatch(self, filter, tag, code):
+
+        try:
+            config = filter.req.get_config()
+            debug = int(config.get("PythonDebug", 0))
+
+            if not hasattr(filter.req,"_mod_include"):
+                filter.req._mod_include = {}
+
+            filter.req._mod_include["filter"] = filter
+
+            code = code.rstrip()
+
+            if tag == 'eval':
+                result = eval(code, filter.req._mod_include)
+                if result is not None:
+                    filter.write(str(result))
+            elif tag == 'exec':
+                exec(code, filter.req._mod_include)
+
+            filter.flush()
+
+        except:
+            try:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                filter.disable()
+                result = self.ReportError(exc_type, exc_value, exc_traceback,
+                                          req=filter.req, filter=filter,
+                                          phase=filter.name,
+                                          hname=filter.req.filename,
+                                          debug=debug)
+            finally:
+                exc_traceback = None
+
+            raise
+
+        return OK
 
     def ReportError(self, etype, evalue, etb, req=None, filter=None, srv=None,
                     phase="N/A", hname="N/A", debug=0):
