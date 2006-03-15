@@ -26,7 +26,6 @@
  */
 
 #include "mod_python.h"
-#include "mod_include.h"
 
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
@@ -1534,17 +1533,16 @@ static apr_status_t python_output_filter(ap_filter_t *f,
  **
  *    handler function for mod_include tag
  *
- *    The mod_include tag handler interface changed somewhere
- *    between Apache 2.0 and Apache 2.2. Not sure what the
- *    official way of detecting change point is, so look for
- *    the SSI_CREATE_ERROR_BUCKET macro as indication that
- *    new interface should be used. Provide a completely
- *    separate implementation for now until determine whether
- *    the SSI_CREATE_ERROR_BUCKET macro can be replicated for
- *    backward compatibility.
+ *    The mod_include tag handler interface changed at:
+ *
+ *      20030821 (2.1.0-dev) bumped mod_include's entire API
+ *
+ *    Provide a completely separate implementation for now until
+ *    it is determined whether the new SSI_CREATE_ERROR_BUCKET
+ *    macro can simply be copied to allow backward compatibility.
  */
 
-#if defined(SSI_CREATE_ERROR_BUCKET)
+#if AP_MODULE_MAGIC_AT_LEAST(20030821,0)
 
 static apr_status_t handle_python(include_ctx_t *ctx,
                                   ap_filter_t *f,
