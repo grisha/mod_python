@@ -55,6 +55,8 @@
 #include "apr_hash.h"
 #include "scoreboard.h"
 #include "ap_mpm.h"
+#include "ap_mmn.h"
+#include "mod_include.h"
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
 #include "unixd.h"
 #endif
