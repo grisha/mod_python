@@ -1533,7 +1533,157 @@ static apr_status_t python_output_filter(ap_filter_t *f,
  ** handle_python
  **
  *    handler function for mod_include tag
+ *
+ *    The mod_include tag handler interface changed somewhere
+ *    between Apache 2.0 and Apache 2.2. Not sure what the
+ *    official way of detecting change point is, so look for
+ *    the SSI_CREATE_ERROR_BUCKET macro as indication that
+ *    new interface should be used. Provide a completely
+ *    separate implementation for now until determine whether
+ *    the SSI_CREATE_ERROR_BUCKET macro can be replicated for
+ *    backward compatibility.
  */
+
+#if defined(SSI_CREATE_ERROR_BUCKET)
+
+static apr_status_t handle_python(include_ctx_t *ctx,
+                                  ap_filter_t *f,
+                                  apr_bucket_brigade *bb) {
+
+    py_config *conf;
+    const char *interp_name = NULL;
+    interpreterdata *idata;
+    requestobject *request_obj;
+    PyObject *resultobject = NULL;
+    filterobject *filter;
+    apr_bucket *tmp_buck;
+
+    char *file = f->r->filename;
+    char *tag = NULL;
+    char *tag_val = NULL;
+
+    PyObject *tagobject = NULL;
+    PyObject *codeobject = NULL;
+
+    request_rec *req = f->r;
+
+    if (!(ctx->flags & SSI_FLAG_PRINTING)) {
+        return APR_SUCCESS;
+    }
+
+    if (ctx->flags & SSI_FLAG_NO_EXEC) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                      "#python used but not allowed in %s", file);
+
+        SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+        return APR_SUCCESS;
+    }
+
+    /* process tags */
+    while (1) {
+        optfn_ssi_get_tag_and_value(ctx, &tag, &tag_val, 1);
+
+        if (!tag || !tag_val)
+            break;
+
+        if (!strlen(tag_val)) {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                          "empty value for '%s' parameter to tag 'python' in %s",
+                          tag, file);
+
+            SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+            Py_XDECREF(tagobject);
+            Py_XDECREF(codeobject);
+            return APR_SUCCESS;
+        }
+
+        if (!strcmp(tag, "eval") || !strcmp(tag, "exec")) {
+            if (tagobject) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                              "multiple 'eval/exec' parameters to tag 'python' in %s",
+                              file);
+
+                SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+                Py_XDECREF(tagobject);
+                Py_XDECREF(codeobject);
+                return APR_SUCCESS;
+            }
+
+            tagobject = PyString_FromString(tag);
+            codeobject = PyString_FromString(tag_val);
+        } else {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                          "unexpected '%s' parameter to tag 'python' in %s",
+                          tag, file);
+
+            SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+            Py_XDECREF(tagobject);
+            Py_XDECREF(codeobject);
+            return APR_SUCCESS;
+        }
+    }
+
+    if (!tagobject) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                      "missing 'eval/exec' parameter to tag 'python' in %s",
+                      file);
+
+        SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+        return APR_SUCCESS;
+    }
+
+    /* get configuration */
+    conf = (py_config *) ap_get_module_config(req->per_dir_config, 
+                                              &python_module);
+
+    /* determine interpreter to use */
+    interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, 0);
+
+    /* get/create interpreter */
+    idata = get_interpreter(interp_name, req->server);
+   
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                      "handle_python: Can't get/create interpreter.");
+
+        Py_XDECREF(tagobject);
+        Py_XDECREF(codeobject);
+        release_interpreter();
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    /* create/acquire request object */
+    request_obj = get_request_object(req, interp_name, 0);
+
+    /* create filter */
+    filter = (filterobject *)MpFilter_FromFilter(f, bb, 0, 0, 0, 0, 0);
+
+    Py_INCREF(request_obj);
+    filter->request_obj = request_obj;
+
+    /* 
+     * Here is where we call into Python!
+     */
+    resultobject = PyObject_CallMethod(idata->obcallback,
+            "IncludeDispatch", "OOO", filter, tagobject, codeobject);
+
+    if (!resultobject)
+    {
+        SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+        release_interpreter();
+        return APR_SUCCESS;
+    }
+
+    /* clean up */
+    Py_XDECREF(resultobject);
+
+    /* release interpreter */
+    release_interpreter();
+    
+    return filter->rc;
+}
+
+#else
 
 static apr_status_t handle_python(include_ctx_t *ctx,
                                   apr_bucket_brigade **bb,
@@ -1557,20 +1707,18 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     PyObject *tagobject = NULL;
     PyObject *codeobject = NULL;
 
-    /* prepare for 2.2 - get everything from f */
     request_rec *req = f->r;
 
-    /* check for Options +IncludesNOEXEC */
-    if (ctx->flags & FLAG_PRINTING) {
-        if (ctx->flags & FLAG_NO_EXEC) {
+    if (!(ctx->flags & FLAG_PRINTING)) {
+        return APR_SUCCESS;
+    }
 
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
-                          "#python used but not allowed in %s", file);
+    if (ctx->flags & FLAG_NO_EXEC) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                      "#python used but not allowed in %s", file);
 
-            CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
-            release_interpreter();
-            return APR_SUCCESS;
-        }
+        SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+        return APR_SUCCESS;
     }
 
     /* process tags */
@@ -1588,7 +1736,6 @@ static apr_status_t handle_python(include_ctx_t *ctx,
             CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
             Py_XDECREF(tagobject);
             Py_XDECREF(codeobject);
-            release_interpreter();
             return APR_SUCCESS;
         }
 
@@ -1601,12 +1748,20 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                 CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
                 Py_XDECREF(tagobject);
                 Py_XDECREF(codeobject);
-                release_interpreter();
                 return APR_SUCCESS;
             }
 
             tagobject = PyString_FromString(tag);
             codeobject = PyString_FromString(tag_val);
+        } else {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                          "unexpected '%s' parameter to tag 'python' in %s",
+                          tag, file);
+
+            CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
+            Py_XDECREF(tagobject);
+            Py_XDECREF(codeobject);
+            return APR_SUCCESS;
         }
     }
 
@@ -1616,7 +1771,6 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                       file);
 
         CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
-        release_interpreter();
         return APR_SUCCESS;
     }
 
@@ -1671,6 +1825,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     return filter->rc;
 }
 
+#endif
 
 /**
  ** directive_PythonImport
