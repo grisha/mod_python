@@ -776,22 +776,22 @@ def restore_nocgi(sav_env, si, so):
     sys.stdout = si
     sys.stdin = so
 
-_interpreter = None
-_server = None
+interpreter = None
+main_server = None
 _callback = None
 
-def register_cleanup(handler,data=None):
-    _apache.register_cleanup(_interpreter,_server,handler,data)
+def register_cleanup(callback, data=None):
+    _apache.register_cleanup(interpreter, main_server, callback, data)
 
-def init(name,server):
+def init(name, server):
     """
         This function is called by the server at startup time
     """
 
-    global _interpreter
-    global _server
-    _interpreter = name
-    _server = server
+    global interpreter
+    global main_server
+    interpreter = name
+    main_server = server
 
     sys.argv = ["mod_python"]
 

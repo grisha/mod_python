@@ -27,6 +27,9 @@
 
 #include "mod_python.h"
 
+/* Server object for main server as supplied to python_init(). */
+static server_rec *main_server = NULL;
+
 /* List of available Python obCallBacks/Interpreters
  * (In a Python dictionary) */
 static PyObject * interpreters = NULL;
@@ -108,7 +111,7 @@ static PyObject * make_obcallback(char *name, server_rec *s)
         fflush(stderr); 
     }
     
-    if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, "sO", name, MpServer_FromServer(s))))) {
+    if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, "sO", name, MpServer_FromServer(main_server))))) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
                      "make_obcallback: could not call %s.\n", (!INITFUNC) ? "<null>" : INITFUNC);
         PyErr_Print();
@@ -594,6 +597,9 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     /* Python version */
     sprintf(buff, "Python/%.200s", strtok((char *)Py_GetVersion(), " "));
     ap_add_version_component(p, buff);
+
+    /* cache main server */
+    main_server = s;
 
     /* global config */
     glb = python_create_global_config(s);

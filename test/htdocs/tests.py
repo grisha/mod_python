@@ -258,8 +258,10 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("req.phase should be 'PythonHandler'")
             
         log("    req.interpreter: %s" % `req.interpreter`)
+        if req.interpreter != apache.interpreter:
+            self.fail("req.interpreter should be same as apache.interpreter" % `apache.interpreter`)
         if req.interpreter != req.server.server_hostname:
-            self.fail("req.interpreter should be same as req.server_hostname: %s" % `req.server_hostname`)
+            self.fail("req.interpreter should be same as req.server.server_hostname: %s" % `req.server.server_hostname`)
             
         log("    req.content_type: %s" % `req.content_type`)
         log("        doing req.content_type = 'test/123' ...")
@@ -808,6 +810,14 @@ def req_server_get_config(req):
 def req_server_get_options(req):
 
     try:
+        server_options = apache.main_server.get_options()
+        assert(server_options.get("global","0") == "0")
+        assert(server_options.get("override","0") == "0")
+
+        server_options = req.connection.base_server.get_options()
+        assert(server_options.get("global","0") == "0")
+        assert(server_options.get("override","0") == "0")
+
         server_options = req.server.get_options()
         assert(server_options["global"] == "1")
         assert(server_options["override"] == "1")
