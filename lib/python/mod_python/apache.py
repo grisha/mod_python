@@ -361,19 +361,19 @@ class CallBack:
             config = filter.req.get_config()
             debug = int(config.get("PythonDebug", 0))
 
-            if not hasattr(filter.req,"_mod_include"):
-                filter.req._mod_include = {}
+            if not hasattr(filter.req,"ssi_globals"):
+                filter.req.ssi_globals = {}
 
-            filter.req._mod_include["filter"] = filter
+            filter.req.ssi_globals["filter"] = filter
 
             code = code.rstrip()
 
             if tag == 'eval':
-                result = eval(code, filter.req._mod_include)
+                result = eval(code, filter.req.ssi_globals)
                 if result is not None:
                     filter.write(str(result))
             elif tag == 'exec':
-                exec(code, filter.req._mod_include)
+                exec(code, filter.req.ssi_globals)
 
             filter.flush()
 
@@ -390,6 +390,8 @@ class CallBack:
                 exc_traceback = None
 
             raise
+
+        filter.req.ssi_globals["filter"] = None
 
         return OK
 
