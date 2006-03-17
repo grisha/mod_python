@@ -27,9 +27,14 @@ import imp
 import types
 import _apache
 
-# a small hack to improve PythonPath performance. This
-# variable stores the last PythonPath in raw (unevaled) form.
-_path = None
+try:
+    import threading
+except:
+    import dummy_threading as threading
+
+# Cache for values of PythonPath that have been seen already.
+_path_cache = {}
+_path_cache_lock = threading.Lock()
 
 class CallBack:
     """
@@ -74,20 +79,19 @@ class CallBack:
             else:
                 object_str = l[1]
 
-            # add the directory to pythonpath if
-            # not there yet, or pythonpath specified
+            # evaluate pythonpath and set sys.path to
+            # resulting value if not already done
 
-            if config.has_key("PythonPath"):
-                # we want to do as little evaling as possible,
-                # so we remember the path in un-evaled form and
-                # compare it
-                global _path
-                pathstring = config["PythonPath"]
-                if pathstring != _path:
-                    _path = pathstring
-                    newpath = eval(pathstring)
-                    if sys.path != newpath:
-                        sys.path[:] = newpath
+            if config.has_key("PythonPath"): 
+                _path_cache_lock.acquire() 
+                try: 
+                    pathstring = config["PythonPath"] 
+                    if not _path_cache.has_key(pathstring): 
+                        newpath = eval(pathstring) 
+                        _path_cache[pathstring] = None 
+                        sys.path[:] = newpath 
+                finally: 
+                    _path_cache_lock.release()
 
             # import module
             module = import_module(module_name,
@@ -153,19 +157,20 @@ class CallBack:
                 object_str = l[1]
 
             # add the directory to pythonpath if
-            # not there yet, or pythonpath specified
+            # not there yet, or evaluate pythonpath
+            # and set sys.path to resulting value
+            # if not already done
 
-            if config.has_key("PythonPath"):
-                # we want to do as little evaling as possible,
-                # so we remember the path in un-evaled form and
-                # compare it
-                global _path
-                pathstring = config["PythonPath"]
-                if pathstring != _path:
-                    _path = pathstring
-                    newpath = eval(pathstring)
-                    if sys.path != newpath:
-                        sys.path[:] = newpath
+            if config.has_key("PythonPath"): 
+                _path_cache_lock.acquire() 
+                try: 
+                    pathstring = config["PythonPath"] 
+                    if not _path_cache.has_key(pathstring): 
+                        newpath = eval(pathstring) 
+                        _path_cache[pathstring] = None 
+                        sys.path[:] = newpath 
+                finally: 
+                    _path_cache_lock.release()
             else:
                 if filter.dir and (filter.dir not in sys.path):
                     sys.path[:0] = [filter.dir]
@@ -265,18 +270,20 @@ class CallBack:
                     object_str = l[1]
 
                 # add the directory to pythonpath if
-                # not there yet, or pythonpath specified
-                if config.has_key("PythonPath"):
-                    # we want to do as little evaling as possible,
-                    # so we remember the path in un-evaled form and
-                    # compare it
-                    global _path
-                    pathstring = config["PythonPath"]
-                    if pathstring != _path:
-                        _path = pathstring
-                        newpath = eval(pathstring)
-                        if sys.path != newpath:
-                            sys.path[:] = newpath
+                # not there yet, or evaluate pythonpath
+                # and set sys.path to resulting value
+                # if not already done
+
+                if config.has_key("PythonPath"): 
+                    _path_cache_lock.acquire() 
+                    try: 
+                        pathstring = config["PythonPath"] 
+                        if not _path_cache.has_key(pathstring): 
+                            newpath = eval(pathstring) 
+                            _path_cache[pathstring] = None 
+                            sys.path[:] = newpath 
+                    finally: 
+                        _path_cache_lock.release()
                 else:
                     dir = hlist.directory
                     if dir and (dir not in sys.path):
@@ -397,7 +404,23 @@ class CallBack:
 
     def ImportDispatch(self, name):
 
-        debug = int(main_server.get_config().get("PythonDebug", "0"))
+        config = main_server.get_config()
+
+        debug = int(config.get("PythonDebug", "0"))
+
+        # evaluate pythonpath and set sys.path to
+        # resulting value if not already done
+
+        if config.has_key("PythonPath"): 
+            _path_cache_lock.acquire() 
+            try: 
+                pathstring = config["PythonPath"] 
+                if not _path_cache.has_key(pathstring): 
+                    newpath = eval(pathstring) 
+                    _path_cache[pathstring] = None 
+                    sys.path[:] = newpath 
+            finally: 
+                _path_cache_lock.release()
 
         # split module::function
         l = name.split('::', 1)

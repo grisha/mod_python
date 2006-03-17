@@ -156,6 +156,15 @@
       The \code{PythonImport} directive now uses the
       \code{apache.import_module()} function to import modules to avoid
       reloading problems when same module is imported from a handler.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-114]{MODPYTHON-114})
+      Fixed race conditions on setting \code{sys.path} when the
+      \code{PythonPath} directive is being used as well as problems with
+      infinite extension of path.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-147]{MODPYTHON-147})
+      Stopped directories being added to \code{sys.path} multiple times when
+      \code{PythonImport} and \code{PythonPath} directive used.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
