@@ -884,7 +884,9 @@ def trans(req):
 
 def import_test(req):
 
-    import sys
+    import sys, os
+    directory = os.path.dirname(__file__)
+    assert(sys.path.count(directory) == 1)
     if sys.modules.has_key("dummymodule"):
         if not apache.main_server.get_options().has_key("dummymodule::function"):
             req.log_error("dummymodule::function not executed")

@@ -2308,41 +2308,6 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
         if (!idata)
             return;
 
-        /* set up PythonPath */
-        ppath = apr_table_get(conf->directives, "PythonPath");
-        if (ppath) {
-
-            PyObject *globals, *locals, *newpath, *sys;
-            
-            globals = PyDict_New();
-            locals = PyDict_New();
-            
-            sys = PyImport_ImportModuleEx("sys", globals, locals, NULL);
-            if (!sys)
-                goto err;
-
-            PyDict_SetItemString(globals, "sys", sys);
-            newpath = PyRun_String((char *)ppath, Py_eval_input, globals, locals);
-            if (!newpath)
-                goto err;
-
-            if (PyObject_SetAttrString(sys, "path", newpath) == -1)
-                goto err;
-
-            Py_XDECREF(sys);
-            Py_XDECREF(newpath);
-            Py_XDECREF(globals);
-            Py_XDECREF(locals);
-            goto success;
-
-        err:
-            PyErr_Print();
-            fflush(stderr); 
-            release_interpreter();
-            return;
-        }
-
-    success:
         /* 
          * Call into Python to do import.
          * This is the C equivalent of
