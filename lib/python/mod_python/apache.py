@@ -395,6 +395,22 @@ class CallBack:
 
         return OK
 
+    def ImportDispatch(self, name):
+
+        debug = int(main_server.get_config().get("PythonDebug", "0"))
+
+        # split module::function
+        l = name.split('::', 1)
+        module_name = l[0]
+        func_name = None
+        if len(l) != 1:
+            func_name = l[1]
+
+        module = import_module(module_name, log=debug)
+
+        if func_name:
+            getattr(module, func_name)()
+
     def ReportError(self, etype, evalue, etb, req=None, filter=None, srv=None,
                     phase="N/A", hname="N/A", debug=0):
         """

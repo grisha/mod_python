@@ -1519,14 +1519,10 @@ class PerRequestTestCase(unittest.TestCase):
             
     def test_import_conf(self):
 
-        # create a dummy module
-        f = open(os.path.join(DOCUMENT_ROOT, "dummymodule.py"), "w")
-        f.write("# nothing here")
-        f.close()
-
         # configure apache to import it at startup
         c = Container(PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                       PythonImport("dummymodule test_import"),
+                      PythonImport("dummymodule::function test_import"),
                       VirtualHost("*",
                                   ServerName("test_import"),
                                   DocumentRoot(DOCUMENT_ROOT),

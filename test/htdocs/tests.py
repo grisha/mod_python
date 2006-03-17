@@ -886,7 +886,11 @@ def import_test(req):
 
     import sys
     if sys.modules.has_key("dummymodule"):
-        req.write("test ok")
+        if not apache.main_server.get_options().has_key("dummymodule::function"):
+            req.log_error("dummymodule::function not executed")
+            req.write("test failed")
+        else:
+            req.write("test ok")
     else:
         req.log_error("dummymodule not found in sys.modules")
         req.write("test failed")

@@ -59,6 +59,11 @@
       The \samp{apache.interpreter} and \samp{apache.main_server} attributes
       have been made publically available. These were previously private and
       not part of the public API.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-118]{MODPYTHON-118})
+      Now possible using the \code{PythonImport} directive to specify the name
+      of a function contained in the module to be called once the designated
+      module has been imported.
   \end{itemize}
 
   Improvements
@@ -146,6 +151,11 @@
       shutdown. This was being done though from within the context of a
       signal handler, which is generally unsafe and would cause the process
       to lock up. This function is no longer called on child process shutdown.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-113]{MODPYTHON-113})
+      The \code{PythonImport} directive now uses the
+      \code{apache.import_module()} function to import modules to avoid
+      reloading problems when same module is imported from a handler.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
