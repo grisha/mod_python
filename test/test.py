@@ -2276,9 +2276,10 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_server_side_include"),
                         DocumentRoot(DOCUMENT_ROOT),
                         Directory(DOCUMENT_ROOT,
+                                  Options("+Includes"),
                                   AddType("text/html .shtml"),
                                   AddOutputFilter("INCLUDES .shtml"),
-                                  Options("+Includes"),
+                                  PythonFixupHandler("tests::server_side_include"),
                                   PythonDebug("On")))
         return str(c)
 

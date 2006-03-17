@@ -1089,6 +1089,10 @@ def test_generator(req):
         yield c
         c += 1
 
+def server_side_include(req):
+    req.ssi_globals = { "data": "test" }
+    return apache.OK
+
 class InstanceTest(object):
     def __call__(self, req):
         return "test callable instance ok"
