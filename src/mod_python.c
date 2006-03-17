@@ -2227,6 +2227,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     hl_entry *hle;
     py_config *conf = ap_get_module_config(s->module_config, &python_module);
     py_global_config *glb;
+    PyObject *resultobject = NULL;
 
     /* accordig Py C Docs we must do this after forking */
 
@@ -2342,15 +2343,26 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
         }
 
     success:
-        /* now import the specified module */
-        if (! PyImport_ImportModule((char *)module_name)) {
+        /* 
+         * Call into Python to do import.
+         * This is the C equivalent of
+         * >>> resultobject = obCallBack.ImportDispatch(module_name)
+         */
+        resultobject = PyObject_CallMethod(idata->obcallback,
+                                           "ImportDispatch", "s", module_name);
+
+        if (!resultobject) {
             if (PyErr_Occurred()) {
                 PyErr_Print();
                 fflush(stderr); 
             }
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                         "directive_PythonImport: error importing %s", (!module_name) ? "<null>" : module_name);
+                         "directive_PythonImport: error importing %s",
+                         (!module_name) ? "<null>" : module_name);
         }
+
+        /* clean up */
+        Py_XDECREF(resultobject);
 
         /* release interpreter */
         release_interpreter();

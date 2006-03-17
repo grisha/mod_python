@@ -452,13 +452,20 @@ server config\\
 mod_python.c
 
 Tells the server to import the Python module module at process startup
-under the specified interpreter name. This is useful for
-initialization tasks that could be time consuming and should not be
-done at the request processing time, e.g. initializing a database
-connection.
+under the specified interpreter name. The import takes place at child
+process initialization, so the module will actually be imported once for
+every child process spawned.
 
-The import takes place at child process initialization, so the module
-will actually be imported once for every child process spawned.
+This is useful for initialization tasks that could be time consuming and
+should not be done at the time of processing a request, e.g. initializing a
+database connection. Where such initialization code could fail and cause
+the importing of the module to fail, it should be placed in its own function
+and the alternate syntax used:
+
+\code{PythonImport \emph{module::function} \emph{interpreter_name}}
+
+The named function will be called only after the module has been imported
+successfully. The function will be called with no arguments.
 
 \begin{notice}
   At the time when the import takes place, the configuration is not
