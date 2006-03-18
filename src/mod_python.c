@@ -1721,7 +1721,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                       "#python used but not allowed in %s", file);
 
-        SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
+        CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
         return APR_SUCCESS;
     }
 
