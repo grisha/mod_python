@@ -304,7 +304,7 @@ class SimpleTestCase(unittest.TestCase):
             
         log("    req.unparsed_uri: %s" % `req.unparsed_uri`)
         if req.unparsed_uri != "/tests.py":
-            self.fail("req.unparse_uri should be '/tests.py'")
+            self.fail("req.unparsed_uri should be '/tests.py'")
             
         log("    req.uri: %s" % `req.uri`)
         if req.uri != "/tests.py":
@@ -327,12 +327,12 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("req.args should be None")
             
         log("    req.finfo: %s" % `req.finfo`)
-        if req.finfo[10] and (req.finfo[10] != req.canonical_filename):
-            self.fail("req.finfo[10] should be the (canonical) filename")
+        if req.finfo[apache.FINFO_FNAME] and (req.finfo[apache.FINFO_FNAME] != req.canonical_filename):
+            self.fail("req.finfo[apache.FINFO_FNAME] should be the (canonical) filename")
         
         log("    req.parsed_uri: %s" % `req.parsed_uri`)
-        if req.parsed_uri[6] != '/tests.py':
-            self.fail("req.parsed_uri[6] should be '/tests.py'")
+        if req.parsed_uri[apache.URI_PATH] != '/tests.py':
+            self.fail("req.parsed_uri[apache.URI_PATH] should be '/tests.py'")
             
         log("    req.used_path_info: %s" % `req.used_path_info`)
         if req.used_path_info != 2:

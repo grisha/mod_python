@@ -1495,6 +1495,23 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         }
         self->request_rec->filename = 
             apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+
+        /* stat file to update finfo */
+        /* XXX Defer enabling of this for now. See MODPYTHON-128.
+        if (apr_stat(&self->request_rec->finfo, self->request_rec->filename, 
+            APR_FINFO_NORM, self->request_rec->pool) != APR_SUCCESS) {
+            self->request_rec->finfo.filetype = APR_NOFILE;
+        } 
+        */
+        return 0;
+    }
+    else if (strcmp(name, "canonical_filename") == 0) {
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "canonical_filename must be a string");
+            return -1;
+        }
+        self->request_rec->canonical_filename = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
     else if (strcmp(name, "path_info") == 0) {
@@ -1720,7 +1737,7 @@ static PyGetSetDef request_getsets[] = {
     {"unparsed_uri",  (getter)getreq_recmbr, NULL, "The URI without any parsing performed", "unparsed_uri"},
     {"uri",           (getter)getreq_recmbr, (setter)setreq_recmbr, "The path portion of URI", "uri"},
     {"filename",      (getter)getreq_recmbr, (setter)setreq_recmbr, "The file name on disk that this request corresponds to", "filename"},
-    {"canonical_filename", (getter)getreq_recmbr, NULL, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
+    {"canonical_filename", (getter)getreq_recmbr, (setter)setreq_recmbr, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
     {"path_info",     (getter)getreq_recmbr, (setter)setreq_recmbr, "Path_info, if any", "path_info"},
     {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
     {"finfo",         (getter)getreq_rec_fi, NULL, "File information", "finfo"},
