@@ -111,7 +111,8 @@
       This value is accessed using \code{req.finfo[apache.FINFO_FILETYPE]}.
       New constants \code{apache.APR_NOFILE}, \code{apache.APR_REG},
       \code{apache.APR_DIR} etc, have been added for comparing with the
-      \code{filetype} value.
+      \code{filetype} value. The \code{req.canonical_filename} attribute
+      was also made writable.
   \end{itemize}
 
   Bug Fixes
