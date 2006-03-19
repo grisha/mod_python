@@ -896,6 +896,15 @@ require valid-user
   client.
 \end{methoddesc}
 
+\begin{methoddesc}[request]{set_etag}{}
+  Sets the outgoing \samp{ETag} header.
+\end{methoddesc}
+
+\begin{methoddesc}[request]{set_last_modified}{}
+  Sets the outgoing \samp{Last-Modified} header based on value of
+  \code{mtime} attribute.
+\end{methoddesc}
+
 \begin{methoddesc}[request]{ssl_var_lookup}{var_name}
   Looks up the value of the named SSL variable.  This method queries
   the mod_ssl Apache module directly, and may therefore be used in
@@ -928,6 +937,11 @@ require valid-user
   renegotiated at any time during a request.
   \end{notice}
 
+\end{methoddesc}
+
+\begin{methoddesc}[request]{update_mtime}{dependency_mtime}
+  If \var{dependency_mtime} is later than the value in the \code{mtime}
+  attribute, sets the attribute to the new value.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{write}{string\optional{, flush=1}}

@@ -784,6 +784,15 @@ def req_no_cache(req):
     req.write('test ok')
     return apache.OK
 
+def req_update_mtime(req):
+    assert(req.mtime == 0.0)
+    req.update_mtime(100.0)
+    assert(req.mtime == 100.0)
+    req.set_etag()
+    req.set_last_modified()
+    req.write('test ok')
+    return apache.OK
+
 def util_redirect(req):
     from mod_python import util
     if req.main:

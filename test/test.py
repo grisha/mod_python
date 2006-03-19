@@ -1048,6 +1048,38 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail(`rsp`)
 
+    def test_req_update_mtime_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_update_mtime"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_update_mtime"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_update_mtime(self):
+
+        print "\n  * Testing req.update_mtime"
+        
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_req_update_mtime", PORT))
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if response.getheader("etag", None) is None:
+            self.fail(`response.getheader("etag", None)`)
+
+        if response.getheader("last-modified", None) is None:
+            self.fail(`response.getheader("last-modified", None)`)
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_util_redirect_conf(self):
 
         c = VirtualHost("*",
@@ -2378,6 +2410,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile3"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_handler"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_no_cache"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_update_mtime"))
         perRequestSuite.addTest(PerRequestTestCase("test_util_redirect"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_server_get_config"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_server_get_options"))

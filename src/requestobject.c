@@ -1193,6 +1193,53 @@ static PyObject * req_set_content_length(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.set_etag(request self)
+ **
+ *      sets the outgoing ETag header
+ */
+
+static PyObject * req_set_etag(requestobject *self, PyObject *args)
+{
+    ap_set_etag(self->request_rec);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** request.set_last_modified(request self)
+ **
+ *      set the Last-modified header
+ */
+
+static PyObject * req_set_last_modified(requestobject *self, PyObject *args)
+{
+    ap_set_last_modified(self->request_rec);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
+ ** request.update_mtime(request self, long mtime)
+ **
+ *      updates mtime attribute if newer
+ */
+
+static PyObject * req_update_mtime(requestobject *self, PyObject *args)
+{
+    double mtime;
+
+    if (! PyArg_ParseTuple(args, "d", &mtime))
+        return NULL;  /* bad args */
+
+    ap_update_mtime(self->request_rec, apr_time_from_sec(mtime));
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
  ** request.write(request self, string what, flush=1)
  **
  *      write output to the client
@@ -1334,7 +1381,10 @@ static PyMethodDef request_methods[] = {
     {"send_http_header",      (PyCFunction) req_send_http_header,      METH_NOARGS},
     {"sendfile",              (PyCFunction) req_sendfile,              METH_VARARGS},
     {"set_content_length",    (PyCFunction) req_set_content_length,    METH_VARARGS},
+    {"set_etag",              (PyCFunction) req_set_etag,              METH_NOARGS},
+    {"set_last_modified",     (PyCFunction) req_set_last_modified,     METH_NOARGS},
     {"ssl_var_lookup",        (PyCFunction) req_ssl_var_lookup,        METH_VARARGS},
+    {"update_mtime",          (PyCFunction) req_update_mtime,          METH_VARARGS},
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
