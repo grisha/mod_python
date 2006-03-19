@@ -732,6 +732,34 @@ DL_EXPORT(void) init_apache()
     o = PyInt_FromLong(AP_CONN_KEEPALIVE);
     PyDict_SetItemString(d, "AP_CONN_KEEPALIVE", o);
     Py_DECREF(o);
+
+    o = PyInt_FromLong(APR_NOFILE);
+    PyDict_SetItemString(d, "APR_NOFILE", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_REG);
+    PyDict_SetItemString(d, "APR_REG", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_DIR);
+    PyDict_SetItemString(d, "APR_DIR", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_CHR);
+    PyDict_SetItemString(d, "APR_CHR", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_BLK);
+    PyDict_SetItemString(d, "APR_BLK", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_PIPE);
+    PyDict_SetItemString(d, "APR_PIPE", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_LNK);
+    PyDict_SetItemString(d, "APR_LNK", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_SOCK);
+    PyDict_SetItemString(d, "APR_SOCK", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(APR_UNKFILE);
+    PyDict_SetItemString(d, "APR_UNKFILE", o);
+    Py_DECREF(o);
 }
 
 PyObject *get_ServerReturn() 

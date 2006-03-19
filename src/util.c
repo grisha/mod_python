@@ -100,7 +100,10 @@ PyObject *tuple_from_finfo(apr_finfo_t *f)
         return Py_None;
     }
       
-    t = PyTuple_New(12);
+    t = PyTuple_New(13);
+
+    /* this should have been first, but was added later */
+    PyTuple_SET_ITEM(t, 12, PyInt_FromLong(f->filetype));
 
     if (f->valid & APR_FINFO_PROT) {
         PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f->protection));

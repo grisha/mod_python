@@ -104,6 +104,14 @@
       output after writing the content of the response back to the request
       object. By not flushing output it is now possible to use the
       "CONTENT_LENGTH" output filter to add a "Content-Length" header.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-128]{MODPYTHON-128})
+      Added the \code{filetype} attribute of the Apache \code{finfo}
+      structure to the tuple returned when accessing \code{req.finfo}.
+      This value is accessed using \code{req.finfo[apache.FINFO_FILETYPE]}.
+      New constants \code{apache.APR_NOFILE}, \code{apache.APR_REG},
+      \code{apache.APR_DIR} etc, have been added for comparing with the
+      \code{filetype} value.
   \end{itemize}
 
   Bug Fixes
