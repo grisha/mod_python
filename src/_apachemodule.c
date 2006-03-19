@@ -703,7 +703,7 @@ struct PyMethodDef _apache_module_methods[] = {
 
 DL_EXPORT(void) init_apache()
 {
-    PyObject *m, *d;
+    PyObject *m, *d, *o;
 
     /* initialize types XXX break windows? */
     MpTable_Type.ob_type = &PyType_Type; 
@@ -723,6 +723,15 @@ DL_EXPORT(void) init_apache()
 
     PyDict_SetItemString(d, "table", (PyObject *)&MpTable_Type);
 
+    o = PyInt_FromLong(AP_CONN_UNKNOWN);
+    PyDict_SetItemString(d, "AP_CONN_UNKNOWN", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(AP_CONN_CLOSE);
+    PyDict_SetItemString(d, "AP_CONN_CLOSE", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(AP_CONN_KEEPALIVE);
+    PyDict_SetItemString(d, "AP_CONN_KEEPALIVE", o);
+    Py_DECREF(o);
 }
 
 PyObject *get_ServerReturn() 

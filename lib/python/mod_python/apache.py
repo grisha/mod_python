@@ -890,6 +890,7 @@ HTTP_EXPECTATION_FAILED           = 417
 HTTP_UNPROCESSABLE_ENTITY         = 422
 HTTP_LOCKED                       = 423
 HTTP_FAILED_DEPENDENCY            = 424
+HTTP_UPGRADE_REQUIRED             = 426
 HTTP_INTERNAL_SERVER_ERROR        = 500
 HTTP_NOT_IMPLEMENTED              = 501
 HTTP_BAD_GATEWAY                  = 502
@@ -969,8 +970,9 @@ URI_FRAGMENT = 8
 
 # for req.proxyreq
 PROXYREQ_NONE = 0       # No proxy
-PROXYREQ_PROXY = 1    # Standard proxy
+PROXYREQ_PROXY = 1      # Standard proxy
 PROXYREQ_REVERSE = 2    # Reverse proxy
+PROXYREQ_RESPONSE = 3   # Origin response
 
 # methods for req.allow_method()
 M_GET = 0               # RFC 2616: HTTP
@@ -1031,3 +1033,18 @@ AP_MPMQ_MAX_SPARE_THREADS  = 10 # Max # of spare threads
 AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon
 AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config
 
+# magic mime types
+CGI_MAGIC_TYPE = "application/x-httpd-cgi" 
+INCLUDES_MAGIC_TYPE = "text/x-server-parsed-html" 
+INCLUDES_MAGIC_TYPE3 = "text/x-server-parsed-html3" 
+DIR_MAGIC_TYPE = "httpd/unix-directory" 
+
+# for req.read_body
+REQUEST_NO_BODY = 0 
+REQUEST_CHUNKED_ERROR = 1 
+REQUEST_CHUNKED_DECHUNK = 2 
+
+# for req.connection.keepalive
+AP_CONN_UNKNOWN = _apache.AP_CONN_UNKNOWN
+AP_CONN_CLOSE = _apache.AP_CONN_CLOSE
+AP_CONN_KEEPALIVE = _apache.AP_CONN_KEEPALIVE
