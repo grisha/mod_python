@@ -352,6 +352,8 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("get_config return should show PythonDebug 1")
 
         log("req.get_options(): %s" % `req.get_options()`)
+        for option in apache.main_server.get_options().keys():
+            del req.get_options()[option]
         if req.get_options() != apache.table({"testing":"123"}):
             self.fail("get_options() should contain 'testing':'123', contains %s"%req.get_options().items())
 

@@ -838,6 +838,14 @@ def init(name, server):
 
     global _callback
     _callback = CallBack()
+
+    options = main_server.get_options()
+    interpreters = options.get('mod_python.future.importer', None)
+    if interpreters:
+        interpreters = map(lambda x: x.strip(), interpreters.split(','))
+        if '*' in interpreters or interpreter in interpreters:
+            from mod_python import importer
+
     return _callback
 
 ## Some functions made public
