@@ -187,13 +187,13 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 #ifdef WITH_THREAD
     PyEval_ReleaseLock();
 #endif
-#if APR_HAS_THREADS
-    apr_thread_mutex_unlock(interpreters_lock);
-#endif
 
     if (! idata) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
                      "get_interpreter: cannot get interpreter data (no more memory?)");
+#if APR_HAS_THREADS
+        apr_thread_mutex_unlock(interpreters_lock);
+#endif
         return NULL;
     }
 
@@ -219,9 +219,16 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
             PyThreadState_Delete(tstate);
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
                       "get_interpreter: no interpreter callback found.");
+#if APR_HAS_THREADS
+            apr_thread_mutex_unlock(interpreters_lock);
+#endif
             return NULL;
         }
     }
+
+#if APR_HAS_THREADS
+    apr_thread_mutex_unlock(interpreters_lock);
+#endif
 
     return idata;
 }

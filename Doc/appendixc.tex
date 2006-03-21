@@ -185,6 +185,11 @@
       \code{apache.HTTP_UPGRADE_REQUIRED}. Also added new constants for
       Apache magic mime types and values for interpreting the
       \code{req.connection.keepalive} and \code{req.read_body} members.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-150]{MODPYTHON-150})
+      In a multithread MPM, the \code{apache.init()} function could be called
+      more than once for a specific interpreter instance whereas it should
+      only be called once.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
