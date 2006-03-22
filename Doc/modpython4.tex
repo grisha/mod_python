@@ -1644,7 +1644,7 @@ Access to form data is provided via the \class{FieldStorage}
 class. This class is similar to the standard library module
 \module{cgi} \class{FieldStorage}.
 
-\begin{classdesc}{FieldStorage}{req\optional{, keep_blank_values, strict_parsing}}
+\begin{classdesc}{FieldStorage}{req\optional{, keep_blank_values, strict_parsing, file_callback, field_callback}}
   This class provides uniform access to HTML form data submitted by the
   client.  \var{req} is an instance of the mod_python request object.
 
@@ -1654,6 +1654,14 @@ class. This class is similar to the standard library module
   ignored as if they were not included.
 
   The optional argument \var{strict_parsing} is not yet implemented.
+
+  The optional argument \var{file_callback} allows the application to override
+  both file creation/deletion semantics and location. See
+  \ref{pyapi-util-fstor-examples} ``FieldStorage Examples'' for additional
+  information. \emph{New in version 3.2}
+
+  The optional argument \var{field_callback} allows the application to override
+  both the creation/deletion semantics and behaviour. \emph{New in version 3.2}
 
   During initialization, \class{FieldStorage} class reads all of the
   data provided by the client. Since all data provided by the client is
@@ -1721,6 +1729,90 @@ class. This class is similar to the standard library module
   \end{methoddesc}
 
 \end{classdesc}
+
+\subsection{FieldStorage Examples\label{pyapi-util-fstor-examples}}
+
+  The following examples demonstrate how to use the \var{file_callback} 
+  parameter of the \class{FieldStorage} constructor to control file
+  object creation. The \class{Storage} classes created in both 
+  examples derive from FileType, thereby providing extended file
+  functionality.
+
+  These examples are provided for demonstration purposes only. The 
+  issue of temporary file location and security must be considered
+  when providing such overrides with mod_python in production use.
+
+\begin{description}
+  \item[Simple file control using class constructor]
+
+    This example uses the \class{FieldStorage} class constructor to
+    create the file object, allowing simple control. It is not 
+    advisable to add class variables to this if serving multiple sites
+    from apache. In that case use the factory method instead.
+
+\begin{verbatim}
+class Storage(file):
+
+    def __init__(self, advisory_filename):
+        self.advisory_filename = advisory_filename
+        self.delete_on_close = True
+        self.already_deleted = False
+        self.real_filename = '/someTempDir/thingy-unique-thingy'
+        super(Storage, self).__init__(self.real_filename, 'w+b')
+
+    def close(self):
+        if self.already_deleted:
+            return
+        super(Storage, self).close()
+        if self.delete_on_close:
+            self.already_deleted = True
+            os.remove(self.real_filename)
+
+request_data = util.FieldStorage(request, keep_blank_values=True, file_callback=Storage)
+\end{verbatim}
+
+
+  \item[Advanced file control using object factory]
+
+    Using a object factory can provide greater control over the
+    constructor parameters.
+
+\begin{verbatim}
+import os
+
+class Storage(file):
+
+    def __init__(self, directory, advisory_filename):
+        self.advisory_filename = advisory_filename
+        self.delete_on_close = True
+        self.already_deleted = False
+        self.real_filename = directory + '/thingy-unique-thingy'
+        super(Storage, self).__init__(self.real_filename, 'w+b')
+
+    def close(self):
+        if self.already_deleted:
+            return
+        super(Storage, self).close()
+        if self.delete_on_close:
+            self.already_deleted = True
+            os.remove(self.real_filename)
+
+class StorageFactory:
+
+    def __init__(self, directory):
+        self.dir = directory
+
+    def create(self, advisory_filename):
+        return Storage(self.dir, advisory_filename)
+
+file_factory = StorageFactory(someDirectory)
+[...sometime later...]
+request_data = util.FieldStorage(request, keep_blank_values=True,
+                                file_callback=file_factory.create)
+\end{verbatim}
+
+\end{description}
+
 
 \subsection{Field class\label{pyapi-util-fstor-fld}}
 

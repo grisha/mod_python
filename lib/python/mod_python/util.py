@@ -48,19 +48,8 @@ readBlockSize = 65368
 """
 
 class Field:
-   def __init__(self, name, file, ctype, type_options,
-                disp, disp_options, headers = {}):
+   def __init__(self, name):
        self.name = name
-       self.file = file
-       self.type = ctype
-       self.type_options = type_options
-       self.disposition = disp
-       self.disposition_options = disp_options
-       if disp_options.has_key("filename"):
-           self.filename = disp_options["filename"]
-       else:
-           self.filename = None
-       self.headers = headers
 
    def __repr__(self):
        """Return printable representation."""
@@ -81,13 +70,34 @@ class Field:
        self.file.close()
 
 class StringField(str):
-   """ This class is basically a string with
-   a value attribute for compatibility with std lib cgi.py
-   """
+    """ This class is basically a string with
+    added attributes for compatibility with std lib cgi.py. Basically, this
+    works the opposite of Field, as it stores its data in a string, but creates
+    a file on demand. Field creates a value on demand and stores data in a file.
+    """
+    filename = None
+    headers = {}
+    ctype = "text/plain"
+    type_options = {}
+    disposition = None
+    disp_options = None
+    
+    # I wanted __init__(name, value) but that does not work (apparently, you
+    # cannot subclass str with a constructor that takes >1 argument)
+    def __init__(self, value):
+        '''Create StringField instance. You'll have to set name yourself.'''
+        str.__init__(self, value)
+        self.value = value
 
-   def __init__(self, str=""):
-       str.__init__(self, str)
-       self.value = self.__str__()
+    def __getattr__(self, name):
+        if name != 'file':
+            raise AttributeError, name
+        self.file = cStringIO.StringIO(self.value)
+        return self.file
+        
+    def __repr__(self):
+       """Return printable representation (to pass unit tests)."""
+       return "Field(%s, %s)" % (`self.name`, `self.value`)
 
 class FieldStorage:
 
@@ -103,8 +113,7 @@ class FieldStorage:
        if req.args:
            pairs = parse_qsl(req.args, keep_blank_values)
            for pair in pairs:
-               file = cStringIO.StringIO(pair[1])
-               self.list.append(Field(pair[0], file, "text/plain", {}, None, {}))
+               self.add_field(pair[0], pair[1])
 
        if req.method != "POST":
            return
@@ -123,9 +132,7 @@ class FieldStorage:
        if ctype.startswith("application/x-www-form-urlencoded"):
            pairs = parse_qsl(req.read(clen), keep_blank_values)
            for pair in pairs:
-               # TODO : isn't this a bit heavyweight just for form fields ?
-               file = cStringIO.StringIO(pair[1])
-               self.list.append(Field(pair[0], file, "text/plain", {}, None, {}))
+               self.add_field(pair[0], pair[1])
            return
 
        if not ctype.startswith("multipart/"):
@@ -205,32 +212,43 @@ class FieldStorage:
            else:
                name = None
 
+           # create a file object
            # is this a file?
            if disp_options.has_key("filename"):
                if file_callback and callable(file_callback):
                    file = file_callback(disp_options["filename"])
                else:
-                   file = self.make_file()
+                   file = tempfile.TemporaryFile("w+b")
            else:
                if field_callback and callable(field_callback):
                    file = field_callback()
                else:
-                   file = self.make_field()
+                   file = cStringIO.StringIO()
 
            # read it in
-           end_of_stream = self.read_to_boundary(req, boundary, file)
+           self.read_to_boundary(req, boundary, file)
            file.seek(0)
-
+ 
            # make a Field
-           field = Field(name, file, ctype, type_options, disp, disp_options, headers)
-
+           if disp_options.has_key("filename"):
+               field = Field(name)
+               field.filename = disp_options["filename"]
+           else:
+               field = StringField(file.read())
+               field.name = name
+           field.file = file
+           field.type = ctype
+           field.type_options = type_options
+           field.disposition = disp
+           field.disposition_options = disp_options
+           field.headers = headers
            self.list.append(field)
 
-   def make_file(self):
-       return tempfile.TemporaryFile("w+b")
-
-   def make_field(self):
-       return cStringIO.StringIO()
+   def add_field(self, key, value):
+       """Insert a field as key/value pair"""
+       item = StringField(value)
+       item.name = key
+       self.list.append(item)
 
    def read_to_boundary(self, req, boundary, file):
         previous_delimiter = None
@@ -283,18 +301,7 @@ class FieldStorage:
 
    def __getitem__(self, key):
        """Dictionary style indexing."""
-       if self.list is None:
-           raise TypeError, "not indexable"
-       found = []
-       for item in self.list:
-           if item.name == key:
-               if isinstance(item.file, FileType) or \
-                      isinstance(getattr(item.file, 'file', None), FileType):
-                   found.append(item)
-               else:
-                   found.append(StringField(item.value))
-       if not found:
-           raise KeyError, key
+       found = self.dictionary[key]
        if len(found) == 1:
            return found[0]
        else:
@@ -303,56 +310,56 @@ class FieldStorage:
    def get(self, key, default):
        try:
            return self.__getitem__(key)
-       except KeyError:
+       except (TypeError, KeyError):
            return default
 
    def keys(self):
        """Dictionary style keys() method."""
-       if self.list is None:
-           raise TypeError, "not indexable"
-       keys = []
-       for item in self.list:
-           if item.name not in keys: keys.append(item.name)
-       return keys
+       return self.dictionary.keys()
 
    def has_key(self, key):
        """Dictionary style has_key() method."""
-       if self.list is None:
-           raise TypeError, "not indexable"
-       for item in self.list:
-           if item.name == key: return 1
-       return 0
+       return (key in self.dictionary)
 
    __contains__ = has_key
 
    def __len__(self):
        """Dictionary style len(x) support."""
-       return len(self.keys())
+       return len(self.dictionary.keys())
 
    def getfirst(self, key, default=None):
        """ return the first value received """
-       for item in self.list:
-           if item.name == key:
-               if isinstance(item.file, FileType) or \
-                      isinstance(getattr(item.file, 'file', None), FileType):
-                   return item
-               else:
-                   return StringField(item.value)
-       return default
+       try:
+           return self.dictionary[key][0]
+       except KeyError:
+           return default
 
    def getlist(self, key):
        """ return a list of received values """
-       if self.list is None:
+       try:
+           return self.dictionary[key]
+       except KeyError:
+           return []
+           
+   def items(self):
+       """Dictionary-style items(), except that items are returned in the same
+       order as they were supplied in the form."""
+       return [(item.name, item) for item in self.list]
+       
+   def __getattr__(self, name):
+       if name != 'dictionary':
+          raise AttributeError, name
+       list = self.list
+       if list is None:
            raise TypeError, "not indexable"
-       found = []
-       for item in self.list:
-           if item.name == key:
-               if isinstance(item.file, FileType) or \
-                      isinstance(getattr(item.file, 'file', None), FileType):
-                   found.append(item)
-               else:
-                   found.append(StringField(item.value))
-       return found
+       result = {}
+       self.dictionary = result
+       for item in list:
+           if item.name in result:
+              result[item.name].append(item)
+           else:
+              result[item.name] = [item]
+       return result
 
 def parse_header(line):
    """Parse a Content-type like header.
