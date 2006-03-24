@@ -1454,8 +1454,6 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     /* get configuration */
     conf = (py_config *) ap_get_module_config(req->per_dir_config, 
                                                   &python_module);
-    req_config = (py_req_config *) ap_get_module_config(req->request_config,
-                                                        &python_module);
 
     /* determine interpreter to use */
     interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, is_input);
@@ -1471,6 +1469,9 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 
     /* create/acquire request object */
     request_obj = get_request_object(req, interp_name, 0);
+
+    req_config = (py_req_config *) ap_get_module_config(req->request_config,
+                                                        &python_module);
 
     /* the name of python function to call */
     if (ctx->name) {
