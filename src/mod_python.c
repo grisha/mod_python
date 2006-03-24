@@ -1486,8 +1486,10 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
             fh = apr_hash_get(conf->out_filters, f->frec->name, APR_HASH_KEY_STRING);
     }
 
-    if (!fh)
+    if (!fh) {
+        release_interpreter();
         return DECLINED;
+    }
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
