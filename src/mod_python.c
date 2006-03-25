@@ -1487,8 +1487,10 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     }
 
     if (!fh) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                      "python_filter: Could not find registered filter.");
         release_interpreter();
-        return DECLINED;
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     /* create filter */
