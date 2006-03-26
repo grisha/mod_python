@@ -25,6 +25,7 @@ import pdb
 import stat
 import imp
 import types
+import cgi
 import _apache
 
 try:
@@ -467,7 +468,7 @@ class CallBack:
 
                     s = '\n<pre>\nMod_python error: "%s %s"\n\n' % (phase, hname)
                     for e in traceback.format_exception(etype, evalue, etb):
-                        s = s + e + '\n'
+                        s = s + cgi.escape(e) + '\n'
                     s = s + "</pre>\n"
 
                     if filter:
