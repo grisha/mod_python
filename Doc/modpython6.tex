@@ -13,7 +13,7 @@ To use the handler, you need the following lines in your configuration
   <Directory /some/path>
     SetHandler mod_python 
     PythonHandler mod_python.publisher
-    </Directory>
+  </Directory>
 \end{verbatim}
 
 This handler allows access to functions and variables within a module
@@ -24,7 +24,7 @@ via URL's. For example, if you have the following module, called
   """ Publisher example """
 
   def say(req, what="NOTHING"):
-  return "I am saying %s" % what
+      return "I am saying %s" % what
 
 \end{verbatim}
 
@@ -87,8 +87,8 @@ For example, given the following configuration:
   DocumentRoot /some/dir
 
   <Directory /some/dir>
-  SetHandler mod_python
-  PythonHandler mod_python.publisher
+    SetHandler mod_python
+    PythonHandler mod_python.publisher
   </Directory>
 \end{verbatim}
 
@@ -96,12 +96,11 @@ And the following \file{/some/dir/index.py} file:
 
 \begin{verbatim}
   def index(req):
-
-    return "We are in index()"
+      return "We are in index()"
 
   def hello(req):
+      return "We are in hello()"
 
-    return "We are in hello()"
 \end{verbatim}
 
 Then:
@@ -183,20 +182,20 @@ can access the \code{hello} function:
 
   def __auth__(req, user, passwd):
 
-  if user == "eggs" and passwd == "spam" or \
-  user == "joe" and passwd == "eoj":
-  return 1
-  else:
-  return 0
+      if user == "eggs" and passwd == "spam" or \
+          user == "joe" and passwd == "eoj":
+          return 1
+      else:
+          return 0
 
   def __access__(req, user):
-  if user == "eggs":
-  return 1
-  else:
-  return 0
+      if user == "eggs":
+          return 1
+      else:
+          return 0
 
   def hello(req):
-  return "hello"
+      return "hello"
 
 \end{verbatim}
 
@@ -209,7 +208,7 @@ Here is the same functionality, but using an alternative technique:
   __access__ = ["eggs"]
 
   def hello(req):
-  return "hello"
+      return "hello"
 
 \end{verbatim}
 
@@ -220,16 +219,16 @@ the function, e.g.:
 \begin{verbatim}
   def sensitive(req):
 
-  def __auth__(req, user, password):
-  if user == 'spam' and password == 'eggs':
-  # let them in
-  return 1
-  else:
-  # no access
-  return 0
+      def __auth__(req, user, password):
+          if user == 'spam' and password == 'eggs':
+              # let them in
+              return 1
+          else:
+              # no access
+              return 0
 
-  # something involving sensitive information
-  return 'sensitive information`
+      # something involving sensitive information
+      return 'sensitive information`
 \end{verbatim}
 
 Note that this technique will also work if \code{__auth__} or
