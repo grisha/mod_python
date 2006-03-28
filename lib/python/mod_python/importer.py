@@ -388,7 +388,7 @@ class _ModuleCache:
         # least record the fact that the module is a
         # child of the parent.
 
-        if modules:
+        if modules is not None:
             if modules.has_key(label):
                 if context:
                     context.children[label] = time.time()
@@ -522,7 +522,7 @@ class _ModuleCache:
                 # of a cyclical import, avoids a never ending
                 # recursive loop.
 
-                if modules:
+                if modules is not None:
                     modules[label] = module
 
                 # Perform actual import of the module.
@@ -602,7 +602,7 @@ class _ModuleCache:
                 # of a cyclical import, avoids a never ending
                 # recursive loop.
 
-                if modules:
+                if modules is not None:
                     modules[label] = module
 
                 # If this is a child import of some parent
@@ -651,11 +651,6 @@ class _ModuleCache:
 
             if self._frozen or not autoreload:
                 return (cache, False)
-
-            # Check if module has been marked as dirty.
-
-            if cache.mtime == 0:
-                return (cache, True)
 
             # Has modification time changed.
 
@@ -748,7 +743,7 @@ class _ModuleCache:
             # as can cause problems. Rely on the parent
             # being modified to cause a reload.
 
-            if modules:
+            if modules is not None:
                 modules[current.label] = current.module
 
             return False
@@ -794,7 +789,7 @@ class _ModuleCache:
 
         visited[current.label] = current
 
-        if modules:
+        if modules is not None:
             modules[current.label] = current.module
 
         return False
