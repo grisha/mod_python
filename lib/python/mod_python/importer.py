@@ -18,7 +18,7 @@
  # 
  # The code in this file originally donated by Graham Dumpleton.
  # 
- # $Id: cache.py 374268 2006-02-02 05:31:45Z nlehuen $
+ # $Id$
 
 from mod_python import apache
 from mod_python import publisher
