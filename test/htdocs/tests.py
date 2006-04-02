@@ -702,6 +702,29 @@ def req_readlines(req):
 
     return apache.OK
 
+def req_discard_request_body(req):
+
+    s = req.read(10)
+    if s != '1234567890':
+        req.log_error('read() #1 returned %s' % `s`)
+        req.write('test failed')
+        return apache.OK
+
+    status = req.discard_request_body()
+    if status != apache.OK:
+        req.log_error('discard_request_body() returned %d' % status)
+        return status
+
+    s = req.read()
+    if s:
+        req.log_error('read() #2 returned %s' % `s`)
+        req.write('test failed')
+        return apache.OK
+
+    req.write('test ok')
+
+    return apache.OK
+
 def req_register_cleanup(req):
 
     req.cleanup_data = "req_register_cleanup test ok"

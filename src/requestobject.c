@@ -510,6 +510,17 @@ static PyObject *req_construct_url(requestobject *self, PyObject *args)
 }
 
 /**
+ ** request.discard_request_body(request self)
+ **
+ *      discard content supplied with request
+ */
+
+static PyObject * req_discard_request_body(requestobject *self)
+{
+    return PyInt_FromLong(ap_discard_request_body(self->request_rec));
+}
+
+/**
  ** request.get_addhandler_exts(request self)
  **
  *     Returns file extentions that were given as argument to AddHandler mod_mime
@@ -1358,6 +1369,7 @@ static PyMethodDef request_methods[] = {
     {"auth_name",             (PyCFunction) req_auth_name,             METH_NOARGS},
     {"auth_type",             (PyCFunction) req_auth_type,             METH_NOARGS},
     {"construct_url",         (PyCFunction) req_construct_url,         METH_VARARGS},
+    {"discard_request_body",  (PyCFunction) req_discard_request_body,  METH_NOARGS},
     {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"document_root",         (PyCFunction) req_document_root,         METH_NOARGS},
     {"flush",                 (PyCFunction) req_flush,                 METH_NOARGS},
