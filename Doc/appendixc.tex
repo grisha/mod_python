@@ -198,6 +198,12 @@
       Debug error page returned to client when an exception in a handler
       occurred wasn't escaping special HTML characters in the traceback or
       the details of the exception.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-120]{MODPYTHON-120})
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-121]{MODPYTHON-121})
+      Fixes to test suite so it will work on virtual hosting environments
+      where \code{localhost} doesn't resolve to \code{127.0.0.1} but the
+      actual IP address of the host.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
