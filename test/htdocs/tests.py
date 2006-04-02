@@ -460,6 +460,12 @@ class SimpleTestCase(unittest.TestCase):
         log = req.log_error
         conn = req.connection
 
+        try: 
+            import socket
+            localip = socket.gethostbyname("localhost") 
+        except: 
+            localip = "127.0.0.1"
+
         log("Examining connection memebers:")
 
         log("    connection.base_server: %s" % `conn.base_server`)
@@ -467,15 +473,15 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("conn.base_server should be same type as req.server")
         
         log("    connection.local_addr: %s" % `conn.local_addr`)
-        if not conn.local_addr[0] in ("127.0.0.1", "0.0.0.0"):
+        if not conn.local_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
             self.fail("conn.local_addr[0] should be '127.0.0.1' or '0.0.0.0'")
         
         log("    connection.remote_addr: %s" % `conn.remote_addr`)
-        if not conn.remote_addr[0] in ("127.0.0.1", "0.0.0.0"):
+        if not conn.remote_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
             self.fail("conn.remote_addr[0] should be '127.0.0.1' or '0.0.0.0'")
 
         log("    connection.remote_ip: %s" % `conn.remote_ip`)
-        if conn.remote_ip != "127.0.0.1":
+        if not conn.remote_ip in ("127.0.0.1", localip):
             self.fail("conn.remote_ip should be '127.0.0.1'")
 
         log("    connection.remote_host: %s" % `conn.remote_host`)
@@ -503,7 +509,7 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("conn.keepalives should be 1")
 
         log("    connection.local_ip: %s" % `conn.local_ip`)
-        if conn.local_ip != "127.0.0.1":
+        if not conn.local_ip in ("127.0.0.1", localip):
             self.fail("conn.local_ip should be '127.0.0.1'")
 
         log("    connection.local_host: %s" % `conn.local_host`)

@@ -1635,9 +1635,14 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_connectionhandler_conf(self):
 
+        try: 
+            localip = socket.gethostbyname("localhost") 
+        except: 
+            localip = "127.0.0.1"
+
         self.conport = findUnusedPort()
         c = str(Listen("%d" % self.conport)) + \
-            str(VirtualHost("127.0.0.1:%d" % self.conport,
+            str(VirtualHost("%s:%d" % (localip, self.conport),
                             SetHandler("mod_python"),
                             PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                             PythonConnectionHandler("tests::connectionhandler")))
