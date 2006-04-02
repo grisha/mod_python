@@ -2251,8 +2251,10 @@ delay.)
   \class{Cookie} (though even if not signed, the session id is
   generated to be very difficult to guess).
 
-  A session will timeout if it has not been accessed for more than
-  \var{timeout}, which defaults to 30 minutes. An attempt to load an
+  A session will timeout if it has not been accessed and a save performed,
+  within the \var{timeout} period. Upon a save occuring the time of last
+  access is updated and the period until the session will timeout be reset.
+  The default \var{timeout} period is 30 minutes. An attempt to load an
   expired session will result in a ``new'' session.
 
   The \var{lock} argument (defaults to 1) indicates whether locking
