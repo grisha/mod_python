@@ -873,6 +873,37 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != params):
             self.fail(`rsp`)
 
+    def test_req_discard_request_body_conf(self):
+
+        c = str(Timeout("5")) + \
+            str(VirtualHost("*",
+                        ServerName("test_req_discard_request_body"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_discard_request_body"),
+                                  PythonDebug("On"))))
+        return c
+
+    def test_req_discard_request_body(self):
+
+        print "\n  * Testing req.discard_request_body()"
+
+        params = '1234567890'*2
+        print "    writing %d bytes..." % len(params)
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "test_req_discard_request_body:%s" % PORT)
+        conn.putheader("Content-Length", len(params))
+        conn.endheaders()
+        conn.send(params)
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_req_register_cleanup_conf(self):
 
         c = VirtualHost("*",
@@ -2407,6 +2438,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_read"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_readline"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_readlines"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_discard_request_body"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_register_cleanup"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_headers_out"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile"))

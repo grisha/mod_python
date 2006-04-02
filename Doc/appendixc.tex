@@ -69,6 +69,12 @@
       Added \code{req.set_etag()}, \code{req.set_last_modified()} and
       \code{req.update_mtime()} functions as wrappers for similar functions
       provided by Apache C API.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-153]{MODPYTHON-153})
+      Added \code{req.discard_request_body()} function as wrapper for
+      similar function provided by Apache C API. The function tests for
+      and reads any message body in the request, simply discarding
+      whatever it receives.
   \end{itemize}
 
   Improvements
