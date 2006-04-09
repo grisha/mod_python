@@ -740,6 +740,7 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
     char *key;
     apr_ssize_t klen;
     hl_entry *hle;
+    py_handler *fh;
 
     /* we basically allow the local configuration to override global,
      * by first copying current values and then new values on top
@@ -766,13 +767,13 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
     }
 
     for (hi = apr_hash_first(p, cc->in_filters); hi; hi=apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
-        apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
+        apr_hash_this(hi, (const void **)&key, &klen, (void **)&fh);
+        apr_hash_set(merged_conf->in_filters, key, klen, (void *)fh);
     }
 
     for (hi = apr_hash_first(p, cc->out_filters); hi; hi=apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void **)&key, &klen, (void **)&hle);
-        apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
+        apr_hash_this(hi, (const void **)&key, &klen, (void **)&fh);
+        apr_hash_set(merged_conf->out_filters, key, klen, (void *)fh);
     }
 
     /** copy new **/
@@ -788,13 +789,13 @@ static void *python_merge_config(apr_pool_t *p, void *current_conf,
     }
 
     for (hi = apr_hash_first(p, nc->in_filters); hi; hi=apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
-        apr_hash_set(merged_conf->in_filters, key, klen, (void *)hle);
+        apr_hash_this(hi, (const void**)&key, &klen, (void **)&fh);
+        apr_hash_set(merged_conf->in_filters, key, klen, (void *)fh);
     }
 
     for (hi = apr_hash_first(p, nc->out_filters); hi; hi=apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void**)&key, &klen, (void **)&hle);
-        apr_hash_set(merged_conf->out_filters, key, klen, (void *)hle);
+        apr_hash_this(hi, (const void**)&key, &klen, (void **)&fh);
+        apr_hash_set(merged_conf->out_filters, key, klen, (void *)fh);
     }
 
     return (void *) merged_conf;
