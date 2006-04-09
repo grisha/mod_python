@@ -147,7 +147,7 @@ typedef struct {
     apr_hash_t   *hlists; /* hlists for every phase */
     apr_hash_t   *in_filters;
     apr_hash_t   *out_filters;
-    hl_entry     *imports;  /* for PythonImport */
+    apr_table_t  *imports;  /* for PythonImport */
 } py_config;
 
 /* register_cleanup info */

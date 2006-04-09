@@ -1861,9 +1861,9 @@ static const char *directive_PythonImport(cmd_parms *cmd, void *mconfig,
                                            &python_module);
 
     if (!conf->imports)
-        conf->imports = hlist_new(cmd->pool, module, interp_name, 0);
-    else 
-        hlist_append(cmd->pool, conf->imports, module, interp_name, 0);
+        conf->imports = apr_table_make(cmd->pool, 4);
+
+    apr_table_add(conf->imports, interp_name, module);
 
     return NULL;
 
@@ -2236,7 +2236,10 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 {
 
 
-    hl_entry *hle;
+    const apr_array_header_t *ah;
+    apr_table_entry_t *elts;
+    int i;
+
     py_config *conf = ap_get_module_config(s->module_config, &python_module);
     py_global_config *glb;
     PyObject *resultobject = NULL;
@@ -2307,45 +2310,50 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
      * Now run PythonImports
      */
 
-    hle = conf->imports;
-    while(hle) {
+    if (conf->imports) {
+        ah = apr_table_elts (conf->imports);
+        elts = (apr_table_entry_t *) ah->elts;
 
-        interpreterdata *idata;
-        const char *module_name = hle->handler;
-        const char *interp_name = hle->directory;
-        const char *ppath;
+        i = ah->nelts;
 
-        /* get interpreter */
-        idata = get_interpreter(interp_name, s);
-        if (!idata)
-            return;
+        while (i--) {
+            if (elts[i].key) {
 
-        /* 
-         * Call into Python to do import.
-         * This is the C equivalent of
-         * >>> resultobject = obCallBack.ImportDispatch(module_name)
-         */
-        resultobject = PyObject_CallMethod(idata->obcallback,
-                                           "ImportDispatch", "s", module_name);
+                interpreterdata *idata;
+                const char *interp_name = elts[i].key;
+                const char *module_name = elts[i].val;
+                const char *ppath;
 
-        if (!resultobject) {
-            if (PyErr_Occurred()) {
-                PyErr_Print();
-                fflush(stderr); 
+                /* get interpreter */
+                idata = get_interpreter(interp_name, s);
+                if (!idata)
+                    return;
+
+                /* 
+                 * Call into Python to do import.
+                 * This is the C equivalent of
+                 * >>> resultobject = obCallBack.ImportDispatch(module_name)
+                 */
+                resultobject = PyObject_CallMethod(idata->obcallback,
+                                                   "ImportDispatch", "s", module_name);
+
+                if (!resultobject) {
+                    if (PyErr_Occurred()) {
+                        PyErr_Print();
+                        fflush(stderr); 
+                    }
+                    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                                 "directive_PythonImport: error importing %s",
+                                 (!module_name) ? "<null>" : module_name);
+                }
+
+                /* clean up */
+                Py_XDECREF(resultobject);
+
+                /* release interpreter */
+                release_interpreter();
             }
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                         "directive_PythonImport: error importing %s",
-                         (!module_name) ? "<null>" : module_name);
         }
-
-        /* clean up */
-        Py_XDECREF(resultobject);
-
-        /* release interpreter */
-        release_interpreter();
-
-        /* next module */
-        hle = hle->next;
     }
 }
 
