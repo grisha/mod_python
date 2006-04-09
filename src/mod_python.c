@@ -344,8 +344,8 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
     int max_clients;
     int locks;
     int n;
-    char *val;
-    char *mutex_dir;
+    const char *val;
+    const char *mutex_dir;
     py_config *conf;
     
     conf = (py_config *) ap_get_module_config(s->module_config, 
@@ -497,7 +497,7 @@ static apr_status_t reinit_mutexes(server_rec *s, apr_pool_t *p, py_global_confi
     /* Determine the directory to use for mutex lock files. 
        See init_mutexes function for more details.
     */
-    char *mutex_dir;
+    const char *mutex_dir;
     py_config *conf;
 
     conf = (py_config *) ap_get_module_config(s->module_config, 
