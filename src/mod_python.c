@@ -276,7 +276,6 @@ apr_status_t python_cleanup(void *data)
     if (!idata) {
         Py_DECREF(ci->handler);
         Py_XDECREF(ci->data);
-        free(ci->interpreter);
         free(ci);
         return APR_SUCCESS; /* this is ignored anyway */
     }
