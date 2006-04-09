@@ -609,8 +609,8 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
     apr_table_t* table = conf->options;
 
     int i;
-    apr_array_header_t* ah = apr_table_elts(table);
-    apr_table_entry_t* elts = ah->elts;
+    const apr_array_header_t* ah = apr_table_elts(table);
+    apr_table_entry_t* elts = (apr_table_entry_t *) ah->elts;
 
     /*
      * We remove the empty values, since they cannot have been defined
@@ -1729,14 +1729,14 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
     else if (strcmp(name, "next") == 0) {
         if (!self->next && self->request_rec->next) {
             self->next = MpRequest_FromRequest(self->request_rec->next);
-            ((requestobject*)self->next)->prev = self;
+            ((requestobject*)self->next)->prev = (PyObject *) self;
         }
         result = self->next;
     }
     else if (strcmp(name, "prev") == 0) {
         if (!self->prev && self->request_rec->prev) {
             self->prev = MpRequest_FromRequest(self->request_rec->prev);
-            ((requestobject*)self->prev)->next = self;
+            ((requestobject*)self->prev)->next = (PyObject *) self;
         }
         result = self->prev;
     }
@@ -1838,7 +1838,7 @@ static struct PyMemberDef request_members[] = {
 
 #ifndef CLEAR_REQUEST_MEMBER 
 #define CLEAR_REQUEST_MEMBER(member)\
-    tmp = member;\
+    tmp = (PyObject *) member;\
     member = NULL;\
     Py_XDECREF(tmp)
 #endif
