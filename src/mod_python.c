@@ -132,6 +132,7 @@ static PyObject * make_obcallback(char *name, server_rec *s)
         const char *mp_dynamic_version = "<unknown>";
         PyObject *o = NULL;
         PyObject *d = NULL;
+        PyObject *f = NULL;
 
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
                      "make_obcallback: could not call %s.\n",
@@ -144,6 +145,7 @@ static PyObject * make_obcallback(char *name, server_rec *s)
         if (m) {
             d = PyModule_GetDict(m);
             o = PyDict_GetItemString(d, "version");
+            f = PyDict_GetItemString(d, "__file__");
 
             if (o) {
                 mp_dynamic_version = PyString_AsString(o);
@@ -154,10 +156,14 @@ static PyObject * make_obcallback(char *name, server_rec *s)
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
                          "make_obcallback: mod_python version mismatch, expected '%s', found '%s'.",
                          mp_compile_version, mp_dynamic_version);
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                         "make_obcallback: mod_python modules location '%s'.",
+                         PyString_AsString(f));
         }
 
         Py_XDECREF(o);
         Py_XDECREF(d);
+        Py_XDECREF(f);
     }
 
       Py_XDECREF(m);
