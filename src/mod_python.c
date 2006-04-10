@@ -88,7 +88,7 @@ static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
 static PyObject * make_obcallback(char *name, server_rec *s)
 {
 
-    PyObject *m;
+    PyObject *m = NULL;
     PyObject *obCallBack = NULL;
 
     /* This makes _apache appear imported, and subsequent
@@ -105,18 +105,62 @@ static PyObject * make_obcallback(char *name, server_rec *s)
      */
 
     if (! ((m = PyImport_ImportModule(MODULENAME)))) {
+        PyObject *path;
+
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                     "make_obcallback: could not import %s.\n", (!MODULENAME) ? "<null>" : MODULENAME);
+                     "make_obcallback: could not import %s.\n",
+                     (!MODULENAME) ? "<null>" : MODULENAME);
+
         PyErr_Print();
         fflush(stderr); 
+
+        path = PyObject_Repr(PySys_GetObject("path"));
+
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                     "make_obcallback: Python path being used \"%s\".",
+                     PyString_AsString(path));
+
+        Py_DECREF(path);
+
+        return NULL;
     }
     
-    if (m && ! ((obCallBack = PyObject_CallMethod(m, INITFUNC, "sO", name, MpServer_FromServer(main_server))))) {
+    if (m && ! ((obCallBack = PyObject_CallMethod(m,
+                 INITFUNC, "sO", name, MpServer_FromServer(main_server))))) {
+
+        const char *mp_compile_version = MPV_STRING;
+        const char *mp_dynamic_version = "<unknown>";
+        PyObject *o = NULL;
+        PyObject *d = NULL;
+
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
-                     "make_obcallback: could not call %s.\n", (!INITFUNC) ? "<null>" : INITFUNC);
+                     "make_obcallback: could not call %s.\n",
+                     (!INITFUNC) ? "<null>" : INITFUNC);
+
         PyErr_Print();
         fflush(stderr); 
+
+        m = PyImport_ImportModule("mod_python");
+        if (m) {
+            d = PyModule_GetDict(m);
+            o = PyDict_GetItemString(d, "version");
+
+            if (o) {
+                mp_dynamic_version = PyString_AsString(o);
+            }
+        }
+
+        if (strcmp(mp_compile_version, mp_dynamic_version) != 0) {
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                         "make_obcallback: mod_python version mismatch, expected '%s', found '%s'.",
+                         mp_compile_version, mp_dynamic_version);
+        }
+
+        Py_XDECREF(o);
+        Py_XDECREF(d);
     }
+
+      Py_XDECREF(m);
     
     return obCallBack;
 }
@@ -575,6 +619,9 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     const char *userdata_key = "python_init";
     apr_status_t rc;
 
+    const char *py_compile_version = PY_VERSION;
+    const char *py_dynamic_version = 0;
+
     /* The "initialized" flag is a fudge for Mac OS X. It
      * addresses two issues. The first is that when an Apache
      * "restart" is performed, Apache will unload the mod_python
@@ -599,9 +646,23 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
 
     /* mod_python version */
     ap_add_version_component(p, VERSION_COMPONENT);
-    
+
+    py_dynamic_version = strtok((char *)Py_GetVersion(), " ");
+
+    if (strcmp(py_compile_version, py_dynamic_version) != 0) {
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                     "python_init: Python version mismatch, expected '%s', found '%s'.",
+                     py_compile_version, py_dynamic_version);
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                     "python_init: Python executable found '%s'.",
+                     Py_GetProgramFullPath());
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                     "python_init: Python path being used '%s'.",
+                     Py_GetPath());
+    }
+
     /* Python version */
-    sprintf(buff, "Python/%.200s", strtok((char *)Py_GetVersion(), " "));
+    sprintf(buff, "Python/%.200s", py_dynamic_version);
     ap_add_version_component(p, buff);
 
     /* cache main server */
