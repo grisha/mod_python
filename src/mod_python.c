@@ -1025,19 +1025,20 @@ static const char *select_interp_name(request_rec *req, conn_rec *con, py_config
             
             /* base interpreter on directory where the file is found */
             if (req && ap_is_directory(req->pool, req->filename)) {
-                /** XXX I suppose that if req->filename is a directory, there already
-                    is a trailing slash in req->filename. This is due to the fact
-                    that Apache redirect any request from /directory to /directory/.
-                    That's why the tests below are commented out, they should be useless.
-                **/
-                /* if (req->filename[strlen(req->filename)-1]=='/') { */
+                /* Where req->filename is a directory, it is not guaranteed
+                 * that it will have a trailing slash in req->filename as
+                 * trailing slash redirection only happens in mod_dir at
+                 * the very end of the fixup phase. Thus need to ensure
+                 * that this is taken into consideration.
+                 */
+                if (req->filename[strlen(req->filename)-1]=='/') {
                     return ap_make_dirstr_parent(req->pool, req->filename);
-                /* }
+                }
                 else {
                     return ap_make_dirstr_parent(req->pool, 
                                                 apr_pstrcat(req->pool, req->filename, 
                                                             "/", NULL ));
-                } */
+                }
             }
             else {
                 if (req && req->filename)

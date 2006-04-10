@@ -214,6 +214,11 @@
       Fixes to test suite so it will work on virtual hosting environments
       where \code{localhost} doesn't resolve to \code{127.0.0.1} but the
       actual IP address of the host.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-157]{MODPYTHON-157})
+      Wrong interpreter name used for fixup handler phase and earlier, when
+      \code{PythonInterpPerDirectory} was enabled and request was against
+      a directory but client didn't provide the trailing slash.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
