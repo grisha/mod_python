@@ -20,6 +20,15 @@
       of Python options set at global scope within the Apache configuration.
       That is, outside of the context of any VirtualHost, Location, Directory
       or Files directives.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-131]{MODPYTHON-131})
+      The directory used for mutex locks can now be specified at 
+      at compile time using \code{./configure --with-mutex-dir value}
+      or at run time with \code{PythonOption mod_python.mutex_directory value}.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-145]{MODPYTHON-145})
+      The number of mutex locks can now be specified at run time with
+      \code{PythonOption mod_python.mutex_locks value}.
   \end{itemize}
 
   Improvements

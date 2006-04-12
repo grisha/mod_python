@@ -318,6 +318,7 @@ class HttpdCtrl:
             PidFile("logs/httpd.pid"),
             ServerName("127.0.0.1"),
             Listen(PORT),
+            PythonOption('mod_python.mutex_directory %s' % TMP_DIR),
             PythonOption('PythonOptionTest sample_value'),
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
@@ -1439,6 +1440,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests"),
                                   PythonOption('PythonOptionTest ""'),
+                                  PythonOption('mod_python.mutex_directory ""'),
                                   PythonOption("testing 123"),
                                   PythonDebug("On")))
         return str(c)

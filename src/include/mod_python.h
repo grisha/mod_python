@@ -106,11 +106,15 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define SILENT 1
 #define NOTSILENT 0
 
-/* hopefully this will go away */
 /* MAX_LOCKS can now be set as a configure option
  * ./configure --with-max-locks=INTEGER
  */
 #define MAX_LOCKS 8 
+
+/* MUTEX_DIR can be set as a configure option
+ * ./configure --with-mutex-dir=/path/to/dir
+ */
+#define MUTEX_DIR "/tmp" 
 
 /* python 2.3 no longer defines LONG_LONG, it defines PY_LONG_LONG */
 #ifndef LONG_LONG

@@ -272,7 +272,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="src/mod_python.c"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN PY_STD_LIB INCLUDES TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC MAX_LOCKS LEX LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN PY_STD_LIB INCLUDES TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC MUTEX_DIR MAX_LOCKS LEX LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -803,6 +803,7 @@ Optional Packages:
 --with-apache=DIR 	Path to Apache sources
 --with-python=PATH	Path to specific Python binary
 --with-python-src=DIR	Path to python sources - required if you want to generate the documenation
+--with-mutex-dir=DIR	Mutex directory
 --with-max-locks=INTEGER	Maximum number of locks
 --with-flex=PATH	Path to specific flex binary.
 	Flex Version 2.5.31 or greater is required to regenerate psp_parser.c
@@ -3059,6 +3060,31 @@ if test -z "$PYTHON_SRC"; then
   PYTHON_SRC=""
 fi
 
+# configure the MUTEX_DIR for location of mutex locks
+
+echo "$as_me:$LINENO: checking for --with-mutex-dir" >&5
+echo $ECHO_N "checking for --with-mutex-dir... $ECHO_C" >&6
+
+# Check whether --with-mutex-dir or --without-mutex-dir was given.
+if test "${with_mutex_dir+set}" = set; then
+  withval="$with_mutex_dir"
+
+  MUTEX_DIR="$withval"
+  echo "$as_me:$LINENO: result: $MUTEX_DIR" >&5
+echo "${ECHO_T}$MUTEX_DIR" >&6
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi;
+
+if test -z "$MUTEX_DIR"; then
+  MUTEX_DIR="/tmp"
+fi
+# TODO - check if MUTEX_DIR is an absolute path
+echo "$as_me:$LINENO: result: Using MUTEX_DIR $MUTEX_DIR" >&5
+echo "${ECHO_T}Using MUTEX_DIR $MUTEX_DIR" >&6
+
 # configure the MAX_LOCKS for number of mutex locks
 
 echo "$as_me:$LINENO: checking for --with-max-locks" >&5
@@ -3858,6 +3884,7 @@ s,@TEST_SERVER_ROOT@,$TEST_SERVER_ROOT,;t t
 s,@MOD_PYTHON_SO@,$MOD_PYTHON_SO,;t t
 s,@MP_VERSION@,$MP_VERSION,;t t
 s,@PYTHON_SRC@,$PYTHON_SRC,;t t
+s,@MUTEX_DIR@,$MUTEX_DIR,;t t
 s,@MAX_LOCKS@,$MAX_LOCKS,;t t
 s,@LEX@,$LEX,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

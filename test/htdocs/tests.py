@@ -944,6 +944,12 @@ def test_sys_argv(req):
         
 def PythonOption_items(req):
     options = req.get_options().items()
+    
+    # The tests may using PythonOption mod_python.* in the test configuration
+    # We need to remove those particular options so they don't interfer
+    # with this test result.
+    options = [ o for o in options if not o[0].startswith('mod_python') ]
+    
     options.sort()
     req.write(str(options))
     return apache.OK
