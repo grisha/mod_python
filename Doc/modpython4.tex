@@ -1380,6 +1380,13 @@ server) serving the request.
   by \code{server->module_config} Apache config vector. 
 \end{methoddesc}
 
+\begin{methoddesc}[server]{get_options}{}
+  Similar to \code{req.get_options()}, but returns a table object holding
+  only the mod_python options defined at global scope within the Apache
+  configuration. That is, outside of the context of any VirtualHost, Location,
+  Directory or Files directives.
+\end{methoddesc}
+
 \begin{methoddesc}[server]{register_cleanup}{request, callable\optional{, data}}
   Registers a cleanup. Very similar to \function{req.register_cleanup()}, except
   this cleanup will be executed at child termination time. This function

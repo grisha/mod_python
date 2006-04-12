@@ -762,6 +762,24 @@ def req_sendfile3(req):
     os.remove(fname)
     return apache.OK
 
+def req_server_get_options(req):
+
+    try:
+        server_options = req.server.get_options()
+        assert(server_options["global"] == "1")
+        assert(server_options["override"] == "1")
+
+        request_options = req.get_options()
+        assert(request_options["global"] == "1")
+        assert(request_options["override"] == "2")
+        assert(request_options["local"] == "1")
+    except:
+        req.write('test failed')
+    else:
+        req.write('test ok')
+
+    return apache.OK
+
 def fileupload(req):
     from mod_python import util
     import md5

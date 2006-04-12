@@ -940,6 +940,30 @@ class PerRequestTestCase(unittest.TestCase):
         else:
             print "\n  * Skipping req.sendfile() for a file which is a symbolic link"
 
+    def test_req_server_get_options_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_server_get_options"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        PythonDebug("Off"),
+                        PythonOption("global 1"),
+                        PythonOption("override 1"),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::req_server_get_options"),
+                                  PythonOption("local 1"),
+                                  PythonOption("override 2"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_server_get_options(self):
+
+        print "\n  * Testing req.server.get_options()"
+
+        rsp = self.vhost_get("test_req_server_get_options")
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_fileupload_conf(self):
 
         c = VirtualHost("*",
@@ -2052,6 +2076,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile2"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_sendfile3"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_server_get_options"))
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload"))
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload_embedded_cr"))
         perRequestSuite.addTest(PerRequestTestCase("test_fileupload_split_boundary"))

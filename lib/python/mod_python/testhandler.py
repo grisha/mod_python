@@ -173,6 +173,9 @@ def handler(req):
     req.write('<h3>Server configuration</h3>\n')
     write_table(req,req.server.get_config())
 
+    req.write('<h3>Server options</h3>\n')
+    write_table(req,req.server.get_options())
+
     req.write('<h3>Server configuration tree</h3>\n<pre>')
     write_tree(req,apache.config_tree(),0)
     req.write('</pre>\n')
