@@ -8,6 +8,12 @@
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-78]{MODPYTHON-78})
       Added support for Apache 2.2.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-94]{MODPYTHON-94})
+      New \code{req.is_https()} and \code{req.ssl_var_lookup()} methods.
+      These communicate direct with the Apache mod_ssl module, allowing
+      it to be determined if the connection is using SSL/TLS and what the
+      values of internal ssl variables are.
   \end{itemize}
 
   Improvements

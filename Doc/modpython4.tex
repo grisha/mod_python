@@ -658,6 +658,21 @@ else:
 
 \end{methoddesc}
 
+\begin{methoddesc}[request]{is_https}{}
+  Returns non-zero if the connection is using SSL/TLS. Will always return
+  zero if the mod_ssl Apache module is not loaded.
+
+  You can use this method during any request phase, unlike looking for
+  the \code{HTTPS} variable in the \code{subprocess_env} member dictionary.
+  This makes it possible to write an authentication or access handler
+  that makes decisions based upon whether SSL is being used.
+
+  Note that this method will not determine the quality of the
+  encryption being used.  For that you should call the \code{ssl_var_lookup}
+  method to get one of the \code{SSL_CIPHER*} variables.
+
+\end{methoddesc}
+
 \begin{methoddesc}{log_error}{message\optional{, level}}
   An interface to the Apache \code{ap_log_rerror}
   function. \var{message} is a string with the error message,
@@ -787,6 +802,40 @@ require valid-user
 
   This function provides the most efficient way to send a file to the
   client.
+\end{methoddesc}
+
+\begin{methoddesc}[request]{ssl_var_lookup}{var_name}
+  Looks up the value of the named SSL variable.  This method queries
+  the mod_ssl Apache module directly, and may therefore be used in
+  early request phases (unlike using the \code{subprocess_env} member.
+
+  If the mod_ssl Apache module is not loaded or the variable is not
+  found then \code{None} is returned.
+
+  If you just want to know if a SSL or TLS connection is being used,
+  you may consider calling the \code{is_https} method instead.
+
+  It is unfortunately not possible to get a list of all available
+  variables with the current mod_ssl implementation, so you must know
+  the name of the variable you want.  Some of the potentially useful
+  ssl variables are listed below.  For a complete list of variables
+  and a description of their values see the mod_ssl documentation.
+
+  \begin{verbatim}
+    SSL_CIPHER
+    SSL_CLIENT_CERT
+    SSL_CLIENT_VERIFY
+    SSL_PROTOCOL
+    SSL_SESSION_ID
+  \end{verbatim}
+
+  \begin{notice}
+  Not all SSL variables are defined or have useful values in every
+  request phase.  Also use caution when relying on these values for
+  security purposes, as SSL or TLS protocol parameters can often be
+  renegotiated at any time during a request.
+  \end{notice}
+
 \end{methoddesc}
 
 \begin{methoddesc}[request]{write}{string\optional{, flush=1}}
