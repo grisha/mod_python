@@ -197,6 +197,10 @@ class PythonAuthenHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class PythonAuthzHandler(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class PythonConnectionHandler(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
