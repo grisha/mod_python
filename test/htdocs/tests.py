@@ -615,7 +615,7 @@ def req_get_basic_auth_pw(req):
 
 def req_auth_type(req):
 
-    if (req.phase == "PythonAuthenHandler"):
+    if req.phase == "PythonAuthenHandler":
         if req.auth_type() != "dummy":
             req.log_error("auth_type check failed")
             req.write("test failed")
@@ -626,28 +626,36 @@ def req_auth_type(req):
             return apache.DONE
         req.user = "dummy"
         req.ap_auth_type = req.auth_type()
+    elif req.phase == "PythonAuthzHandler":
+        if req.ap_auth_type != "dummy":
+            req.log_error("ap_auth_type check failed")
+            req.write("test failed")
+            return apache.DONE
+        if req.user != "dummy":
+            req.log_error("user check failed")
+            req.write("test failed")
+            return apache.DONE
     else:
         if req.ap_auth_type != "dummy":
             req.log_error("ap_auth_type check failed")
             req.write("test failed")
-            return apache.OK
+            return apache.DONE
         if req.user != "dummy":
             req.log_error("user check failed")
             req.write("test failed")
-            return apache.OK
+            return apache.DONE
         req.write("test ok")
 
     return apache.OK
 
 def req_requires(req):
 
-    req.user = "blah" # or else!
-
     if req.requires() == ('valid-user',):
         req.write("test ok")
         return apache.DONE
 
-    return apache.OK
+    req.write("test failed")
+    return apache.DONE
 
 def req_document_root(req):
 

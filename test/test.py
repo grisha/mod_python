@@ -653,6 +653,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   AuthType("dummy"),
                                   Require("valid-user"),
                                   PythonAuthenHandler("tests::req_auth_type"),
+                                  PythonAuthzHandler("tests::req_auth_type"),
                                   PythonHandler("tests::req_auth_type"),
                                   PythonDebug("On")))
         return str(c)
@@ -674,35 +675,16 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_req_requires_conf(self):
 
-        if APACHE_VERSION == '2.2':
-            # Apache 2.2 needs AuthBasicAuthoritative Off 
-            # This is necessary when combining mod_auth_basic with third-party
-            # modules that are not configured with the AuthBasicProvider  
-            # directive. 
-            c = VirtualHost("*",
-                        ServerName("test_req_requires"),
-                        DocumentRoot(DOCUMENT_ROOT),
-                        Directory(DOCUMENT_ROOT,
-                                  SetHandler("mod_python"),
-                                  AuthName("blah"),
-                                  AuthType("basic"),
-                                  Require("valid-user"),
-                                  AuthBasicAuthoritative("Off"),
-                                  PythonAuthenHandler("tests::req_requires"),
-                                  PythonDebug("On")))
-
-        else:
-            # This configuration is suitable for Apache 2.0
-            c = VirtualHost("*",
-                        ServerName("test_req_requires"),
-                        DocumentRoot(DOCUMENT_ROOT),
-                        Directory(DOCUMENT_ROOT,
-                                  SetHandler("mod_python"),
-                                  AuthName("blah"),
-                                  AuthType("basic"),
-                                  Require("valid-user"),
-                                  PythonAuthenHandler("tests::req_requires"),
-                                  PythonDebug("On")))
+        c = VirtualHost("*",
+                    ServerName("test_req_requires"),
+                    DocumentRoot(DOCUMENT_ROOT),
+                    Directory(DOCUMENT_ROOT,
+                              SetHandler("mod_python"),
+                              AuthName("blah"),
+                              AuthType("dummy"),
+                              Require("valid-user"),
+                              PythonAuthenHandler("tests::req_requires"),
+                              PythonDebug("On")))
 
         return str(c)
 
