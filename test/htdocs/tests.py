@@ -644,13 +644,12 @@ def req_get_basic_auth_pw(req):
 
 def req_requires(req):
 
-    req.user = "blah" # or else!
-
     if req.requires() == ('valid-user',):
         req.write("test ok")
         return apache.DONE
 
-    return apache.OK
+    req.write("test failed")
+    return apache.DONE
 
 def req_document_root(req):
 
