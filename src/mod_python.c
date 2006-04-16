@@ -1226,7 +1226,10 @@ static int python_handler(request_rec *req, char *phase)
     }
     
     /* determine interpreter to use */
-    interp_name = select_interp_name(req, NULL, conf, hle, NULL, 0);
+    if (hle)
+        interp_name = select_interp_name(req, NULL, conf, hle, NULL, 0);
+    else
+        interp_name = select_interp_name(req, NULL, conf, dynhle, NULL, 0);
 
     /* get/create interpreter */
     idata = get_interpreter(interp_name, req->server);
