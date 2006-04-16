@@ -1997,6 +1997,27 @@ class PerRequestTestCase(unittest.TestCase):
         if status != 500:
             self.fail("session accepted a sid which is too long")
 
+    def test_files_directive_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_files_directive"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  Files("*.py",
+                                        SetHandler("mod_python"),
+                                        PythonHandler("tests::files_directive"),
+                                        PythonDebug("On"))))
+        return str(c)
+
+    def test_files_directive(self):
+
+        directory = (DOCUMENT_ROOT.replace('\\', '/')+'/').upper()
+
+        print "\n  * Testing Files directive"
+        rsp = self.vhost_get("test_files_directive", path="/tests.py").upper()
+
+        if rsp != directory:
+            self.fail(`rsp`)
+
     def test_publisher_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
@@ -2485,6 +2506,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_Session_illegal_sid"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
+        perRequestSuite.addTest(PerRequestTestCase("test_files_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_nested"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_method_nested"))

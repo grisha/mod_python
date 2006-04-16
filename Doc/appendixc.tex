@@ -229,6 +229,13 @@
       Using \code{PythonInterpPerDirective} when setting content handler to
       run dynamically with \code{req.add_handler()} would cause Apache to
       crash.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-126]{MODPYTHON-126})
+      When \code{Python*Handler} or \code{Python*Filter} directive is used
+      inside of a \code{Files} directive container, the handler/filter
+      directory value will now correctly resolve to the directory corresponding
+      to any parent \code{Directory} directive or the location of the
+      \code{.htaccess} file the \code{Files} directive is contained in.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
