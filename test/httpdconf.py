@@ -125,6 +125,10 @@ class ErrorLog(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class Files(ContainerTag):
+    def __init__(self, dir, *args):
+        ContainerTag.__init__(self, self.__class__.__name__, dir, args)
+
 class IfModule(ContainerTag):
     def __init__(self, dir, *args):
         ContainerTag.__init__(self, self.__class__.__name__, dir, args)

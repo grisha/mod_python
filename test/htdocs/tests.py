@@ -1081,6 +1081,11 @@ def Session_Session(req):
 
     return apache.OK
 
+def files_directive(req):
+
+    req.write(str(req.hlist.directory))
+    return apache.OK
+
 def test_sys_argv(req):
     import sys
     req.write(repr(sys.argv))

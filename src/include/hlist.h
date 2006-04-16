@@ -35,6 +35,8 @@ extern "C" {
     typedef struct hl_entry {
         const char *handler;
         const char *directory;
+        int d_is_fnmatch;
+        ap_regex_t *regex;
         int silent;  /* 1 for PythonHandlerModule, where
                         if a handler is not found in a module,
                         no error should be reported */
@@ -42,9 +44,10 @@ extern "C" {
     } hl_entry;
     
     hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
-                        const int s);
+                        int d_is_fnmatch, ap_regex_t *regex, const int s);
     hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                           const char *d, const int s);
+                           const char *d, int d_is_fnmatch, ap_regex_t *regex,
+                           const int s);
     hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle);
 
 #ifdef __cplusplus

@@ -61,6 +61,12 @@
 #include "unixd.h"
 #endif
 
+#if !AP_MODULE_MAGIC_AT_LEAST(20050127,0)
+typedef regex_t ap_regex_t;
+#define AP_REG_EXTENDED REG_EXTENDED
+#define AP_REG_ICASE REG_ICASE
+#endif
+
 /* Python headers */
 /* this gets rid of some compile warnings */
 #if defined(_POSIX_THREADS)
@@ -185,7 +191,9 @@ typedef struct
 typedef struct
 {
     char *handler;
-    char *dir;
+    char *directory;
+    int d_is_fnmatch;
+    ap_regex_t *regex;
 } py_handler;
 
 apr_status_t python_cleanup(void *data);

@@ -34,7 +34,7 @@
  */
 
 hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
-                    const int s)
+                    int d_is_fnmatch, ap_regex_t *regex, const int s)
 {
     hl_entry *hle;
 
@@ -42,6 +42,8 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d,
 
     hle->handler = apr_pstrdup(p, h);
     hle->directory = apr_pstrdup(p, d);
+    hle->d_is_fnmatch = d_is_fnmatch;
+    hle->regex = regex;
     hle->silent = s;
 
     return hle;
@@ -57,7 +59,8 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d,
  */
 
 hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                       const char *d, const int s)
+                       const char *d, int d_is_fnmatch, ap_regex_t *regex,
+                       const int s)
 {
     hl_entry *nhle;
 
@@ -69,6 +72,8 @@ hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
 
     nhle->handler = apr_pstrdup(p, h);
     nhle->directory = apr_pstrdup(p, d);
+    nhle->d_is_fnmatch = d_is_fnmatch;
+    nhle->regex = regex;
     nhle->silent = s;
 
     if (hle)
@@ -90,6 +95,8 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
     head = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
     head->handler = apr_pstrdup(p, hle->handler);
     head->directory = apr_pstrdup(p, hle->directory);
+    head->d_is_fnmatch = hle->d_is_fnmatch;
+    head->regex = hle->regex;
     head->silent = hle->silent;
 
     hle = hle->next;
@@ -99,7 +106,8 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
         nhle = nhle->next;
         nhle->handler = apr_pstrdup(p, hle->handler);
         nhle->directory = apr_pstrdup(p, hle->directory);
-        nhle->silent = hle->silent;
+        nhle->d_is_fnmatch = hle->d_is_fnmatch;
+        nhle->regex = hle->regex;
         hle = hle->next;
     }
 

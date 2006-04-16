@@ -161,7 +161,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
 
         /* then just append to hlist */
         hlist_append(self->request_rec->pool, self->hlo->head,
-                     handler, dir, NOTSILENT);
+                     handler, dir, 0, NULL, NOTSILENT);
     }
     else {
         /* this is a phase that we're not in */
@@ -177,11 +177,11 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
         hle = apr_hash_get(req_config->dynhls, phase, APR_HASH_KEY_STRING);
 
         if (! hle) {
-            hle = hlist_new(self->request_rec->pool, handler, dir, NOTSILENT);
+            hle = hlist_new(self->request_rec->pool, handler, dir, 0, NULL, NOTSILENT);
             apr_hash_set(req_config->dynhls, phase, APR_HASH_KEY_STRING, hle);
         }
         else {
-            hlist_append(self->request_rec->pool, hle, handler, dir, NOTSILENT);
+            hlist_append(self->request_rec->pool, hle, handler, dir, 0, NULL, NOTSILENT);
         }
     }
     
@@ -280,7 +280,7 @@ static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
     fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
-    if (dir) fh->dir = apr_pstrdup(self->request_rec->pool, dir);
+    if (dir) fh->directory = apr_pstrdup(self->request_rec->pool, dir);
 
     apr_hash_set(req_config->in_filters,
                  apr_pstrdup(self->request_rec->pool, name),
@@ -313,7 +313,7 @@ static PyObject *req_register_output_filter(requestobject *self, PyObject *args)
     fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
-    if (dir) fh->dir = apr_pstrdup(self->request_rec->pool, dir);
+    if (dir) fh->directory = apr_pstrdup(self->request_rec->pool, dir);
 
     apr_hash_set(req_config->out_filters,
                  apr_pstrdup(self->request_rec->pool, name),

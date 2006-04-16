@@ -886,13 +886,105 @@ static const char *python_directive(cmd_parms *cmd, void * mconfig,
     return NULL;
 }
 
-static void python_directive_hl_add(apr_pool_t *p,
-                                    apr_hash_t *hlists, 
+/* returns a parent if it matches the given directive */
+static const ap_directive_t * find_parent(const ap_directive_t *dirp,
+                                          const char *what)
+{
+    while (dirp->parent != NULL) {
+        dirp = dirp->parent;
+
+        if (strcasecmp(dirp->directive, what) == 0)
+            return dirp;
+    }
+
+    return NULL;
+}
+
+#ifdef WIN32
+#define USE_ICASE AP_REG_ICASE 
+#else
+#define USE_ICASE 0
+#endif
+
+static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
+                             char **dp, int *gx, ap_regex_t **rx)
+{
+    const ap_directive_t *context = 0;
+    const ap_directive_t *directive = 0;
+    const char *endp, *arg;
+
+    char *directory = 0;
+    int d_is_fnmatch = 0;
+    ap_regex_t *regex = 0;
+
+    directive = cmd->directive;
+
+    /* Skip any enclosing File directive if one exists */
+
+    if ((context = find_parent(directive, "<Files")) ||
+        (context = find_parent(directive, "<FilesMatch"))) {
+
+        directive = context;
+    }
+
+    if ((context = find_parent(directive, "<Directory"))) {
+        arg = context->args;
+        endp = ap_strrchr_c(arg, '>');
+        arg = apr_pstrndup(p, arg, endp - arg);
+
+        directory = ap_getword_conf(p, &arg);
+
+        if (!strcmp(cmd->path, "~")) {
+            regex = ap_pregcomp(p, directory, AP_REG_EXTENDED|USE_ICASE);
+            directory = ap_getword_conf(p, &arg);
+        } else if (ap_is_matchexp(directory)) {
+            d_is_fnmatch = 1;
+        }
+    } else if ((context = find_parent(directive, "<DirectoryMatch"))) {
+        regex = ap_pregcomp(p, directory, AP_REG_EXTENDED|USE_ICASE);
+
+        arg = context->args;
+        endp = ap_strrchr_c(arg, '>');
+        arg = apr_pstrndup(p, arg, endp - arg);
+
+        directory = ap_getword_conf(p, &arg);
+    }
+    else if (cmd->config_file != NULL) {
+        /* cmd->config_file is NULL when in main Apache
+         * configuration file as the file is completely
+         * read in before the directive is processed as
+         * EXEC_ON_READ is not set in req_override field
+         * of command_struct table entry. Thus now then
+         * we are being used in a .htaccess file. */
+
+        directory = ap_make_dirstr_parent(p, directive->filename);
+    }
+
+    /* Only add trailing slash at this point if no
+     * pattern matching to be done at a later time. */
+
+    if (!d_is_fnmatch && !regex) {
+        if (directory && (directory[strlen(directory) - 1] != '/'))
+            directory = apr_pstrcat(p, directory, "/", NULL);
+    }
+
+    *dp = directory;
+    *gx = d_is_fnmatch;
+    *rx = regex;
+}
+
+static void python_directive_hl_add(apr_pool_t *p, apr_hash_t *hlists, 
                                     const char *phase, const char *handler, 
-                                    const char *directory, const int silent)
+                                    const cmd_parms* cmd, const int silent)
 {
     hl_entry *head;
     char *h;
+
+    char *directory = 0;
+    int d_is_fnmatch = 0;
+    ap_regex_t *regex = 0;
+
+    determine_context(p, cmd, &directory, &d_is_fnmatch, &regex);
 
     head = (hl_entry *)apr_hash_get(hlists, phase, APR_HASH_KEY_STRING);
 
@@ -901,11 +993,11 @@ static void python_directive_hl_add(apr_pool_t *p,
 
     while (*(h = ap_getword_white(p, &handler)) != '\0') {
         if (!head) {
-            head = hlist_new(p, h, directory, silent);
+            head = hlist_new(p, h, directory, d_is_fnmatch, regex, silent);
             apr_hash_set(hlists, phase, APR_HASH_KEY_STRING, head);
         }
         else {
-            hlist_append(p, head, h, directory, silent);
+            hlist_append(p, head, h, directory, d_is_fnmatch, regex, silent);
         }
     }
 }
@@ -934,11 +1026,12 @@ static const char *python_directive_handler(cmd_parms *cmd, py_config* conf,
      */
 
     const char *exts = val;
+
     val = ap_getword(cmd->pool, &exts, '|');
 
     if (*exts == '\0') {
         python_directive_hl_add(cmd->pool, conf->hlists, key, val,
-                                conf->config_dir, silent);
+                                cmd, silent);
     }
     else {
 
@@ -955,7 +1048,7 @@ static const char *python_directive_handler(cmd_parms *cmd, py_config* conf,
             s = apr_pstrcat(cmd->pool, key, ext, NULL);
 
             python_directive_hl_add(cmd->pool, conf->hlists, s, val,
-                                    conf->config_dir, silent);
+                                    cmd, silent);
         }
     }
 
@@ -1137,7 +1230,7 @@ static const char *select_interp_name(request_rec *req, conn_rec *con, py_config
                     fh = (py_handler *)apr_hash_get(conf->out_filters, fname,
                                                            APR_HASH_KEY_STRING);
                 }
-                s = fh->dir;
+                s = fh->directory;
             }
             else {
                 s = hle->directory;
@@ -1157,7 +1250,6 @@ static const char *select_interp_name(request_rec *req, conn_rec *con, py_config
         }
     }
 }
-
 
 /**
  ** python_handler
@@ -1224,7 +1316,7 @@ static int python_handler(request_rec *req, char *phase)
         /* nothing to do here */
         return DECLINED;
     }
-    
+
     /* determine interpreter to use */
     if (hle)
         interp_name = select_interp_name(req, NULL, conf, hle, NULL, 0);
@@ -1566,7 +1658,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
-                                                 fh->handler, fh->dir);
+                                                 fh->handler, fh->directory);
 
     Py_INCREF(request_obj);
     filter->request_obj = request_obj;
@@ -2228,6 +2320,10 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
     py_handler *fh;
     ap_filter_rec_t *frec;
 
+    char *directory = 0;
+    int d_is_fnmatch = 0;
+    ap_regex_t *regex = 0;
+
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
 
@@ -2238,9 +2334,13 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
  
     conf = (py_config *) mconfig;
 
+    determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &regex);
+
     fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
     fh->handler = (char *)handler;
-    fh->dir = conf->config_dir;
+    fh->directory = directory;
+    fh->d_is_fnmatch = d_is_fnmatch;
+    fh->regex = regex;
 
     apr_hash_set(conf->in_filters, frec->name, APR_HASH_KEY_STRING, fh);
 
@@ -2252,6 +2352,10 @@ static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig,
     py_config *conf;
     py_handler *fh;
     ap_filter_rec_t *frec;
+
+    char *directory = 0;
+    int d_is_fnmatch = 0;
+    ap_regex_t *regex = 0;
  
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
@@ -2260,12 +2364,16 @@ static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig,
        directive is only allowed in the main config. For .htaccess we
        would have to make sure not to duplicate this */
     frec = ap_register_output_filter(name, python_output_filter, NULL, AP_FTYPE_RESOURCE);
- 
+
+    determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &regex);
+
     conf = (py_config *) mconfig;
     
     fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
     fh->handler = (char *)handler;
-    fh->dir = conf->config_dir;
+    fh->directory = directory;
+    fh->d_is_fnmatch = d_is_fnmatch;
+    fh->regex = regex;
 
     apr_hash_set(conf->out_filters, frec->name, APR_HASH_KEY_STRING, fh);
 
