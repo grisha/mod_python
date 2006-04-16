@@ -588,6 +588,19 @@ def req_add_empty_handler_string(req):
 
     return apache.OK
 
+def req_add_handler_empty_phase(req):
+    req.log_error("req_add_handler_empty_phase")
+    req.log_error("phase=%s" % req.phase)
+    req.log_error("interpreter=%s" % req.interpreter)
+    req.log_error("directory=%s" % req.hlist.directory)
+    if req.phase != "PythonHandler":
+        directory = os.path.dirname(__file__)
+        req.add_handler("PythonHandler", "tests::req_add_handler_empty_phase", directory)
+    else:
+        req.write("test ok")
+
+    return apache.OK
+
 def accesshandler_add_handler_to_empty_hl(req):
     # Prior to version 3.2.6, adding a python handler 
     # to and empty handler list would cause a segfault
