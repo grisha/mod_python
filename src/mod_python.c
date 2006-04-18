@@ -960,12 +960,28 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
         directory = ap_make_dirstr_parent(p, directive->filename);
     }
 
-    /* Only add trailing slash at this point if no
-     * pattern matching to be done at a later time. */
+    /* Only canonicalize path and add trailing slash at
+     * this point if no pattern matching to be done at
+     * a later time. */
 
     if (!d_is_fnmatch && !regex) {
-        if (directory && (directory[strlen(directory) - 1] != '/'))
-            directory = apr_pstrcat(p, directory, "/", NULL);
+
+        char *newpath = 0;
+        apr_status_t rv;
+
+        rv = apr_filepath_merge(&newpath, NULL, directory,
+                                APR_FILEPATH_TRUENAME, p);
+
+        /* Should be able to ignore a failure as any
+         * problem with path should have been flagged
+         * when configuration was read in. */
+
+        if (rv == APR_SUCCESS || rv == APR_EPATHWILD) {
+            directory = newpath;
+            if (directory[strlen(directory) - 1] != '/') {
+                directory = apr_pstrcat(p, directory, "/", NULL);
+            }
+        }
     }
 
     *dp = directory;
