@@ -62,9 +62,13 @@
 #endif
 
 #if !AP_MODULE_MAGIC_AT_LEAST(20050127,0)
+/* Debian backported ap_regex_t to Apache 2.0 and
+ * thus made official version checking break. */
+#ifndef AP_REG_EXTENDED
 typedef regex_t ap_regex_t;
 #define AP_REG_EXTENDED REG_EXTENDED
 #define AP_REG_ICASE REG_ICASE
+#endif
 #endif
 
 /* Python headers */
