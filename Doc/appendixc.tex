@@ -236,6 +236,13 @@
       directory value will now correctly resolve to the directory corresponding
       to any parent \code{Directory} directive or the location of the
       \code{.htaccess} file the \code{Files} directive is contained in.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-166]{MODPYTHON-166})
+      \code{PythonHandlerModule} was not setting up registration of the
+      \code{PythonFixupHandler} or \code{PythonAuthenHandler}. For the
+      latter this meant that using \code{Require} directive with
+      \code{PythonHandlerModule} would cause a 500 error and complaint in
+      error log about "No groups file".
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}

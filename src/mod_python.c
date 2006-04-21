@@ -2284,8 +2284,10 @@ static const char *directive_PythonHandlerModule(cmd_parms *cmd, void *mconfig,
     python_directive_handler(cmd, mconfig, "PythonTransHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonHeaderParserHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonAccessHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonAuthenHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonAuthzHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonTypeHandler", val, SILENT);
+    python_directive_handler(cmd, mconfig, "PythonFixupHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonInitHandler", val, SILENT);
     python_directive_handler(cmd, mconfig, "PythonLogHandler", val, SILENT);
