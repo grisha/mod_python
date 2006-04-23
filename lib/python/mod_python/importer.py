@@ -154,10 +154,10 @@ def import_module(module_name, autoreload=None, log=None, path=None):
     if os.path.isabs(module_name):
         file = module_name
 
-    elif module_name[:2] == '~/':
-        directory = get_directory()
-        if directory is not None:
-            file = os.path.join(directory, module_name[2:])
+    #elif module_name[:2] == '~/':
+    #    directory = get_directory()
+    #    if directory is not None:
+    #        file = os.path.join(directory, module_name[2:])
 
     elif module_name[:2] == './':
         context = _parent_context()
@@ -1183,12 +1183,23 @@ def FilterDispatch(self, filter):
             # current request so that it will be
             # available from within 'import_module()'.
 
+            directory = filter.dir
+            handler = filter.handler
+
+            if handler[:2] == './':
+                if directory is not None:
+                    handler = os.path.join(directory, handler[2:])
+
+            elif handler[:3] == '../':
+                if directory is not None:
+                    handler = os.path.join(directory, handler)
+
             config = filter.req.get_config()
-            cache = _setup_config_cache(config, filter.dir)
+            cache = _setup_config_cache(config, directory)
 
             (aborted, result) = _process_target(config=config,
-                    req=filter.req, directory=filter.dir,
-                    handler=filter.handler, default=default_handler,
+                    req=filter.req, directory=directory,
+                    handler=handler, default=default_handler,
                     arg=filter, silent=0)
 
             if not filter.closed:
@@ -1281,11 +1292,20 @@ def HandlerDispatch(self, req):
                 # available from within 'import_module()'.
 
                 directory = hlist.directory
+                handler = hlist.handler
+
+                if handler[:2] == './':
+                    if directory is not None:
+                        handler = os.path.join(directory, handler[2:])
+
+                elif handler[:3] == '../':
+                    if directory is not None:
+                        handler = os.path.join(directory, handler)
 
                 cache = _setup_config_cache(config, directory)
 
                 (aborted, result) = _process_target(config=config, req=req,
-                        directory=directory, handler=hlist.handler,
+                        directory=directory, handler=handler,
                         default=default_handler, arg=req, silent=hlist.silent)
 
             finally:
