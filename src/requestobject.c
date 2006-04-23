@@ -477,7 +477,13 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
 
 static PyObject *req_auth_name(requestobject *self)
 {
-    return PyString_FromString(ap_auth_name(self->request_rec));
+    const char *auth_name = ap_auth_name(self->request_rec);
+
+    if (!auth_name) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    return PyString_FromString(auth_name);
 }
 
 /**
@@ -488,7 +494,14 @@ static PyObject *req_auth_name(requestobject *self)
 
 static PyObject *req_auth_type(requestobject *self)
 {
-    return PyString_FromString(ap_auth_type(self->request_rec));
+    const char *auth_type = ap_auth_type(self->request_rec);
+
+    if (!auth_type) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    return PyString_FromString(auth_type);
 }
 
 /**
