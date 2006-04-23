@@ -1843,7 +1843,6 @@ static apr_status_t handle_python(include_ctx_t *ctx,
 
         Py_XDECREF(tagobject);
         Py_XDECREF(codeobject);
-        release_interpreter();
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -1985,7 +1984,6 @@ static apr_status_t handle_python(include_ctx_t *ctx,
 
         Py_XDECREF(tagobject);
         Py_XDECREF(codeobject);
-        release_interpreter();
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
