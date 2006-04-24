@@ -147,6 +147,11 @@
       indicating that the PDB session has been aborted is raised rather
       than \code{None} being returned with a subsequent error complaining
       about the handler returning an invalid value.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-101]{MODPYTHON-101})
+      Force an exception when handler evaluates to something other than
+      \code{None} but is otherwise not callable. Previously an exception
+      would not be generated if the handler evaluated to \code{False}.
   \end{itemize}
 
   Bug Fixes
