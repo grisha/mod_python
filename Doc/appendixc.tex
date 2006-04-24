@@ -136,6 +136,17 @@
       Added additional debugging and logging output for where mod_python
       cannot initialise itself properly due to Python or mod_python version
       mismatches or missing Python module code files.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-90]{MODPYTHON-90})
+      The \code{PythonEnablePdb} configuration option will now be ignored
+      if Apache hasn't been started up in single process mode.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-91]{MODPYTHON-91})
+      If running Apache in single process mode with PDB enabled and the
+      "quit" command is used to exit that debug session, an exception
+      indicating that the PDB session has been aborted is raised rather
+      than \code{None} being returned with a subsequent error complaining
+      about the handler returning an invalid value.
   \end{itemize}
 
   Bug Fixes
