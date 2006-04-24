@@ -104,9 +104,32 @@ class CallBack:
 
             if object:
 
-                # call the object
-                if int(config.get("PythonEnablePdb", 0)):
-                    result = pdb.runcall(object, conn)
+                # Only permit debugging using pdb if Apache has
+                # actually been started in single process mode.
+
+                pdb_debug = int(config.get("PythonEnablePdb", "0"))
+                one_process = exists_config_define("ONE_PROCESS")
+
+                if pdb_debug and one_process:
+
+                    # Don't use pdb.runcall() as it results in
+                    # a bogus 'None' response when pdb session
+                    # is quit. With this code the exception
+                    # marking that the session has been quit is
+                    # propogated back up and it is obvious in
+                    # the error message what actually occurred.
+
+                    debugger = pdb.Pdb()
+                    debugger.reset()
+                    sys.settrace(debugger.trace_dispatch)
+
+                    try:
+                        result = object(conn)
+
+                    finally:
+                        debugger.quitting = 1
+                        sys.settrace(None)
+
                 else:
                     result = object(conn)
 
@@ -186,11 +209,34 @@ class CallBack:
 
             if object:
 
-                # call the object
-                if int(config.get("PythonEnablePdb", 0)):
-                    pdb.runcall(object, filter)
+                # Only permit debugging using pdb if Apache has
+                # actually been started in single process mode.
+
+                pdb_debug = int(config.get("PythonEnablePdb", "0"))
+                one_process = exists_config_define("ONE_PROCESS")
+
+                if pdb_debug and one_process:
+
+                    # Don't use pdb.runcall() as it results in
+                    # a bogus 'None' response when pdb session
+                    # is quit. With this code the exception
+                    # marking that the session has been quit is
+                    # propogated back up and it is obvious in
+                    # the error message what actually occurred.
+
+                    debugger = pdb.Pdb()
+                    debugger.reset()
+                    sys.settrace(debugger.trace_dispatch)
+
+                    try:
+                        result = object(filter)
+
+                    finally:
+                        debugger.quitting = 1
+                        sys.settrace(None)
+
                 else:
-                    object(filter)
+                    result = object(filter)
 
                 # always flush the filter. without a FLUSH or EOS bucket,
                 # the content is never written to the network.
@@ -301,9 +347,32 @@ class CallBack:
 
                 if object:
 
-                    # call the object
-                    if int(config.get("PythonEnablePdb", 0)):
-                        result = pdb.runcall(object, req)
+                    # Only permit debugging using pdb if Apache has
+                    # actually been started in single process mode.
+
+                    pdb_debug = int(config.get("PythonEnablePdb", "0"))
+                    one_process = exists_config_define("ONE_PROCESS")
+
+                    if pdb_debug and one_process:
+
+                        # Don't use pdb.runcall() as it results in
+                        # a bogus 'None' response when pdb session
+                        # is quit. With this code the exception
+                        # marking that the session has been quit is
+                        # propogated back up and it is obvious in
+                        # the error message what actually occurred.
+
+                        debugger = pdb.Pdb()
+                        debugger.reset()
+                        sys.settrace(debugger.trace_dispatch)
+
+                        try:
+                            result = object(req)
+
+                        finally:
+                            debugger.quitting = 1
+                            sys.settrace(None)
+
                     else:
                         result = object(req)
 
