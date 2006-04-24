@@ -254,6 +254,13 @@
       latter this meant that using \code{Require} directive with
       \code{PythonHandlerModule} would cause a 500 error and complaint in
       error log about "No groups file".
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-167]{MODPYTHON-167})
+      When \code{PythonDebug} was \code{On} and and exception occurred, the
+      response to the client had a status of \code{200} when it really should
+      have been a \code{500} error status indicating that an internal error
+      occurred. A \code{500} error status was correctly being returned when
+      \code{PythonDebug} was \code{Off}.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
