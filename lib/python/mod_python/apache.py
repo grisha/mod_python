@@ -102,39 +102,37 @@ class CallBack:
             object = resolve_object(module, object_str,
                                     arg=conn, silent=0)
 
-            if object:
+            # Only permit debugging using pdb if Apache has
+            # actually been started in single process mode.
 
-                # Only permit debugging using pdb if Apache has
-                # actually been started in single process mode.
+            pdb_debug = int(config.get("PythonEnablePdb", "0"))
+            one_process = exists_config_define("ONE_PROCESS")
 
-                pdb_debug = int(config.get("PythonEnablePdb", "0"))
-                one_process = exists_config_define("ONE_PROCESS")
+            if pdb_debug and one_process:
 
-                if pdb_debug and one_process:
+                # Don't use pdb.runcall() as it results in
+                # a bogus 'None' response when pdb session
+                # is quit. With this code the exception
+                # marking that the session has been quit is
+                # propogated back up and it is obvious in
+                # the error message what actually occurred.
 
-                    # Don't use pdb.runcall() as it results in
-                    # a bogus 'None' response when pdb session
-                    # is quit. With this code the exception
-                    # marking that the session has been quit is
-                    # propogated back up and it is obvious in
-                    # the error message what actually occurred.
+                debugger = pdb.Pdb()
+                debugger.reset()
+                sys.settrace(debugger.trace_dispatch)
 
-                    debugger = pdb.Pdb()
-                    debugger.reset()
-                    sys.settrace(debugger.trace_dispatch)
-
-                    try:
-                        result = object(conn)
-
-                    finally:
-                        debugger.quitting = 1
-                        sys.settrace(None)
-
-                else:
+                try:
                     result = object(conn)
 
-                assert (type(result) == type(int())), \
-                       "ConnectionHandler '%s' returned invalid return code." % handler
+                finally:
+                    debugger.quitting = 1
+                    sys.settrace(None)
+
+            else:
+                result = object(conn)
+
+            assert (type(result) == type(int())), \
+                   "ConnectionHandler '%s' returned invalid return code." % handler
 
         except PROG_TRACEBACK, traceblock:
             # Program run-time error
@@ -207,42 +205,40 @@ class CallBack:
             # find the object
             object = resolve_object(module, object_str, arg=filter, silent=0)
 
-            if object:
+            # Only permit debugging using pdb if Apache has
+            # actually been started in single process mode.
 
-                # Only permit debugging using pdb if Apache has
-                # actually been started in single process mode.
+            pdb_debug = int(config.get("PythonEnablePdb", "0"))
+            one_process = exists_config_define("ONE_PROCESS")
 
-                pdb_debug = int(config.get("PythonEnablePdb", "0"))
-                one_process = exists_config_define("ONE_PROCESS")
+            if pdb_debug and one_process:
 
-                if pdb_debug and one_process:
+                # Don't use pdb.runcall() as it results in
+                # a bogus 'None' response when pdb session
+                # is quit. With this code the exception
+                # marking that the session has been quit is
+                # propogated back up and it is obvious in
+                # the error message what actually occurred.
 
-                    # Don't use pdb.runcall() as it results in
-                    # a bogus 'None' response when pdb session
-                    # is quit. With this code the exception
-                    # marking that the session has been quit is
-                    # propogated back up and it is obvious in
-                    # the error message what actually occurred.
+                debugger = pdb.Pdb()
+                debugger.reset()
+                sys.settrace(debugger.trace_dispatch)
 
-                    debugger = pdb.Pdb()
-                    debugger.reset()
-                    sys.settrace(debugger.trace_dispatch)
-
-                    try:
-                        result = object(filter)
-
-                    finally:
-                        debugger.quitting = 1
-                        sys.settrace(None)
-
-                else:
+                try:
                     result = object(filter)
 
-                # always flush the filter. without a FLUSH or EOS bucket,
-                # the content is never written to the network.
-                # XXX an alternative is to tell the user to flush() always
-                if not filter.closed: 
-                    filter.flush()
+                finally:
+                    debugger.quitting = 1
+                    sys.settrace(None)
+
+            else:
+                result = object(filter)
+
+            # always flush the filter. without a FLUSH or EOS bucket,
+            # the content is never written to the network.
+            # XXX an alternative is to tell the user to flush() always
+            if not filter.closed: 
+                filter.flush()
 
         except SERVER_RETURN, value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -345,7 +341,7 @@ class CallBack:
                 object = resolve_object(module, object_str,
                                         arg=req, silent=hlist.silent)
 
-                if object:
+                if not hlist.silent or object is not None:
 
                     # Only permit debugging using pdb if Apache has
                     # actually been started in single process mode.

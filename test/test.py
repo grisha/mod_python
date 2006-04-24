@@ -2018,6 +2018,32 @@ class PerRequestTestCase(unittest.TestCase):
         if rsp != directory:
             self.fail(`rsp`)
 
+    def test_none_handler_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_none_handler"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::none_handler"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_none_handler(self):
+
+        print "\n  * Testing None handler"
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "test_none_handler:%s" % PORT)
+        conn.endheaders()
+        response = conn.getresponse()
+        status = response.status
+        rsp = response.read()
+        conn.close()
+        if status != 500:
+            print status, rsp
+            self.fail("none handler should generate error")
+
     def test_publisher_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
@@ -2507,6 +2533,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
         perRequestSuite.addTest(PerRequestTestCase("test_files_directive"))
+        perRequestSuite.addTest(PerRequestTestCase("test_none_handler"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_nested"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_method_nested"))
