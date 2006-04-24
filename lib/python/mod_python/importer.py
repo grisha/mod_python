@@ -951,7 +951,7 @@ def _execute_target(config, req, object, arg):
         # Only permit debugging using pdb if Apache has
         # actually been started in single process mode.
 
-        pdb_debug = config.has_key("PythonEnablePdb")
+        pdb_debug = int(config.get("PythonEnablePdb", "0"))
         one_process = apache.exists_config_define("ONE_PROCESS")
 
         if pdb_debug and one_process:
