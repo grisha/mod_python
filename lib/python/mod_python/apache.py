@@ -533,6 +533,7 @@ class CallBack:
                     return HTTP_INTERNAL_SERVER_ERROR
                 else:
                     # write to client
+                    req.status = HTTP_INTERNAL_SERVER_ERROR
                     req.content_type = 'text/html'
 
                     s = '\n<pre>\nMod_python error: "%s %s"\n\n' % (phase, hname)
