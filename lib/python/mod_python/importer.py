@@ -172,34 +172,33 @@ def import_module(module_name, autoreload=None, log=None, path=None):
             file = os.path.join(directory, module_name)
 
     if file is None:
-        # If not an explicit file reference, it is a
-        # module name. Determine the list of directories
-        # that need to be searched for a module code
-        # file. These directories will be, the handler
-        # root directory and any specified search path.
-        # The handler root though is only checked if it
-        # is known and the 'PythonPath' directive is not
-        # specified. The latter check of 'PythonPath' is
-        # made purely to ensure backward compatability
-        # with old code where the handler root would
-        # previously have been added automatically to
-        # 'sys.path'. The danger is where users add the
-        # handler root to 'PythonPath' explicitly. They
-        # need to be educated not to do this with the
-        # new module importing system as it is not
-        # really necessary and will just continue to
-        # cause possible problems if they do so.
+	# If not an explicit file reference, it is a
+	# module name. Determine the list of directories
+	# that need to be searched for a module code
+	# file. These directories will be, the directory
+	# of the parent if also imported using this
+	# importer and any specified search path. When
+	# enabled, the handler root directory will also
+	# be searched.
 
         search_path = []
 
         if path is not None:
             search_path.extend(path)
 
-        config = get_config()
-        if config and not config.has_key('PythonPath'):
+        context = _parent_context()
+        if context is not None:
+            local_directory = os.path.dirname(context.file)
+            search_path.append(local_directory)
+
+            if context.path is not None:
+                search_path.extend(context.path)
+
+        options = apache.main_server.get_options()
+        if int(options.get('mod_python.importer.search_handler_root', '0')):
             directory = get_directory()
             if directory is not None:
-                if path is None or directory not in path:
+                if not path or directory not in path:
                     search_path.append(directory)
 
         # Attempt to find the code file for the module
@@ -848,23 +847,12 @@ class _ModuleImporter:
         if context is None:
             return None
 
-        # Determine the list of directories that need to
-        # be searched for a module code file. These
-        # directories will be, the handler root
-        # directory, the directory of the parent and any
-        # specified search path. The handler root though
-        # is only checked if it is known and the
-        # 'PythonPath' directive is not specified. The
-        # latter check of 'PythonPath' is made purely to
-        # ensure backward compatability with old code
-        # where the handler root would previously have
-        # been added automatically to 'sys.path'. The
-        # danger is where users add the handler root to
-        # 'PythonPath' explicitly. They need to be
-        # educated not to do this with the new module
-        # importing system as it is not really necessary
-        # and will just continue to cause possible
-        # problems if they do so.
+	# Determine the list of directories that need to
+	# be searched for a module code file. These
+	# directories will be, the directory of the
+	# parent and any specified search path. When
+	# enabled, the handler root directory will also
+	# be searched.
 
         search_path = []
 
@@ -874,14 +862,12 @@ class _ModuleImporter:
         if context.path is not None:
             search_path.extend(context.path)
 
-        config = get_config()
-        if config and not config.has_key('PythonPath'):
-            root_directory = get_directory()
-            if root_directory is not None:
-                if root_directory != local_directory:
-                    if (context.path is None or
-                            root_directory not in context.path):
-                        search_path.append(root_directory)
+        options = apache.main_server.get_options()
+        if int(options.get('mod_python.importer.search_handler_root', '0')):
+            directory = get_directory()
+            if directory is not None:
+                if not path or directory not in path:
+                    search_path.append(directory)
 
         # Return if we have no search path to search.
 
