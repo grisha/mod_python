@@ -1928,6 +1928,8 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::Session_Session"),
                                   PythonOption('session_directory "%s"' % TMP_DIR),
+                                  PythonOption('ApplicationPath "/path"'),
+                                  PythonOption('mod_python.session.application_domain "test_Session_Session"'),
                                   PythonDebug("On")))
         return str(c)
 
@@ -1946,6 +1948,18 @@ class PerRequestTestCase(unittest.TestCase):
 
         if rsp != "test ok" or setcookie == None:
             self.fail("session did not set a cookie")
+
+        parts = setcookie.split('; ')
+        fields = {}
+        for part in parts:
+          key, value = part.split('=')
+          fields[key] = value
+
+        if not fields.has_key('path') or fields['path'] != '/path':
+            self.fail("session did not contain expected 'path'")
+
+        if not fields.has_key('domain') or fields['domain'] != 'test_Session_Session':
+            self.fail("session did not contain expected 'domain'")
 
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)

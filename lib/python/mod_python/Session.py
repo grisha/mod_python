@@ -194,6 +194,8 @@ class BaseSession(dict):
             c = Cookie.Cookie(session_cookie_name, self._sid)
 
         config = self._req.get_options()
+        if config.has_key("mod_python.session.application_domain"): 
+            c.domain = config["mod_python.session.application_domain"] 
         if config.has_key("ApplicationPath"):
             c.path = config["ApplicationPath"]
         else:

@@ -2250,6 +2250,13 @@ delay.)
   \code{ApplicationPath} option (\samp{PythonOption ApplicationPath
   /my/path} in server configuration).
 
+  The domain of a cookie is by default not set for a session and as such
+  the session is only valid for the host which generated it. In order to
+  have a session which spans across common sub domains, you can specify the
+  parent domain using the \code{mod_python.session.application_domain}
+  option (\samp{PythonOption mod_python.session.application_domain
+  mod_python.org} in server configuration).
+
   When a \var{secret} is provided, \class{BaseSession} will use
   \class{SignedCookie} when generating cookies thereby making the
   session id almost impossible to fake. The default is to use plain
