@@ -162,7 +162,6 @@ static PyObject * make_obcallback(char *name, server_rec *s)
         }
 
         Py_XDECREF(o);
-        Py_XDECREF(d);
         Py_XDECREF(f);
     }
 
