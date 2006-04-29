@@ -119,7 +119,7 @@
     }
 }
 
-<PYCODE>\r\n|\n {
+<PYCODE>\r\n|\n|\r {
     psp_string_appendc(&PSP_PG(pycode), '\n');
         
     PSP_PG(seen_newline) = 1;
