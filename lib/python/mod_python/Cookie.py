@@ -59,7 +59,9 @@ class metaCookie(type):
             "version", "path", "domain", "secure",
             "comment", "expires", "max_age",
             # RFC 2965
-            "commentURL", "discard", "port")
+            "commentURL", "discard", "port",
+            # Microsoft Extension
+            "httponly" )
 
         # _valid_attr + property values
         # (note __slots__ is a new Python feature, it
@@ -149,7 +151,7 @@ class Cookie(object):
         result = ["%s=%s" % (self.name, self.value)]
         for name in self._valid_attr:
             if hasattr(self, name):
-                if name in ("secure", "discard"):
+                if name in ("secure", "discard", "httponly"):
                     result.append(name)
                 else:
                     result.append("%s=%s" % (name, getattr(self, name)))
@@ -205,7 +207,7 @@ class SignedCookie(Cookie):
                                self.value)]
         for name in self._valid_attr:
             if hasattr(self, name):
-                if name in ("secure", "discard"):
+                if name in ("secure", "discard", "httponly"):
                     result.append(name)
                 else:
                     result.append("%s=%s" % (name, getattr(self, name)))
@@ -268,7 +270,7 @@ class MarshalCookie(SignedCookie):
         result = ["%s=%s%s" % (self.name, self.hexdigest(m), m)]
         for name in self._valid_attr:
             if hasattr(self, name):
-                if name in ("secure", "discard"):
+                if name in ("secure", "discard", "httponly"):
                     result.append(name)
                 else:
                     result.append("%s=%s" % (name, getattr(self, name)))
