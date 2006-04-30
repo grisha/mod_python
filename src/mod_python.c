@@ -192,6 +192,34 @@ static interpreterdata *save_interpreter(const char *name, PyInterpreterState *i
     return idata;
 }
 
+/*
+ * python_interpreter_name
+ *
+ *      Get name of current interpreter. Must be called while lock is held.
+ *      This is effectively a shortcut for accessing "apache.interpreter".
+ */
+
+PyObject *python_interpreter_name()
+{
+    PyObject *m = NULL;
+    PyObject *d = NULL;
+    PyObject *o = NULL;
+
+    m = PyImport_ImportModule("mod_python.apache");
+    if (m) {
+        d = PyModule_GetDict(m);
+        o = PyDict_GetItemString(d, "interpreter");
+
+        if (o) {
+            Py_INCREF(o);
+            Py_DECREF(m);
+            return o;
+        }
+    }
+
+    return 0;
+}
+
 /**
  ** get_interpreter
  **
@@ -325,6 +353,7 @@ apr_status_t python_cleanup(void *data)
     if (!idata) {
         Py_DECREF(ci->handler);
         Py_XDECREF(ci->data);
+        free((void *)ci->interpreter);
         free(ci);
         return APR_SUCCESS; /* this is ignored anyway */
     }
@@ -377,6 +406,7 @@ apr_status_t python_cleanup(void *data)
 
     Py_DECREF(ci->handler);
     Py_DECREF(ci->data);
+    free((void *)ci->interpreter);
     free(ci);
 
     release_interpreter();
@@ -1096,13 +1126,13 @@ static const char *python_directive_flag(void * mconfig, char *key, int val)
 static apr_status_t python_cleanup_handler(void *data);
 
 /**
- ** get_request_object
+ ** python_get_request_object
  **
  *      This creates or retrieves a previously created request object.
  *      The pointer to request object is stored in req->request_config.
  */
 
-static requestobject *get_request_object(request_rec *req, const char *interp_name, char *phase)
+requestobject *python_get_request_object(request_rec *req, const char *phase)
 {
     py_req_config *req_config;
     requestobject *request_obj = NULL;
@@ -1160,11 +1190,6 @@ static requestobject *get_request_object(request_rec *req, const char *interp_na
                                   python_cleanup_handler, 
                                   apr_pool_cleanup_null);
     }
-    /* make a note of which subinterpreter we're running under */
-    if (interp_name)
-        request_obj->interpreter = apr_pstrdup(req->pool, interp_name);
-    else
-        request_obj->interpreter = apr_pstrdup(req->pool, MAIN_INTERPRETER);
 
     /* make a note of which phase we are in right now */
     if (phase)
@@ -1348,7 +1373,7 @@ static int python_handler(request_rec *req, char *phase)
     }
     
     /* create/acquire request object */
-    request_obj = get_request_object(req, interp_name, phase);
+    request_obj = python_get_request_object(req, phase);
 
     /* remember the extension if any. used by publisher */
     if (ext) 
@@ -1646,7 +1671,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     }
 
     /* create/acquire request object */
-    request_obj = get_request_object(req, interp_name, 0);
+    request_obj = python_get_request_object(req, 0);
 
     req_config = (py_req_config *) ap_get_module_config(req->request_config,
                                                         &python_module);
@@ -1846,7 +1871,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     }
 
     /* create/acquire request object */
-    request_obj = get_request_object(req, interp_name, 0);
+    request_obj = python_get_request_object(req, 0);
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, 0, 0, 0, 0, 0);
@@ -1987,7 +2012,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     }
 
     /* create/acquire request object */
-    request_obj = get_request_object(req, interp_name, 0);
+    request_obj = python_get_request_object(req, 0);
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, *bb, 0, 0, 0, 0, 0);

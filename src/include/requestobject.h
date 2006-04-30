@@ -34,9 +34,6 @@ extern "C" {
         request_rec    * request_rec;
         PyObject       * connection;
         PyObject       * server;
-        PyObject       * next;
-        PyObject       * prev;
-        PyObject       * main;
         PyObject       * headers_in;
         PyObject       * headers_out;
         PyObject       * err_headers_out;
@@ -44,7 +41,6 @@ extern "C" {
         PyObject       * notes;
         PyObject       * phase;
         char           * extension;   /* for | .ext syntax */
-        char           * interpreter; 
         int              content_type_set;
         hlistobject    * hlo;
         char           * rbuff;       /* read bufer */

@@ -59,9 +59,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->request_rec = req;
     result->connection = NULL;
     result->server = NULL;
-    result->next = NULL;
-    result->prev = NULL;
-    result->main = NULL;
     result->headers_in = MpTable_FromTable(req->headers_in);
     result->headers_out = MpTable_FromTable(req->headers_out);
     result->err_headers_out = MpTable_FromTable(req->err_headers_out);
@@ -69,7 +66,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->notes = MpTable_FromTable(req->notes);
     result->phase = NULL;
     result->extension = NULL;
-    result->interpreter = NULL;
     result->content_type_set = 0;
     result->hlo = NULL;
     result->rbuff = NULL;
@@ -1108,6 +1104,8 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
     cleanup_info *ci;
     PyObject *handler = NULL;
     PyObject *data = NULL;
+    PyObject *name_obj = NULL;
+    char *name = NULL;
 
     if (! PyArg_ParseTuple(args, "O|O", &handler, &data))
         return NULL;  /* bad args */
@@ -1118,7 +1116,10 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
     if (PyCallable_Check(handler)) {
         Py_INCREF(handler);
         ci->handler = handler;
-        ci->interpreter = self->interpreter;
+        name_obj = python_interpreter_name();
+        name = (char *)malloc(strlen(PyString_AsString(name_obj))+1);
+        strcpy(name, PyString_AsString(name_obj));
+        ci->interpreter = name;
         if (data) {
             Py_INCREF(data);
             ci->data = data;
@@ -1490,7 +1491,10 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
      * replaced in between handlers and we're left with a stale.
      */
 
-    if (strcmp(name, "headers_in") == 0) {
+    if (strcmp(name, "interpreter") == 0) {
+        return python_interpreter_name();
+    }
+    else if (strcmp(name, "headers_in") == 0) {
         if (((tableobject*)self->headers_in)->table != self->request_rec->headers_in) 
             ((tableobject*)self->headers_in)->table = self->request_rec->headers_in;
         Py_INCREF(self->headers_in);
@@ -1740,24 +1744,22 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
         result = self->server;
     }
     else if (strcmp(name, "next") == 0) {
-        if (!self->next && self->request_rec->next) {
-            self->next = MpRequest_FromRequest(self->request_rec->next);
-            ((requestobject*)self->next)->prev = (PyObject *) self;
+        if (self->request_rec->next) {
+            result = (PyObject*)python_get_request_object(
+                self->request_rec->next, 0);
         }
-        result = self->next;
     }
     else if (strcmp(name, "prev") == 0) {
-        if (!self->prev && self->request_rec->prev) {
-            self->prev = MpRequest_FromRequest(self->request_rec->prev);
-            ((requestobject*)self->prev)->next = (PyObject *) self;
+        if (self->request_rec->prev) {
+            result = (PyObject*)python_get_request_object(
+                self->request_rec->prev, 0);
         }
-        result = self->prev;
     }
     else if (strcmp(name, "main") == 0) {
-        if (!self->main && self->request_rec->main) {
-            self->main = MpRequest_FromRequest(self->request_rec->main);
+        if (self->request_rec->main) {
+            result = (PyObject*)python_get_request_object(
+                self->request_rec->main, 0);
         }
-        result = self->main;
     }
 
     if (!result)
@@ -1769,6 +1771,7 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
 }
 
 static PyGetSetDef request_getsets[] = {
+    {"interpreter", (getter)getreq_recmbr, NULL, "Python interpreter name", "interpreter"},
     {"connection", (getter)getmakeobj, NULL, "Connection object", "connection"},
     {"server",     (getter)getmakeobj, NULL, "Server object", "server"},
     {"next",       (getter)getmakeobj, NULL, "If redirected, pointer to the to request", "next"},
@@ -1838,7 +1841,6 @@ static struct PyMemberDef request_members[] = {
     {"_content_type_set",  T_INT,       OFF(content_type_set),  RO},
     {"phase",              T_OBJECT,    OFF(phase),             RO},
     {"extension",          T_STRING,    OFF(extension),         RO},
-    {"interpreter",        T_STRING,    OFF(interpreter),       RO},
     {"hlist",              T_OBJECT,    OFF(hlo),               RO},
     {NULL}  /* Sentinel */
 };
@@ -1863,9 +1865,6 @@ static int request_tp_clear(requestobject *self)
     CLEAR_REQUEST_MEMBER(self->dict);
     CLEAR_REQUEST_MEMBER(self->connection);
     CLEAR_REQUEST_MEMBER(self->server);
-    CLEAR_REQUEST_MEMBER(self->next);
-    CLEAR_REQUEST_MEMBER(self->prev);
-    CLEAR_REQUEST_MEMBER(self->main);
     CLEAR_REQUEST_MEMBER(self->headers_in);
     CLEAR_REQUEST_MEMBER(self->headers_out);
     CLEAR_REQUEST_MEMBER(self->err_headers_out);
@@ -1917,9 +1916,6 @@ static int request_tp_traverse(requestobject* self, visitproc visit, void *arg) 
     VISIT_REQUEST_MEMBER(self->dict, visit, arg);
     VISIT_REQUEST_MEMBER(self->connection, visit, arg);
     VISIT_REQUEST_MEMBER(self->server, visit, arg);
-    VISIT_REQUEST_MEMBER(self->next, visit, arg);
-    VISIT_REQUEST_MEMBER(self->prev, visit, arg);
-    VISIT_REQUEST_MEMBER(self->main, visit, arg);
     VISIT_REQUEST_MEMBER(self->headers_in, visit, arg);
     VISIT_REQUEST_MEMBER(self->headers_out, visit, arg);
     VISIT_REQUEST_MEMBER(self->err_headers_out, visit, arg);

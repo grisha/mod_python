@@ -155,6 +155,16 @@
       Force an exception when handler evaluates to something other than
       \code{None} but is otherwise not callable. Previously an exception
       would not be generated if the handler evaluated to \code{False}.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-152]{MODPYTHON-152})
+      When in a sub request, when a request is the result of an internal
+      redirect, or when when returning from such a request, the
+      \code{req.main}, \code{req.prev} and \code{req.next} members now
+      correctly return a reference to the original Python request object
+      wrapper first created for the specific \code{request_rec} instance
+      rather than creating a new distinct Python request object. This means
+      that any data added explicitly to a request object can be passed
+      between such requests.
   \end{itemize}
 
   Bug Fixes
