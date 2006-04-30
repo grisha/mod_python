@@ -201,6 +201,8 @@ typedef struct
 } py_handler;
 
 apr_status_t python_cleanup(void *data);
+PyObject* python_interpreter_name(void);
+requestobject *python_get_request_object(request_rec *req, const char *phase);
 
 #endif /* !Mp_MOD_PYTHON_H */
 
