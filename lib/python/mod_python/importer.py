@@ -1365,6 +1365,19 @@ def IncludeDispatch(self, filter, tag, code):
 
             filter.req.ssi_globals["filter"] = filter
 
+            class _InstanceInfo:
+
+                def __init__(self, label, file, cache):
+                    self.label = label
+                    self.file = file
+                    self.cache = cache
+                    self.children = {}
+                    self.path = []
+
+            filter.req.ssi_globals["__file__"] = filter.req.filename
+            filter.req.ssi_globals["__info__"] = _InstanceInfo(
+                    None, filter.req.filename, None)
+
             code = code.rstrip()
 
             if tag == 'eval':
