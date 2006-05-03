@@ -37,6 +37,10 @@ except:
 _path_cache = {}
 _path_cache_lock = threading.Lock()
 
+_result_warning = """Handler has returned result or raised SERVER_RETURN
+exception with argument having non integer type. Type of value returned
+was %s, whereas expected """ + str(types.IntType) + "."
+
 class CallBack:
     """
     A generic callback object.
@@ -343,37 +347,52 @@ class CallBack:
 
                 if not hlist.silent or object is not None:
 
-                    # Only permit debugging using pdb if Apache has
-                    # actually been started in single process mode.
+                    try:
+                        # Only permit debugging using pdb if Apache has
+                        # actually been started in single process mode.
 
-                    pdb_debug = int(config.get("PythonEnablePdb", "0"))
-                    one_process = exists_config_define("ONE_PROCESS")
+                        pdb_debug = int(config.get("PythonEnablePdb", "0"))
+                        one_process = exists_config_define("ONE_PROCESS")
 
-                    if pdb_debug and one_process:
+                        if pdb_debug and one_process:
 
-                        # Don't use pdb.runcall() as it results in
-                        # a bogus 'None' response when pdb session
-                        # is quit. With this code the exception
-                        # marking that the session has been quit is
-                        # propogated back up and it is obvious in
-                        # the error message what actually occurred.
+                            # Don't use pdb.runcall() as it results in
+                            # a bogus 'None' response when pdb session
+                            # is quit. With this code the exception
+                            # marking that the session has been quit is
+                            # propogated back up and it is obvious in
+                            # the error message what actually occurred.
 
-                        debugger = pdb.Pdb()
-                        debugger.reset()
-                        sys.settrace(debugger.trace_dispatch)
+                            debugger = pdb.Pdb()
+                            debugger.reset()
+                            sys.settrace(debugger.trace_dispatch)
 
-                        try:
+                            try:
+                                result = object(req)
+
+                            finally:
+                                debugger.quitting = 1
+                                sys.settrace(None)
+
+                        else:
                             result = object(req)
 
-                        finally:
-                            debugger.quitting = 1
-                            sys.settrace(None)
+                    except SERVER_RETURN, value:
 
-                    else:
-                        result = object(req)
+                        # The SERVER_RETURN exception type when raised
+                        # otherwise indicates an abort from below with
+                        # value as (result, status) or (result, None) or
+                        # result.
 
-                    assert (type(result) == type(int())), \
-                           "Handler '%s' returned invalid return code." % hlist.handler
+                        if len(value.args) == 2:
+                            (result, status) = value.args
+                            if status:
+                                req.status = status
+                        else:
+                            result = value.args[0]
+
+                    assert (type(result) == types.IntType), \
+                            _result_warning % type(result)
 
                     # stop cycling through handlers
                     if result != OK:
@@ -386,26 +405,6 @@ class CallBack:
                         result = DECLINED
 
                 hlist.next()
-
-        except SERVER_RETURN, value:
-            # SERVER_RETURN indicates an abort from below
-            # with value as (result, status) or (result, None) or result
-            try:
-                if len(value.args) == 2:
-                    (result, status) = value.args
-                    if status:
-                        req.status = status
-                else:
-                    result = value.args[0]
-
-                if type(result) != type(7):
-                    s = "Value raised with SERVER_RETURN is invalid. It is a "
-                    s = s + "%s, but it must be a tuple or an int." % type(result)
-                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
-                    return HTTP_INTERNAL_SERVER_ERROR
-
-            except:
-                pass
 
         except PROG_TRACEBACK, traceblock:
             # Program run-time error

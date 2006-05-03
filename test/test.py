@@ -2058,6 +2058,25 @@ class PerRequestTestCase(unittest.TestCase):
             print status, rsp
             self.fail("none handler should generate error")
 
+    def test_server_return_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_server_return"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::server_return_1"),
+                                  PythonHandler("tests::server_return_2"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_server_return(self):
+
+        print "\n  * Testing SERVER_RETURN"
+        rsp = self.vhost_get("test_server_return")
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_publisher_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
@@ -2548,6 +2567,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_interpreter_per_directory"))
         perRequestSuite.addTest(PerRequestTestCase("test_files_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_none_handler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_server_return"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_nested"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_method_nested"))

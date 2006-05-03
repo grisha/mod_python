@@ -1088,6 +1088,13 @@ def files_directive(req):
 
 none_handler = None
 
+def server_return_1(req):
+    raise apache.SERVER_RETURN, apache.OK
+
+def server_return_2(req):
+    req.write("test ok")
+    return apache.OK
+
 def test_sys_argv(req):
     import sys
     req.write(repr(sys.argv))
