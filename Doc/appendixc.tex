@@ -288,6 +288,11 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-168]{MODPYTHON-168})
       Fixed psp_parser error when CR is used as a line terminator in psp code.
       This may occur with some older editors such as GoLive on Mac OS X.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-100]{MODPYTHON-100})
+      When using stacked handlers and a \code{SERVER_RETURN} exception was
+      used to return an \code{OK} status for that handler, any following
+      handlers weren't being run if appropriate for the phase.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
