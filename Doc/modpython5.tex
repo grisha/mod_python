@@ -16,8 +16,19 @@ Multiple handlers can be specified on a single line, in which case
 they will be called sequentially, from left to right. Same handler
 directives can be specified multiple times as well, with the same
 result - all handlers listed will be executed sequentially, from first
-to last. If any handler in the sequence returns a value other than
-\code{apache.OK}, then execution of all subsequent handlers is aborted.
+to last.
+
+If any handler in the sequence returns a value other than \code{apache.OK}
+or \code{apache.DECLINED}, then execution of all subsequent handlers for
+that phase are aborted. What happens when either \code{apache.OK} or
+\code{apache.DECLINED} is returned is dependent on which phase is
+executing.
+
+Note that prior to mod_python 3.3, if any handler in the sequence, no
+matter which phase was executing, returned a value other than
+\code{apache.OK}, then execution of all subsequent handlers for that phase
+was aborted. This is now the case only for the \code{PythonHandler}
+directive.
 
 The list of handlers can optionally be followed by a \code{|} followed
 by one or more file extensions. This would restrict the execution of
@@ -75,6 +86,10 @@ This handler is called after the request has been read but before any
 other phases have been processed. This is useful to make decisions
 based upon the input header fields.
 
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.OK} or \code{apache.DECLINED}, then
+execution of all subsequent handlers for this phase are aborted.
+
 \begin{notice}
 When this phase of the request is processed, the URI has not yet
 been translated into a path name, therefore this directive could never
@@ -109,6 +124,10 @@ This handler gives allows for an opportunity to translate the URI into
 an actual filename, before the server's default rules (Alias
 directives and the like) are followed.
 
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.DECLINED}, then execution of all
+subsequent handlers for this phase are aborted.
+
 \begin{notice}
   At the time when this phase of the request is being processed, the
   URI has not been translated into a path name, therefore this
@@ -135,6 +154,10 @@ This handler is called to give the module a chance to look at the
 request headers and take any appropriate specific actions early in the
 processing sequence.
 
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.OK} or \code{apache.DECLINED}, then
+execution of all subsequent handlers for this phase are aborted.
+
 \subsection{PythonInitHandler\label{dir-handlers-pih}}
 \index{PythonInitHandler}
 
@@ -150,6 +173,10 @@ mod_python.c
 This handler is the first handler called in the request processing
 phases that is allowed both inside and outside \file{.htaccess} and
 directory.
+
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.OK} or \code{apache.DECLINED}, then
+execution of all subsequent handlers for this phase are aborted.
 
 This handler is actually an alias to two different handlers. When
 specified in the main config file outside any directory tags, it is an
@@ -174,6 +201,10 @@ mod_python.c
 This routine is called to check for any module-specific restrictions
 placed upon the requested resource.
 
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.OK} or \code{apache.DECLINED}, then
+execution of all subsequent handlers for this phase are aborted.
+
 For example, this can be used to restrict access by IP number. To do
 so, you would return \code{HTTP_FORBIDDEN} or some such to indicate
 that access is not allowed.
@@ -194,6 +225,10 @@ This routine is called to check the authentication information sent
 with the request (such as looking up the user in a database and
 verifying that the [encrypted] password sent matches the one in the
 database).
+
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.DECLINED}, then execution of all
+subsequent handlers for this phase are aborted.
 
 To obtain the username, use \code{req.user}. To obtain the password
 entered by the user, use the \code{req.get_basic_auth_pw()} function.
@@ -241,6 +276,10 @@ This handler runs after AuthenHandler and is intended for checking
 whether a user is allowed to access a particular resource. But more
 often than not it is done right in the AuthenHandler.
 
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.DECLINED}, then execution of all
+subsequent handlers for this phase are aborted.
+
 \subsection{PythonTypeHandler\label{dir-handlers-tph}}
 \index{PythonTypeHandler}
 
@@ -257,6 +296,10 @@ This routine is called to determine and/or set the various document
 type information bits, like Content-type (via \code{r->content_type}),
 language, et cetera.
 
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.DECLINED}, then execution of all
+subsequent handlers for this phase are aborted.
+
 \subsection{PythonFixupHandler\label{dir-handlers-fuh}}
 \index{PythonFixupHandler}
 
@@ -271,6 +314,10 @@ mod_python.c
 
 This routine is called to perform any module-specific fixing of header
 fields, et cetera. It is invoked just before any content-handler.
+
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.OK} or \code{apache.DECLINED}, then
+execution of all subsequent handlers for this phase are aborted.
 
 \subsection{PythonHandler\label{dir-handlers-ph}}
 \index{PythonHandler}
@@ -287,6 +334,10 @@ mod_python.c
 This is the main request handler. Many applications will only provide
 this one handler.
 
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.OK}, then execution of all
+subsequent handlers for this phase are aborted.
+
 \subsection{PythonLogHandler\label{dir-handlers-plh}}
 \index{PythonLogHandler}
 
@@ -300,7 +351,11 @@ not None\\
 mod_python.c
 
 This routine is called to perform any module-specific logging
-activities. 
+activities.
+
+Where multiple handlers are specified, if any handler in the sequence
+returns a value other than \code{apache.OK} or \code{apache.DECLINED}, then
+execution of all subsequent handlers for this phase are aborted.
 
 \subsection{PythonCleanupHandler\label{dir-handlers-pch}}
 \index{PythonCleanupHandler}
