@@ -2077,6 +2077,33 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail(`rsp`)
 
+    def test_phase_status_conf(self):
+        c = VirtualHost("*",
+                        ServerName("test_phase_status"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  AuthType("bogus"),
+                                  AuthName("bogus"),
+                                  Require("valid-user"),
+                                  PythonAuthenHandler("tests::phase_status_1"),
+                                  PythonAuthenHandler("tests::phase_status_2"),
+                                  PythonAuthenHandler("tests::phase_status_3"),
+                                  PythonFixupHandler("tests::phase_status_4"),
+                                  PythonFixupHandler("tests::phase_status_5"),
+                                  PythonFixupHandler("tests::phase_status_6"),
+                                  PythonHandler("tests::phase_status_7"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_phase_status(self):
+
+        print "\n  * Testing phase status"
+        rsp = self.vhost_get("test_phase_status")
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_publisher_conf(self):
         c = VirtualHost("*",
                         ServerName("test_publisher"),
@@ -2568,6 +2595,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_files_directive"))
         perRequestSuite.addTest(PerRequestTestCase("test_none_handler"))
         perRequestSuite.addTest(PerRequestTestCase("test_server_return"))
+        perRequestSuite.addTest(PerRequestTestCase("test_phase_status"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_nested"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_auth_method_nested"))

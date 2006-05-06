@@ -1095,6 +1095,46 @@ def server_return_2(req):
     req.write("test ok")
     return apache.OK
 
+def phase_status_1(req):
+    apache.log_error("phase_status_1")
+    req.phases = [1]
+    return apache.DECLINED
+
+def phase_status_2(req):
+    apache.log_error("phase_status_2")
+    req.phases.append(2)
+    req.user = "bogus"
+    req.ap_auth_type = "bogus"
+    return apache.OK
+
+def phase_status_3(req):
+    apache.log_error("phase_status_3")
+    req.phases.append(3)
+    return apache.OK
+
+def phase_status_4(req):
+    apache.log_error("phase_status_4")
+    req.phases.append(4)
+    return apache.DECLINED
+
+def phase_status_5(req):
+    apache.log_error("phase_status_5")
+    req.phases.append(5)
+    return apache.OK
+
+def phase_status_6(req):
+    apache.log_error("phase_status_6")
+    req.phases.append(6)
+    return apache.OK
+
+def phase_status_7(req):
+    apache.log_error("phase_status_7")
+    if req.phases != [1, 2, 4, 5, 6]:
+        req.write("test failed")
+    else:
+        req.write("test ok")
+    return apache.OK
+
 def test_sys_argv(req):
     import sys
     req.write(repr(sys.argv))

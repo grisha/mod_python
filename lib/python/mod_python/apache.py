@@ -301,6 +301,13 @@ class CallBack:
         config = req.get_config()
         debug = int(config.get("PythonDebug", 0))
 
+        default_object_str = req.phase[len("python"):].lower()
+
+        # Lookup expected status values that allow us to
+        # continue when multiple handlers exist.
+
+        expected = _status_values[default_object_str]
+
         try:
             hlist = req.hlist
 
@@ -311,8 +318,8 @@ class CallBack:
 
                 module_name = l[0]
                 if len(l) == 1:
-                    # no oject, provide default
-                    object_str = req.phase[len("python"):].lower()
+                    # no object, provide default
+                    object_str = default_object_str
                 else:
                     object_str = l[1]
 
@@ -395,13 +402,15 @@ class CallBack:
                             _result_warning % type(result)
 
                     # stop cycling through handlers
-                    if result != OK:
+                    if result not in expected:
                         break
 
                 elif hlist.silent:
-                    # A faulty handler marked as silent will only 
-                    # propagate DECLINED if it is the first and only handler.
-                    if result != OK:
+		    # A missing handler when in silent mode will
+		    # only propagate DECLINED if it is the first
+		    # and only handler.
+
+                    if result == HTTP_INTERNAL_SERVER_ERROR:
                         result = DECLINED
 
                 hlist.next()
@@ -1005,6 +1014,21 @@ APLOG_NOERRNO = 8
 OK = REQ_PROCEED = 0
 DONE = -2
 DECLINED = REQ_NOACTION = -1
+
+_status_values = {
+    "postreadrequesthandler":   [ DECLINED, OK ],
+    "transhandler":             [ DECLINED ],
+    "maptostoragehandler":      [ DECLINED ],
+    "inithandler":              [ DECLINED, OK ],
+    "headerparserhandler":      [ DECLINED, OK ],
+    "accesshandler":            [ DECLINED, OK ],
+    "authenhandler":            [ DECLINED ],
+    "authzhandler":             [ DECLINED ],
+    "typehandler":              [ DECLINED ],
+    "fixuphandler":             [ DECLINED, OK ],
+    "loghandler":               [ DECLINED, OK ],
+    "handler":                  [ OK ],
+}
 
 # constants for get_remote_host
 REMOTE_HOST = 0

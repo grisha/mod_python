@@ -170,6 +170,26 @@
       rather than creating a new distinct Python request object. This means
       that any data added explicitly to a request object can be passed
       between such requests.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-129]{MODPYTHON-129})
+      When specifying multiple handlers for phases other than the content
+      phase as defined by \code{PythonHandler}, the status returned by each
+      handler is now treated the same as how Apache would treat the status
+      if the handler was registered using the low level C API. What this
+      means is that whereas previously stacked handlers of any phase would
+      in turn be executed as long as they returned \code{apache.OK}, this
+      is no longer the case and now only occurs for \code{PythonHandler}.
+      What happens for other phases is dependent on the phase, but in all
+      cases, a handler returning \code{apache.DECLINED} no longer causes
+      the execution of subsequent handlers for the phase to be skipped.
+      Instead, it will move to the next of the stacked handlers. In the
+      case of \code{PythonTransHandler}, \code{PythonAuthenHandler},
+      \code{PythonAuthzHandler} and \code{PythonTypeHandler}, as soon
+      as \code{apache.OK} is returned, subsequent handlers for the phase
+      will be skipped, as the result indicates that any processing pertinent
+      to that phase has been completed. For other phases, stacked handlers
+      will continue to be executed if \code{apache.OK} is returned as well
+      as when \code{apache.DECLINED} is returned.
   \end{itemize}
 
   Bug Fixes
