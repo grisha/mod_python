@@ -611,6 +611,32 @@ def accesshandler_add_handler_to_empty_hl(req):
 
     return apache.OK
 
+def test_req_add_handler_directory(req):
+    # dir1 will not have a trailing slash and on Win32
+    # will use back slashes and not forward slashes.
+    dir1 = os.path.dirname(__file__)
+    if req.phase == "PythonFixupHandler":
+        req.add_handler("PythonHandler", "tests::test_req_add_handler_directory", dir1)
+    else:
+	# dir2 should only use forward slashes and
+	# should have a trailing forward slash added by
+	# call to req.add_handler(). When dir1 and dir2
+	# are normalised for current operating system,
+        # they should be equivalent.
+        dir2 = req.hlist.directory
+        if dir2[-1] != '/' or dir2.count('\\') != 0:
+            req.write('test failed')
+        else:
+            dir1 = os.path.normpath(dir1)
+            dir2 = os.path.normpath(dir2)
+            if dir2 != dir1:
+                req.write('test failed')
+            else:
+                req.write('test ok')
+        
+    return apache.OK
+
+
 def req_allow_methods(req):
 
     req.allow_methods(["PYTHONIZE"])
