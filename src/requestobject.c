@@ -148,6 +148,29 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
                                      "Invalid phase: %s", phase));
         return NULL;
     }
+
+    /* Canonicalize path and add trailing slash at
+     * this point if directory was provided. */
+
+    if (dir) {
+
+        char *newpath = 0;
+        apr_status_t rv;
+
+        rv = apr_filepath_merge(&newpath, NULL, dir,
+                                APR_FILEPATH_TRUENAME,
+                                self->request_rec->pool);
+
+        /* If there is a failure, use the original path
+         * which was supplied. */
+
+        if (rv == APR_SUCCESS || rv == APR_EPATHWILD) {
+            dir = newpath;
+            if (dir[strlen(dir) - 1] != '/') {
+                dir = apr_pstrcat(self->request_rec->pool, dir, "/", NULL);
+            }
+        }
+    }
     
     /* which phase are we processing? */
     currphase = PyString_AsString(self->phase);
@@ -263,7 +286,7 @@ static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
 {
     char *name;
     char *handler;
-    const char *dir = NULL;
+    char *dir = NULL;
     py_req_config *req_config;
     py_handler *fh;
 
@@ -276,7 +299,32 @@ static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
     fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
-    if (dir) fh->directory = apr_pstrdup(self->request_rec->pool, dir);
+
+    /* Canonicalize path and add trailing slash at
+     * this point if directory was provided. */
+
+    if (dir) {
+
+        char *newpath = 0;
+        apr_status_t rv;
+
+        rv = apr_filepath_merge(&newpath, NULL, dir,
+                                APR_FILEPATH_TRUENAME,
+                                self->request_rec->pool);
+
+        /* If there is a failure, use the original path
+         * which was supplied. */
+
+        if (rv == APR_SUCCESS || rv == APR_EPATHWILD) {
+            dir = newpath;
+            if (dir[strlen(dir) - 1] != '/') {
+                dir = apr_pstrcat(self->request_rec->pool, dir, "/", NULL);
+            }
+            fh->directory = dir;
+        } else {
+            fh->directory = apr_pstrdup(self->request_rec->pool, dir);
+        }
+    }
 
     apr_hash_set(req_config->in_filters,
                  apr_pstrdup(self->request_rec->pool, name),
@@ -296,7 +344,7 @@ static PyObject *req_register_output_filter(requestobject *self, PyObject *args)
 {
     char *name;
     char *handler;
-    const char *dir = NULL;
+    char *dir = NULL;
     py_req_config *req_config;
     py_handler *fh;
 
@@ -309,7 +357,32 @@ static PyObject *req_register_output_filter(requestobject *self, PyObject *args)
     fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
-    if (dir) fh->directory = apr_pstrdup(self->request_rec->pool, dir);
+
+    /* Canonicalize path and add trailing slash at
+     * this point if directory was provided. */
+
+    if (dir) {
+
+        char *newpath = 0;
+        apr_status_t rv;
+
+        rv = apr_filepath_merge(&newpath, NULL, dir,
+                                APR_FILEPATH_TRUENAME,
+                                self->request_rec->pool);
+
+        /* If there is a failure, use the original path
+         * which was supplied. */
+
+        if (rv == APR_SUCCESS || rv == APR_EPATHWILD) {
+            dir = newpath;
+            if (dir[strlen(dir) - 1] != '/') {
+                dir = apr_pstrcat(self->request_rec->pool, dir, "/", NULL);
+            }
+            fh->directory = dir;
+        } else {
+            fh->directory = apr_pstrdup(self->request_rec->pool, dir);
+        }
+    }
 
     apr_hash_set(req_config->out_filters,
                  apr_pstrdup(self->request_rec->pool, name),

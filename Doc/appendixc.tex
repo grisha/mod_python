@@ -313,6 +313,15 @@
       When using stacked handlers and a \code{SERVER_RETURN} exception was
       used to return an \code{OK} status for that handler, any following
       handlers weren't being run if appropriate for the phase.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-161]{MODPYTHON-161})
+      Directory argument supplied to \code{req.add_handler()} is
+      canonicalized and a trailing slash added automatically. This is
+      needed to ensure that the directory is always in POSIX path style as
+      used by Apache and that convention where directories associated with
+      directives always have trailing slash is adhered to. If this is not
+      done, a different interpreter can be chosen to that expected when the
+      \code{PythonInterpPerDirective} is used.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}

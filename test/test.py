@@ -586,6 +586,28 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail(`rsp`)
 
+    def test_req_add_handler_directory_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_req_add_handler_directory"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonInterpPerDirective("On"),
+                                  PythonFixupHandler("tests::test_req_add_handler_directory"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_req_add_handler_directory(self):
+        # Checking that directory is canonicalized and trailing
+        # slash is added.
+
+        print """\n  * Testing req.add_handler() directory"""
+        rsp = self.vhost_get("test_req_add_handler_directory")
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
     def test_accesshandler_add_handler_to_empty_hl_conf(self):
         # Note that there is no PythonHandler specified in the the VirtualHost
         # config. We want to see if req.add_handler will work when the 
@@ -2545,6 +2567,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_add_bad_handler"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_add_empty_handler_string"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler_empty_phase"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler_directory"))
         perRequestSuite.addTest(PerRequestTestCase("test_accesshandler_add_handler_to_empty_hl"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
