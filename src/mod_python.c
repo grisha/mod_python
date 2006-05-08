@@ -1211,10 +1211,11 @@ requestobject *python_get_request_object(request_rec *req, const char *phase)
  *      is specified, then its a connection handler.
  */
 
-static const char *select_interp_name(request_rec *req, conn_rec *con, py_config *conf, 
-                                      hl_entry *hle, const char *fname, int is_input)
+static const char *select_interp_name(request_rec *req, conn_rec *con,
+                                      py_config *conf, hl_entry *hle,
+                                      py_handler *fh)
 {
-    const char *s;
+    const char *s = NULL;
 
     if ((s = apr_table_get(conf->directives, "PythonInterpreter"))) {
         /* forced by configuration */
@@ -1261,18 +1262,10 @@ static const char *select_interp_name(request_rec *req, conn_rec *con, py_config
             
             py_handler *fh;
 
-            if (fname) {
-                if (is_input) {
-                    fh = (py_handler *)apr_hash_get(conf->in_filters, fname,
-                                                           APR_HASH_KEY_STRING);
-                }
-                else {
-                    fh = (py_handler *)apr_hash_get(conf->out_filters, fname,
-                                                           APR_HASH_KEY_STRING);
-                }
+            if (fh) {
                 s = fh->directory;
             }
-            else {
+            else if (hle) {
                 s = hle->directory;
             }
 
@@ -1359,9 +1352,9 @@ static int python_handler(request_rec *req, char *phase)
 
     /* determine interpreter to use */
     if (hle)
-        interp_name = select_interp_name(req, NULL, conf, hle, NULL, 0);
+        interp_name = select_interp_name(req, NULL, conf, hle, NULL);
     else
-        interp_name = select_interp_name(req, NULL, conf, dynhle, NULL, 0);
+        interp_name = select_interp_name(req, NULL, conf, dynhle, NULL);
 
     /* get/create interpreter */
     idata = get_interpreter(interp_name, req->server);
@@ -1558,7 +1551,7 @@ static apr_status_t python_connection(conn_rec *con)
     }
     
     /* determine interpreter to use */
-    interp_name = select_interp_name(NULL, con, conf, hle, NULL, 0);
+    interp_name = select_interp_name(NULL, con, conf, hle, NULL);
 
     /* get/create interpreter */
     idata = get_interpreter(interp_name, con->base_server);
@@ -1658,24 +1651,8 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     conf = (py_config *) ap_get_module_config(req->per_dir_config, 
                                                   &python_module);
 
-    /* determine interpreter to use */
-    interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, is_input);
-
-    /* get/create interpreter */
-    idata = get_interpreter(interp_name, req->server);
-   
-    if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
-                      "python_filter: Can't get/create interpreter.");
-        return HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    /* create/acquire request object */
-    request_obj = python_get_request_object(req, 0);
-
     req_config = (py_req_config *) ap_get_module_config(req->request_config,
                                                         &python_module);
-
     /* the name of python function to call */
     if (ctx->name) {
         if (is_input)
@@ -1692,9 +1669,23 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     if (!fh) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
                       "python_filter: Could not find registered filter.");
-        release_interpreter();
         return HTTP_INTERNAL_SERVER_ERROR;
     }
+
+    /* determine interpreter to use */
+    interp_name = select_interp_name(req, NULL, conf, NULL, fh);
+
+    /* get/create interpreter */
+    idata = get_interpreter(interp_name, req->server);
+   
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                      "python_filter: Can't get/create interpreter.");
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    /* create/acquire request object */
+    request_obj = python_get_request_object(req, 0);
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
@@ -1856,7 +1847,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                                               &python_module);
 
     /* determine interpreter to use */
-    interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, 0);
+    interp_name = select_interp_name(req, NULL, conf, NULL, NULL);
 
     /* get/create interpreter */
     idata = get_interpreter(interp_name, req->server);
@@ -1997,7 +1988,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                                               &python_module);
 
     /* determine interpreter to use */
-    interp_name = select_interp_name(req, NULL, conf, NULL, f->frec->name, 0);
+    interp_name = select_interp_name(req, NULL, conf, NULL, NULL);
 
     /* get/create interpreter */
     idata = get_interpreter(interp_name, req->server);
