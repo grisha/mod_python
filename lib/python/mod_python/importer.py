@@ -1400,10 +1400,8 @@ def IncludeDispatch(self, filter, tag, code):
     except:
         try:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            filter.disable()
             result = self.ReportError(exc_type, exc_value, exc_traceback,
-                                      req=filter.req, filter=filter,
-                                      phase=filter.name,
+                                      filter=filter, phase=filter.name,
                                       hname=filter.req.filename,
                                       debug=debug)
         finally:
