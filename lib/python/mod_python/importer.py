@@ -1378,7 +1378,7 @@ def IncludeDispatch(self, filter, tag, code):
             filter.req.ssi_globals["__info__"] = _InstanceInfo(
                     None, filter.req.filename, None)
 
-            code = code.rstrip()
+            code = code.replace('\r\n', '\n').rstrip()
 
             if tag == 'eval':
                 result = eval(code, filter.req.ssi_globals)

@@ -1,3 +1,4 @@
 <!--#python exec="
-filter.write(data)
+filter.write(data[:1])
+filter.write(data[1:])
 "--> <!--#python eval="'ok'" -->
