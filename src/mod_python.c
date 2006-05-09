@@ -1260,13 +1260,14 @@ static const char *select_interp_name(request_rec *req, conn_rec *con,
              * global interpreter.
              */
             
-            py_handler *fh;
-
             if (fh) {
                 s = fh->directory;
             }
             else if (hle) {
                 s = hle->directory;
+            }
+            else {
+                return NULL;
             }
 
             if (s && (s[0] == '\0'))
