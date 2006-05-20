@@ -638,20 +638,20 @@ def module_mtime(module):
     mtime = 0
     if module.__dict__.has_key("__file__"):
 
-       filepath = module.__file__
+        filepath = module.__file__
 
-       try:
-           # this try/except block is a workaround for a Python bug in
-           # 2.0, 2.1 and 2.1.1. See
-           # http://sourceforge.net/tracker/?group_id=5470&atid=105470&func=detail&aid=422004
+        try:
+            # this try/except block is a workaround for a Python bug in
+            # 2.0, 2.1 and 2.1.1. See
+            # http://sourceforge.net/tracker/?group_id=5470&atid=105470&func=detail&aid=422004
 
-           if os.path.exists(filepath):
-               mtime = os.path.getmtime(filepath)
+            if os.path.exists(filepath):
+                mtime = os.path.getmtime(filepath)
 
-           if os.path.exists(filepath[:-1]) :
-               mtime = max(mtime, os.path.getmtime(filepath[:-1]))
+            if os.path.exists(filepath[:-1]) :
+                mtime = max(mtime, os.path.getmtime(filepath[:-1]))
 
-       except OSError: pass
+        except OSError: pass
 
     return mtime
 

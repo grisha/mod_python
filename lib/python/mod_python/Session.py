@@ -56,11 +56,11 @@ def _init_rnd():
     g = random.Random(time.time())
     result = [g]
     for i in range(gennum - 1):
-       laststate = g.getstate()
-       g = random.Random()
-       g.setstate(laststate)
-       g.jumpahead(1000000)
-       result.append(g)
+        laststate = g.getstate()
+        g = random.Random()
+        g.setstate(laststate)
+        g.jumpahead(1000000)
+        result.append(g)
 
     return result
 

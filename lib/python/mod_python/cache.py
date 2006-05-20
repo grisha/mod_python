@@ -314,8 +314,8 @@ class HTTPCache(Cache):
             try:
                 match = re_max_age.match(headers['cache-control'])
                 if match:
-                        entry._expires=time()+int(match.group(1))
-                        expiration = True
+                    entry._expires=time()+int(match.group(1))
+                    expiration = True
             except (KeyError, ValueError):
                 pass
             if not expiration:

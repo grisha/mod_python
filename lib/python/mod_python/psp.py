@@ -227,7 +227,7 @@ class PSP:
                     raise et, ev, etb
         finally:
             if session is not None:
-                    session.unlock()
+                session.unlock()
 
     def __str__(self):
         self.req.content_type = 'text/html'
