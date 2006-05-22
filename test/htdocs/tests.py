@@ -1140,13 +1140,13 @@ def phase_status_3(req):
 
 def phase_status_4(req):
     apache.log_error("phase_status_4")
-    req.phases.append(4)
-    return apache.DECLINED
+    #req.phases.append(4)
+    return apache.OK
 
 def phase_status_5(req):
     apache.log_error("phase_status_5")
     req.phases.append(5)
-    return apache.OK
+    return apache.DECLINED
 
 def phase_status_6(req):
     apache.log_error("phase_status_6")
@@ -1155,7 +1155,13 @@ def phase_status_6(req):
 
 def phase_status_7(req):
     apache.log_error("phase_status_7")
-    if req.phases != [1, 2, 4, 5, 6]:
+    req.phases.append(7)
+    return apache.OK
+
+def phase_status_8(req):
+    apache.log_error("phase_status_8")
+    apache.log_error("phases = %s" % req.phases)
+    if req.phases != [1, 2, 5, 6, 7]:
         req.write("test failed")
     else:
         req.write("test ok")
