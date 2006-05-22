@@ -2111,10 +2111,11 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonAuthenHandler("tests::phase_status_1"),
                                   PythonAuthenHandler("tests::phase_status_2"),
                                   PythonAuthenHandler("tests::phase_status_3"),
-                                  PythonFixupHandler("tests::phase_status_4"),
+                                  PythonAuthzHandler("tests::phase_status_4"),
                                   PythonFixupHandler("tests::phase_status_5"),
                                   PythonFixupHandler("tests::phase_status_6"),
-                                  PythonHandler("tests::phase_status_7"),
+                                  PythonFixupHandler("tests::phase_status_7"),
+                                  PythonHandler("tests::phase_status_8"),
                                   PythonDebug("On")))
         return str(c)
 
