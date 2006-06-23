@@ -342,7 +342,7 @@ class DbmSession(BaseSession):
             self._dbmtype = __import__(module)
         
     def _get_dbm(self):
-        result = self._dbmtype.open(self._dbmfile, 'c')
+        result = self._dbmtype.open(self._dbmfile, 'c', stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
         if self._dbmtype is anydbm:
             self._set_dbm_type()
         return result
