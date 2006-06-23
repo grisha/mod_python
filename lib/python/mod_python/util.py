@@ -47,9 +47,30 @@ readBlockSize = 65368
    optimized specifically for Apache and mod_python.
 """
 
-class Field:
-   def __init__(self, name):
+class Field: 
+   """This class is used internally by FieldStorage and is not meant to be 
+   instantiated by the user. Each instance of a Field  class represents an 
+   HTML Form input.
+   """
+   
+   def __init__(self, name, file=None, ctype=None, type_options=None,
+                disp=None, disp_options=None, headers = {}):
+       """Use of this constructor is deprecated and will change to
+       __init__(self, name) in mod_python 3.3.
+       """
        self.name = name
+       self.file = file
+       self.type = ctype
+       self.type_options = type_options
+       self.disposition = disp
+       self.disposition_options = disp_options
+       if disp_options and disp_options.has_key("filename"):
+           self.filename = disp_options["filename"]
+       else:
+           self.filename = None
+       self.headers = headers
+
+
 
    def __repr__(self):
        """Return printable representation."""
