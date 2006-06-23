@@ -1412,7 +1412,7 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS
     status=apr_stat(&finfo, fname,
-                    APR_FINFO_NORM, self->request_rec->pool);
+                    APR_FINFO_SIZE, self->request_rec->pool);
     Py_END_ALLOW_THREADS
     if (status != APR_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Could not stat file for reading");
@@ -1421,7 +1421,7 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
     
     Py_BEGIN_ALLOW_THREADS                         
     status=apr_file_open(&fd, fname,
-                         APR_READ, finfo.protection,
+                         APR_READ, APR_OS_DEFAULT,
                          self->request_rec->pool);
     Py_END_ALLOW_THREADS
     if (status != APR_SUCCESS) {
