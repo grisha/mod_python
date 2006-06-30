@@ -20,5 +20,5 @@
 __all__ = ["apache", "cgihandler", "psp",
            "publisher", "util", "python22"]
 
-version = "3.2.9-rc3"
+version = "3.2.9"
 
