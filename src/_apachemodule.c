@@ -315,8 +315,13 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
             _PyString_Resize(&key, strlen(ckey));
             _PyString_Resize(&val, strlen(cval));
 
-            if (key && val)
-                PyList_Append(pairs, Py_BuildValue("(O,O)", key, val));
+            if (key && val) {
+                PyObject* listitem = Py_BuildValue("(O,O)", key, val);
+                if(listitem) {
+                    PyList_Append(pairs, listitem);
+                    Py_DECREF(listitem);
+                }
+            }
 
         }
         Py_XDECREF(pair);

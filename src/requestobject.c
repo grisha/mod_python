@@ -871,6 +871,7 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
     PyObject *line, *rlargs;
     long sizehint = -1;
     long size = 0;
+    long linesize;
 
     if (! PyArg_ParseTuple(args, "|l", &sizehint)) 
         return NULL;
@@ -883,13 +884,15 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
         return PyErr_NoMemory();
 
     line = req_readline(self, rlargs);
-    while (line && (PyString_Size(line)>0)) {
+    while (line && ((linesize=PyString_Size(line))>0)) {
         PyList_Append(result, line);
-        size += PyString_Size(line);
+        size += linesize;
         if ((sizehint != -1) && (size >= size))
             break;
+        Py_DECREF(line);
         line = req_readline(self, args);
     }
+    Py_XDECREF(line);
 
     if (!line)
         return NULL;

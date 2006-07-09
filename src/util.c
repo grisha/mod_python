@@ -396,6 +396,8 @@ PyObject *cfgtree_walk(ap_directive_t *dir)
 
         PyList_Append(list, t);
 
+        Py_DECREF(t);
+
         if (dir->first_child) {
 
             PyObject *child = cfgtree_walk(dir->first_child);
@@ -403,6 +405,8 @@ PyObject *cfgtree_walk(ap_directive_t *dir)
                 return PyErr_NoMemory();
 
             PyList_Append(list, child);
+            
+            Py_DECREF(child);
 
         }
 
