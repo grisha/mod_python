@@ -87,6 +87,10 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-172]{MODPYTHON-172})
       Fixed three memory leaks that were found in _apachemodule.parse_qsl, req.readlines
       and util.cfgtree_walk.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-179]{MODPYTHON-179})
+      Fixed the behaviour of req.readlines() when a size hint was provided. Previously,
+      it would always return a single line when a size hint was provided.
   \end{itemize}
 
   Improvements
