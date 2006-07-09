@@ -325,7 +325,7 @@ class HttpdCtrl:
             Listen(PORT),
             PythonOption('mod_python.mutex_directory %s' % TMP_DIR),
             PythonOption('PythonOptionTest sample_value'),
-            PythonOption('mod_python.future.importer *'),
+            # PythonOption('mod_python.future.importer *'),
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
 
