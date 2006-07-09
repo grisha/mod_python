@@ -25,10 +25,20 @@ if not exist "%APACHESRC%\include" GOTO BADAPACHESRC
 
 rem Cleanup
 rmdir /s /q build
-del ..\src\*.obj ..\src\*.lib ..\src\*.exp ..\src\*.res
+del /s ..\src\*.obj ..\src\*.lib ..\src\*.exp ..\src\*.res
 
 rem Build
 python setup.py.in bdist_wininst --install-script win32_postinstall.py
+GOTO END
+
+rem Use this instead of the previous line to create a debug build
+rem For this you need a Python debug build. The .py files will be installed
+rem directly in the Python debug build's site-packages. The .so file will remain
+rem in build/lib.win32-2.4, so you'll have to make sure your testconf.py file
+rem points to it instead of the copy that may already reside in LIBEXECDIR.
+
+rem python_d setup.py.in build --debug install
+rem GOTO END
 
 rem Compress the installer if possible
 upx.exe --no-color --no-progress --best dist\*.exe
@@ -36,7 +46,8 @@ GOTO END
 
 :BADAPACHESRC
 echo Currently APACHESRC points to %APACHESRC%
-echo This value seems wrong as we could not find a proper Apache installation here.
+echo This value seems wrong as we could not find a proper
+echo Apache installation here.
 
 :NOAPACHESRC
 echo Please set the APACHESRC variable to point to your Apache setup
