@@ -325,7 +325,7 @@ class HttpdCtrl:
             Listen(PORT),
             PythonOption('mod_python.mutex_directory %s' % TMP_DIR),
             PythonOption('PythonOptionTest sample_value'),
-            #PythonOption('mod_python.future.importer *'),
+            PythonOption('mod_python.future.importer *'),
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
 
@@ -897,6 +897,44 @@ class PerRequestTestCase(unittest.TestCase):
 
         print "    response size: %d\n" % len(rsp)
         if (rsp != params):
+            self.fail(`rsp`)
+
+        print "\n  * Testing req.readlines(size_hint=30000)"
+
+        params = ('1234567890'*3000+'\n')*4
+        print "    writing %d bytes..." % len(params)
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("POST", "/tests.py", skip_host=1)
+        conn.putheader("Host", "test_req_readlines:%s" % PORT)
+        conn.putheader("Content-Length", len(params))
+        conn.putheader("SizeHint", 30000)
+        conn.endheaders()
+        conn.send(params)
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        print "    response size: %d\n" % len(rsp)
+        if (rsp != ('1234567890'*3000+'\n')):
+            self.fail(`rsp`)
+
+        print "\n  * Testing req.readlines(size_hint=32000)"
+
+        params = ('1234567890'*3000+'\n')*4
+        print "    writing %d bytes..." % len(params)
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("POST", "/tests.py", skip_host=1)
+        conn.putheader("Host", "test_req_readlines:%s" % PORT)
+        conn.putheader("Content-Length", len(params))
+        conn.putheader("SizeHint", 32000)
+        conn.endheaders()
+        conn.send(params)
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        print "    response size: %d\n" % len(rsp)
+        if (rsp != (('1234567890'*3000+'\n')*2)):
             self.fail(`rsp`)
 
     def test_req_discard_request_body_conf(self):

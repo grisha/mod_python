@@ -744,7 +744,12 @@ def req_readline(req):
 
 def req_readlines(req):
 
-    lines = req.readlines()
+    
+    if 'SizeHint' in req.headers_in:
+        lines = req.readlines(int(req.headers_in['SizeHint']))
+    else:
+        lines = req.readlines()
+
     req.write("".join(lines))
 
     return apache.OK
