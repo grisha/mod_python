@@ -830,8 +830,10 @@ require valid-user
 \end{methoddesc}
 
 \begin{methoddesc}[request]{readlines}{\optional{sizehint}}
-  Reads all or up to \var{sizehint} bytes of lines using
-  \method{readline} and returns a list of the lines read.
+  Reads all lines using \method{readline} and returns a list of the lines read.
+  If the optional \var{sizehint} parameter is given in, the method will read
+  at least \var{sizehint} bytes of data, up to the completion of the line in
+  which the \var{sizehint} bytes limit is reached.
 \end{methoddesc}
 
 \begin{methoddesc}[request]{register_cleanup}{callable\optional{, data}}

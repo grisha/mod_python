@@ -1155,7 +1155,7 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
     while (line && ((linesize=PyString_Size(line))>0)) {
         PyList_Append(result, line);
         size += linesize;
-        if ((sizehint != -1) && (size >= size))
+        if ((sizehint != -1) && (size >= sizehint))
             break;
         Py_DECREF(line);
         line = req_readline(self, args);
