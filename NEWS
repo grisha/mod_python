@@ -1,3 +1,11 @@
+July 19 2006 -  3.2.10 is being tagged
+
+July 19 2006 -  The public release of 3.2.9 is being abandoned due to some
+                recently reported memory leaks. Although 3.2.9 is ready for
+		release, it is felt that it is prudent to address these now
+		and proceed immediately to 3.2.10. See MODPYTHON-172 for 
+		on the specific details on the issues.
+
 June 29 2006 -	3.2.9 is being tagged
 
 Feb 19 2006 -	3.2.8 is being tagged
