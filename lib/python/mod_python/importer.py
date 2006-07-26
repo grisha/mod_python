@@ -124,8 +124,12 @@ def _parent_context():
                 parent.f_globals['__file__'] == __file__):
             parent = parent.f_back
 
-    if parent and parent.f_globals.has_key('__info__'):
-        return parent.f_globals['__info__']
+    if parent and parent.f_globals.has_key('__mp_info__'):
+        mp_info = parent.f_globals['__mp_info__']
+        mp_path = parent.f_globals['__mp_path__']
+        return (mp_info, mp_path)
+
+    return (None, None)
 
 def _find_module(module_name, path):
 
@@ -160,15 +164,15 @@ def import_module(module_name, autoreload=None, log=None, path=None):
     #        file = os.path.join(directory, module_name[2:])
 
     elif module_name[:2] == './':
-        context = _parent_context()
-        if context is not None:
-            directory = os.path.dirname(context.file)
+        (mp_info, mp_path) = _parent_context()
+        if mp_info is not None:
+            directory = os.path.dirname(mp_info.file)
             file = os.path.join(directory, module_name[2:])
 
     elif module_name[:3] == '../':
-        context = _parent_context()
-        if context is not None:
-            directory = os.path.dirname(context.file)
+        (mp_info, mp_path) = _parent_context()
+        if mp_info is not None:
+            directory = os.path.dirname(mp_info.file)
             file = os.path.join(directory, module_name)
 
     if file is None:
@@ -186,13 +190,13 @@ def import_module(module_name, autoreload=None, log=None, path=None):
         if path is not None:
             search_path.extend(path)
 
-        context = _parent_context()
-        if context is not None:
-            local_directory = os.path.dirname(context.file)
+        (mp_info, mp_path) = _parent_context()
+        if mp_info is not None:
+            local_directory = os.path.dirname(mp_info.file)
             search_path.append(local_directory)
 
-            if context.path is not None:
-                search_path.extend(context.path)
+            if mp_path is not None:
+                search_path.extend(mp_path)
 
         options = apache.main_server.get_options()
         if int(options.get('mod_python.importer.search_handler_root', '0')):
@@ -260,7 +264,6 @@ class _InstanceInfo:
         self.file = file
         self.cache = cache
         self.children = {}
-        self.path = []
 
 class _ModuleCache:
 
@@ -355,13 +358,13 @@ class _ModuleCache:
         # details stashed into the parent module by the
         # module importing system itself.
 
-        context = _parent_context()
+        (mp_info, mp_path) = _parent_context()
 
         # Check for an attempt by the module to import
         # itself.
 
-        if context:
-            assert(file != context.file), "Import cycle in %s." % file
+        if mp_info:
+            assert(file != mp_info.file), "Import cycle in %s." % file
 
         # Retrieve the per request modules cache entry.
 
@@ -389,8 +392,8 @@ class _ModuleCache:
 
         if modules is not None:
             if modules.has_key(label):
-                if context:
-                    context.children[label] = time.time()
+                if mp_info:
+                    mp_info.children[label] = time.time()
                 return modules[label]
 
         # Now move on to trying to find the actual
@@ -440,7 +443,7 @@ class _ModuleCache:
                 # transferred.
 
                 if cache.module != None:
-                    if hasattr(cache.module, "__clone__"):
+                    if hasattr(cache.module, "__mp_clone__"):
                         try:
                             # Migrate any existing state data from
                             # existing module instance to new module
@@ -450,14 +453,14 @@ class _ModuleCache:
                                 msg = "Cloning module '%s'" % file
                                 self._log_notice(msg)
 
-                            cache.module.__clone__(module)
+                            cache.module.__mp_clone__(module)
 
                         except:
                             # Forcibly purging module from system.
 
-                            if hasattr(cache.module, "__purge__"):
+                            if hasattr(cache.module, "__mp_purge__"):
                                 try:
-                                    cache.module.__purge__()
+                                    cache.module.__mp_purge__()
                                 except:
                                     pass
 
@@ -499,7 +502,7 @@ class _ModuleCache:
 
                 instance = _InstanceInfo(label, file, cache)
 
-                module.__info__ = instance
+                module.__mp_info__ = instance
 
                 # Cache any additional module search path which
                 # should be used for this instance of the module
@@ -511,7 +514,7 @@ class _ModuleCache:
                 if path is None:
                     path = []
 
-                instance.path = list(path)
+                module.__mp_path__ = list(path)
 
                 # Place a reference to the module within the
                 # request specific cache of imported modules.
@@ -553,8 +556,8 @@ class _ModuleCache:
 
                 atime = time.time()
 
-                if context:
-                    context.children[label] = atime
+                if mp_info:
+                    mp_info.children[label] = atime
 
                 # Update the cache.
 
@@ -568,7 +571,7 @@ class _ModuleCache:
                 # handler don't result in the module later being
                 # reloaded if they change.
 
-                cache.children = dict(module.__info__.children)
+                cache.children = dict(module.__mp_info__.children)
 
                 # Increment the generation count of the global
                 # state of all modules. This is used in the
@@ -610,8 +613,8 @@ class _ModuleCache:
 
                 atime = time.time()
 
-                if context:
-                    context.children[label] = atime
+                if mp_info:
+                    mp_info.children[label] = atime
 
                 # Didn't need to reload the module so simply
                 # increment access counts and last access time.
@@ -842,9 +845,9 @@ class _ModuleImporter:
         # statement if parent module was imported using
         # the same.
 
-        context = _parent_context()
+        (mp_info, mp_path) = _parent_context()
 
-        if context is None:
+        if mp_info is None:
             return None
 
 	# Determine the list of directories that need to
@@ -856,11 +859,11 @@ class _ModuleImporter:
 
         search_path = []
 
-        local_directory = os.path.dirname(context.file)
+        local_directory = os.path.dirname(mp_info.file)
         search_path.append(local_directory)
 
-        if context.path is not None:
-            search_path.extend(context.path)
+        if mp_path is not None:
+            search_path.extend(mp_path)
 
         options = apache.main_server.get_options()
         if int(options.get('mod_python.importer.search_handler_root', '0')):
@@ -1372,11 +1375,11 @@ def IncludeDispatch(self, filter, tag, code):
                     self.file = file
                     self.cache = cache
                     self.children = {}
-                    self.path = []
 
             filter.req.ssi_globals["__file__"] = filter.req.filename
-            filter.req.ssi_globals["__info__"] = _InstanceInfo(
+            filter.req.ssi_globals["__mp_info__"] = _InstanceInfo(
                     None, filter.req.filename, None)
+            filter.req.ssi_globals["__mp_path__"] = []
 
             code = code.replace('\r\n', '\n').rstrip()
 
