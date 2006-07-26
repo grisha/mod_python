@@ -161,7 +161,7 @@ class PSP:
         filename = self.filename
 
         if not os.path.isfile(filename):
-            raise ValueError, "%s is not a file" % filename
+            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
 
         mtime = os.path.getmtime(filename)
 

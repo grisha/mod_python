@@ -198,6 +198,16 @@
       to that phase has been completed. For other phases, stacked handlers
       will continue to be executed if \code{apache.OK} is returned as well
       as when \code{apache.DECLINED} is returned.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-178]{MODPYTHON-178})
+      When using mod_python.psp, if the PSP file which is the target of the
+      request doesn't actually exist, an \code{apache.HTTP_NOT_FOUND} server
+      error is now returned to the client rather than raising a
+      \code{ValueError} exception which results in a 500 internal server error.
+      Note that if using \code{SetHandler} and the request is against the
+      directory and no \code{DirectoryIndex} directive is specified which
+      lists a valid PSP index file, then the same \code{apache.HTTP_NOT_FOUND}
+      server error is returned to the client.
   \end{itemize}
 
   Bug Fixes
