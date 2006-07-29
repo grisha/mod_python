@@ -1894,6 +1894,25 @@ class PerRequestTestCase(unittest.TestCase):
             msg = 'psp_parser parse errors for: %s' % (', '.join(failures))
             self.fail(msg)
 
+    def test_psp_error_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_psp_error"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.psp"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_psp_error(self):
+
+        print "\n  * Testing mod_python.psp error page"
+
+        rsp = self.vhost_get("test_psp_error", path="/psptest_main.psp")
+        if (rsp.strip().split() != ["okay","fail"]):
+            self.fail(`rsp`)
+
     def test_Cookie_Cookie_conf(self):
 
         c = VirtualHost("*",
@@ -2648,6 +2667,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_cgihandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_psphandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_psp_parser"))
+        perRequestSuite.addTest(PerRequestTestCase("test_psp_error"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_Cookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Cookie_MarshalCookie"))
         perRequestSuite.addTest(PerRequestTestCase("test_Session_Session"))
