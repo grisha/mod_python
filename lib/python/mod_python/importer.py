@@ -997,46 +997,58 @@ def _execute_target(config, req, object, arg):
 
 def _process_target(config, req, directory, handler, default, arg, silent):
 
-    # Determine module name and target object.
+    if not callable(handler):
 
-    parts = handler.split('::', 1)
+        # Determine module name and target object.
 
-    module_name = parts[0]
+        parts = handler.split('::', 1)
 
-    if len(parts) == 1:
-        object_str = default
+        module_name = parts[0]
+
+        if len(parts) == 1:
+            object_str = default
+        else:
+            object_str = parts[1]
+
+        # Update 'sys.path'. This will only be done if we
+        # have not encountered the current value of the
+        # 'PythonPath' config previously.
+
+        if config.has_key("PythonPath"):
+
+            apache._path_cache_lock.acquire()
+
+            try:
+
+                pathstring = config["PythonPath"]
+                if not apache._path_cache.has_key(pathstring):
+                    newpath = eval(pathstring)
+                    apache._path_cache[pathstring] = None
+                    sys.path[:] = newpath
+
+            finally:
+                apache._path_cache_lock.release()
+
+        # Import module containing target object. Specify
+        # the handler root directory in the search path so
+        # that it is still checked even if 'PythonPath' set.
+
+        path = []
+
+        if directory:
+            path = [directory]
+
+        module = import_module(module_name, path=path)
+
+        # Obtain reference to actual target object.
+
+        object = apache.resolve_object(module, object_str, arg, silent=silent)
+
     else:
-        object_str = parts[1]
 
-    # Update 'sys.path'. This will only be done if we
-    # have not encountered the current value of the
-    # 'PythonPath' config previously.
+        # Handler is the target object.
 
-    if config.has_key("PythonPath"):
-
-        apache._path_cache_lock.acquire()
-
-        try:
-
-            pathstring = config["PythonPath"]
-            if not apache._path_cache.has_key(pathstring):
-                newpath = eval(pathstring)
-                apache._path_cache[pathstring] = None
-                sys.path[:] = newpath
-
-        finally:
-            apache._path_cache_lock.release()
-
-    # Import module containing target object. Specify
-    # the handler root directory in the search path so
-    # that it is still checked even if 'PythonPath' set.
-
-    path = []
-
-    if directory:
-        path = [directory]
-
-    module = import_module(module_name, path=path)
+        object = handler
 
     # Lookup expected status values that allow us to
     # continue when multiple handlers exist.
@@ -1050,10 +1062,6 @@ def _process_target(config, req, directory, handler, default, arg, silent):
         result = apache.OK
     else:
         result = apache.DECLINED
-
-    # Obtain reference to actual target object.
-
-    object = apache.resolve_object(module, object_str, arg, silent=silent)
 
     if object is not None or not silent:
 
@@ -1175,13 +1183,15 @@ def FilterDispatch(self, filter):
             directory = filter.dir
             handler = filter.handler
 
-            if handler[:2] == './':
-                if directory is not None:
-                    handler = os.path.join(directory, handler[2:])
+            if type(handler) == types.StringType:
 
-            elif handler[:3] == '../':
-                if directory is not None:
-                    handler = os.path.join(directory, handler)
+                if handler[:2] == './':
+                    if directory is not None:
+                        handler = os.path.join(directory, handler[2:])
+
+                elif handler[:3] == '../':
+                    if directory is not None:
+                        handler = os.path.join(directory, handler)
 
             config = filter.req.get_config()
             cache = _setup_config_cache(config, directory)
@@ -1280,16 +1290,20 @@ def HandlerDispatch(self, req):
                 # current request so that it will be
                 # available from within 'import_module()'.
 
+                cache = None
+
                 directory = hlist.directory
                 handler = hlist.handler
 
-                if handler[:2] == './':
-                    if directory is not None:
-                        handler = os.path.join(directory, handler[2:])
+                if type(handler) == types.StringType:
 
-                elif handler[:3] == '../':
-                    if directory is not None:
-                        handler = os.path.join(directory, handler)
+                    if handler[:2] == './':
+                        if directory is not None:
+                            handler = os.path.join(directory, handler[2:])
+
+                    elif handler[:3] == '../':
+                        if directory is not None:
+                            handler = os.path.join(directory, handler)
 
                 cache = _setup_config_cache(config, directory)
 

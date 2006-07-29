@@ -75,7 +75,7 @@
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
                               ap_input_mode_t mode, apr_size_t readbytes,
-                              char * handler, char *dir)
+                              char *handler, PyObject *callable, char *dir)
 {
     filterobject *result;
 
@@ -105,6 +105,7 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
     result->softspace = 0;
 
     result->handler = handler;
+    result->callable = callable;
     result->dir = dir;
 
     result->request_obj = NULL; 
@@ -492,7 +493,6 @@ static struct memberlist filter_memberlist[] = {
     {"name",               T_OBJECT,    0,                       RO},
     {"req",                T_OBJECT,    OFF(request_obj),          },
     {"is_input",           T_INT,       OFF(is_input),           RO},
-    {"handler",            T_STRING,    OFF(handler),            RO},
     {"dir",                T_STRING,    OFF(dir),                RO},
     {NULL}  /* Sentinel */
 };
@@ -546,6 +546,17 @@ static PyObject * filter_getattr(filterobject *self, char *name)
         else {
             Py_INCREF(self->request_obj);
             return (PyObject *)self->request_obj;
+        }
+    }
+    else if (strcmp(name, "handler") == 0) {
+        if (self->callable) {
+            Py_INCREF(self->callable);
+            return self->callable;
+        } else if (self->handler) {
+            return PyString_FromString(self->handler);
+        } else {
+            Py_INCREF(Py_None);
+            return Py_None;
         }
     }
     else

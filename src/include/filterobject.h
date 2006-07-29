@@ -48,6 +48,7 @@ extern "C" {
         int bytes_written;
 
         char *handler;
+        PyObject *callable;
         char *dir;
 
         requestobject *request_obj;
@@ -61,7 +62,8 @@ extern "C" {
     extern DL_IMPORT(PyObject *) 
         MpFilter_FromFilter Py_PROTO((ap_filter_t *f, apr_bucket_brigade *bb_in, 
                                       int is_input, ap_input_mode_t mode, 
-                                      apr_size_t readbytes, char *hadler, char *dir));
+                                      apr_size_t readbytes, char *handler,
+                                      PyObject *callable, char *dir));
 
 #ifdef __cplusplus
 }

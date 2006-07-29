@@ -34,6 +34,7 @@ extern "C" {
     /* handler list entry */
     typedef struct hl_entry {
         const char *handler;
+        PyObject *callable;
         const char *directory;
         int d_is_fnmatch;
         ap_regex_t *regex;
@@ -43,11 +44,12 @@ extern "C" {
         struct hl_entry *next;
     } hl_entry;
     
-    hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
-                        int d_is_fnmatch, ap_regex_t *regex, const int s);
+    hl_entry *hlist_new(apr_pool_t *p, const char *h, PyObject* o,
+                        const char *d, int d_is_fnmatch, ap_regex_t *regex,
+                        const int s);
     hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                           const char *d, int d_is_fnmatch, ap_regex_t *regex,
-                           const int s);
+                           PyObject* o, const char *d, int d_is_fnmatch,
+                           ap_regex_t *regex, const int s);
     hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle);
 
 #ifdef __cplusplus

@@ -88,7 +88,6 @@ static PyMethodDef hlistmethods[] = {
 #define OFF(x) offsetof(hl_entry, x)
 
 static struct memberlist hlist_memberlist[] = {
-    {"handler",            T_STRING,    OFF(handler),              RO},
     {"directory",          T_STRING,    OFF(directory),            RO},
     {"silent",             T_INT,       OFF(silent),               RO},
     {NULL}  /* Sentinel */
@@ -126,6 +125,18 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
     if (! self->head) {
         Py_INCREF(Py_None);
         return Py_None;
+    }
+
+    if (strcmp(name, "handler") == 0) {
+        if (self->head->callable) {
+            Py_INCREF(self->head->callable);
+            return self->head->callable;
+        } else if (self->head->handler) {
+            return PyString_FromString(self->head->handler);
+        } else {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
     }
 
     return PyMember_Get((char *)self->head, hlist_memberlist, name);

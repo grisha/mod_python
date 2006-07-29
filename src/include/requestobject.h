@@ -43,6 +43,7 @@ extern "C" {
         char           * extension;   /* for | .ext syntax */
         int              content_type_set;
         hlistobject    * hlo;
+        PyObject       * callbacks;
         char           * rbuff;       /* read bufer */
         int              rbuff_len;   /* read buffer size */
         int              rbuff_pos;   /* position into the buffer */
