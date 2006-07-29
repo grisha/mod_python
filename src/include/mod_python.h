@@ -195,6 +195,7 @@ typedef struct
 typedef struct
 {
     char *handler;
+    PyObject *callable;
     char *directory;
     int d_is_fnmatch;
     ap_regex_t *regex;

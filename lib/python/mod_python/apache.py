@@ -170,18 +170,6 @@ class CallBack:
 
         try:
 
-            # split module::handler
-            l = filter.handler.split('::', 1)
-            module_name = l[0]
-            if len(l) == 1:
-                # no oject, provide default
-                if filter.is_input:
-                    object_str = "inputfilter"
-                else:
-                    object_str = "outputfilter"
-            else:
-                object_str = l[1]
-
             # add the directory to pythonpath if
             # not there yet, or evaluate pythonpath
             # and set sys.path to resulting value
@@ -201,13 +189,29 @@ class CallBack:
                 if filter.dir and (filter.dir not in sys.path):
                     sys.path[:0] = [filter.dir]
 
-            # import module
-            module = import_module(module_name,
-                                   autoreload=int(config.get("PythonAutoReload", 1)),
-                                   log=debug)
+            if not callable(filter.handler):
 
-            # find the object
-            object = resolve_object(module, object_str, arg=filter, silent=0)
+                # split module::handler
+                l = filter.handler.split('::', 1)
+                module_name = l[0]
+                if len(l) == 1:
+                    # no oject, provide default
+                    if filter.is_input:
+                        object_str = "inputfilter"
+                    else:
+                        object_str = "outputfilter"
+                else:
+                    object_str = l[1]
+
+                # import module
+                module = import_module(module_name,
+                                       autoreload=int(config.get("PythonAutoReload", 1)),
+                                       log=debug)
+
+                # find the object
+                object = resolve_object(module, object_str, arg=filter, silent=0)
+            else:
+                object = filter.handler
 
             # Only permit debugging using pdb if Apache has
             # actually been started in single process mode.
@@ -313,16 +317,6 @@ class CallBack:
 
             while hlist.handler is not None:
 
-                # split module::handler
-                l = hlist.handler.split('::', 1)
-
-                module_name = l[0]
-                if len(l) == 1:
-                    # no object, provide default
-                    object_str = default_object_str
-                else:
-                    object_str = l[1]
-
                 # add the directory to pythonpath if
                 # not there yet, or evaluate pythonpath
                 # and set sys.path to resulting value
@@ -343,14 +337,29 @@ class CallBack:
                     if dir and (dir not in sys.path):
                         sys.path[:0] = [dir]
 
-                # import module
-                module = import_module(module_name,
-                                       autoreload=int(config.get("PythonAutoReload", 1)),
-                                       log=debug)
+                if not callable(hlist.handler):
 
-                # find the object
-                object = resolve_object(module, object_str,
-                                        arg=req, silent=hlist.silent)
+                    # split module::handler
+                    l = hlist.handler.split('::', 1)
+
+                    module_name = l[0]
+                    if len(l) == 1:
+                        # no object, provide default
+                        object_str = default_object_str
+                    else:
+                        object_str = l[1]
+
+                    # import module
+                    module = import_module(module_name,
+                                           autoreload=int(config.get("PythonAutoReload", 1)),
+                                           log=debug)
+
+                    # find the object
+                    object = resolve_object(module, object_str,
+                                            arg=req, silent=hlist.silent)
+
+                else:
+                    object = hlist.handler
 
                 if not hlist.silent or object is not None:
 

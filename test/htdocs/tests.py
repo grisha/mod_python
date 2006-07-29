@@ -554,18 +554,19 @@ def handler(req):
 
     return apache.OK
 
-def req_add_handler(req):
-
-    req.secret_message = "foo"
-    req.add_handler("PythonHandler", "tests::simple_handler")
-
-    return apache.OK
-
 def simple_handler(req):
     # for req_add_handler()
     if (req.secret_message == "foo"):
         req.write("test ok")
         
+    return apache.OK
+
+def req_add_handler(req):
+
+    req.secret_message = "foo"
+    req.add_handler("PythonHandler", "tests::simple_handler")
+    req.add_handler("PythonHandler", simple_handler)
+
     return apache.OK
 
 def req_add_bad_handler(req):
@@ -991,11 +992,24 @@ def import_test(req):
 
     return apache.OK
 
-def outputfilter(filter):
+def outputfilter1(filter):
 
     s = filter.read()
     while s:
         filter.write(s.upper())
+        s = filter.read()
+
+    if s is None:
+        filter.close()
+
+    return apache.OK
+
+def outputfilter2(filter):
+
+    s = filter.read()
+    while s:
+        for c in s:
+          filter.write(2*c)
         s = filter.read()
 
     if s is None:
@@ -1027,9 +1041,11 @@ def req_add_output_filter(req):
 
 def req_register_output_filter(req):
 
-    req.register_output_filter("MP_TEST_FILTER","tests::outputfilter")
+    req.register_output_filter("MP_TEST_FILTER1","tests::outputfilter1")
+    req.register_output_filter("MP_TEST_FILTER2",outputfilter2)
 
-    req.add_output_filter("MP_TEST_FILTER")
+    req.add_output_filter("MP_TEST_FILTER1")
+    req.add_output_filter("MP_TEST_FILTER2")
 
     req.write("test ok")
 

@@ -1038,11 +1038,11 @@ static void python_directive_hl_add(apr_pool_t *p, apr_hash_t *hlists,
 
     while (*(h = ap_getword_white(p, &handler)) != '\0') {
         if (!head) {
-            head = hlist_new(p, h, directory, d_is_fnmatch, regex, silent);
+            head = hlist_new(p, h, 0, directory, d_is_fnmatch, regex, silent);
             apr_hash_set(hlists, phase, APR_HASH_KEY_STRING, head);
         }
         else {
-            hlist_append(p, head, h, directory, d_is_fnmatch, regex, silent);
+            hlist_append(p, head, h, 0, directory, d_is_fnmatch, regex, silent);
         }
     }
 }
@@ -1690,7 +1690,8 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
 
     /* create filter */
     filter = (filterobject *)MpFilter_FromFilter(f, bb, is_input, mode, readbytes,
-                                                 fh->handler, fh->directory);
+                                                 fh->handler, fh->callable,
+                                                 fh->directory);
 
     Py_INCREF(request_obj);
     filter->request_obj = request_obj;
@@ -1866,7 +1867,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     request_obj = python_get_request_object(req, 0);
 
     /* create filter */
-    filter = (filterobject *)MpFilter_FromFilter(f, bb, 0, 0, 0, 0, 0);
+    filter = (filterobject *)MpFilter_FromFilter(f, bb, 0, 0, 0, 0, 0, 0);
 
     Py_INCREF(request_obj);
     filter->request_obj = request_obj;
@@ -2007,7 +2008,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     request_obj = python_get_request_object(req, 0);
 
     /* create filter */
-    filter = (filterobject *)MpFilter_FromFilter(f, *bb, 0, 0, 0, 0, 0);
+    filter = (filterobject *)MpFilter_FromFilter(f, *bb, 0, 0, 0, 0, 0, 0);
 
     Py_INCREF(request_obj);
     filter->request_obj = request_obj;

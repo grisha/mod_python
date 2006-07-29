@@ -514,7 +514,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.add_handler()"
         rsp = self.vhost_get("test_req_add_handler")
 
-        if (rsp != "test ok"):
+        if (rsp != 2*"test ok"):
             self.fail(`rsp`)
 
     def test_req_add_bad_handler_conf(self):
@@ -1681,7 +1681,7 @@ class PerRequestTestCase(unittest.TestCase):
                         SetHandler("mod_python"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::simplehandler"),
-                        PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
+                        PythonOutputFilter("tests::outputfilter1 MP_TEST_FILTER"),
                         PythonDebug("On"),
                         AddOutputFilter("MP_TEST_FILTER .py"))
         return str(c)
@@ -1702,7 +1702,7 @@ class PerRequestTestCase(unittest.TestCase):
                         SetHandler("mod_python"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::req_add_output_filter"),
-                        PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
+                        PythonOutputFilter("tests::outputfilter1 MP_TEST_FILTER"),
                         PythonDebug("On"))
         return str(c)
 
@@ -1730,7 +1730,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.register_output_filter"
         rsp = self.vhost_get("test_req_register_output_filter")
 
-        if (rsp != "TEST OK"):
+        if (rsp != "TTEESSTT  OOKK"):
             self.fail(`rsp`)
 
     def test_connectionhandler_conf(self):
