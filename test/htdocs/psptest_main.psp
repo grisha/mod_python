@@ -1,0 +1,6 @@
+okay
+<%
+psp.set_error_page('psptest_fail.psp')
+session['dummy'] = 1
+raise 'fail'
+%>

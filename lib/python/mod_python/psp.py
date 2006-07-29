@@ -190,10 +190,11 @@ class PSP:
         # does this code use session?
         session = None
         if "session" in code.co_names:
-            if hasattr(req, 'session'):
-                session = req.session
-            else:
-                session = Session.Session(req) 
+            if not hasattr(req, 'session'):
+                # no existing session, so need to create one,
+                # session has to be saved back to request object
+                # to avoid deadlock if error page tries to use it
+                req.session = session = Session.Session(req) 
 
         # does this code use form?
         form = None
@@ -205,8 +206,18 @@ class PSP:
 
         try:
             global_scope = globals().copy()
-            global_scope.update({"req":req, "session":session,
-                                 "form":form, "psp":psp})
+            global_scope.update({"req":req, "form":form, "psp":psp})
+
+            # strictly speaking, session attribute only needs
+            # to be populated if referenced, but historically
+            # code has always populated it even if None, so
+            # preserve that just in case changing it breaks
+            # some users code
+            if hasattr(req, 'session'):
+                global_scope.update({"session":req.session})
+            else:
+                global_scope.update({"session":None})
+
             global_scope.update(self.vars) # passed in __init__()
             global_scope.update(vars)      # passed in run()
             try:
@@ -216,8 +227,8 @@ class PSP:
                 
                 # the mere instantiation of a session changes it
                 # (access time), so it *always* has to be saved
-                if session is not None:
-                    session.save()
+                if hasattr(req, 'session'):
+                    req.session.save()
             except:
                 et, ev, etb = sys.exc_info()
                 if psp.error_page:
@@ -226,8 +237,12 @@ class PSP:
                 else:
                     raise et, ev, etb
         finally:
+            # if session was created here, unlock it and don't leave
+            # it behind in request object in unlocked state as it
+            # will just cause problems if then used by subsequent code
             if session is not None:
                 session.unlock()
+                del req.session
 
     def __str__(self):
         self.req.content_type = 'text/html'
