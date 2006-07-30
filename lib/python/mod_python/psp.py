@@ -75,7 +75,14 @@ class PSPInterface:
     def apply_data(self, object):
 
         if not self.form:
-            self.form = util.FieldStorage(self.req, keep_blank_values=1)
+            if not hasattr(self.req, 'form'):
+                # no existing form, so need to create one,
+                # form has to be saved back to request object
+                # so that error page can access it if need be
+                self.form = util.FieldStorage(self.req, keep_blank_values=1)
+                self.req.form = self.form
+            else:
+                self.form = self.req.form
 
         return util.apply_fs_data(object, self.form, req=self.req)
 
@@ -199,7 +206,14 @@ class PSP:
         # does this code use form?
         form = None
         if "form" in code.co_names:
-            form = util.FieldStorage(req, keep_blank_values=1)
+            if not hasattr(req, 'form'):
+                # no existing form, so need to create one,
+                # form has to be saved back to request object
+                # so that error page can access it if need be
+                form = util.FieldStorage(req, keep_blank_values=1)
+                req.form = form
+            else:
+                form = req.form
 
         # create psp interface object
         psp = PSPInterface(req, self.filename, form)

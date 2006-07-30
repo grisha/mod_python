@@ -359,6 +359,14 @@
       inherited from the caller meaning caller could no longer use it safely.
       PSP code will now only unlock session if it created it in the first
       place.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-38]{MODPYTHON-38})
+      Fixed issue when using PSP pages in conjunction with publisher handler
+      or where a PSP error page was being triggered, that form parameters
+      coming from content of a POST request weren't available or only available
+      using a workaround. Specifically, the PSP page will now use any
+      \code{FieldStorage} object instance cached as \code{req.form} left
+      there by preceding code.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
