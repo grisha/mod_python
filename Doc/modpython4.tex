@@ -2728,7 +2728,7 @@ PythonOption PSPDbmCache ``/tmp/pspcache.dbm''
     referenced in the code.
 
     The object passed in \code{psp} is an instance of
-    \class{PSPInstance}.
+    \class{PSPInterface}.
 
   \end{methoddesc}
 
@@ -2760,12 +2760,12 @@ def handler(req):
 
 \end{classdesc}
 
-\begin{classdesc}{PSPInstance}{}
+\begin{classdesc}{PSPInterface}{}
   An object of this class is passed as a global variable \code{psp} to
   the PSP code. Objects of this class are instantiated internally and
   the interface to \method{__init__} is purposely undocumented.
 
-  \begin{methoddesc}[PSPInstance]{set_error_page}{filename}
+  \begin{methoddesc}[PSPInterface]{set_error_page}{filename}
     Used to set a psp page to be processed when an exception
     occurs. If the path is absolute, it will be appended to document
     root, otherwise the file is assumed to exist in the same directory
@@ -2774,12 +2774,12 @@ def handler(req):
     \code{sys.exc_info()}.
   \end{methoddesc}
 
-  \begin{methoddesc}[PSPInstance]{apply_data}{object\optional{, **kw}}
+  \begin{methoddesc}[PSPInterface]{apply_data}{object\optional{, **kw}}
     This method will call the callable object \var{object}, passing form
     data as keyword arguments, and return the result.
   \end{methoddesc}
 
-  \begin{methoddesc}[PSPInstance]{redirect}{location\optional{, permanent=0}}
+  \begin{methoddesc}[PSPInterface]{redirect}{location\optional{, permanent=0}}
     This method will redirect the browser to location
     \var{location}. If \var{permanent} is true, then
     \constant{MOVED_PERMANENTLY} will be sent (as opposed to
