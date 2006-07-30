@@ -138,6 +138,14 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
             return Py_None;
         }
     }
+    else if (strcmp(name, "parent") == 0) {
+        if (self->head->parent) {
+            return MpHList_FromHLEntry(self->head->parent);
+        } else {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+    }
 
     return PyMember_Get((char *)self->head, hlist_memberlist, name);
 
@@ -152,9 +160,14 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
 static PyObject *hlist_repr(hlistobject *self)
 {
     PyObject *s = PyString_FromString("{");
+    PyObject *repr = NULL;
     if (self->head->handler) {
         PyString_ConcatAndDel(&s, PyString_FromString("'handler:'"));
         PyString_ConcatAndDel(&s, PyString_FromString(self->head->handler));
+        PyString_ConcatAndDel(&s, PyString_FromString("'"));
+    } else if (self->head->callable) {
+        PyString_ConcatAndDel(&s, PyString_FromString("'handler:'"));
+        PyString_ConcatAndDel(&s, PyObject_Repr(self->head->callable));
         PyString_ConcatAndDel(&s, PyString_FromString("'"));
     }
     if (self->head->directory) {

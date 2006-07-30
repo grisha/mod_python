@@ -75,7 +75,8 @@
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
                               ap_input_mode_t mode, apr_size_t readbytes,
-                              char *handler, PyObject *callable, char *dir)
+                              char *handler, PyObject *callable, char *dir,
+                              hl_entry *parent)
 {
     filterobject *result;
 
@@ -107,6 +108,7 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
     result->handler = handler;
     result->callable = callable;
     result->dir = dir;
+    result->parent = parent;
 
     result->request_obj = NULL; 
 
@@ -554,7 +556,17 @@ static PyObject * filter_getattr(filterobject *self, char *name)
             return self->callable;
         } else if (self->handler) {
             return PyString_FromString(self->handler);
-        } else {
+        }
+        else {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+    }
+    else if (strcmp(name, "parent") == 0) {
+        if (self->parent) {
+            return MpHList_FromHLEntry(self->parent);
+        }
+        else {
             Py_INCREF(Py_None);
             return Py_None;
         }

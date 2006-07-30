@@ -199,6 +199,7 @@ typedef struct
     char *directory;
     int d_is_fnmatch;
     ap_regex_t *regex;
+    hl_entry *parent;
 } py_handler;
 
 apr_status_t python_cleanup(void *data);

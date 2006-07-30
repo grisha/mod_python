@@ -204,7 +204,8 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
 
         /* then just append to hlist */
         hlist_append(self->request_rec->pool, self->hlo->head,
-                     handler, callable, dir, 0, NULL, NOTSILENT);
+                     handler, callable, dir, 0, NULL, NOTSILENT,
+                     self->hlo->head);
     }
     else {
         /* this is a phase that we're not in */
@@ -220,11 +221,13 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
         hle = apr_hash_get(req_config->dynhls, phase, APR_HASH_KEY_STRING);
 
         if (! hle) {
-            hle = hlist_new(self->request_rec->pool, handler, callable, dir, 0, NULL, NOTSILENT);
+            hle = hlist_new(self->request_rec->pool, handler, callable, dir,
+                            0, NULL, NOTSILENT, self->hlo->head);
             apr_hash_set(req_config->dynhls, phase, APR_HASH_KEY_STRING, hle);
         }
         else {
-            hlist_append(self->request_rec->pool, hle, handler, callable, dir, 0, NULL, NOTSILENT);
+            hlist_append(self->request_rec->pool, hle, handler, callable, dir,
+                         0, NULL, NOTSILENT, self->hlo->head);
         }
     }
     
@@ -339,6 +342,7 @@ static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
     fh->callable = callable;
+    fh->parent = self->hlo->head;
 
     /* Canonicalize path and add trailing slash at
      * this point if directory was provided. */
@@ -413,6 +417,7 @@ static PyObject *req_register_output_filter(requestobject *self, PyObject *args)
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
     fh->callable = callable;
+    fh->parent = self->hlo->head;
 
     /* Canonicalize path and add trailing slash at
      * this point if directory was provided. */
