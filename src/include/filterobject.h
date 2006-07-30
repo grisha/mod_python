@@ -50,6 +50,7 @@ extern "C" {
         char *handler;
         PyObject *callable;
         char *dir;
+        hl_entry *parent;
 
         requestobject *request_obj;
 
@@ -63,7 +64,8 @@ extern "C" {
         MpFilter_FromFilter Py_PROTO((ap_filter_t *f, apr_bucket_brigade *bb_in, 
                                       int is_input, ap_input_mode_t mode, 
                                       apr_size_t readbytes, char *handler,
-                                      PyObject *callable, char *dir));
+                                      PyObject *callable, char *dir,
+                                      hl_entry *parent));
 
 #ifdef __cplusplus
 }

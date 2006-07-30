@@ -1176,12 +1176,22 @@ def FilterDispatch(self, filter):
     try:
 
         try:
-            # Cache the server configuration for the
-            # current request so that it will be
-            # available from within 'import_module()'.
-
             directory = filter.dir
             handler = filter.handler
+
+            # If directory for filter is not set,
+            # then search back through parents and
+            # inherit value from parent if found.
+
+            if directory is None:
+                parent = filter.parent
+                while parent is not None:
+                    if parent.directory is not None:
+                        directory = parent.directory
+                        break
+                    parent = parent.parent
+
+            # Expand relative addressing shortcuts.
 
             if type(handler) == types.StringType:
 
@@ -1192,6 +1202,10 @@ def FilterDispatch(self, filter):
                 elif handler[:3] == '../':
                     if directory is not None:
                         handler = os.path.join(directory, handler)
+
+            # Cache the server configuration for the
+            # current request so that it will be
+            # available from within 'import_module()'.
 
             config = filter.req.get_config()
             cache = _setup_config_cache(config, directory)
@@ -1286,14 +1300,24 @@ def HandlerDispatch(self, req):
         while not aborted and hlist.handler is not None:
 
             try:
-                # Cache the server configuration for the
-                # current request so that it will be
-                # available from within 'import_module()'.
-
                 cache = None
 
                 directory = hlist.directory
                 handler = hlist.handler
+
+                # If directory for handler is not set,
+                # then search back through parents and
+                # inherit value from parent if found.
+
+                if directory is None:
+                    parent = hlist.parent
+                    while parent is not None:
+                        if parent.directory is not None:
+                            directory = parent.directory
+                            break
+                        parent = parent.parent
+
+                # Expand relative addressing shortcuts.
 
                 if type(handler) == types.StringType:
 
@@ -1304,6 +1328,10 @@ def HandlerDispatch(self, req):
                     elif handler[:3] == '../':
                         if directory is not None:
                             handler = os.path.join(directory, handler)
+
+                # Cache the server configuration for the
+                # current request so that it will be
+                # available from within 'import_module()'.
 
                 cache = _setup_config_cache(config, directory)
 
