@@ -1373,6 +1373,8 @@ static int python_handler(request_rec *req, char *phase)
     if (ext) 
         request_obj->extension = apr_pstrdup(req->pool, ext);
 
+    Py_XDECREF(request_obj->hlo);
+
     if (!hle) {
         /* create a handler list object from dynamically registered handlers */
         request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(dynhle);
