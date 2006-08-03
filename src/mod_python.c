@@ -1373,15 +1373,23 @@ static int python_handler(request_rec *req, char *phase)
     if (ext) 
         request_obj->extension = apr_pstrdup(req->pool, ext);
 
-    Py_XDECREF(request_obj->hlo);
-
     if (!hle) {
-        /* create a handler list object from dynamically registered handlers */
-        request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(dynhle);
+        if (request_obj->hlo) {
+            MpHList_Copy(request_obj->hlo, dynhle);
+        }
+        else {
+            /* create a handler list object from dynamically registered handlers */
+            request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(dynhle, 1);
+        }
     }
     else {
-        /* create a handler list object */
-        request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
+        if (request_obj->hlo) {
+            MpHList_Copy(request_obj->hlo, hle);
+        }
+        else {
+            /* create a handler list object */
+            request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle, 1);
+        }
 
         /* add dynamically registered handlers, if any */
         if (dynhle) {
@@ -1569,7 +1577,7 @@ static apr_status_t python_connection(conn_rec *con)
     conn_obj = (connobject*) MpConn_FromConn(con);
 
     /* create a hahdler list object */
-    conn_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
+    conn_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle, 1);
 
     /* 
      * Here is where we call into Python!

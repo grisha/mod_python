@@ -203,7 +203,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     if (strcmp(currphase, phase) == 0) {
 
         /* then just append to hlist */
-        hlist_append(self->request_rec->pool, self->hlo->head,
+        hlist_append(self->hlo->pool, self->hlo->head,
                      handler, callable, dir, 0, NULL, NOTSILENT,
                      self->hlo->head);
     }

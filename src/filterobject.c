@@ -564,7 +564,7 @@ static PyObject * filter_getattr(filterobject *self, char *name)
     }
     else if (strcmp(name, "parent") == 0) {
         if (self->parent) {
-            return MpHList_FromHLEntry(self->parent);
+            return MpHList_FromHLEntry(self->parent, 0);
         }
         else {
             Py_INCREF(Py_None);

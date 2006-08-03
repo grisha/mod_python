@@ -41,9 +41,9 @@ extern "C" {
     
 #define MpHList_Check(op) ((op)->ob_type == &MpHList_Type)
 
-    extern DL_IMPORT(PyObject *)MpHList_FromHLEntry Py_PROTO((hl_entry *hse));
-    extern DL_IMPORT(void)MpHList_Append Py_PROTO((hlistobject *self, hl_entry *hse));
+    extern DL_IMPORT(PyObject *)MpHList_FromHLEntry Py_PROTO((hl_entry *hle, int owner));
     extern DL_IMPORT(void)MpHList_Append Py_PROTO((hlistobject *self, hl_entry *hle));
+    extern DL_IMPORT(void)MpHList_Copy Py_PROTO((hlistobject *self, hl_entry *hle));
     
 #ifdef __cplusplus
 }

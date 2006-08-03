@@ -28,12 +28,12 @@
 #include "mod_python.h"
 
 /**
- ** MpHList_FromHSEntry()
+ ** MpHList_FromHLEntry()
  **
  * new list from hl_entry
  */
 
-PyObject *MpHList_FromHLEntry(hl_entry *hle) 
+PyObject *MpHList_FromHLEntry(hl_entry *hle, int owner) 
 {
     hlistobject *result;
     apr_pool_t *p;
@@ -42,11 +42,17 @@ PyObject *MpHList_FromHLEntry(hl_entry *hle)
     if (! result) 
         PyErr_NoMemory();
 
-    /* XXX need second arg abort function to report mem error */
-    apr_pool_create_ex(&p, NULL, NULL, NULL);
+    if (owner) {
+	/* XXX need second arg abort function to report mem error */
+	apr_pool_create_ex(&p, NULL, NULL, NULL);
 
-    result->pool = p;
-    result->head = hlist_copy(p, hle);
+	result->pool = p;
+	result->head = hlist_copy(p, hle);
+    }
+    else {
+	result->pool = NULL;
+	result->head = hle;
+    }
 
     return (PyObject *) result;
 }
@@ -61,10 +67,37 @@ void MpHList_Append(hlistobject *self, hl_entry *hle)
 {
     hl_entry *tail;
 
+    /* this function will never be called on objects
+     * which aren't the owner of the list, but protect
+     * against that case anyway as we don't have a
+     * pool to allocate data from when doing copy */
+    if (!self->pool)
+        return;
+
     /* find tail */
     for (tail = self->head; tail->next; tail=tail->next);
 
     tail->next = hlist_copy(self->pool, hle);
+}
+
+/**
+ ** MpHlist_Copy(hlistobject, hl_entry)
+ **
+ *  Append hl_entry to hlistobject, copying everything.
+ */
+
+void MpHList_Copy(hlistobject *self, hl_entry *hle)
+{
+    hl_entry *tail;
+
+    /* this function will never be called on objects
+     * which aren't the owner of the list, but protect
+     * against that case anyway as we don't have a
+     * pool to allocate data from when doing copy */
+    if (!self->pool)
+        return;
+
+    self->head = hlist_copy(self->pool, hle);
 }
 
 /**
@@ -140,7 +173,7 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
     }
     else if (strcmp(name, "parent") == 0) {
         if (self->head->parent) {
-            return MpHList_FromHLEntry(self->head->parent);
+            return MpHList_FromHLEntry(self->head->parent, 0);
         } else {
             Py_INCREF(Py_None);
             return Py_None;
