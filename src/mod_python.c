@@ -963,27 +963,26 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
 
         directory = ap_getword_conf(p, &arg);
 
-        if (!strcmp(cmd->path, "~")) {
-            regex = ap_pregcomp(p, directory, AP_REG_EXTENDED|USE_ICASE);
+        if (!strcmp(directory, "~")) {
             directory = ap_getword_conf(p, &arg);
+            regex = ap_pregcomp(p, cmd->path, AP_REG_EXTENDED|USE_ICASE);
         } else if (ap_is_matchexp(directory)) {
             d_is_fnmatch = 1;
         }
     } else if ((context = find_parent(directive, "<DirectoryMatch"))) {
-        regex = ap_pregcomp(p, directory, AP_REG_EXTENDED|USE_ICASE);
-
         arg = context->args;
         endp = ap_strrchr_c(arg, '>');
         arg = apr_pstrndup(p, arg, endp - arg);
 
         directory = ap_getword_conf(p, &arg);
+        regex = ap_pregcomp(p, directory, AP_REG_EXTENDED|USE_ICASE);
     }
     else if (cmd->config_file != NULL) {
         /* cmd->config_file is NULL when in main Apache
          * configuration file as the file is completely
          * read in before the directive is processed as
          * EXEC_ON_READ is not set in req_override field
-         * of command_struct table entry. Thus now then
+         * of command_struct table entry. Thus know then
          * we are being used in a .htaccess file. */
 
         directory = ap_make_dirstr_parent(p, directive->filename);
