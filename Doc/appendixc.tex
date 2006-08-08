@@ -371,6 +371,11 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-181]{MODPYTHON-181})
       Fixed memory leak when mod_python handlers are defined for more than
       one phase at the same time.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-84]{MODPYTHON-84})
+      The original change to fix the symlink issue for \code{req.sendfile()}
+      was causing problems on Win32, plus code needed to be changed to work
+      with APR 1.2.7.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
