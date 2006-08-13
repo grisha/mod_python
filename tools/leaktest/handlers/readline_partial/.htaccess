@@ -1,0 +1,3 @@
+AddHandler mod_python .py
+PythonHandler mptest
+PythonDebug On

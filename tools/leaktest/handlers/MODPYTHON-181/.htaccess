@@ -1,0 +1,4 @@
+PythonFixupHandler handlers
+AddHandler mod_python .py
+PythonHandler handlers
+PythonDebug On
