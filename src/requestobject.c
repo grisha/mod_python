@@ -194,8 +194,17 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
                 dir = apr_pstrcat(self->request_rec->pool, dir, "/", NULL);
             }
         }
+        else {
+            /* dir is from Python, so duplicate it */
+
+            dir = apr_pstrdup(self->request_rec->pool, dir);
+        }
     }
-    
+
+    /* handler is from Python, so duplicate it */
+
+    handler = apr_pstrdup(self->request_rec->pool, handler);
+
     /* which phase are we processing? */
     currphase = PyString_AsString(self->phase);
 
@@ -203,7 +212,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     if (strcmp(currphase, phase) == 0) {
 
         /* then just append to hlist */
-        hlist_append(self->hlo->pool, self->hlo->head,
+        hlist_append(self->request_rec->pool, self->hlo->head,
                      handler, callable, dir, 0, NULL, NOTSILENT,
                      self->hlo->head);
     }

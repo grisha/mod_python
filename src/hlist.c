@@ -41,9 +41,9 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, PyObject *o, const char *d,
 
     hle = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
 
-    hle->handler = apr_pstrdup(p, h);
+    hle->handler = h;
     hle->callable = o;
-    hle->directory = apr_pstrdup(p, d);
+    hle->directory = d;
     hle->d_is_fnmatch = d_is_fnmatch;
     hle->regex = regex;
     hle->silent = s;
@@ -73,9 +73,9 @@ hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
 
     nhle = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
 
-    nhle->handler = apr_pstrdup(p, h);
+    nhle->handler = h;
     nhle->callable = o;
-    nhle->directory = apr_pstrdup(p, d);
+    nhle->directory = d;
     nhle->d_is_fnmatch = d_is_fnmatch;
     nhle->regex = regex;
     nhle->silent = s;
@@ -98,9 +98,9 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
     hl_entry *head;
 
     head = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
-    head->handler = apr_pstrdup(p, hle->handler);
+    head->handler = hle->handler;
     head->callable = hle->callable;
-    head->directory = apr_pstrdup(p, hle->directory);
+    head->directory = hle->directory;
     head->d_is_fnmatch = hle->d_is_fnmatch;
     head->regex = hle->regex;
     head->silent = hle->silent;
@@ -111,9 +111,9 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
     while (hle) {
         nhle->next = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
         nhle = nhle->next;
-        nhle->handler = apr_pstrdup(p, hle->handler);
+        nhle->handler = hle->handler;
         nhle->callable = hle->callable;
-        nhle->directory = apr_pstrdup(p, hle->directory);
+        nhle->directory = hle->directory;
         nhle->d_is_fnmatch = hle->d_is_fnmatch;
         nhle->regex = hle->regex;
         nhle->silent = hle->silent;
@@ -122,5 +122,34 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
     }
 
     return head;
+}
+
+/**
+ ** hlist_extend
+ **
+ */
+
+void hlist_extend(apr_pool_t *p, hl_entry *hle1,
+                       const hl_entry *hle2)
+{
+    if (!hle2)
+        return;
+
+    /* find tail */
+    while (hle1 && hle1->next)
+        hle1 = hle1->next;
+
+    while (hle2) {
+        hle1->next = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
+        hle1 = hle1->next;
+        hle1->handler = hle2->handler;
+        hle1->callable = hle2->callable;
+        hle1->directory = hle2->directory;
+        hle1->d_is_fnmatch = hle2->d_is_fnmatch;
+        hle1->regex = hle2->regex;
+        hle1->silent = hle2->silent;
+        hle1->parent = hle2->parent;
+        hle2 = hle2->next;
+    }
 }
 
