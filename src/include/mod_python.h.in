@@ -53,6 +53,7 @@
 #include "apr_strings.h"
 #include "apr_lib.h"
 #include "apr_hash.h"
+#include "apr_fnmatch.h"
 #include "scoreboard.h"
 #include "ap_mpm.h"
 #include "ap_mmn.h"

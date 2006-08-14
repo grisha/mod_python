@@ -1201,7 +1201,63 @@ requestobject *python_get_request_object(request_rec *req, const char *phase)
 }
 
 /**
- ** select_interpreter_name
+ ** resolve_directory
+ **
+ *      resolve any directory match returning the matched directory
+ */
+
+static const char *resolve_directory(request_rec *req, const char *directory,
+                                     int d_is_fnmatch, ap_regex_t *regex)
+{
+    char *prefix;
+    int len, dirs, i;
+
+    if (!req || !req->filename || (!d_is_fnmatch && !regex))
+        return directory;
+
+    dirs = ap_count_dirs(req->filename) + 1;
+    len = strlen(req->filename);
+    prefix = (char*)apr_palloc(req->pool, len+1);
+
+    for (i=0; i<=dirs; i++) {
+        ap_make_dirstr_prefix(prefix, req->filename, i);
+#ifdef WIN32
+        if (d_is_fnmatch && apr_fnmatch(directory, prefix,
+            APR_FNM_PATHNAME|APR_FNM_CASE_BLIND) == 0) {
+#else
+        if (d_is_fnmatch && apr_fnmatch(directory, prefix,
+            APR_FNM_PATHNAME) == 0) {
+#endif
+            return prefix;
+        }
+        else if (regex && ap_regexec(regex, prefix, 0, NULL, 0) == 0) {
+            return prefix;
+        }
+
+        if (strcmp(prefix, "/") != 0) {
+            prefix[strlen(prefix)-1] = '\0';
+#ifdef WIN32
+            if (d_is_fnmatch && apr_fnmatch(directory, prefix,
+                APR_FNM_PATHNAME|APR_FNM_CASE_BLIND) == 0) {
+#else
+            if (d_is_fnmatch && apr_fnmatch(directory, prefix,
+                APR_FNM_PATHNAME) == 0) {
+#endif
+                prefix[strlen(prefix)] = '/';
+                return prefix;
+            }
+            else if (regex && ap_regexec(regex, prefix, 0, NULL, 0) == 0) {
+                prefix[strlen(prefix)] = '/';
+                return prefix;
+            }
+        }
+    }
+
+    return directory;
+}
+
+/**
+ ** select_interp_name
  **
  *      (internal)
  *      figure out the name of the interpreter we should be using
@@ -1302,6 +1358,7 @@ static int python_handler(request_rec *req, char *phase)
     char *ext = NULL;
     hl_entry *hle = NULL;
     hl_entry *dynhle = NULL;
+    hl_entry *hlohle = NULL;
 
     py_req_config *req_conf;
 
@@ -1331,7 +1388,8 @@ static int python_handler(request_rec *req, char *phase)
 
     /* try without extension if we don't match */
     if (!hle) {
-        hle = (hl_entry *)apr_hash_get(conf->hlists, phase, APR_HASH_KEY_STRING);
+        hle = (hl_entry *)apr_hash_get(conf->hlists, phase,
+                                       APR_HASH_KEY_STRING);
 
         /* also blank out ext since we didn't succeed with it. this is tested
            further below */
@@ -1350,11 +1408,32 @@ static int python_handler(request_rec *req, char *phase)
         return DECLINED;
     }
 
+    /* construct list for the handler list object */
+    if (!hle) {
+        hlohle = hlist_copy(req->pool, dynhle);
+    }
+    else {
+        hlohle = hlist_copy(req->pool, hle);
+
+        if (dynhle)
+            hlist_extend(req->pool, hlohle, dynhle);
+    }
+
+    /* resolve wildcard or regex directory patterns */
+    hle = hlohle;
+    while (hle) {
+        if (hle->d_is_fnmatch || hle->regex) {
+            hle->directory = resolve_directory(req, hle->directory,
+                                               hle->d_is_fnmatch, hle->regex);
+            hle->d_is_fnmatch = 0;
+            hle->regex = NULL;
+        }
+
+        hle = hle->next;
+    }
+
     /* determine interpreter to use */
-    if (hle)
-        interp_name = select_interp_name(req, NULL, conf, hle, NULL);
-    else
-        interp_name = select_interp_name(req, NULL, conf, dynhle, NULL);
+    interp_name = select_interp_name(req, NULL, conf, hlohle, NULL);
 
     /* get/create interpreter */
     idata = get_interpreter(interp_name, req->server);
@@ -1372,37 +1451,17 @@ static int python_handler(request_rec *req, char *phase)
     if (ext) 
         request_obj->extension = apr_pstrdup(req->pool, ext);
 
-    if (!hle) {
-        if (request_obj->hlo) {
-            MpHList_Copy(request_obj->hlo, dynhle);
-        }
-        else {
-            /* create a handler list object from dynamically registered handlers */
-            request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(dynhle, 1);
-        }
-    }
-    else {
-        if (request_obj->hlo) {
-            MpHList_Copy(request_obj->hlo, hle);
-        }
-        else {
-            /* create a handler list object */
-            request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle, 1);
-        }
-
-        /* add dynamically registered handlers, if any */
-        if (dynhle) {
-            MpHList_Append(request_obj->hlo, dynhle);
-        }
-    }
+    /* construct a new handler list object */
+    Py_XDECREF(request_obj->hlo);
+    request_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hlohle);
 
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
      * >>> resultobject = obCallBack.Dispatch(request_object, phase)
      */
-    resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch", "O", 
-                                       request_obj);
+    resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch",
+                                       "O", request_obj);
 
     /* clear phase from request object */
     Py_XDECREF(request_obj->phase);
@@ -1559,7 +1618,7 @@ static apr_status_t python_connection(conn_rec *con)
         /* nothing to do here */
         return DECLINED;
     }
-    
+
     /* determine interpreter to use */
     interp_name = select_interp_name(NULL, con, conf, hle, NULL);
 
@@ -1575,16 +1634,16 @@ static apr_status_t python_connection(conn_rec *con)
     /* create connection object */
     conn_obj = (connobject*) MpConn_FromConn(con);
 
-    /* create a hahdler list object */
-    conn_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle, 1);
+    /* create a handler list object */
+    conn_obj->hlo = (hlistobject *)MpHList_FromHLEntry(hle);
 
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
      * >>> resultobject = obCallBack.Dispatch(request_object, phase)
      */
-    resultobject = PyObject_CallMethod(idata->obcallback, "ConnectionDispatch", "O", 
-                                       conn_obj);
+    resultobject = PyObject_CallMethod(idata->obcallback, "ConnectionDispatch",
+                                       "O", conn_obj);
      
     /* release the lock and destroy tstate*/
     release_interpreter();

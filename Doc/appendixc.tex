@@ -381,6 +381,17 @@
       The original change to fix the symlink issue for \code{req.sendfile()}
       was causing problems on Win32, plus code needed to be changed to work
       with APR 1.2.7.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-63]{MODPYTHON-63})
+      When handler directives are used within \code{Directory} or
+      \code{DirectoryMatch} directives where wildcards or regular
+      expressions are used, the handler directory will be set to the
+      shortest directory matched by the directory pattern. Handler
+      directives can now also be used within \code{Files} and
+      \code{FilesMatch} directives and the handler directory will correctly
+      resolve to the directory corresponding to the enclosing
+      \code{Directory} or \code{DirectoryMatch} directive, or the directory
+      the \code{.htaccess} file is contained in.
   \end{itemize}
 
 \chapter{Changes from Version (3.2.7)\label{app-changes-from-3.2.7}}
