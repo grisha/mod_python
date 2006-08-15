@@ -1071,7 +1071,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         /* then do some initial setting up */
         rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
 
-        if(rc != OK) {
+        if (rc != OK) {
             PyObject *val = PyInt_FromLong(rc);
             if (val == NULL)
                 return NULL;
@@ -1116,6 +1116,12 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
                     if(_PyString_Resize(&result, copied))
                         return NULL;
 
+                /* fix for MODPYTHON-181 leak */
+                if (self->rbuff_pos >= self->rbuff_len && self->rbuff != NULL) {
+                    free(self->rbuff);
+                    self->rbuff = NULL;
+                } 
+
                 return result;
             }
         }
@@ -1132,9 +1138,13 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 
     /* if got this far, the buffer should be empty, we need to read more */
         
-    /* create a read buffer */
+    /* create a read buffer
+      
+       The buffer len will be at least HUGE_STRING_LEN in size,
+       to avoid memory fragmention
+    */
     self->rbuff_len = len > HUGE_STRING_LEN ? len : HUGE_STRING_LEN;
-    self->rbuff_pos = self->rbuff_len;
+    self->rbuff_pos = 0;
     self->rbuff = malloc(self->rbuff_len);
     if (! self->rbuff)
         return PyErr_NoMemory();
@@ -1144,6 +1154,19 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         chunk_len = ap_get_client_block(self->request_rec, self->rbuff, 
                                         self->rbuff_len);
     Py_END_ALLOW_THREADS;
+
+    /* ap_get_client_block could return -1 on error */
+    if (chunk_len == -1) {
+
+        /* Free rbuff since returning NULL here should end the request */
+        free(self->rbuff);
+        self->rbuff = NULL;
+
+        PyErr_SetObject(PyExc_IOError, 
+                        PyString_FromString("Client read error (Timeout?)"));
+        return NULL;
+    }
+    
     bytes_read = chunk_len;
 
     /* if this is a "short read", try reading more */
@@ -2055,8 +2078,15 @@ static void request_tp_dealloc(requestobject *self)
      */
     PyObject_GC_UnTrack(self);
     
-    request_tp_clear(self);
+    /* self->rebuff is used by req_readline.
+     * It may not have been freed if req_readline was not
+     * enough times to consume rbuff's contents.
+     */
+    if (self->rbuff != NULL)
+        free(self->rbuff); 
 
+    request_tp_clear(self);
+  
     PyObject_GC_Del(self);
 }
 
