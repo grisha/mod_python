@@ -26,7 +26,7 @@ def leaktest(test_name, test_method,
     
     try:
         print >>sys.stderr, '%s leaktest' % name
-        print >>sys.stderr, '    running ',
+        print >>sys.stderr, '  %s ' % name,
         for i in xrange(0, count):
             rsp = test_method(host)
             if verbose == 3:
@@ -44,19 +44,20 @@ def leaktest(test_name, test_method,
                 # as we don't want to crash the host
                 mem_usage = get_memory_usage()
                 log_memory_usage(log_dir, test_name, i + 1, mem_usage)
-                if max(mem_usage.values()) > mem_limit:
+                max_proc_mem = max(mem_usage.values())
+                if max_proc_mem > mem_limit:
                     log_msg('/tmp/leaktest',
                             'TEST %s: ERROR LEAK_DETECTED: memory limit (%0.2f %%) exceeded' % (test_name, mem_limit))
 
                     raise StopTest, 'apache memory limit exceeded'
-                print >>sys.stderr, '    sleeping ',
+                print >>sys.stderr, ' %7d requests (%4.2f%%) sleeping ' % (i + 1, max_proc_mem),
                 count_down = sleep
                 while (count_down > 0):
                     time.sleep(2)
                     count_down = count_down - 2
                     sys.stderr.write('. ')
                     sys.stderr.flush()
-                print >>sys.stderr, '\n    running ',
+                print >>sys.stderr, '\n  %s ' % (name),
         status = 'PASS'
     except StopTest:
         print >>sys.stderr, ''
@@ -460,13 +461,15 @@ if __name__ == '__main__':
         test_list = tests.keys()
         test_list.remove('debug')
 
-        # We want to run the baseline test first
-        # The baseline request should NOT leak.
+        # we don't want to run the baseline test
+        # unless it's specified with the -b
+        # switch. It will be added backing later if
+        # required.
         test_list.remove('baseline')
         test_list.sort()
+
+    if options.do_baseline:
         test_list.insert(0, 'baseline')
-    elif options.do_baseline:
-        test_list = ['baseline', ]
 
     for arg in args:
         if arg not in tests:
