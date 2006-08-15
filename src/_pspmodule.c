@@ -152,7 +152,12 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     psp_string_0(&parser->pycode);
     Py_END_ALLOW_THREADS
 
-    code = PyString_FromString(parser->pycode.blob);
+    if (parser->pycode.blob) {
+        code = PyString_FromString(parser->pycode.blob);
+    }
+    else {
+        code = PyString_FromString("");
+    }
 
     psp_parser_cleanup(parser);
 
