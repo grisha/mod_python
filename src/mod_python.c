@@ -51,7 +51,7 @@ static APR_OPTIONAL_FN_TYPE(ap_ssi_parse_string)         *optfn_ssi_parse_string
  *      Creates a new Python interpreter.
  */
 
-static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
+static PyInterpreterState *make_interpreter(const char *name)
 {
     PyThreadState *tstate;
     
@@ -60,7 +60,7 @@ static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
 
     if (! tstate) {
         /* couldn't create an interpreter, this is bad */
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                      "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
         return NULL;
     }
@@ -85,7 +85,7 @@ static PyInterpreterState *make_interpreter(const char *name, server_rec *srv)
  *      the reference to obCallBack.
  */
 
-static PyObject * make_obcallback(char *name, server_rec *s)
+static PyObject * make_obcallback(char *name)
 {
 
     PyObject *m = NULL;
@@ -107,7 +107,7 @@ static PyObject * make_obcallback(char *name, server_rec *s)
     if (! ((m = PyImport_ImportModule(MODULENAME)))) {
         PyObject *path;
 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                      "make_obcallback: could not import %s.\n",
                      (!MODULENAME) ? "<null>" : MODULENAME);
 
@@ -116,7 +116,7 @@ static PyObject * make_obcallback(char *name, server_rec *s)
 
         path = PyObject_Repr(PySys_GetObject("path"));
 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                      "make_obcallback: Python path being used \"%s\".",
                      PyString_AsString(path));
 
@@ -134,7 +134,7 @@ static PyObject * make_obcallback(char *name, server_rec *s)
         PyObject *d = NULL;
         PyObject *f = NULL;
 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                      "make_obcallback: could not call %s.\n",
                      (!INITFUNC) ? "<null>" : INITFUNC);
 
@@ -153,10 +153,10 @@ static PyObject * make_obcallback(char *name, server_rec *s)
         }
 
         if (strcmp(mp_compile_version, mp_dynamic_version) != 0) {
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                          "make_obcallback: mod_python version mismatch, expected '%s', found '%s'.",
                          mp_compile_version, mp_dynamic_version);
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                          "make_obcallback: mod_python modules location '%s'.",
                          PyString_AsString(f));
         }
@@ -227,7 +227,7 @@ PyObject *python_interpreter_name()
  *      NOTE: This function will acquire lock
  */
 
-static interpreterdata *get_interpreter(const char *name, server_rec *srv)
+static interpreterdata *get_interpreter(const char *name)
 {
     PyObject *p;
     PyThreadState *tstate;
@@ -244,7 +244,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 #endif
 
     if (!interpreters) {
-         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
+         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                        "get_interpreter: interpreters dictionary not initialised.");
         return NULL;
     }
@@ -252,7 +252,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
     p = PyDict_GetItemString(interpreters, (char *)name);
     if (!p)
     {
-        PyInterpreterState *istate = make_interpreter(name, srv);
+        PyInterpreterState *istate = make_interpreter(name);
 
         if (istate)
             idata = save_interpreter(name, istate);
@@ -266,7 +266,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 #endif
 
     if (! idata) {
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                      "get_interpreter: cannot get interpreter data (no more memory?)");
 #if APR_HAS_THREADS
         apr_thread_mutex_unlock(interpreters_lock);
@@ -284,7 +284,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
 
     if (!idata->obcallback) {
 
-        idata->obcallback = make_obcallback((char*)name,srv);
+        idata->obcallback = make_obcallback((char*)name);
 
         if (!idata->obcallback) 
         {
@@ -294,7 +294,7 @@ static interpreterdata *get_interpreter(const char *name, server_rec *srv)
             PyThreadState_Swap(NULL);
 #endif
             PyThreadState_Delete(tstate);
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, srv,
+            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                       "get_interpreter: no interpreter callback found.");
 #if APR_HAS_THREADS
             apr_thread_mutex_unlock(interpreters_lock);
@@ -345,10 +345,7 @@ apr_status_t python_cleanup(void *data)
     cleanup_info *ci = (cleanup_info *)data;
 
     /* get/create interpreter */
-    if (ci->request_rec)
-        idata = get_interpreter(ci->interpreter, ci->request_rec->server);
-    else
-        idata = get_interpreter(ci->interpreter, ci->server_rec);
+    idata = get_interpreter(ci->interpreter);
 
     if (!idata) {
         Py_DECREF(ci->handler);
@@ -639,6 +636,73 @@ static py_global_config *python_create_global_config(server_rec *s)
     return glb;
 }
 
+/*
+ * mp_acquire_interpreter()
+ *
+ *      Exported function for acquiring named interpreter.
+ */
+
+PyInterpreterState *mp_acquire_interpreter(const char *name)
+{
+    interpreterdata *idata;
+
+    idata = get_interpreter(name);
+
+    return idata->istate;
+}
+
+/*
+ * mp_release_interpreter()
+ *
+ *      Exported function for releasing acquired interpreter.
+ *
+ */
+
+void mp_release_interpreter(void)
+{
+    release_interpreter();
+}
+
+/*
+ * mp_get_request_object(request_rec *req)
+ *
+ *      Exported function for obtaining wrapper for request object.
+ *
+ */
+
+PyObject *mp_get_request_object(request_rec *req)
+{
+    requestobject *request_obj;
+
+    request_obj = python_get_request_object(req, 0);
+
+    return (PyObject *)request_obj;
+}
+
+/*
+ * mp_get_server_object(server_rec *srv)
+ *
+ *      Exported function for obtaining wrapper for server object.
+ *
+ */
+
+PyObject *mp_get_server_object(server_rec *srv)
+{
+    return (PyObject *)MpServer_FromServer(srv);
+}
+
+/*
+ * mp_get_connection_object(conn_rec *conn)
+ *
+ *      Exported function for obtaining wrapper for connection object.
+ *
+ */
+
+PyObject *mp_get_connection_object(conn_rec *conn)
+{
+    return (PyObject *)MpConn_FromConn(conn);
+}
+
 /**
  ** python_init()
  **
@@ -738,6 +802,13 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         PyEval_ReleaseLock();
 #endif
     }
+
+    APR_REGISTER_OPTIONAL_FN(mp_acquire_interpreter);
+    APR_REGISTER_OPTIONAL_FN(mp_release_interpreter);
+    APR_REGISTER_OPTIONAL_FN(mp_get_request_object);
+    APR_REGISTER_OPTIONAL_FN(mp_get_server_object);
+    APR_REGISTER_OPTIONAL_FN(mp_get_connection_object);
+
     return OK;
 }
 
@@ -1436,7 +1507,7 @@ static int python_handler(request_rec *req, char *phase)
     interp_name = select_interp_name(req, NULL, conf, hlohle, NULL);
 
     /* get/create interpreter */
-    idata = get_interpreter(interp_name, req->server);
+    idata = get_interpreter(interp_name);
 
     if (!idata) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
@@ -1575,7 +1646,7 @@ static apr_status_t python_cleanup_handler(void *data)
         requestobject *request_obj = req_config->request_obj;
 
         /* get interpreter */
-        idata = get_interpreter(NULL, req->server);
+        idata = get_interpreter(NULL);
         if (!idata)
             return APR_SUCCESS; /* this return code is ignored by httpd anyway */
 
@@ -1623,7 +1694,7 @@ static apr_status_t python_connection(conn_rec *con)
     interp_name = select_interp_name(NULL, con, conf, hle, NULL);
 
     /* get/create interpreter */
-    idata = get_interpreter(interp_name, con->base_server);
+    idata = get_interpreter(interp_name);
 
     if (!idata) {
         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server,
@@ -1745,7 +1816,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     interp_name = select_interp_name(req, NULL, conf, NULL, fh);
 
     /* get/create interpreter */
-    idata = get_interpreter(interp_name, req->server);
+    idata = get_interpreter(interp_name);
    
     if (!idata) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
@@ -1920,7 +1991,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     interp_name = select_interp_name(req, NULL, conf, NULL, NULL);
 
     /* get/create interpreter */
-    idata = get_interpreter(interp_name, req->server);
+    idata = get_interpreter(interp_name);
    
     if (!idata) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
@@ -2061,7 +2132,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     interp_name = select_interp_name(req, NULL, conf, NULL, NULL);
 
     /* get/create interpreter */
-    idata = get_interpreter(interp_name, req->server);
+    idata = get_interpreter(interp_name);
    
     if (!idata) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
@@ -2491,7 +2562,7 @@ static apr_status_t python_finalize(void *data)
 {
     interpreterdata *idata;
 
-    idata = get_interpreter(NULL, NULL);
+    idata = get_interpreter(NULL);
 
     if (idata) {
 
@@ -2605,7 +2676,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
                 const char *ppath;
 
                 /* get interpreter */
-                idata = get_interpreter(interp_name, s);
+                idata = get_interpreter(interp_name);
                 if (!idata)
                     return;
 
