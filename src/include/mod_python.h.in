@@ -207,6 +207,12 @@ apr_status_t python_cleanup(void *data);
 PyObject* python_interpreter_name(void);
 requestobject *python_get_request_object(request_rec *req, const char *phase);
 
+APR_DECLARE_OPTIONAL_FN(PyInterpreterState *, mp_acquire_interpreter, (const char *));
+APR_DECLARE_OPTIONAL_FN(void *, mp_release_interpreter, ());
+APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_request_object, (request_rec *));
+APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_server_object, (server_rec *));
+APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_connection_object, (conn_rec *));
+
 #endif /* !Mp_MOD_PYTHON_H */
 
 /*

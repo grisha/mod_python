@@ -68,6 +68,13 @@
       \code{req.register_output_filter()} methods can now take a direct
       reference to a callable object as well a string which refers to a
       module or module::function combination by name.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-165]{MODPYTHON-165})
+      Exported functions from mod_python module to be used in other third
+      party modules for Apache. The purpose of these functions is to allow
+      those other modules to access the mechanics of how mod_python creates
+      interpreters, thereby allowing other modules to also embed Python
+      and for there not to be a conflict with mod_python.
   \end{itemize}
 
   Improvements
