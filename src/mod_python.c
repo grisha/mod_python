@@ -160,9 +160,6 @@ static PyObject * make_obcallback(char *name)
                          "make_obcallback: mod_python modules location '%s'.",
                          PyString_AsString(f));
         }
-
-        Py_XDECREF(o);
-        Py_XDECREF(f);
     }
 
       Py_XDECREF(m);
