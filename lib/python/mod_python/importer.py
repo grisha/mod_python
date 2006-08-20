@@ -32,6 +32,7 @@ import imp
 import md5
 import time
 import string
+import StringIO
 
 try:
     import threading
@@ -54,25 +55,67 @@ except:
 # module on top of the old module, but loads the new
 # instance into a clean module.
 
-_modules_cache = {}
+_request_modules_cache = {}
 
-def _cleanup_modules_cache(thread=None):
+def _cleanup_request_modules_cache(thread=None):
     thread = thread or threading.currentThread()
-    _modules_cache.pop(thread, None)
+    _request_modules_cache.pop(thread, None)
 
-def _setup_modules_cache(req=None, thread=None):
-    thread = thread or threading.currentThread()
-    if not _modules_cache.has_key(thread):
-        _modules_cache[thread] = {}
+def _setup_request_modules_cache(req=None):
+    thread = threading.currentThread()
+    if not _request_modules_cache.has_key(thread):
+        _request_modules_cache[thread] = {}
         if req:
-            req.register_cleanup(_cleanup_modules_cache, thread)
+            req.register_cleanup(_cleanup_request_modules_cache, thread)
 
-def _get_modules_cache(thread=None):
-    thread = thread or threading.currentThread()
-    return _modules_cache.get(thread, None)
+def _get_request_modules_cache():
+    thread = threading.currentThread()
+    return _request_modules_cache.get(thread, None)
+
+def request_modules_graph(verbose=0):
+    output = StringIO.StringIO()
+    modules = _get_request_modules_cache()
+    print >> output, 'digraph REQUEST {'
+    print >> output, 'node [shape=box];'
+
+    for module in modules.values():
+
+        name = module.__name__
+        filename = module.__file__
+
+        if verbose:
+            cache = module.__mp_info__.cache
+
+            ctime = time.asctime(time.localtime(cache.ctime))
+            mtime = time.asctime(time.localtime(cache.mtime))
+            atime = time.asctime(time.localtime(cache.atime))
+            generation = cache.generation
+            direct = cache.direct
+            indirect = cache.indirect
+            path = module.__mp_path__
+
+            message = '%s [label="%s\\nmtime = %s\\nctime = %s\\natime = %s\\n'
+            message += 'generation = %d, direct = %d, indirect = %d\\n'
+            message += 'path = %s"];'
+
+            print >> output, message % (name, filename, mtime, ctime, atime, \
+                    generation, direct, indirect, path)
+        else:
+            message = '%s [label="%s"];'
+
+            print >> output, message % (name, filename)
+
+        children = module.__mp_info__.children
+        for child_name in children:
+            print >> output, '%s -> %s' % (name, child_name)
+
+    print >> output, '}'
+    return output.getvalue()
+
+apache.request_modules_graph = request_modules_graph
 
 
-# Define a transient per request config cache into which
+# Define a transient per request cache into which
 # the currently active configuration and handler root
 # directory pertaining to a request is stored. This is
 # done so that it can be accessed directly from the
@@ -80,30 +123,40 @@ def _get_modules_cache(thread=None):
 # settings indicating if logging and module reloading is
 # enabled and to determine where to look for modules.
 
-_config_cache = {}
+_current_cache = {}
 
-def _setup_config_cache(config, directory, thread=None):
-    thread = thread or threading.currentThread()
-    cache  = _config_cache.get(thread, (None, None))
-    if config is not None:
-        if directory:
-            directory = os.path.normpath(directory)
-        _config_cache[thread] = (config, directory)
+def _setup_current_cache(config, options, directory):
+    thread = threading.currentThread()
+    if directory:
+        directory = os.path.normpath(directory)
+    cache  = _current_cache.get(thread, (None, None, None))
+    if config is None and options is None:
+        del _current_cache[thread]
     else:
-        del _config_cache[thread]
+        _current_cache[thread] = (config, options, directory)
     return cache
 
-def get_config(thread=None):
-    thread = thread or threading.currentThread()
-    config, directory = _config_cache.get(thread,
-            (apache.main_server.get_config(), None))
+def get_current_config():
+    thread = threading.currentThread()
+    config, options, directory = _current_cache.get(thread,
+            (apache.main_server.get_config(), None, None))
     return config
 
-def get_directory(thread=None):
-    thread = thread or threading.currentThread()
-    config, directory = _config_cache.get(thread, (None, None))
+def get_current_options():
+    thread = threading.currentThread()
+    config, options, directory = _current_cache.get(thread,
+            (None, apache.main_server.get_options(), None))
+    return options
+
+def get_handler_root():
+    thread = threading.currentThread()
+    config, options, directory = _current_cache.get(thread,
+            (None, None, None))
     return directory
 
+apache.get_current_config = get_current_config
+apache.get_current_options = get_current_options
+apache.get_handler_root = get_handler_root
 
 # Define an alternate implementation of the module
 # importer system and substitute it for the standard one
@@ -125,9 +178,9 @@ def _parent_context():
             parent = parent.f_back
 
     if parent and parent.f_globals.has_key('__mp_info__'):
-        mp_info = parent.f_globals['__mp_info__']
-        mp_path = parent.f_globals['__mp_path__']
-        return (mp_info, mp_path)
+        parent_info = parent.f_globals['__mp_info__']
+        parent_path = parent.f_globals['__mp_path__']
+        return (parent_info, parent_path)
 
     return (None, None)
 
@@ -139,9 +192,10 @@ def _find_module(module_name, path):
     # packages will be ignored.
 
     for directory in path:
-        file = os.path.join(directory, module_name) + '.py'
-        if os.path.exists(file):
-            return file
+        if directory is not None:
+            file = os.path.join(directory, module_name) + '.py'
+            if os.path.exists(file):
+                return file
 
 def import_module(module_name, autoreload=None, log=None, path=None):
 
@@ -158,21 +212,21 @@ def import_module(module_name, autoreload=None, log=None, path=None):
     if os.path.isabs(module_name):
         file = module_name
 
-    #elif module_name[:2] == '~/':
-    #    directory = get_directory()
-    #    if directory is not None:
-    #        file = os.path.join(directory, module_name[2:])
+    elif module_name[:2] == '~/':
+        directory = get_handler_root()
+        if directory is not None:
+            file = os.path.join(directory, module_name[2:])
 
     elif module_name[:2] == './':
-        (mp_info, mp_path) = _parent_context()
-        if mp_info is not None:
-            directory = os.path.dirname(mp_info.file)
+        (parent_info, parent_path) = _parent_context()
+        if parent_info is not None:
+            directory = os.path.dirname(parent_info.file)
             file = os.path.join(directory, module_name[2:])
 
     elif module_name[:3] == '../':
-        (mp_info, mp_path) = _parent_context()
-        if mp_info is not None:
-            directory = os.path.dirname(mp_info.file)
+        (parent_info, parent_path) = _parent_context()
+        if parent_info is not None:
+            directory = os.path.dirname(parent_info.file)
             file = os.path.join(directory, module_name)
 
     if file is None:
@@ -190,20 +244,18 @@ def import_module(module_name, autoreload=None, log=None, path=None):
         if path is not None:
             search_path.extend(path)
 
-        (mp_info, mp_path) = _parent_context()
-        if mp_info is not None:
-            local_directory = os.path.dirname(mp_info.file)
-            search_path.append(local_directory)
+        (parent_info, parent_path) = _parent_context()
+        if parent_info is not None:
+            directory = os.path.dirname(parent_info.file)
+            search_path.append(directory)
 
-            if mp_path is not None:
-                search_path.extend(mp_path)
+        if parent_path is not None:
+            search_path.extend(parent_path)
 
-        options = apache.main_server.get_options()
-        if int(options.get('mod_python.importer.search_handler_root', '0')):
-            directory = get_directory()
-            if directory is not None:
-                if not path or directory not in path:
-                    search_path.append(directory)
+        options = get_current_options()
+        if options.has_key('mod_python.importer.path'):
+            directory = eval(options['mod_python.importer.path'])
+            search_path.extend(directory)
 
         # Attempt to find the code file for the module
         # if we have directories to actually search.
@@ -228,7 +280,8 @@ def import_module(module_name, autoreload=None, log=None, path=None):
         # Use the module importing and caching system
         # to load the code from the specified file.
 
-        return _moduleCache.import_module(file, autoreload, log, import_path)
+        return _global_modules_cache.import_module(file, autoreload, \
+                log, import_path)
 
     else:
         # If a module code file could not be found,
@@ -252,7 +305,9 @@ class _CacheInfo:
         self.instance = 0
         self.generation = 0
         self.children = {}
+        self.path = []
         self.atime = 0
+        self.ctime = 0
         self.direct = 0
         self.indirect = 0
         self.lock = threading.Lock()
@@ -310,7 +365,50 @@ class _ModuleCache:
     def freeze_modules(self):
         self._frozen = True
 
-    def check_directory(self, file):
+    def modules_graph(self, verbose=0):
+        self._lock1.acquire()
+        try:
+            output = StringIO.StringIO()
+            modules = self._cache
+            print >> output, 'digraph GLOBAL {'
+            print >> output, 'node [shape=box];'
+
+            for cache in modules.values():
+
+                name = cache.label
+                filename = cache.file
+
+                if verbose:
+                    ctime = time.asctime(time.localtime(cache.ctime))
+                    mtime = time.asctime(time.localtime(cache.mtime))
+                    atime = time.asctime(time.localtime(cache.atime))
+                    generation = cache.generation
+                    direct = cache.direct
+                    indirect = cache.indirect
+                    path = cache.path
+
+                    message = '%s [label="%s\\nmtime = %s\\nctime = %s\\n'
+                    message += 'atime = %s\\ngeneration = %d, direct = %d,'
+                    message += 'indirect = %d\\npath = %s"];'
+
+                    print >> output, message % (name, filename, mtime, ctime,
+                            atime, generation, direct, indirect, path)
+                else:
+                    message = '%s [label="%s"];'
+
+                    print >> output, message % (name, filename)
+
+                children = cache.children
+                for child_name in children:
+                    print >> output, '%s -> %s' % (name, child_name)
+
+            print >> output, '}'
+            return output.getvalue()
+
+        finally:
+            self._lock1.release()
+
+    def _check_directory(self, file):
 
         directory = os.path.dirname(file)
 
@@ -319,7 +417,7 @@ class _ModuleCache:
             if directory in sys.path:
                 msg = 'Module directory listed in "sys.path". '
                 msg = msg + 'This may cause problems. Please check code. '
-                msg = msg + 'Code file being imported is "%s".' % file
+                msg = msg + 'File being imported is "%s".' % file
                 self._log_warning(msg)
 
     def import_module(self, file, autoreload=None, log=None, path=None):
@@ -339,7 +437,7 @@ class _ModuleCache:
 
         if autoreload is None or log is None:
 
-            config = get_config()
+            config = get_current_config()
 
             if autoreload is None:
                 autoreload = int(config.get("PythonAutoReload", 1))
@@ -352,23 +450,23 @@ class _ModuleCache:
         # in 'sys.path'.
 
         if log:
-            self.check_directory(file)
+            self._check_directory(file)
 
         # Retrieve the parent context. That is, the
         # details stashed into the parent module by the
         # module importing system itself.
 
-        (mp_info, mp_path) = _parent_context()
+        (parent_info, parent_path) = _parent_context()
 
         # Check for an attempt by the module to import
         # itself.
 
-        if mp_info:
-            assert(file != mp_info.file), "Import cycle in %s." % file
+        if parent_info:
+            assert(file != parent_info.file), "Import cycle in %s." % file
 
         # Retrieve the per request modules cache entry.
 
-        modules = _get_modules_cache()
+        modules = _get_request_modules_cache()
 
         # Calculate a unique label corresponding to the
         # name of the file which is the module. This
@@ -392,8 +490,8 @@ class _ModuleCache:
 
         if modules is not None:
             if modules.has_key(label):
-                if mp_info:
-                    mp_info.children[label] = time.time()
+                if parent_info:
+                    parent_info.children[label] = time.time()
                 return modules[label]
 
         # Now move on to trying to find the actual
@@ -527,6 +625,15 @@ class _ModuleCache:
                 if modules is not None:
                     modules[label] = module
 
+                # If this is a child import of some parent
+                # module, add this module as a child of the
+                # parent.
+
+                atime = time.time()
+
+                if parent_info:
+                    parent_info.children[label] = atime
+
                 # Perform actual import of the module.
 
                 try:
@@ -550,15 +657,6 @@ class _ModuleCache:
 
                     raise
 
-                # If this is a child import of some parent
-                # module, add this module as a child of the
-                # parent.
-
-                atime = time.time()
-
-                if mp_info:
-                    mp_info.children[label] = atime
-
                 # Update the cache.
 
                 cache.module = module
@@ -573,6 +671,10 @@ class _ModuleCache:
 
                 cache.children = dict(module.__mp_info__.children)
 
+                # Create link to embedded path at end of import.
+
+                cache.path = module.__mp_path__
+
                 # Increment the generation count of the global
                 # state of all modules. This is used in the
                 # dependency management scheme for reloading to
@@ -586,6 +688,7 @@ class _ModuleCache:
 
                 # Update access time and reset access counts.
 
+                cache.ctime = atime
                 cache.atime = atime
                 cache.direct = 1
                 cache.indirect = 0
@@ -613,8 +716,8 @@ class _ModuleCache:
 
                 atime = time.time()
 
-                if mp_info:
-                    mp_info.children[label] = atime
+                if parent_info:
+                    parent_info.children[label] = atime
 
                 # Didn't need to reload the module so simply
                 # increment access counts and last access time.
@@ -663,6 +766,11 @@ class _ModuleCache:
                 # Must have been removed just then. We return
                 # currently cached module and avoid a reload.
                 # Defunct module would need to be purged later.
+
+                msg = 'Module code file has been removed. '
+                msg = msg + 'This may cause problems. Using cached module. '
+                msg = msg + 'File being imported "%s".' % file
+                self._log_warning(msg)
 
                 return (cache, False)
 
@@ -733,7 +841,6 @@ class _ModuleCache:
         # disk since last loaded.
 
         try:
-
             mtime = os.path.getmtime(current.file)
 
             if mtime != current.mtime:
@@ -744,6 +851,11 @@ class _ModuleCache:
             # Don't cause this to force a reload though
             # as can cause problems. Rely on the parent
             # being modified to cause a reload.
+
+            msg = 'Module code file has been removed. '
+            msg = msg + 'This may cause problems. Using cached module. '
+            msg = msg + 'File being imported "%s".' % current.file
+            self._log_warning(msg)
 
             if modules is not None:
                 modules[current.label] = current.module
@@ -763,9 +875,17 @@ class _ModuleCache:
                 # Check for a child which refers to one of its
                 # ancestors. Hopefully this will never occur. If
                 # it does we will force a reload every time to
-                # highlight there is a problem.
+                # highlight there is a problem. Note this does
+                # not get detected first time module is loaded,
+                # only here on subsequent checks. If reloading
+                # is not enabled, then problem will never be
+                # detected and flagged.
 
                 if label in ancestors:
+                    msg = 'Module imports an ancestor module. '
+                    msg = msg + 'This may cause problems. Please check code. '
+                    msg = msg + 'File doing import is "%s".' % current.file
+                    self._log_warning(msg)
                     return True
 
                 # If the child isn't in the cache any longer for
@@ -805,19 +925,16 @@ class _ModuleCache:
         # name which is a filesystem path. Hope MD5 hex
         # digest is okay.
 
-        stub = os.path.splitext(file)[0]
-        label = md5.new(stub).hexdigest()
-        label = self._prefix + label
-        label = label + "_" + str(len(stub))
-        return label
+        return self._prefix + md5.new(file).hexdigest()
 
 
-_moduleCache = _ModuleCache()
+_global_modules_cache = _ModuleCache()
 
-apache.freeze_modules = _moduleCache.freeze_modules
+def _get_global_modules_cache():
+    return _global_modules_cache
 
-def ModuleCache():
-    return _moduleCache
+apache.freeze_modules = _global_modules_cache.freeze_modules
+apache.modules_graph = _global_modules_cache.modules_graph
 
 
 class _ModuleLoader:
@@ -826,7 +943,7 @@ class _ModuleLoader:
         self.__file = file
 
     def load_module(self, fullname):
-        return _moduleCache.import_module(self.__file)
+        return _global_modules_cache.import_module(self.__file)
 
 class _ModuleImporter:
 
@@ -845,9 +962,9 @@ class _ModuleImporter:
         # statement if parent module was imported using
         # the same.
 
-        (mp_info, mp_path) = _parent_context()
+        (parent_info, parent_path) = _parent_context()
 
-        if mp_info is None:
+        if parent_info is None:
             return None
 
 	# Determine the list of directories that need to
@@ -859,18 +976,16 @@ class _ModuleImporter:
 
         search_path = []
 
-        local_directory = os.path.dirname(mp_info.file)
-        search_path.append(local_directory)
+        directory = os.path.dirname(parent_info.file)
+        search_path.append(directory)
 
-        if mp_path is not None:
-            search_path.extend(mp_path)
+        if parent_path is not None:
+            search_path.extend(parent_path)
 
-        options = apache.main_server.get_options()
-        if int(options.get('mod_python.importer.search_handler_root', '0')):
-            directory = get_directory()
-            if directory is not None:
-                if not path or directory not in path:
-                    search_path.append(directory)
+        options = get_current_options()
+        if options.has_key('mod_python.importer.path'):
+            directory = eval(options['mod_python.importer.path'])
+            search_path.extend(directory)
 
         # Return if we have no search path to search.
 
@@ -1094,7 +1209,7 @@ def ConnectionDispatch(self, conn):
     # transfer ownership and responsibility for
     # discarding the cache entry to latter handlers.
 
-    _setup_modules_cache()
+    _setup_request_modules_cache()
 
     try:
 
@@ -1104,7 +1219,8 @@ def ConnectionDispatch(self, conn):
             # available from within 'import_module()'.
 
             config = conn.base_server.get_config()
-            cache = _setup_config_cache(config, None)
+            options = conn.base_server.get_options()
+            cache = _setup_current_cache(config, options, None)
 
             (aborted, result) = _process_target(config=config, req=None,
                     directory=None, handler=conn.hlist.handler,
@@ -1116,11 +1232,11 @@ def ConnectionDispatch(self, conn):
             # will cause the configuration cache entry to
             # be discarded.
 
-            _setup_config_cache(*cache)
+            _setup_current_cache(*cache)
 
             # Also discard the modules cache entry.
 
-            _cleanup_modules_cache()
+            _cleanup_request_modules_cache()
 
     except apache.PROG_TRACEBACK, traceblock:
 
@@ -1171,7 +1287,7 @@ def FilterDispatch(self, filter):
     # specified. A cleanup handler is registered to
     # later discard the cache entry if it was created.
 
-    _setup_modules_cache(filter.req)
+    _setup_request_modules_cache(filter.req)
 
     try:
 
@@ -1208,7 +1324,8 @@ def FilterDispatch(self, filter):
             # available from within 'import_module()'.
 
             config = filter.req.get_config()
-            cache = _setup_config_cache(config, directory)
+            options = filter.req.get_options()
+            cache = _setup_current_cache(config, options, directory)
 
             (aborted, result) = _process_target(config=config,
                     req=filter.req, directory=directory,
@@ -1221,7 +1338,7 @@ def FilterDispatch(self, filter):
         finally:
             # Restore any previous cached configuration.
 
-            _setup_config_cache(*cache)
+            _setup_current_cache(*cache)
 
     except apache.PROG_TRACEBACK, traceblock:
 
@@ -1283,11 +1400,12 @@ def HandlerDispatch(self, req):
     # A cleanup handler is registered to later discard
     # the cache entry if it needed to be created.
 
-    _setup_modules_cache(req)
+    _setup_request_modules_cache(req)
 
     # Cache configuration for later.
 
     config = req.get_config()
+    options = req.get_options()
 
     try:
         # Iterate over the handlers defined for the
@@ -1333,7 +1451,7 @@ def HandlerDispatch(self, req):
                 # current request so that it will be
                 # available from within 'import_module()'.
 
-                cache = _setup_config_cache(config, directory)
+                cache = _setup_current_cache(config, options, directory)
 
                 (aborted, result) = _process_target(config=config, req=req,
                         directory=directory, handler=handler,
@@ -1342,7 +1460,7 @@ def HandlerDispatch(self, req):
             finally:
                 # Restore any previous cached configuration.
 
-                _setup_config_cache(*cache)
+                _setup_current_cache(*cache)
 
             hlist.next()
 
@@ -1391,7 +1509,7 @@ def IncludeDispatch(self, filter, tag, code):
     # specified. A cleanup handler is registered to
     # later discard the cache entry if it was created.
 
-    _setup_modules_cache(filter.req)
+    _setup_request_modules_cache(filter.req)
 
     try:
 
@@ -1401,7 +1519,8 @@ def IncludeDispatch(self, filter, tag, code):
             # available from within 'import_module()'.
 
             config = filter.req.get_config()
-            cache = _setup_config_cache(config, None)
+            options = filter.req.get_options()
+            cache = _setup_current_cache(config, options, None)
 
             debug = int(config.get("PythonDebug", 0))
 
@@ -1440,7 +1559,7 @@ def IncludeDispatch(self, filter, tag, code):
 
             # Restore any previous cached configuration.
 
-            _setup_config_cache(*cache)
+            _setup_current_cache(*cache)
 
     except:
         try:
@@ -1491,7 +1610,7 @@ def ImportDispatch(self, name):
         # Note that this cache will always be thrown
         # away when the module has been imported.
 
-        _setup_modules_cache()
+        _setup_request_modules_cache()
 
         # Import the module.
 
@@ -1506,7 +1625,7 @@ def ImportDispatch(self, name):
 
         # Discard the modules cache entry.
 
-        _cleanup_modules_cache()
+        _cleanup_request_modules_cache()
 
 _callback.ImportDispatch = new.instancemethod(
         ImportDispatch, _callback, apache.CallBack)

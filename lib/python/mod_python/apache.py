@@ -924,11 +924,15 @@ def init(name, server):
     _callback = CallBack()
 
     options = main_server.get_options()
-    interpreters = options.get('mod_python.future.importer', None)
+    #interpreters = options.get('mod_python.future.importer', None)
+    interpreters = options.get('mod_python.legacy.importer', None)
     if interpreters:
         interpreters = map(lambda x: x.strip(), interpreters.split(','))
-        if '*' in interpreters or interpreter in interpreters:
+        #if '*' in interpreters or interpreter in interpreters:
+        if not ('*' in interpreters or interpreter in interpreters):
             from mod_python import importer
+    else:
+        from mod_python import importer
 
     return _callback
 
