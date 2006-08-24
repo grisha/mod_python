@@ -412,6 +412,24 @@ objects. For a more in-depth look at Apache internals, see the
     parameter by calling \code{apache.exists_config_define('FOOBAR')}.
 \end{funcdesc}
 
+\begin{funcdesc}{stat}{fname, wanted}
+    This function returns an instance of an \code{mp_finfo} object
+    describing information related to the file with name \code{fname}.
+    The \code{wanted} argument describes the minimum attributes which
+    should be filled out. The resultant object can be assigned to the
+    \code{req.finfo} attribute.
+\end{funcdesc}
+
+\begin{funcdesc}{lstat}{fname, wanted}
+    This function returns an instance of an \code{mp_finfo} object
+    describing information related to the file with name \code{fname}.
+    The \code{wanted} argument describes the minimum attributes which
+    should be filled out. The resultant object can be assigned to the
+    \code{req.finfo} attribute. This function differs to {stat()} in
+    that if the file is a symlink, information about the link is returned
+    as opposed to the file the symlink points at.
+\end{funcdesc}
+
 \begin{funcdesc}{register_cleanup}{callable\optional{, data}}
   Registers a cleanup that will be performed at child shutdown time. Equivalent
   to \function{server.register_cleanup()}, except that a request object is not
@@ -1271,16 +1289,29 @@ def typehandler(req):
 \end{memberdesc}
 
 \begin{memberdesc}[request]{finfo}
-  Tuple. A file information structure, analogous to POSIX stat,
-  describing the file pointed to by the URI.  \code{(mode, ino,
-    dev, nlink, uid, gid, size, atime, mtime, ctime, fname,
-    name)}. The \code{apache} module defines a set of \constant{FINFO_*}
-  constants that should be used to access elements of this
-  tuple. Example:
+  A file information object with type \code{mp_finfo}, analogous to the
+  result of the POSIX stat function, describing the
+  file pointed to by the URI. The object provides the attributes
+  \code{fname}, \code{filetype}, \code{valid}, \code{protection},
+  \code{user}, \code{group}, \code{size}, \code{inode}, \code{device},
+  \code{nlink}, \code{atime}, \code{mtime}, \code{ctime} and \code{name}.
+
+  The attribute may be assigned to using the result of \code{apache.stat()}
+  or \code{apache.lstat()}. For example:
+
   \begin{verbatim}
-fname = req.finfo[apache.FINFO_FNAME]
+if req.finfo.filetype == apache.APR_DIR:
+  req.filename = posixpath.join(req.filename, 'index.html')
+  req.finfo = apache.stat(req.filename, apache.APR_FINFO_MIN)
   \end{verbatim}
-  \emph{(Read-Only})
+
+  For backward compatability, the object can also be accessed as if it
+  were a tuple. The \code{apache} module defines a set of \constant{FINFO_*}
+  constants that should be used to access elements of this tuple.
+
+  \begin{verbatim}
+user = req.finfo[apache.FINFO_USER]
+  \end{verbatim}
 \end{memberdesc}
 
 \begin{memberdesc}[request]{parsed_uri}

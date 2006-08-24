@@ -136,21 +136,22 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
 
 static PyObject *hlist_repr(hlistobject *self)
 {
+    PyObject *t;
     PyObject *s = PyString_FromString("{");
-    PyObject *repr = NULL;
     if (self->head->handler) {
-        PyString_ConcatAndDel(&s, PyString_FromString("'handler:'"));
-        PyString_ConcatAndDel(&s, PyString_FromString(self->head->handler));
-        PyString_ConcatAndDel(&s, PyString_FromString("'"));
+        PyString_ConcatAndDel(&s, PyString_FromString("'handler':"));
+        t = PyString_FromString(self->head->handler);
+        PyString_ConcatAndDel(&s, PyObject_Repr(t));
+        Py_XDECREF(t);
     } else if (self->head->callable) {
-        PyString_ConcatAndDel(&s, PyString_FromString("'handler:'"));
+        PyString_ConcatAndDel(&s, PyString_FromString("'handler':"));
         PyString_ConcatAndDel(&s, PyObject_Repr(self->head->callable));
-        PyString_ConcatAndDel(&s, PyString_FromString("'"));
     }
     if (self->head->directory) {
-        PyString_ConcatAndDel(&s, PyString_FromString(",'directory':'"));
-        PyString_ConcatAndDel(&s, PyString_FromString(self->head->directory));
-        PyString_ConcatAndDel(&s, PyString_FromString("'"));
+        PyString_ConcatAndDel(&s, PyString_FromString(",'directory':"));
+        t = PyString_FromString(self->head->directory);
+        PyString_ConcatAndDel(&s, PyObject_Repr(t));
+        Py_XDECREF(t);
     }
     PyString_ConcatAndDel(&s, PyString_FromString(",'silent':"));
     if (self->head->silent)

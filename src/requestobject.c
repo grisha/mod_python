@@ -1805,6 +1805,21 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
+    else if (strcmp(name, "finfo") == 0) {
+        finfoobject *f;
+        if (! MpFinfo_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "finfo must be a finfoobject");
+            return -1;
+        }
+        f = (finfoobject *)val;
+        self->request_rec->finfo = *f->finfo;
+        self->request_rec->finfo.fname = apr_pstrdup(self->request_rec->pool,
+                                                      f->finfo->fname);
+        self->request_rec->finfo.name = apr_pstrdup(self->request_rec->pool,
+                                                      f->finfo->name);
+
+        return 0;
+    }
     
     return PyMember_SetOne((char*)self->request_rec, 
                            find_memberdef(request_rec_mbrs, (char*)name),
@@ -1888,7 +1903,7 @@ static PyObject *getreq_rec_fi(requestobject *self, void *name)
     apr_finfo_t *fi = 
         (apr_finfo_t *)((char *)self->request_rec + md->offset);
 
-    return tuple_from_finfo(fi);
+    return MpFinfo_FromFinfo(fi);
 }
 
 /**
@@ -2003,7 +2018,7 @@ static PyGetSetDef request_getsets[] = {
     {"canonical_filename", (getter)getreq_recmbr, (setter)setreq_recmbr, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
     {"path_info",     (getter)getreq_recmbr, (setter)setreq_recmbr, "Path_info, if any", "path_info"},
     {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
-    {"finfo",         (getter)getreq_rec_fi, NULL, "File information", "finfo"},
+    {"finfo",         (getter)getreq_rec_fi, (setter)setreq_recmbr, "File information", "finfo"},
     {"parsed_uri",    (getter)getreq_rec_uri, NULL, "Components of URI", "parsed_uri"},
     {"used_path_info", (getter)getreq_recmbr, NULL, "Flag to accept or reject path_info on current request", "used_path_info"},
     {"headers_in", (getter)getreq_recmbr, NULL, "Incoming headers", "headers_in"},

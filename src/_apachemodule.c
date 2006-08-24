@@ -688,6 +688,72 @@ static PyObject *exists_config_define(PyObject *self, PyObject *args)
     }
 }
 
+/**
+ ** mp_stat(fname, wanted)
+ **
+ *  Wrapper for apr_stat().
+ */
+
+static PyObject *mp_stat(PyObject *self, PyObject *args)
+{
+    char *fname = NULL;
+    apr_int32_t wanted = 0;
+    finfoobject* finfo;
+    apr_status_t result;
+
+    if (! PyArg_ParseTuple(args, "si", &fname, &wanted))
+        return NULL; 
+
+    finfo = (finfoobject *)MpFinfo_New();
+
+    fname = apr_pstrdup(finfo->pool, fname);
+
+    result = apr_stat(finfo->finfo, fname, wanted, finfo->pool);
+
+    if (result == APR_INCOMPLETE || result == APR_SUCCESS)
+        return (PyObject *)finfo;
+
+    Py_DECREF(finfo);
+
+    PyErr_SetObject(PyExc_OSError,
+                    Py_BuildValue("is", result, "apr_stat() failed"));
+
+    return NULL;
+}
+
+/**
+ ** mp_lstat(fname, wanted)
+ **
+ *  Wrapper for apr_lstat().
+ */
+
+static PyObject *mp_lstat(PyObject *self, PyObject *args)
+{
+    char *fname = NULL;
+    apr_int32_t wanted = 0;
+    finfoobject* finfo;
+    apr_status_t result;
+
+    if (! PyArg_ParseTuple(args, "si", &fname, &wanted))
+        return NULL; 
+
+    finfo = (finfoobject *)MpFinfo_New();
+
+    fname = apr_pstrdup(finfo->pool, fname);
+
+    result = apr_lstat(finfo->finfo, fname, wanted, finfo->pool);
+
+    if (result == APR_INCOMPLETE || result == APR_SUCCESS)
+        return (PyObject *)finfo;
+
+    Py_DECREF(finfo);
+
+    PyErr_SetObject(PyExc_OSError,
+                    Py_BuildValue("is", result, "apr_stat() failed"));
+
+    return NULL;
+}
+
 /* methods of _apache */
 struct PyMethodDef _apache_module_methods[] = {
     {"config_tree",           (PyCFunction)config_tree,          METH_NOARGS},
@@ -698,6 +764,8 @@ struct PyMethodDef _apache_module_methods[] = {
     {"server_root",           (PyCFunction)server_root,          METH_NOARGS},
     {"register_cleanup",      (PyCFunction)register_cleanup,     METH_VARARGS},
     {"exists_config_define",  (PyCFunction)exists_config_define, METH_VARARGS},
+    {"stat",                  (PyCFunction)mp_stat,              METH_VARARGS},
+    {"lstat",                 (PyCFunction)mp_lstat,             METH_VARARGS},
     {"_global_lock",          (PyCFunction)_global_lock,         METH_VARARGS},
     {"_global_trylock",       (PyCFunction)_global_trylock,      METH_VARARGS},
     {"_global_unlock",        (PyCFunction)_global_unlock,       METH_VARARGS},

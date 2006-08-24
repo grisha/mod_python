@@ -121,13 +121,15 @@
       Apache module will be responsible for generating the content.
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-128]{MODPYTHON-128})
-      Added the \code{filetype} attribute of the Apache \code{finfo}
-      structure to the tuple returned when accessing \code{req.finfo}.
-      This value is accessed using \code{req.finfo[apache.FINFO_FILETYPE]}.
-      New constants \code{apache.APR_NOFILE}, \code{apache.APR_REG},
-      \code{apache.APR_DIR} etc, have been added for comparing with the
-      \code{filetype} value. The \code{req.canonical_filename} attribute
-      was also made writable.
+      Made the \code{req.canonical_filename} attribute writable. Changed
+      the \code{req.finfo} attribute from being a tuple to an actual object.
+      For backwards compatibility the attributes of the object can still be
+      accessed as if they were a tuple. New code however should access
+      the attributes as member data. The \code{req.finfo} attribute is
+      also now writable and can be assigned to using the result of calling
+      new functions \code{apache.stat()} and \code{apache.lstat()}. These
+      functions are wrappers for \code{apr_stat()} and \code{apr_lstat()}
+      respectively.
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-129]{MODPYTHON-129})
       When specifying multiple handlers for phases other than the content

@@ -115,7 +115,7 @@ PSPModule = PSPExtension(getmp_srcdir(), [getmp_includedir()])
 
 modpy_src_files = ("mod_python.c", "_apachemodule.c", "connobject.c", "filterobject.c",
                    "hlist.c", "hlistobject.c", "requestobject.c", "serverobject.c", "tableobject.c",
-                   "util.c")
+                   "util.c", "finfoobject.c")
 
 class finallist(list):
   """this represents a list that cannot be appended to..."""
