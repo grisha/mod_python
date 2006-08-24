@@ -106,6 +106,7 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #include "requestobject.h"
 #include "filterobject.h"
 #include "_pspmodule.h"
+#include "finfoobject.h"
 
 /** Things specific to mod_python, as an Apache module **/
 

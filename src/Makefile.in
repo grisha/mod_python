@@ -30,7 +30,8 @@ CFLAGS=$(OPT) $(INCLUDES)
 srcdir=.
 
 SRCS=	mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
-		serverobject.c connobject.c filterobject.c hlist.c hlistobject.c
+		serverobject.c connobject.c filterobject.c hlist.c \
+		hlistobject.c finfoobject.c
 
 all:	@ALL@
 

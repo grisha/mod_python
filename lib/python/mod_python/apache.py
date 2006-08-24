@@ -944,6 +944,8 @@ config_tree = _apache.config_tree
 server_root = _apache.server_root
 mpm_query = _apache.mpm_query
 exists_config_define = _apache.exists_config_define
+stat = _apache.stat
+lstat = _apache.lstat
 
 ## Some constants
 
@@ -1067,7 +1069,6 @@ FINFO_CTIME = 9
 FINFO_FNAME = 10
 FINFO_NAME = 11
 FINFO_FILETYPE = 12
-#FINFO_FILEHAND = 14
 
 # the req.parsed_uri
 URI_SCHEME = 0
@@ -1171,3 +1172,28 @@ APR_PIPE = _apache.APR_PIPE
 APR_LNK = _apache.APR_LNK
 APR_SOCK = _apache.APR_SOCK
 APR_UNKFILE = _apache.APR_UNKFILE
+
+# for apache.stat()
+APR_FINFO_LINK = 0x00000001 # Stat the link not the file itself if it is a link
+APR_FINFO_MTIME = 0x00000010 # Modification Time
+APR_FINFO_CTIME = 0x00000020 # Creation or inode-changed time
+APR_FINFO_ATIME = 0x00000040 # Access Time
+APR_FINFO_SIZE = 0x00000100 # Size of the file
+APR_FINFO_CSIZE = 0x00000200 # Storage size consumed by the file
+APR_FINFO_DEV = 0x00001000 # Device
+APR_FINFO_INODE = 0x00002000 # Inode
+APR_FINFO_NLINK = 0x00004000 # Number of links
+APR_FINFO_TYPE = 0x00008000 # Type
+APR_FINFO_USER = 0x00010000 # User
+APR_FINFO_GROUP = 0x00020000 # Group
+APR_FINFO_UPROT = 0x00100000 # User protection bits
+APR_FINFO_GPROT = 0x00200000 # Group protection bits
+APR_FINFO_WPROT = 0x00400000 # World protection bits
+APR_FINFO_ICASE = 0x01000000 # if dev is case insensitive
+APR_FINFO_NAME = 0x02000000 # ->name in proper case
+APR_FINFO_MIN = 0x00008170 # type, mtime, ctime, atime, size
+APR_FINFO_IDENT = 0x00003000 # dev and inode
+APR_FINFO_OWNER = 0x00030000 # user and group
+APR_FINFO_PROT = 0x00700000 # all protections
+APR_FINFO_NORM = 0x0073b170 # an atomic unix apr_stat()
+APR_FINFO_DIRENT = 0x02000000 # an atomic unix apr_dir_read()
