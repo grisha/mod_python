@@ -946,11 +946,6 @@ static PySequenceMethods table_as_sequence = {
     0,                                  /* sq_inplace_repeat */
 };
 
-static PyObject *table_alloc(PyTypeObject *type, int nitems)
-{
-    return MpTable_New();
-}
-
 /**
  ** table_new
  **
@@ -958,20 +953,7 @@ static PyObject *table_alloc(PyTypeObject *type, int nitems)
 
 static PyObject *table_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *self;
-
-    assert(type != NULL && type->tp_alloc != NULL);
-    self = type->tp_alloc(type, 0);
-    if (self != NULL) {
-        apr_pool_t *p;
-        tableobject *t = (tableobject *)self;
-        apr_pool_create_ex(&p, NULL, NULL, NULL);
-        t->pool = p;
-        t->table = apr_table_make(p, 2);
-    }
-
-    return self;
-
+    return MpTable_New();
 }
 
 static int table_init(tableobject *self, PyObject *args, PyObject *kwds)
@@ -1052,7 +1034,7 @@ PyTypeObject MpTable_Type = {
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
     (initproc)table_init,               /* tp_init */
-    (allocfunc)table_alloc,             /* tp_alloc */
+    0,                                  /* tp_alloc */
     table_new,                          /* tp_new */
     (destructor)table_dealloc,          /* tp_free */
 };
