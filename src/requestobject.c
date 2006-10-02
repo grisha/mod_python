@@ -1561,7 +1561,6 @@ static PyMethodDef request_methods[] = {
     {"get_remote_host",       (PyCFunction) req_get_remote_host,       METH_VARARGS},
     {"get_options",           (PyCFunction) req_get_options,           METH_NOARGS},
     {"get_session",           (PyCFunction) req_get_session,           METH_VARARGS},
-    {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     {"internal_redirect",     (PyCFunction) req_internal_redirect,     METH_VARARGS},
     {"is_https",              (PyCFunction) req_is_https,              METH_NOARGS},
     {"log_error",             (PyCFunction) req_log_error,             METH_VARARGS},
