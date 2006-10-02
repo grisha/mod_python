@@ -428,7 +428,7 @@ class PerRequestTestCase(unittest.TestCase):
             entity.write(boundary)
             entity.write('\r\n')
             entity.write('Content-Type: text/plain\r\n')
-            entity.write('Content-Disposition: form-data; name="%s"\r\n'%name)
+            entity.write('Content-Disposition: form-data;\r\n name="%s"\r\n'%name)
             entity.write('\r\n')
             entity.write(str(value))
             entity.write('\r\n')
