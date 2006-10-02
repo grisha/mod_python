@@ -1737,36 +1737,12 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
     else if (strcmp(name, "filename") == 0) {
-        char *filename1 = 0;
-        char *filename2 = 0;
-        apr_status_t rv;
-
         if (! PyString_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "filename must be a string");
             return -1;
         }
-
-        filename1 = PyString_AsString(val);
-
-        rv = apr_filepath_merge(&filename2, NULL, filename1,
-                                APR_FILEPATH_TRUENAME,
-                                self->request_rec->pool);
-
-        /* If there is a failure, use the original filename
-         * which was supplied. */
-
-        if (rv != APR_SUCCESS && rv != APR_EPATHWILD)
-            filename2 = apr_pstrdup(self->request_rec->pool, filename1);
-
-        self->request_rec->filename = filename2;
-
-        /* stat file to update finfo */
-        /* XXX Defer enabling of this for now. See MODPYTHON-128.
-        if (apr_stat(&self->request_rec->finfo, self->request_rec->filename, 
-            APR_FINFO_NORM, self->request_rec->pool) != APR_SUCCESS) {
-            self->request_rec->finfo.filetype = APR_NOFILE;
-        } 
-        */
+        self->request_rec->filename = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
     else if (strcmp(name, "canonical_filename") == 0) {

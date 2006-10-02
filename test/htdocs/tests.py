@@ -27,7 +27,6 @@ import re
 import time
 import os
 import cStringIO
-import posixpath
 
 # This is used for mod_python.publisher security tests
 _SECRET_PASSWORD = 'root'
@@ -972,19 +971,7 @@ def postreadrequest(req):
 
 def trans(req):
 
-    docroot = req.document_root()
-    directory = os.path.basename(docroot)
-
-    req.filename = posixpath.join(docroot, "..", directory, "tests.py")
-
-    filename = req.filename
-
     req.filename = req.document_root()+"/tests.py"
-
-    req.log_error("filename1 = %s" % filename)
-    req.log_error("filename2 = %s" % req.filename)
-
-    assert(filename == req.filename)
 
     return apache.OK
 
