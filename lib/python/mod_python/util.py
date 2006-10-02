@@ -174,6 +174,10 @@ class FieldStorage:
   
             skip_this_part = False
             while line not in ('\r','\r\n'):
+                nextline = req.readline(readBlockSize)
+                while nextline and nextline[0] in [ ' ', '\t']:
+                    line = line + nextline
+                    nextline = req.readline(readBlockSize)
                 # we read the headers until we reach an empty line
                 # NOTE : a single \n would mean the entity is malformed, but
                 # we're tolerating it anyway
@@ -192,7 +196,7 @@ class FieldStorage:
                     if ctype.find('/') == -1:
                         ctype = 'application/octet-stream'
             
-                line = req.readline(readBlockSize)
+                line = nextline
                 match = boundary.match(line)
                 if (not line) or match:
                     # we stop if we reached the end of the stream or a stop boundary
