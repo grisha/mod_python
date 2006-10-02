@@ -964,6 +964,25 @@ def util_fieldstorage(req):
 
 def postreadrequest(req):
 
+    req.log_error('postreadrequest')
+
+    req.add_common_vars()
+
+    req.subprocess_env['TEST1'] = "'"
+    req.subprocess_env['TEST2'] = '"'
+
+    req.log_error('subprocess_env = %s' % req.subprocess_env)
+    req.log_error('subprocess_env.values() = %s' % req.subprocess_env.values())
+
+    for value in req.subprocess_env.itervalues():
+        req.log_error('VALUE = %s' % value)
+
+    for item in req.subprocess_env.iteritems():
+        req.log_error('ITEM = %s' % (item,))
+
+    req.log_error('SCRIPT_FILENAME = %s' % req.subprocess_env.get('SCRIPT_FILENAME'))
+    req.log_error('SCRIPT_FILENAME = %s' % req.subprocess_env['SCRIPT_FILENAME'])
+
     req.write("test ok")
 
     return apache.DONE

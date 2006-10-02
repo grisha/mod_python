@@ -363,6 +363,12 @@
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-185]{MODPYTHON-185})
       Fixed segfault in psp.parsestring(src_string) when src_string is empty.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-187]{MODPYTHON-187})
+      Table objects could crash in various ways when the value of an item
+      was NULL. This could occur for \code{SCRIPT_FILENAME} when the
+      \code{req.subprocess_env} table was accessed in the post read request
+      handler phase.
   \end{itemize}
 
 

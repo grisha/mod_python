@@ -156,6 +156,7 @@ static int table_print(register tableobject *self, register FILE *fp, register i
 static PyObject * table_repr(tableobject *self)
 {
     PyObject *s;
+    PyObject *t = NULL;
     const apr_array_header_t *ah;
     apr_table_entry_t *elts;
     int i;
@@ -172,11 +173,22 @@ static PyObject * table_repr(tableobject *self)
     while (i--)
         if (elts[i].key)
         {
-            PyString_ConcatAndDel(&s, PyString_FromString("'"));
-            PyString_ConcatAndDel(&s, PyString_FromString(elts[i].key));
-            PyString_ConcatAndDel(&s, PyString_FromString("': '"));
-            PyString_ConcatAndDel(&s, PyString_FromString(elts[i].val));
-            PyString_ConcatAndDel(&s, PyString_FromString("'"));
+            t = PyString_FromString(elts[i].key);
+            PyString_ConcatAndDel(&s, PyObject_Repr(t));
+            Py_XDECREF(t);
+
+            PyString_ConcatAndDel(&s, PyString_FromString(": "));
+
+            if (elts[i].val) {
+              t = PyString_FromString(elts[i].val);
+            } else {
+              t = Py_None;
+              Py_INCREF(t);
+            }
+
+            PyString_ConcatAndDel(&s, PyObject_Repr(t));
+            Py_XDECREF(t);
+
             if (i > 0)
                 PyString_ConcatAndDel(&s, PyString_FromString(", "));
             else
@@ -236,7 +248,13 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
     while (i--)
         if (elts[i].key) {
             if (apr_strnatcasecmp(elts[i].key, k) == 0) {
-                PyObject *v = PyString_FromString(elts[i].val);
+                PyObject *v = NULL;
+                if (elts[i].val != NULL) {
+                    v = PyString_FromString(elts[i].val);
+                } else { 
+                    v = Py_None;
+                    Py_INCREF(v);
+                }
                 PyList_Insert(list, 0, v);
                 Py_DECREF(v);
             }
@@ -363,7 +381,13 @@ static PyObject * table_values(register tableobject *self)
     {
         if (elts[i].key)
         {
-            PyObject *val = PyString_FromString(elts[i].val);
+            PyObject *val = NULL;
+            if (elts[i].val != NULL) {
+                val = PyString_FromString(elts[i].val);
+            } else { 
+                val = Py_None;
+                Py_INCREF(val);
+            }
             PyList_SetItem(v, j, val);
             j++;
         }
@@ -789,7 +813,15 @@ static int table_traverse(tableobject *self, visitproc visit, void *arg)
     while (i--)
         if (elts[i].key) {
             int err;
-            PyObject *v = PyString_FromString(elts[i].val);
+
+            PyObject *v = NULL;
+            if (elts[i].val != NULL) {
+                v = PyString_FromString(elts[i].val);
+            } else { 
+                v = Py_None;
+                Py_INCREF(v);
+            }
+
             err = visit(v, arg);
             Py_XDECREF(v);
             if (err)
@@ -842,7 +874,15 @@ static PyObject *select_key(apr_table_entry_t *elts)
 
 static PyObject *select_value(apr_table_entry_t *elts)
 {
-    return PyString_FromString(elts->val);
+    PyObject *val = NULL;
+    if (elts->val != NULL) {
+        val = PyString_FromString(elts->val);
+    } else { 
+        val = Py_None;
+        Py_INCREF(val);
+    }
+
+    return val;
 }
 
 static PyObject *select_item(apr_table_entry_t *elts)
