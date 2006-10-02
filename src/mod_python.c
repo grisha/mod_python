@@ -243,6 +243,12 @@ static interpreterdata *get_interpreter(const char *name)
     if (!interpreters) {
          ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                        "get_interpreter: interpreters dictionary not initialised.");
+#ifdef WITH_THREAD
+        PyEval_ReleaseLock();
+#endif
+#if APR_HAS_THREADS
+        apr_thread_mutex_unlock(interpreters_lock);
+#endif
         return NULL;
     }
 
