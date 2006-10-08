@@ -213,7 +213,7 @@ def handler(req):
     published = publish_object(req, object)
     
     # we log a message if nothing was published, it helps with debugging
-    if (not published) and (req.bytes_sent==0) and (req.next is None):
+    if (not published) and (req._bytes_queued==0) and (req.next is None):
         log=int(req.get_config().get("PythonDebug", 0))
         if log:
             req.log_error("mod_python.publisher: nothing to publish.")

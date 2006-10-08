@@ -350,6 +350,11 @@
       Fixed the behaviour of req.readlines() when a size hint was provided. Previously,
       it would always return a single line when a size hint was provided.
     \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-180]{MODPYTHON-180})
+      Publisher would wrongly output a warning about nothing to publish if
+      \code{req.write()} or \code{req.sendfile()} used and data not flushed,
+      and then published function returned \code{None}.
+    \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-181]{MODPYTHON-181})
       Fixed memory leak when mod_python handlers are defined for more than
       one phase at the same time.

@@ -42,6 +42,7 @@ extern "C" {
         PyObject       * phase;
         char           * extension;   /* for | .ext syntax */
         int              content_type_set;
+        apr_off_t        bytes_queued;
         hlistobject    * hlo;
         PyObject       * callbacks;
         char           * rbuff;       /* read bufer */
