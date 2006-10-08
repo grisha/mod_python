@@ -67,6 +67,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->phase = NULL;
     result->extension = NULL;
     result->content_type_set = 0;
+    result->bytes_queued = 0;
     result->hlo = NULL;
     result->callbacks = PyList_New(0);
     if (!result->callbacks)
@@ -1462,6 +1463,8 @@ static PyObject * req_write(requestobject *self, PyObject *args)
             }
     }
 
+    self->bytes_queued += len;
+
     Py_INCREF(Py_None);
     return Py_None;
 
@@ -1537,6 +1540,8 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
         PyErr_SetString(PyExc_IOError, "Write failed, client closed connection.");
         return NULL;
     }
+
+    self->bytes_queued += len;
 
     py_result = PyLong_FromLong (nbytes);
     Py_INCREF(py_result);
@@ -1691,6 +1696,17 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
             ((tableobject*)self->notes)->table = self->request_rec->notes;
         Py_INCREF(self->notes);
         return self->notes;
+    }
+    else if (strcmp(name, "_bytes_queued") == 0) {
+        if (sizeof(apr_off_t) == sizeof(LONG_LONG)) {
+            LONG_LONG l = self->bytes_queued;
+            return PyLong_FromLongLong(l);
+        }
+        else {
+            /* assume it's long */
+            long l = self->bytes_queued;
+            return PyLong_FromLong(l);
+        }
     }
     else
         return PyMember_GetOne((char*)self->request_rec,
@@ -2006,6 +2022,7 @@ static PyGetSetDef request_getsets[] = {
     /* XXX htaccess */
     /* XXX filters and eos */
     {"eos_sent", (getter)getreq_recmbr, NULL, "EOS bucket sent", "eos_sent"},
+    {"_bytes_queued", (getter)getreq_recmbr, NULL, "Bytes queued by handler", "_bytes_queued"},
     {NULL}  /* Sentinel */
 };
 
