@@ -727,6 +727,42 @@ between the apache configuration files (\file{httpd.conf},
 \file{.htaccess}, etc) and the Python programs. If the value is omitted or empty (\code{""}),
 then the key is removed from the local configuration.
 
+\strong{Reserved PythonOption Keywords}
+
+Some PythonOption keywords are used for configuring various aspects of
+mod_python. Any keyword starting with mod_python.* should be considered
+as reserved for internal mod_python use. 
+
+Users are encouraged to use their own namespace qualifiers when creating
+add-on modules, and not pollute the global namespace.
+
+The following PythonOption keys are currently used by mod_python.
+
+% Note - Make sure you put a space character in any empty tables cells.
+%        Otherwise the formatting will be messed up.
+\begin{tableiii}{l|c|l}{textrm}{Key}{Required Value}{Notes}
+  \lineiii{mod_python.future.importer}{*}{Enables the experimental module importer.}
+  \lineiii{mod_python.mutex_directory}{ }{ }
+  \lineiii{mod_python.mutex_locks}{ }{ }
+  \lineiii{mod_python.psp.cache_database_filename}{ }{ }
+  \lineiii{mod_python.session.session_type}{ }{ }
+  \lineiii{mod_python.session.cookie_name}{ }{ }
+  \lineiii{mod_python.session.application_path}{ }{ }
+  \lineiii{mod_python.dbm_session.database_filename}{ }{ }
+  \lineiii{mod_python.file_session.enable_fast_cleanup}{ }{ }
+  \lineiii{mod_python.file_session.verify_session_timeout}{ }{ }
+  \lineiii{mod_python.file_session.cleanup_grace_period}{ }{ }
+  \lineiii{mod_python.file_session.cleanup_time_limit}{ }{ }
+
+  \lineiii{session}{ }{Deprecated, use mod_python.session.session_type}
+  \lineiii{session_directory}{ }{Deprecated, use mod_python.session.session_directory}
+  \lineiii{session_fast_cleanup}{ }{Deprecated, use mod_python.file_session.enable_fast_cleanup}
+  \lineiii{session_grace_period}{ }{Deprecated, use mod_python.file_session.cleanup_grace_period}
+  \lineiii{session_verify_cleanup}{ }{Deprecated, use mod_python.file_session.cleanup_session_timeout}
+  \lineiii{mod_python.}{ }{ }
+\end{tableiii}
+
+
 \subsection{PythonPath\label{dir-other-pp}}
 \index{PythonPath}
 
