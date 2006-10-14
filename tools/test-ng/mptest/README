@@ -1,0 +1,45 @@
+load_plugins(path, testgroup)
+
+    """Find and load all available plugin modules
+       Plugin modules must register themselves with
+       plugin.register(Class)
+       
+       Test classes must override run() or an exception
+       will be raised when the tests are run.
+       
+        Test classes should subclass plugin.TestTemplate
+       
+       Multiple tests can be registered in the same module.
+       eg.
+
+        import plugin
+
+        class MyTest(plugin.TestTemplate):
+            '''Describe your test in the docstring'''
+            name = "Some descriptive name"
+            group = "Test Group Name"
+
+            # priority determines the order in which tests are run
+            # tests in the same group with a higher number are run first
+
+            priority = 0 
+            def __init__(self, config=None):
+                self.config = config
+
+            def run(self):
+                # This method will be called by the framework to
+                # perform the actual test
+                # You must override this method
+                raise NotImplementedError
+
+        class MyOtherTest(plugin.TestTemplate):
+            def __init__(self, config=None):
+                self.config = config
+
+            def run(self):
+                raise NotImplementedError
+
+        plugin.register(MyTest)
+        plugin.register(MyOtherTest)
+
+    """

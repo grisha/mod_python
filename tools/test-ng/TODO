@@ -1,0 +1,16 @@
+====
+TODO
+====
+
+Refactor mptest/core/tests.py into appropriate test groups.
+
+Fix name globbing for running tests.
+
+Dump test failure details to a file instead of stdout.
+
+Add test result failure and error tracebacks to the failure dump.
+
+Add test to scan error_log for seg fault. This should be the last
+test performed.
+
+Merge old memory leak tests into this test framework.

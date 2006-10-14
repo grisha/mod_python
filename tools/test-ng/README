@@ -1,0 +1,216 @@
+This is an example of a possible plugin architecture for use in 
+mod_python leaktest and unit tests.
+
+
+Preamble
+========
+
+It's generally agreed that the current mod_python test framework
+(as of version 3.2.10) is deficient in many regards.
+
+This work is an attempt to address those deficiencies and make it
+extensible so new features and functionality can be easily
+incorporated.
+
+
+Goals
+=====
+
+Simplify test writing. New tests can be added without editing any existing
+code in the test framework.
+
+Write and run tests for specific apache versions.
+
+Write and run tests for specific mpms.
+
+Disable specific tests by default.
+
+Run disabled tests without editing any test code.
+
+Run individual tests or groups of tests.
+
+Add and run tests not specific to the core mod_python functionality. 
+    eg. Memory leak tests
+
+Easy for users to incorporate tests for their own applications
+into the test framework.
+
+
+Installation
+------------
+
+$ tar zxvf mod_python-test-ng.tgz
+
+Configuration
+-------------
+
+There is nothing to configure. test-ng/test.py searches your path for
+apxs or apxs2. If you want to use a specific apxs, or an apxs not on 
+your path, you can pass the --with-apxs run time option.
+
+
+Running Tests Quickstart
+------------------------
+
+For the impatient, the following will run all of the default tests.
+The test run and the output will be the same as the legacy test 
+framework.
+
+$ python test.py
+
+If you need to use a specific apxs, pass a command line option. This
+will run the default tests with a specific apxs.
+
+$ python test.py --with-apxs=/path/to/apxs
+
+Cleanup after yourself. This is the equivalent to "make dist-clean" 
+in the legacy framework. This will delete, conf/*.conf files, remove the 
+logs/ directory, remove the tmp/ directory and recursively delete 
+all *.pyc files and the exit.
+
+$ python test.py --clean
+
+
+Running Specific Test
+---------------------
+
+So far you haven't seen anything new, but we will now delve into the new
+features. You should try these commands as you read this.
+
+First, take a look at the command line options:
+
+$ python test.py -h
+
+
+First, let's get a listing of all the tests.
+
+$ python test.py -l
+
+The output with this option will list all of the registered tests. I won't
+reproduce the full list here but you might guess from that output that
+the tests are arranged in a namespace. 
+
+This namespace consists of 3 parts: <test_package>.<test_group>.<test_class>
+The test_package allows us to cleanly separate the different tests.
+For example, the
+
+
+You can get a list of the test packages with the -p option.
+
+$ python test.py -p
+core
+leaktests
+myapp
+# 3 packages found
+
+Three packages were found. The "core" package contains the same tests as 
+the legacy framework. These are the tests that should pass before a
+mod_python release, and are the tests run by default when test.py is
+ run without any arguments. 
+
+The "leaktests" package contains tests for
+examining mod_python memory_leaks. Although these tests do test core
+mod_python functionality, they  are not included in the "core" package as
+they may be very time consuming (many hours) to run.
+
+The "myapp" package contains tests for my own application. This package
+would not be distributed with mod_python, but is here to give you a hint
+as to the new functionality available for creating your own private tests.
+
+The <test_group> part of namespace allows tests to be logically organized
+within the test package. You can get a list of test groups with the -g option
+
+$ python test.py -g core
+core.internal
+core.perinstance
+core.publisher
+core.request
+core.session
+core.tests
+# 6 groups found
+
+You can also use this name space as an argument with the -l option
+
+$ python test.py -l core.session
+core.session.SessionIllegalSidTest
+core.session.SessionSessionTest
+# 2 tests found
+
+By default, all of these query options using simple globbing, so
+core.s is the same as "core.s*". (Perhaps this should configurable?)
+
+$ python test.py -l core.se
+core.session.SessionIllegalSidTest
+core.session.SessionSessionTest
+# 2 tests found
+
+
+The final part of the namespace is the test_class, which is the actual test
+case and is a subclass of unittest.TestCase.
+
+You now know how explore the available tests. Let's put that knowledge to use.
+
+Run all the core.session tests:
+
+$ python test.py core.session
+
+
+Run a specific tests:
+
+$ python test.py core.session.SessionIllegalSidTest
+
+$ python test.py core.session.SessionSessionTest core.perinstance.LoadModuleTest
+
+Run tests in several different groups:
+
+$ python test.py core.session core.perinstance
+
+Run tests listed in a file. This is useful for repeating some specific tests.
+
+$ python test.py -i mytestlist.txt
+
+You can use the output of test.py -l to create the test list.
+
+$ python test.py -l core |grep -i sendfile > mytestlist.txt
+$ python test.py -i mytestlist.txt
+
+Test.py automatically creates a file named "failures.txt", which 
+contains the names of any failed tests. This might be useful for repeating
+certain tests when debugging your code.
+
+$ python test.py core
+
+... debug your code and re-run the failed tests ...
+
+$ python test.py -i failures.txt
+
+
+Running Disabled Tests
+---------------------
+
+Some tests cannot be run reliably and are disbled by default. Disabled tests
+are marked in the test listing output.
+
+$ python test.py -l |grep DISABLED
+core.tests.PublisherCacheTest  ........................ (DISABLED)
+core.tests.PublisherIteratorTest  ..................... (DISABLED)
+
+You can force disabled tests to run with the -f or --force option.
+
+$ python test.py -f core.tests.PublisherCacheTest
+
+
+Writing Tests
+-------------
+
+
+
+
+A test case consists of 2 parts: the client test case and the mod_python
+handler.
+
+
+$ python test.py -a <test_package>.<test_group>.<test_case>
+
+Most test cases should subclass mptest.testconf.Virtual
+
