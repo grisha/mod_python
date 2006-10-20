@@ -274,6 +274,7 @@ static PySequenceMethods finfoseq_as_sequence = {
         0,
         0,                                      /* sq_concat */
         0,                                      /* sq_repeat */
+        /* PYTHON 2.5: WARNING: 'intargfunc' must be replaced with 'ssizeargfunc' */
         (intargfunc)finfoseq_item,              /* sq_item */
         0,                                      /* sq_slice */
         0,                                      /* sq_ass_item */

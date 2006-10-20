@@ -43,14 +43,17 @@ PyObject * tuple_from_array_header(const apr_array_header_t *ah)
 
     if (ah == NULL)
     {
+        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
         t = PyTuple_New(0);
     }
     else
     {
+        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
         t = PyTuple_New(ah->nelts);
 
         s = (char **) ah->elts;
         for (i = 0; i < ah->nelts; i++) {
+            /* PYTHON 2.5: PyTuple_SetItem uses Py_ssize_t for input parameters */
             PyTuple_SetItem(t, i, PyString_FromString(s[i]));
         }
     }
@@ -71,13 +74,16 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
     char **methods;
 
     if ((l->method_list == NULL) || (l->method_list->nelts == 0)) {
+        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
         t = PyTuple_New(0);
     }
     else {
+        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
         t = PyTuple_New(l->method_list->nelts);
         
         methods = (char **)l->method_list->elts;
         for (i = 0; i < l->method_list->nelts; ++i) {
+            /* PYTHON 2.5: PyTuple_SetItem uses Py_ssize_t for input parameters */
             PyTuple_SetItem(t, i, PyString_FromString(methods[i]));
         }
     }
@@ -100,6 +106,7 @@ PyObject *tuple_from_finfo(apr_finfo_t *f)
         return Py_None;
     }
       
+    /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
     t = PyTuple_New(13);
 
     /* this should have been first, but was added later */
@@ -196,6 +203,7 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u)
 {
     PyObject *t;
 
+    /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
     t = PyTuple_New(9);
 
     if (u->scheme) {
@@ -387,6 +395,7 @@ PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
 PyObject *cfgtree_walk(ap_directive_t *dir)
 {
 
+    /* PYTHON 2.5: PyList_New uses Py_ssize_t for input parameters */
     PyObject *list = PyList_New(0);
     if (!list)
         return PyErr_NoMemory();

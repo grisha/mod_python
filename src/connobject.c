@@ -98,6 +98,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         return Py_None;
     }
 
+    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
     result = PyString_FromStringAndSize(NULL, bufsize);
 
     /* possibly no more memory */
@@ -135,6 +136,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         /* time to grow destination string? */
         if (len == 0 && bytes_read == bufsize) {
 
+            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
             _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
             buffer = PyString_AS_STRING((PyStringObject *) result);
             buffer += bufsize;
@@ -154,6 +156,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
     /* resize if necessary */
     if (bytes_read < len || len == 0) 
+        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
         if(_PyString_Resize(&result, bytes_read))
             return NULL;
 
@@ -217,6 +220,7 @@ static PyObject * conn_write(connobject *self, PyObject *args)
         return NULL;
     }
 
+    /* PYTHON 2.5: 'PyString_Size' uses Py_ssize_t for return values (may need overflow check) */
     len = PyString_Size(s);
 
     if (len) {

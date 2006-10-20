@@ -89,6 +89,7 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         return NULL; /* error */
 
     /* split query string by '&' and ';' into a list of pairs */
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */ 
     pairs = PyList_New(0);
     if (pairs == NULL)
         return NULL;
@@ -102,6 +103,7 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         char *cpair;
         int j = 0;
 
+        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
         pair = PyString_FromStringAndSize(NULL, len);
         if (pair == NULL)
             return NULL;
@@ -116,6 +118,7 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         }
 
         if (j) {
+            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
             _PyString_Resize(&pair, j);
             if (pair)
                 PyList_Append(pairs, pair);
@@ -134,6 +137,7 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     if (dict == NULL)
         return NULL;
 
+    /* PYTHON 2.5: 'PyList_Size' uses Py_ssize_t for input parameters */ 
     lsize = PyList_Size(pairs);
     n = 0;
 
@@ -147,9 +151,11 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         cpair = PyString_AS_STRING(pair);
 
         len = strlen(cpair);
+        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
         key = PyString_FromStringAndSize(NULL, len);
         if (key == NULL) 
             return NULL;
+        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
         val = PyString_FromStringAndSize(NULL, len);
         if (val == NULL) 
             return NULL;
@@ -184,7 +190,9 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
             ap_unescape_url(ckey);
             ap_unescape_url(cval);
 
+            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
             _PyString_Resize(&key, strlen(ckey));
+            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
             _PyString_Resize(&val, strlen(cval));
 
             if (key && val) {
@@ -237,6 +245,7 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
         return NULL; /* error */
 
     /* split query string by '&' and ';' into a list of pairs */
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */ 
     pairs = PyList_New(0);
     if (pairs == NULL)
         return NULL;
@@ -250,6 +259,7 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
         char *cpair, *ckey, *cval;
         int plen, j, p, k, v;
 
+        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
         pair = PyString_FromStringAndSize(NULL, len);
         if (pair == NULL)
             return NULL;
@@ -271,14 +281,17 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
         }
 
         cpair[j] = '\0';
+        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
         _PyString_Resize(&pair, j);
         cpair = PyString_AS_STRING(pair);
 
         /* split the "abc=def" pair */
         plen = strlen(cpair);
+        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
         key = PyString_FromStringAndSize(NULL, plen);
         if (key == NULL) 
             return NULL;
+        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
         val = PyString_FromStringAndSize(NULL, plen);
         if (val == NULL) 
             return NULL;
@@ -312,7 +325,9 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
             ap_unescape_url(ckey);
             ap_unescape_url(cval);
 
+            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
             _PyString_Resize(&key, strlen(ckey));
+            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
             _PyString_Resize(&val, strlen(cval));
 
             if (key && val) {
