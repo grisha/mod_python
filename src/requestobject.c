@@ -69,6 +69,7 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->content_type_set = 0;
     result->bytes_queued = 0;
     result->hlo = NULL;
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     result->callbacks = PyList_New(0);
     if (!result->callbacks)
         return PyErr_NoMemory();
@@ -486,12 +487,14 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
         return NULL;
     }
 
+    /* PYTHON 2.5: 'PySequence_Length' uses Py_ssize_t for input parameters */
     len = PySequence_Length(methods);
 
     if (len) {
 
         PyObject *method;
 
+        /* PYTHON 2.5: 'PySequence_GetItem' uses Py_ssize_t for input parameters */
         method = PySequence_GetItem(methods, 0);
         if (! PyString_Check(method)) {
             PyErr_SetString(PyExc_TypeError, 
@@ -503,6 +506,7 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
                          PyString_AS_STRING(method), NULL);
 
         for (i = 1; i < len; i++) {
+            /* PYTHON 2.5: 'PySequence_GetItem' uses Py_ssize_t for input parameters */
             method = PySequence_GetItem(methods, i);
             if (! PyString_Check(method)) {
                 PyErr_SetString(PyExc_TypeError, 
@@ -993,6 +997,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
         len = self->request_rec->remaining +
             (self->rbuff_len - self->rbuff_pos);
 
+    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
     result = PyString_FromStringAndSize(NULL, len);
 
     /* possibly no more memory */
@@ -1037,6 +1042,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
 
     /* resize if necessary */
     if (bytes_read < len) 
+        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
         if(_PyString_Resize(&result, bytes_read))
             return NULL;
 
@@ -1092,6 +1098,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
             (self->rbuff_len - self->rbuff_pos);
 
     /* create the result buffer */
+    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
     result = PyString_FromStringAndSize(NULL, len);
 
     /* possibly no more memory */
@@ -1114,6 +1121,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 
                 /* resize if necessary */
                 if (copied < len) 
+                    /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
                     if(_PyString_Resize(&result, copied))
                         return NULL;
 
@@ -1214,6 +1222,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 
     /* resize if necessary */
     if (copied < len) 
+        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
         if(_PyString_Resize(&result, copied))
             return NULL;
 
@@ -1229,6 +1238,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 static PyObject *req_readlines(requestobject *self, PyObject *args)
 {
 
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     PyObject *result = PyList_New(0);
     PyObject *line, *rlargs;
     long sizehint = -1;
@@ -1241,11 +1251,13 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
     if (result == NULL)
         return PyErr_NoMemory();
 
+    /* PYTHON 2.5: 'PyTuple_New' uses Py_ssize_t for input parameters */
     rlargs = PyTuple_New(0);
     if (result == NULL)
         return PyErr_NoMemory();
 
     line = req_readline(self, rlargs);
+    /* PYTHON 2.5: 'PyString_Size' uses Py_ssize_t for input parameters */
     while (line && ((linesize=PyString_Size(line))>0)) {
         PyList_Append(result, line);
         size += linesize;
@@ -1340,17 +1352,20 @@ static PyObject * req_requires(requestobject *self)
         return Py_BuildValue("()");
     }
 
+    /* PYTHON 2.5: 'PyTuple_New' uses Py_ssize_t for input parameters */
     result = PyTuple_New(reqs_arr->nelts);
 
     reqs = (require_line *) reqs_arr->elts;
 
     for (i = 0; i < reqs_arr->nelts; ++i) {
         if (reqs[i].method_mask & (AP_METHOD_BIT << self->request_rec->method_number)) {
+        /* PYTHON 2.5: 'PyTuple_SetItem' uses Py_ssize_t for input parameters */
             PyTuple_SetItem(result, ti++, 
                             PyString_FromString(reqs[i].requirement));
         }
     }
 
+    /* PYTHON 2.5: '_PyTuple_Resize' uses Py_ssize_t for input parameters */
     _PyTuple_Resize(&result, ti);
 
     return result;
@@ -2156,6 +2171,7 @@ PyTypeObject MpRequest_Type = {
     Py_TPFLAGS_HAVE_GC ,               /* tp_flags */
     request_doc,                       /* tp_doc */
     (traverseproc)request_tp_traverse, /* tp_traverse */
+    /* PYTHON 2.5: 'inquiry' should be perhaps replaced with 'lenfunc' */ 
     (inquiry)request_tp_clear,         /* tp_clear */
     0,                                 /* tp_richcompare */
     0,                                 /* tp_weaklistoffset */

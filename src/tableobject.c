@@ -236,6 +236,7 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
        returns the first match.
     */
 
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     list = PyList_New(0);
     if (!list) 
         return NULL;
@@ -255,12 +256,14 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
                     v = Py_None;
                     Py_INCREF(v);
                 }
+                /* PYTHON 2.5: 'PyList_Insert' uses Py_ssize_t for input parameters */
                 PyList_Insert(list, 0, v);
                 Py_DECREF(v);
             }
         }
 
     /* if no match */
+    /* PYTHON 2.5: 'PyList_Size' uses Py_ssize_t for return values (may need overflow check) */
     if (PyList_Size(list) == 0) {
         Py_DECREF(list);
         PyErr_SetObject(PyExc_KeyError, key);
@@ -268,7 +271,9 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
     }
 
     /* if we got one match */
+    /* PYTHON 2.5: 'PyList_Size' uses Py_ssize_t for return values (may need overflow check) */
     if (PyList_Size(list) == 1) {
+        /* PYTHON 2.5: 'PyList_GetItem' uses Py_ssize_t for input parameters */
         PyObject *v = PyList_GetItem(list, 0);
         Py_INCREF(v);
         Py_DECREF(list);
@@ -320,6 +325,7 @@ static int table_ass_subscript(tableobject *self, PyObject *key,
 /* table as mapping */
 
 static PyMappingMethods table_as_mapping = {
+    /* PYTHON 2.5: 'inquiry' should be perhaps replaced with 'lenfunc' */
     (inquiry)       tablelength,           /*mp_length*/
     (binaryfunc)    table_subscript,       /*mp_subscript*/
     (objobjargproc) table_ass_subscript,   /*mp_ass_subscript*/
@@ -343,6 +349,7 @@ static PyObject * table_keys(register tableobject *self)
     ah = apr_table_elts(self->table);
     elts = (apr_table_entry_t *) ah->elts;
 
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     v = PyList_New(ah->nelts);
 
     for (i = 0, j = 0; i < ah->nelts; i++)
@@ -350,6 +357,7 @@ static PyObject * table_keys(register tableobject *self)
         if (elts[i].key)
         {
             PyObject *key = PyString_FromString(elts[i].key);
+            /* PYTHON 2.5: 'PyList_SetItem' uses Py_ssize_t for input parameters */
             PyList_SetItem(v, j, key);
             j++;
         }
@@ -375,6 +383,7 @@ static PyObject * table_values(register tableobject *self)
     ah = apr_table_elts(self->table);
     elts = (apr_table_entry_t *) ah->elts;
 
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     v = PyList_New(ah->nelts);
 
     for (i = 0, j = 0; i < ah->nelts; i++)
@@ -388,6 +397,7 @@ static PyObject * table_values(register tableobject *self)
                 val = Py_None;
                 Py_INCREF(val);
             }
+            /* PYTHON 2.5: 'PyList_SetItem' uses Py_ssize_t for input parameters */
             PyList_SetItem(v, j, val);
             j++;
         }
@@ -413,6 +423,7 @@ static PyObject * table_items(register tableobject *self)
     ah = apr_table_elts(self->table);
     elts = (apr_table_entry_t *) ah->elts;
 
+    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     v = PyList_New(ah->nelts);
 
     for (i = 0, j = 0; i < ah->nelts; i++)
@@ -420,6 +431,7 @@ static PyObject * table_items(register tableobject *self)
         if (elts[i].key)
         {
             PyObject *keyval = Py_BuildValue("(s,s)", elts[i].key, elts[i].val);
+            /* PYTHON 2.5: 'PyList_SetItem' uses Py_ssize_t for input parameters */
             PyList_SetItem(v, j, keyval);
             j++;
         }
@@ -1060,6 +1072,7 @@ PyTypeObject MpTable_Type = {
     Py_TPFLAGS_BASETYPE,                /* tp_flags */
     mp_table_doc,                       /* tp_doc */
     (traverseproc)table_traverse,       /* tp_traverse */
+    /* PYTHON 2.5: 'inquiry' should be perhaps replaced with 'lenfunc' */
     (inquiry)table_tp_clear,            /* tp_clear */
     table_richcompare,                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
