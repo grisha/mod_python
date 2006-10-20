@@ -76,7 +76,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->rbuff = NULL;
     result->rbuff_pos = 0;
     result->rbuff_len = 0;
-    result->session = NULL;
 
     /* we make sure that the object dictionary is there
      * before registering the object with the GC
@@ -784,65 +783,6 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
     return MpTable_FromTable(table);
 }
 
-/**
- ** request.get_session() 
- **
- *      Get the session instance, or create a new one.
- *      This method just calls the python function
- *      create_session() in mod_python/Session.py to actually create
- *      the session instance.
- */ 
-
-static PyObject *req_get_session(requestobject *self, PyObject *args)
-{
-#ifdef ENABLE_GET_SESSION
-    /* get_session is not ready for mod_python 3.2 release
-     * We'll leave the code intact but raise an error
-     */
-    PyObject *m;
-    PyObject *sid;
-    PyObject *req;
-    PyObject *result;
-
-    if (!self->session) {
-        /* Get the session id from the subprocess_env table if possible.
-         * If a session instance exists at the time of a req_internal_redirect()
-         * call, the session id will be added to the subprocess_env table with 
-         * the key PYSID.  req_internal_redirect() calls ap_internal_redirect(),
-         * which prepends all keys in subprocess_env with "REDIRECT_", so the key
-         * we want is REDIRECT_PYSID.
-         * req_internal_redirect() should have unlocked the session, so we do not
-         * need to worry about session deadlocking as a result of the redirect.
-         */ 
-        req = (PyObject *)self;
-        m = PyImport_ImportModule("mod_python.Session");
-        sid = PyObject_CallMethod(self->subprocess_env, "get", "(ss)","REDIRECT_PYSID", "");
-        self->session = PyObject_CallMethod(m, "create_session", "(OO)", req, sid);
-        Py_DECREF(m);
-        Py_DECREF(sid);
-
-        /* TODO
-         * Failure to DECREF req results in a serious memory leak.
-         * On the other hand, if the session created does not save 
-         * a reference to the request, we'll get a segfault.
-         * This should be documented for developers subclassing BaseSession.
-         * Maybe we should check self->session for the _req attribute
-         * and only do the decref if it exists? Or is there a better
-         * way to handle this? - Jim
-         */ 
-        Py_DECREF(req);
-        if (self->session == NULL)
-            return NULL;
-    }
-    result = self->session;
-    Py_INCREF(result);
-    return result;
-#else
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "get_session is not implemented");
-    return NULL;
-#endif
-}
 
 /**
  ** request.internal_redirect(request self, string newuri)
@@ -852,59 +792,10 @@ static PyObject *req_get_session(requestobject *self, PyObject *args)
 static PyObject * req_internal_redirect(requestobject *self, PyObject *args)
 {
     char *new_uri;
-#ifdef ENABLE_GET_SESSION
-    PyObject *sid;
-    PyObject *rc;
-#endif
 
     if (! PyArg_ParseTuple(args, "z", &new_uri))
         return NULL; /* error */
 
-#ifdef ENABLE_GET_SESSION
-    if (self->session){
-        /* A session exists, so save and unlock it before the redirect.
-         * The session instance is not preserved across the ap_internal_direct()
-         * call, so all we can do is save a reference to session id as a string
-         * and recreate the session instance when the redirected request
-         * is processed. This is handled by req_get_session().
-         * Note that ap_internal_redirect() makes a copy of the subprocess_env table,
-         * pre-pending all the keys in the table with "REDIRECT_".
-         * Each internal_redirect results in a save and a read, which may impact
-         * performance, depending on the type of persistent store used by the
-         * session class.
-         */
-
-        if (!(sid = PyObject_CallMethod(self->session, "id", NULL))) {
-            sid = PyString_FromString("");
-        }
-
-        /* Save the session id in the subprocess_env table. This id will be used
-         * to recreate the session instance when the redirected request is 
-         * processed.
-         */
-        if ((rc = PyObject_CallMethod(self->subprocess_env, "setdefault", "(sS)","PYSID", sid))) {
-            Py_DECREF(rc);
-        }
-        
-        Py_DECREF(sid);
-
-        /* Save the session instance so any session data can be restored when
-         * the redirected request is processed.
-         */
-        if (!(rc = PyObject_CallMethod(self->session, "save", NULL))) {
-            Py_DECREF(rc);
-        }
-
-        /* Unlock the session. The session instance will be recreated when
-         * the redirected request is processed. Failure to unlock the session
-         * here will result in a deadlock.
-         */
-        if (!(rc = PyObject_CallMethod(self->session, "unlock", NULL))) {
-            Py_DECREF(rc);
-        }
-    }
-#endif
-    
     Py_BEGIN_ALLOW_THREADS
     ap_internal_redirect(new_uri, self->request_rec);
     Py_END_ALLOW_THREADS
@@ -1580,7 +1471,6 @@ static PyMethodDef request_methods[] = {
     {"get_addhandler_exts",   (PyCFunction) req_get_addhandler_exts,   METH_NOARGS},
     {"get_remote_host",       (PyCFunction) req_get_remote_host,       METH_VARARGS},
     {"get_options",           (PyCFunction) req_get_options,           METH_NOARGS},
-    {"get_session",           (PyCFunction) req_get_session,           METH_VARARGS},
     {"internal_redirect",     (PyCFunction) req_internal_redirect,     METH_VARARGS},
     {"is_https",              (PyCFunction) req_is_https,              METH_NOARGS},
     {"log_error",             (PyCFunction) req_log_error,             METH_VARARGS},
@@ -2080,7 +1970,6 @@ static int request_tp_clear(requestobject *self)
     CLEAR_REQUEST_MEMBER(self->phase);
     CLEAR_REQUEST_MEMBER(self->hlo);
     CLEAR_REQUEST_MEMBER(self->callbacks);
-    CLEAR_REQUEST_MEMBER(self->session);
     
     return 0;
 }
@@ -2137,7 +2026,6 @@ static int request_tp_traverse(requestobject* self, visitproc visit, void *arg) 
     VISIT_REQUEST_MEMBER(self->subprocess_env, visit, arg);
     VISIT_REQUEST_MEMBER(self->notes, visit, arg);
     VISIT_REQUEST_MEMBER(self->phase, visit, arg);
-    VISIT_REQUEST_MEMBER(self->session, visit, arg);
     
     /* no need to Py_DECREF(dict) since the reference is borrowed */
     return 0;
