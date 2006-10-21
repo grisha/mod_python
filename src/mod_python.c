@@ -291,6 +291,7 @@ static interpreterdata *get_interpreter(const char *name)
 
         if (!idata->obcallback) 
         {
+            PyThreadState_Clear(tstate);
 #ifdef WITH_THREAD
             PyEval_ReleaseThread(tstate);
 #else
@@ -324,6 +325,7 @@ static interpreterdata *get_interpreter(const char *name)
 static void release_interpreter(void) 
 {
     PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState_Clear(tstate);
 #ifdef WITH_THREAD
     PyEval_ReleaseThread(tstate);
 #else
