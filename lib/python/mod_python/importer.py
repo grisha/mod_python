@@ -33,6 +33,7 @@ import md5
 import time
 import string
 import StringIO
+import traceback
 
 try:
     import threading
@@ -348,6 +349,16 @@ class _ModuleCache:
         text = "mod_python (pid=%d,interpreter=%s): %s" % (pid, `name`, msg)
         apache.log_error(text, flags, server)
 
+    def _log_exception(self):
+        pid = os.getpid()
+        name = apache.interpreter
+        server = apache.main_server
+        flags = apache.APLOG_NOERRNO|apache.APLOG_ERR
+        etype, evalue, etb = sys.exc_info()
+        for msg in traceback.format_exception(etype, evalue, etb):
+            text = "mod_python (pid=%d,interpreter=%s): %s" % (pid, `name`, msg)
+            apache.log_error(text, flags, server)
+
     def cached_modules(self):
         self._lock1.acquire()
         try:
@@ -556,15 +567,17 @@ class _ModuleCache:
                         except:
                             # Forcibly purging module from system.
 
-                            if hasattr(cache.module, "__mp_purge__"):
-                                try:
-                                    cache.module.__mp_purge__()
-                                except:
-                                    pass
+                            self._log_exception()
 
                             if log:
                                 msg = "Purging module '%s'" % file
                                 self._log_notice(msg)
+
+                            if hasattr(cache.module, "__mp_purge__"):
+                                try:
+                                    cache.module.__mp_purge__()
+                                except:
+                                    self._log_exception()
 
                             cache.module = None
 
