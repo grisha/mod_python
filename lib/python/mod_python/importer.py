@@ -34,6 +34,7 @@ import time
 import string
 import StringIO
 import traceback
+import cgi
 
 try:
     import threading
@@ -354,10 +355,12 @@ class _ModuleCache:
         name = apache.interpreter
         server = apache.main_server
         flags = apache.APLOG_NOERRNO|apache.APLOG_ERR
+        prefix = "mod_python (pid=%d,interpreter=%s)" % (pid, `name`)
         etype, evalue, etb = sys.exc_info()
         for msg in traceback.format_exception(etype, evalue, etb):
-            text = "mod_python (pid=%d,interpreter=%s): %s" % (pid, `name`, msg)
+            text = "%s: %s" % (prefix, msg[:-1])
             apache.log_error(text, flags, server)
+        etb = None
 
     def cached_modules(self):
         self._lock1.acquire()
@@ -1042,6 +1045,7 @@ _callback.xFilterDispatch = _callback.FilterDispatch
 _callback.xHandlerDispatch = _callback.HandlerDispatch
 _callback.xIncludeDispatch = _callback.IncludeDispatch
 _callback.xImportDispatch = _callback.ImportDispatch
+_callback.xReportError = _callback.ReportError
 
 _result_warning = """Handler has returned result or raised SERVER_RETURN
 exception with argument having non integer type. Type of value returned
@@ -1642,3 +1646,85 @@ def ImportDispatch(self, name):
 
 _callback.ImportDispatch = new.instancemethod(
         ImportDispatch, _callback, apache.CallBack)
+
+def ReportError(self, etype, evalue, etb, req=None, filter=None,
+                srv=None, phase="N/A", hname="N/A", debug=0):
+
+    try:
+        try:
+
+            if str(etype) == "exceptions.IOError" \
+               and str(evalue)[:5] == "Write":
+
+		# If this is an I/O error while writing to
+		# client, it is probably better not to try to
+		# write to the cleint even if debug is on.
+
+		# XXX Note that a failure to write back data in
+		# a response should be indicated by a special
+		# exception type which is caught here and not a
+		# generic I/O error as there could be false
+		# positives. See MODPYTHON-92.
+
+                debug = 0
+
+            # Always log the details of any exception.
+
+            pid = os.getpid()
+            iname = apache.interpreter
+            flags = apache.APLOG_NOERRNO|apache.APLOG_ERR
+            details = "(pid=%d,interpreter=%s,phase=%s,handler=%s)" % \
+                    (pid, `iname`, `phase`, `hname`)
+
+            tb = traceback.format_exception(etype, evalue, etb)
+
+            for line in tb:
+                text = "mod_python %s: %s" % (details, line[:-1])
+                if req:
+                    req.log_error(text, flags)
+                else:
+                    apache.log_error(text, flags, srv)
+
+            if not debug or not req:
+                return apache.HTTP_INTERNAL_SERVER_ERROR
+            else:
+                req.status = apache.HTTP_INTERNAL_SERVER_ERROR
+                req.content_type = 'text/html'
+
+                text = '\n<pre>\nMOD_PYTHON ERROR\n\n'
+                text = text + 'PID: %s\n' % pid
+                text = text + 'Interpreter: %s\n' % `iname`
+                text = text + 'Phase: %s\n' % `phase`
+                if req:
+                    context = req.hlist
+                    while context.parent != None:
+                        context = context.parent
+                    text = text + 'HandlerRoot: %s\n' % `context.directory`
+                    text = text + 'HandlerPath: %s\n' % `req.hlist.directory`
+                text = text + 'Handler: %s\n' % cgi.escape(repr(hname))
+                text = text + '\n'
+
+                for line in tb:
+                    text = text + cgi.escape(line) + '\n'
+                text = text + "</pre>\n"
+
+                if filter:
+                    filter.write(text)
+                    filter.flush()
+                else:
+                    req.write(text)
+
+                return apache.DONE
+
+        except:
+	    # When all else fails try and dump traceback
+	    # directory standard error and flush it.
+
+            traceback.print_exc()
+            sys.stderr.flush()
+
+    finally:
+        etb = None
+
+_callback.ReportError = new.instancemethod(
+    ReportError, _callback, apache.CallBack)
