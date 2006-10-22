@@ -127,9 +127,8 @@
       accessed as if they were a tuple. New code however should access
       the attributes as member data. The \code{req.finfo} attribute is
       also now writable and can be assigned to using the result of calling
-      new functions \code{apache.stat()} and \code{apache.lstat()}. These
-      functions are wrappers for \code{apr_stat()} and \code{apr_lstat()}
-      respectively.
+      the new function \code{apache.stat()}. This function is a wrapper
+      for \code{apr_stat()}.
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-129]{MODPYTHON-129})
       When specifying multiple handlers for phases other than the content
