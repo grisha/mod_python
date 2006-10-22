@@ -945,7 +945,6 @@ server_root = _apache.server_root
 mpm_query = _apache.mpm_query
 exists_config_define = _apache.exists_config_define
 stat = _apache.stat
-lstat = _apache.lstat
 
 ## Some constants
 

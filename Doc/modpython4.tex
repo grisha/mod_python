@@ -420,16 +420,6 @@ objects. For a more in-depth look at Apache internals, see the
     \code{req.finfo} attribute.
 \end{funcdesc}
 
-\begin{funcdesc}{lstat}{fname, wanted}
-    This function returns an instance of an \code{mp_finfo} object
-    describing information related to the file with name \code{fname}.
-    The \code{wanted} argument describes the minimum attributes which
-    should be filled out. The resultant object can be assigned to the
-    \code{req.finfo} attribute. This function differs to {stat()} in
-    that if the file is a symlink, information about the link is returned
-    as opposed to the file the symlink points at.
-\end{funcdesc}
-
 \begin{funcdesc}{register_cleanup}{callable\optional{, data}}
   Registers a cleanup that will be performed at child shutdown time. Equivalent
   to \function{server.register_cleanup()}, except that a request object is not
@@ -1296,8 +1286,8 @@ def typehandler(req):
   \code{user}, \code{group}, \code{size}, \code{inode}, \code{device},
   \code{nlink}, \code{atime}, \code{mtime}, \code{ctime} and \code{name}.
 
-  The attribute may be assigned to using the result of \code{apache.stat()}
-  or \code{apache.lstat()}. For example:
+  The attribute may be assigned to using the result of \code{apache.stat()}.
+  For example:
 
   \begin{verbatim}
 if req.finfo.filetype == apache.APR_DIR:
