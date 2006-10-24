@@ -37,7 +37,10 @@ extern "C" {
         PyObject *callable;
         const char *directory;
         int d_is_fnmatch;
-        ap_regex_t *regex;
+        ap_regex_t *d_regex;
+        const char *location;
+        int l_is_fnmatch;
+        ap_regex_t *l_regex;
         int silent;  /* 1 for PythonHandlerModule, where
                         if a handler is not found in a module,
                         no error should be reported */
@@ -46,11 +49,13 @@ extern "C" {
     } hl_entry;
     
     hl_entry *hlist_new(apr_pool_t *p, const char *h, PyObject* o,
-                        const char *d, int d_is_fnmatch, ap_regex_t *regex,
+                        const char *d, int d_is_fnmatch, ap_regex_t *d_regex,
+                        const char *l, int l_is_fnmatch, ap_regex_t *l_regex,
                         const int s, hl_entry* parent);
-    hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                           PyObject* o, const char *d, int d_is_fnmatch,
-                           ap_regex_t *regex, const int s, hl_entry* parent);
+    hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h, PyObject* o,
+                           const char *d, int d_is_fnmatch, ap_regex_t *d_regex,
+                           const char *l, int l_is_fnmatch, ap_regex_t *l_regex,
+                           const int s, hl_entry* parent);
 
     hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle);
     void hlist_extend(apr_pool_t *p, hl_entry *hle1, const hl_entry *hle2);

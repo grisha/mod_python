@@ -1012,7 +1012,8 @@ static const ap_directive_t * find_parent(const ap_directive_t *dirp,
 #endif
 
 static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
-                             char **dp, int *gx, ap_regex_t **rx)
+                              char **d, int *d_gx, ap_regex_t **d_rx,
+                              char **l, int *l_gx, ap_regex_t **l_rx)
 {
     const ap_directive_t *context = 0;
     const ap_directive_t *directive = 0;
@@ -1020,7 +1021,11 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
 
     char *directory = 0;
     int d_is_fnmatch = 0;
-    ap_regex_t *regex = 0;
+    ap_regex_t *d_regex = 0;
+
+    char *location = 0;
+    int l_is_fnmatch = 0;
+    ap_regex_t *l_regex = 0;
 
     directive = cmd->directive;
 
@@ -1041,7 +1046,7 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
 
         if (!strcmp(directory, "~")) {
             directory = ap_getword_conf(p, &arg);
-            regex = ap_pregcomp(p, cmd->path, AP_REG_EXTENDED|USE_ICASE);
+            d_regex = ap_pregcomp(p, cmd->path, AP_REG_EXTENDED|USE_ICASE);
         } else if (ap_is_matchexp(directory)) {
             d_is_fnmatch = 1;
         }
@@ -1051,9 +1056,28 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
         arg = apr_pstrndup(p, arg, endp - arg);
 
         directory = ap_getword_conf(p, &arg);
-        regex = ap_pregcomp(p, directory, AP_REG_EXTENDED|USE_ICASE);
-    }
-    else if (cmd->config_file != NULL) {
+        d_regex = ap_pregcomp(p, directory, AP_REG_EXTENDED|USE_ICASE);
+    } else if ((context = find_parent(directive, "<Location"))) {
+        arg = context->args;
+        endp = ap_strrchr_c(arg, '>');
+        arg = apr_pstrndup(p, arg, endp - arg);
+
+        location = ap_getword_conf(p, &arg);
+
+        if (!strcmp(location, "~")) {
+            location = ap_getword_conf(p, &arg);
+            l_regex = ap_pregcomp(p, cmd->path, AP_REG_EXTENDED|USE_ICASE);
+        } else if (ap_is_matchexp(location)) {
+            l_is_fnmatch = 1;
+        }
+    } else if ((context = find_parent(directive, "<LocationMatch"))) {
+        arg = context->args;
+        endp = ap_strrchr_c(arg, '>');
+        arg = apr_pstrndup(p, arg, endp - arg);
+
+        location = ap_getword_conf(p, &arg);
+        l_regex = ap_pregcomp(p, location, AP_REG_EXTENDED|USE_ICASE);
+    } else if (cmd->config_file != NULL) {
         /* cmd->config_file is NULL when in main Apache
          * configuration file as the file is completely
          * read in before the directive is processed as
@@ -1068,7 +1092,7 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
      * this point if no pattern matching to be done at
      * a later time. */
 
-    if (!d_is_fnmatch && !regex) {
+    if (directory && !d_is_fnmatch && !d_regex) {
 
         char *newpath = 0;
         apr_status_t rv;
@@ -1088,9 +1112,13 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
         }
     }
 
-    *dp = directory;
-    *gx = d_is_fnmatch;
-    *rx = regex;
+    *d = directory;
+    *d_gx = d_is_fnmatch;
+    *d_rx = d_regex;
+
+    *l = location;
+    *l_gx = l_is_fnmatch;
+    *l_rx = l_regex;
 }
 
 static void python_directive_hl_add(apr_pool_t *p, apr_hash_t *hlists, 
@@ -1102,9 +1130,14 @@ static void python_directive_hl_add(apr_pool_t *p, apr_hash_t *hlists,
 
     char *directory = 0;
     int d_is_fnmatch = 0;
-    ap_regex_t *regex = 0;
+    ap_regex_t *d_regex = 0;
 
-    determine_context(p, cmd, &directory, &d_is_fnmatch, &regex);
+    char *location = 0;
+    int l_is_fnmatch = 0;
+    ap_regex_t *l_regex = 0;
+
+    determine_context(p, cmd, &directory, &d_is_fnmatch, &d_regex,
+                      &location, &l_is_fnmatch, &l_regex);
 
     head = (hl_entry *)apr_hash_get(hlists, phase, APR_HASH_KEY_STRING);
 
@@ -1113,11 +1146,13 @@ static void python_directive_hl_add(apr_pool_t *p, apr_hash_t *hlists,
 
     while (*(h = ap_getword_white(p, &handler)) != '\0') {
         if (!head) {
-            head = hlist_new(p, h, 0, directory, d_is_fnmatch, regex, silent, 0);
+            head = hlist_new(p, h, 0, directory, d_is_fnmatch, d_regex,
+                             location, l_is_fnmatch, l_regex, silent, 0);
             apr_hash_set(hlists, phase, APR_HASH_KEY_STRING, head);
         }
         else {
-            hlist_append(p, head, h, 0, directory, d_is_fnmatch, regex, silent, 0);
+            hlist_append(p, head, h, 0, directory, d_is_fnmatch, d_regex,
+                         location, l_is_fnmatch, l_regex, silent, 0);
         }
     }
 }
@@ -1283,20 +1318,22 @@ requestobject *python_get_request_object(request_rec *req, const char *phase)
  */
 
 static const char *resolve_directory(request_rec *req, const char *directory,
-                                     int d_is_fnmatch, ap_regex_t *regex)
+                                     int d_is_fnmatch, ap_regex_t *d_regex)
 {
     char *prefix;
     int len, dirs, i;
 
-    if (!req || !req->filename || (!d_is_fnmatch && !regex))
+    if (!req || !req->filename || (!d_is_fnmatch && !d_regex))
         return directory;
 
     dirs = ap_count_dirs(req->filename) + 1;
     len = strlen(req->filename);
-    prefix = (char*)apr_palloc(req->pool, len+1);
+    prefix = (char*)apr_palloc(req->pool, len+2);
 
     for (i=0; i<=dirs; i++) {
         ap_make_dirstr_prefix(prefix, req->filename, i);
+
+        /* Match with trailing slash first. */
 #ifdef WIN32
         if (d_is_fnmatch && apr_fnmatch(directory, prefix,
             APR_FNM_PATHNAME|APR_FNM_CASE_BLIND) == 0) {
@@ -1306,12 +1343,14 @@ static const char *resolve_directory(request_rec *req, const char *directory,
 #endif
             return prefix;
         }
-        else if (regex && ap_regexec(regex, prefix, 0, NULL, 0) == 0) {
+        else if (d_regex && ap_regexec(d_regex, prefix, 0, NULL, 0) == 0) {
             return prefix;
         }
 
         if (strcmp(prefix, "/") != 0) {
             prefix[strlen(prefix)-1] = '\0';
+
+            /* Match without trailing slash. */
 #ifdef WIN32
             if (d_is_fnmatch && apr_fnmatch(directory, prefix,
                 APR_FNM_PATHNAME|APR_FNM_CASE_BLIND) == 0) {
@@ -1322,7 +1361,7 @@ static const char *resolve_directory(request_rec *req, const char *directory,
                 prefix[strlen(prefix)] = '/';
                 return prefix;
             }
-            else if (regex && ap_regexec(regex, prefix, 0, NULL, 0) == 0) {
+            else if (d_regex && ap_regexec(d_regex, prefix, 0, NULL, 0) == 0) {
                 prefix[strlen(prefix)] = '/';
                 return prefix;
             }
@@ -1330,6 +1369,60 @@ static const char *resolve_directory(request_rec *req, const char *directory,
     }
 
     return directory;
+}
+
+/**
+ ** resolve_location
+ **
+ *      resolve any location match returning the matched location
+ */
+
+static const char *resolve_location(request_rec *req, const char *location,
+                                     int l_is_fnmatch, ap_regex_t *l_regex)
+{
+    char *prefix;
+    int len, dirs, i;
+
+    if (!req || !req->uri || (!l_is_fnmatch && !l_regex))
+        return location;
+
+    dirs = ap_count_dirs(req->uri) + 1;
+    len = strlen(req->uri);
+    prefix = (char*)apr_palloc(req->pool, len+2);
+
+    for (i=0; i<=dirs; i++) {
+        int match = 0;
+        ap_make_dirstr_prefix(prefix, req->uri, i);
+
+        /* Match with trailing slash first. */
+        if (l_is_fnmatch && apr_fnmatch(location, prefix,
+            APR_FNM_PATHNAME) == 0) {
+            match = 1;
+        }
+        else if (l_regex && ap_regexec(l_regex, prefix, 0, NULL, 0) == 0) {
+            match = 1;
+        }
+
+        if (strcmp(prefix, "/") != 0) {
+            prefix[strlen(prefix)-1] = '\0';
+
+            /* Match without trailing slash. */
+            if (l_is_fnmatch && apr_fnmatch(location, prefix,
+                APR_FNM_PATHNAME) == 0) {
+                return prefix;
+            }
+            else if (l_regex && ap_regexec(l_regex, prefix, 0, NULL, 0) == 0) {
+                return prefix;
+            }
+
+            if (match) {
+                prefix[strlen(prefix)] = '/';
+                return prefix;
+            }
+        }
+    }
+
+    return location;
 }
 
 /**
@@ -1498,11 +1591,17 @@ static int python_handler(request_rec *req, char *phase)
     /* resolve wildcard or regex directory patterns */
     hle = hlohle;
     while (hle) {
-        if (hle->d_is_fnmatch || hle->regex) {
+        if (hle->d_is_fnmatch || hle->d_regex) {
             hle->directory = resolve_directory(req, hle->directory,
-                                               hle->d_is_fnmatch, hle->regex);
+                                               hle->d_is_fnmatch, hle->d_regex);
             hle->d_is_fnmatch = 0;
-            hle->regex = NULL;
+            hle->d_regex = NULL;
+        }
+        if (hle->l_is_fnmatch || hle->l_regex) {
+            hle->location = resolve_location(req, hle->location,
+                                               hle->l_is_fnmatch, hle->l_regex);
+            hle->l_is_fnmatch = 0;
+            hle->l_regex = NULL;
         }
 
         hle = hle->next;
@@ -2505,7 +2604,11 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
 
     char *directory = 0;
     int d_is_fnmatch = 0;
-    ap_regex_t *regex = 0;
+    ap_regex_t *d_regex = 0;
+
+    char *location = 0;
+    int l_is_fnmatch = 0;
+    ap_regex_t *l_regex = 0;
 
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
@@ -2517,13 +2620,19 @@ static const char *directive_PythonInputFilter(cmd_parms *cmd, void *mconfig,
  
     conf = (py_config *) mconfig;
 
-    determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &regex);
+    determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &d_regex,
+                      &location, &l_is_fnmatch, &l_regex);
 
     fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
     fh->handler = (char *)handler;
+
     fh->directory = directory;
     fh->d_is_fnmatch = d_is_fnmatch;
-    fh->regex = regex;
+    fh->d_regex = d_regex;
+
+    fh->location = location;
+    fh->l_is_fnmatch = l_is_fnmatch;
+    fh->l_regex = l_regex;
 
     apr_hash_set(conf->in_filters, frec->name, APR_HASH_KEY_STRING, fh);
 
@@ -2538,8 +2647,12 @@ static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig,
 
     char *directory = 0;
     int d_is_fnmatch = 0;
-    ap_regex_t *regex = 0;
- 
+    ap_regex_t *d_regex = 0;
+
+    char *location = 0;
+    int l_is_fnmatch = 0;
+    ap_regex_t *l_regex = 0;
+
     if (!name)
         name = apr_pstrdup(cmd->pool, handler);
 
@@ -2548,15 +2661,21 @@ static const char *directive_PythonOutputFilter(cmd_parms *cmd, void *mconfig,
        would have to make sure not to duplicate this */
     frec = ap_register_output_filter(name, python_output_filter, NULL, AP_FTYPE_RESOURCE);
 
-    determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &regex);
+    determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &d_regex,
+                      &location, &l_is_fnmatch, &l_regex);
 
     conf = (py_config *) mconfig;
     
     fh = (py_handler *) apr_pcalloc(cmd->pool, sizeof(py_handler));
     fh->handler = (char *)handler;
+
     fh->directory = directory;
     fh->d_is_fnmatch = d_is_fnmatch;
-    fh->regex = regex;
+    fh->d_regex = d_regex;
+
+    fh->location = location;
+    fh->l_is_fnmatch = l_is_fnmatch;
+    fh->l_regex = l_regex;
 
     apr_hash_set(conf->out_filters, frec->name, APR_HASH_KEY_STRING, fh);
 
