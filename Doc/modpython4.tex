@@ -747,7 +747,7 @@ else:
 
 \end{methoddesc}
 
-\begin{methoddesc}{log_error}{message\optional{, level}}
+\begin{methoddesc}[request]{log_error}{message\optional{, level}}
   An interface to the Apache \code{ap_log_rerror}
   function. \var{message} is a string with the error message,
   \var{level} is one of the following flags constants:
@@ -1332,6 +1332,27 @@ structure.
 
 \subsubsection{Connection Methods\label{pyapi-mpconn-meth}}
 
+\begin{methoddesc}[connection]{log_error}{message\optional{, level}}
+  An interface to the Apache \code{ap_log_cerror}
+  function. \var{message} is a string with the error message,
+  \var{level} is one of the following flags constants:
+
+  \begin{verbatim}
+    APLOG_EMERG
+    APLOG_ALERT
+    APLOG_CRIT
+    APLOG_ERR
+    APLOG_WARNING
+    APLOG_NOTICE
+    APLOG_INFO
+    APLOG_DEBUG
+    APLOG_NOERRNO
+  \end{verbatim}            
+
+  If you need to write to log and do not have a reference to a connection or
+  request object, use the \function{apache.log_error} function.
+\end{methoddesc}
+
 \begin{methoddesc}[connection]{read}{\optional{length}}
   Reads at most \var{length} bytes from the client. The read blocks
   indefinitely until there is at least one byte to read. If length is
@@ -1532,6 +1553,27 @@ server) serving the request.
   only the mod_python options defined at global scope within the Apache
   configuration. That is, outside of the context of any VirtualHost, Location,
   Directory or Files directives.
+\end{methoddesc}
+
+\begin{methoddesc}[server]{log_error}{message\optional{, level}}
+  An interface to the Apache \code{ap_log_error}
+  function. \var{message} is a string with the error message,
+  \var{level} is one of the following flags constants:
+
+  \begin{verbatim}
+    APLOG_EMERG
+    APLOG_ALERT
+    APLOG_CRIT
+    APLOG_ERR
+    APLOG_WARNING
+    APLOG_NOTICE
+    APLOG_INFO
+    APLOG_DEBUG
+    APLOG_NOERRNO
+  \end{verbatim}            
+
+  If you need to write to log and do not have a reference to a server or
+  request object, use the \function{apache.log_error} function.
 \end{methoddesc}
 
 \begin{methoddesc}[server]{register_cleanup}{request, callable\optional{, data}}

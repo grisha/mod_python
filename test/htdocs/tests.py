@@ -41,7 +41,10 @@ class SimpleTestCase(unittest.TestCase):
     def test_apache_log_error(self):
 
         s = self.req.server
+        c = self.req.connection
+
         apache.log_error("Testing apache.log_error():", apache.APLOG_INFO, s)
+
         apache.log_error("xEMERGx", apache.APLOG_EMERG, s)
         apache.log_error("xALERTx", apache.APLOG_ALERT, s)
         apache.log_error("xCRITx", apache.APLOG_CRIT, s)
@@ -51,6 +54,24 @@ class SimpleTestCase(unittest.TestCase):
         apache.log_error("xINFOx", apache.APLOG_INFO, s)
         apache.log_error("xDEBUGx", apache.APLOG_DEBUG, s)
 
+        s.log_error("xEMERGx", apache.APLOG_EMERG)
+        s.log_error("xALERTx", apache.APLOG_ALERT)
+        s.log_error("xCRITx", apache.APLOG_CRIT)
+        s.log_error("xERRx", apache.APLOG_ERR)
+        s.log_error("xWARNINGx", apache.APLOG_WARNING)
+        s.log_error("xNOTICEx", apache.APLOG_NOTICE)
+        s.log_error("xINFOx", apache.APLOG_INFO)
+        s.log_error("xDEBUGx", apache.APLOG_DEBUG)
+
+        c.log_error("xEMERGx", apache.APLOG_EMERG)
+        c.log_error("xALERTx", apache.APLOG_ALERT)
+        c.log_error("xCRITx", apache.APLOG_CRIT)
+        c.log_error("xERRx", apache.APLOG_ERR)
+        c.log_error("xWARNINGx", apache.APLOG_WARNING)
+        c.log_error("xNOTICEx", apache.APLOG_NOTICE)
+        c.log_error("xINFOx", apache.APLOG_INFO)
+        c.log_error("xDEBUGx", apache.APLOG_DEBUG)
+
         # see what's in the log now
         f = open("%s/logs/error_log" % apache.server_root())
         # for some reason re doesn't like \n, why?
@@ -58,7 +79,7 @@ class SimpleTestCase(unittest.TestCase):
         log = "".join(map(string.strip, f.readlines()))
         f.close()
 
-        if not re.search("xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx", log):
+        if not re.search("xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx.*xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx.*xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx", log):
             self.fail("Could not find test messages in error_log")
             
 
