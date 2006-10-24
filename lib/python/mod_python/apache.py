@@ -564,6 +564,7 @@ class CallBack:
             except:
                 # last try
                 traceback.print_exc()
+                sys.stderr.flush()
 
         finally:
             # erase the traceback

@@ -337,29 +337,27 @@ class _ModuleCache:
     def _log_notice(self, msg):
         pid = os.getpid()
         name = apache.interpreter
-        server = apache.main_server
         flags = apache.APLOG_NOERRNO|apache.APLOG_NOTICE
-        text = "mod_python (pid=%d,interpreter=%s): %s" % (pid, `name`, msg)
-        apache.log_error(text, flags, server)
+        text = "mod_python (pid=%d, interpreter=%s): %s" % (pid, `name`, msg)
+        apache.main_server.log_error(text, flags)
 
     def _log_warning(self, msg):
         pid = os.getpid()
         name = apache.interpreter
-        server = apache.main_server
         flags = apache.APLOG_NOERRNO|apache.APLOG_WARNING
-        text = "mod_python (pid=%d,interpreter=%s): %s" % (pid, `name`, msg)
-        apache.log_error(text, flags, server)
+        text = "mod_python (pid=%d, interpreter=%s): %s" % (pid, `name`, msg)
+        apache.main_server.log_error(text, flags)
 
     def _log_exception(self):
         pid = os.getpid()
         name = apache.interpreter
-        server = apache.main_server
         flags = apache.APLOG_NOERRNO|apache.APLOG_ERR
-        prefix = "mod_python (pid=%d,interpreter=%s)" % (pid, `name`)
+        msg = 'Application error'
+        text = "mod_python (pid=%d, interpreter=%s): %s" % (pid, `name`, msg)
+        apache.main_server.log_error(text, flags)
         etype, evalue, etb = sys.exc_info()
-        for msg in traceback.format_exception(etype, evalue, etb):
-            text = "%s: %s" % (prefix, msg[:-1])
-            apache.log_error(text, flags, server)
+        for text in traceback.format_exception(etype, evalue, etb):
+            apache.main_server.log_error(text[:-1], flags)
         etb = None
 
     def cached_modules(self):
@@ -1264,7 +1262,7 @@ def ConnectionDispatch(self, conn):
         try:
             (exc_type, exc_value, exc_traceback) = traceblock
             result = self.ReportError(exc_type, exc_value, exc_traceback,
-                    srv=conn.base_server, phase="ConnectionHandler",
+                    conn=conn, phase="ConnectionHandler",
                     hname=conn.hlist.handler, debug=debug)
 
         finally:
@@ -1279,7 +1277,7 @@ def ConnectionDispatch(self, conn):
         try:    
             exc_type, exc_value, exc_traceback = sys.exc_info()
             result = self.ReportError(exc_type, exc_value, exc_traceback,
-                    srv=conn.base_server, phase="ConnectionHandler",
+                    conn=conn, phase="ConnectionHandler",
                     hname=conn.hlist.handler, debug=debug)
         finally:
             exc_traceback = None
@@ -1425,12 +1423,27 @@ def HandlerDispatch(self, req):
     options = req.get_options()
 
     try:
+        (aborted, hlist) = False, req.hlist
+
+	# The actual handler root is the directory
+	# associated with the handler first in the
+	# chain. This may be a handler which was called
+	# in an earlier phase if the req.add_handler()
+	# method was used. The directory for those that
+	# follow the first may have been overridden by
+	# directory supplied to the req.add_handler()
+	# method.
+
+        root = hlist.directory
+        parent = hlist.parent
+        while parent is not None:
+            root = parent.directory
+            parent = parent.parent
+
         # Iterate over the handlers defined for the
         # current phase and execute each in turn
         # until the last is reached or prematurely
         # aborted.
-
-        (aborted, hlist) = False, req.hlist
 
         while not aborted and hlist.handler is not None:
 
@@ -1443,6 +1456,11 @@ def HandlerDispatch(self, req):
                 # If directory for handler is not set,
                 # then search back through parents and
                 # inherit value from parent if found.
+                # This directory is that where modules
+                # are searched for first and may not be
+                # the same as the handler root if it
+                # was supplied explicitly to the method
+                # req.add_handler().
 
                 if directory is None:
                     parent = hlist.parent
@@ -1468,7 +1486,7 @@ def HandlerDispatch(self, req):
                 # current request so that it will be
                 # available from within 'import_module()'.
 
-                cache = _setup_current_cache(config, options, directory)
+                cache = _setup_current_cache(config, options, root)
 
                 (aborted, result) = _process_target(config=config, req=req,
                         directory=directory, handler=handler,
@@ -1583,8 +1601,7 @@ def IncludeDispatch(self, filter, tag, code):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             result = self.ReportError(exc_type, exc_value, exc_traceback,
                                       filter=filter, phase=filter.name,
-                                      hname=filter.req.filename,
-                                      debug=debug)
+                                      hname=filter.req.filename, debug=debug)
         finally:
             exc_traceback = None
 
@@ -1647,8 +1664,8 @@ def ImportDispatch(self, name):
 _callback.ImportDispatch = new.instancemethod(
         ImportDispatch, _callback, apache.CallBack)
 
-def ReportError(self, etype, evalue, etb, req=None, filter=None,
-                srv=None, phase="N/A", hname="N/A", debug=0):
+def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
+                phase="N/A", hname="N/A", debug=0):
 
     try:
         try:
@@ -1668,22 +1685,54 @@ def ReportError(self, etype, evalue, etb, req=None, filter=None,
 
                 debug = 0
 
+            # Determine which log function we are going
+            # to use to output any messages.
+
+            if filter and not req:
+                req = filter.req
+
+            if req:
+                log_error = req.log_error
+            elif conn:
+                log_error = conn.log_error
+            else:
+                log_error = apache.main_server.log_error
+
             # Always log the details of any exception.
 
             pid = os.getpid()
             iname = apache.interpreter
             flags = apache.APLOG_NOERRNO|apache.APLOG_ERR
-            details = "(pid=%d,interpreter=%s,phase=%s,handler=%s)" % \
-                    (pid, `iname`, `phase`, `hname`)
+
+            text = "mod_python (pid=%d, interpreter=%s, " % (pid, `iname`)
+            text = text + "phase=%s, handler=%s)" % (`phase`, `hname`)
+            text = text + ": Application error"
+
+            log_error(text, flags)
+
+            if req:
+                location = None
+                directory = None
+
+                context = req.hlist
+
+                if context:
+                    while context.parent != None:
+                        context = context.parent
+
+                    location = context.location
+                    directory = context.directory
+
+                log_error('URI: %s' % `req.uri`, flags)
+                log_error('Location: %s' % `location`, flags)
+                log_error('Directory: %s' % `directory`, flags)
+                log_error('Filename: %s' % `req.filename`, flags)
+                log_error('PathInfo: %s' % `req.path_info`, flags)
 
             tb = traceback.format_exception(etype, evalue, etb)
 
             for line in tb:
-                text = "mod_python %s: %s" % (details, line[:-1])
-                if req:
-                    req.log_error(text, flags)
-                else:
-                    apache.log_error(text, flags, srv)
+                log_error(line[:-1], flags)
 
             if not debug or not req:
                 return apache.HTTP_INTERNAL_SERVER_ERROR
@@ -1695,12 +1744,16 @@ def ReportError(self, etype, evalue, etb, req=None, filter=None,
                 text = text + 'PID: %s\n' % pid
                 text = text + 'Interpreter: %s\n' % `iname`
                 text = text + 'Phase: %s\n' % `phase`
+
                 if req:
-                    context = req.hlist
-                    while context.parent != None:
-                        context = context.parent
-                    text = text + 'HandlerRoot: %s\n' % `context.directory`
-                    text = text + 'HandlerPath: %s\n' % `req.hlist.directory`
+                    text = text + '\n'
+                    text = text + 'URI: %s\n' % `req.uri`
+                    text = text + 'Location: %s\n' % `location`
+                    text = text + 'Directory: %s\n' % `directory`
+                    text = text + 'Filename: %s\n' % `req.filename`
+                    text = text + 'PathInfo: %s\n' % `req.path_info`
+
+                text = text + '\n'
                 text = text + 'Handler: %s\n' % cgi.escape(repr(hname))
                 text = text + '\n'
 

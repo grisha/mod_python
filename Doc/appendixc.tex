@@ -75,6 +75,14 @@
       those other modules to access the mechanics of how mod_python creates
       interpreters, thereby allowing other modules to also embed Python
       and for there not to be a conflict with mod_python.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-193]{MODPYTHON-193})
+      Added new attribute available as \code{req.hlist.location}. For a
+      handler executed directly as the result of a handler directive
+      within a \code{Location} directive, this will be set to the value
+      of the \code{Location} directive. If \code{LocationMatch}, or
+      wildcards or regular expressions are used with \code{Location},
+      the value will be the matched value in the URL and not the pattern.
   \end{itemize}
 
   Improvements

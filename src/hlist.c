@@ -33,9 +33,10 @@
  *  Start a new list.
  */
 
-hl_entry *hlist_new(apr_pool_t *p, const char *h, PyObject *o, const char *d, 
-                    int d_is_fnmatch, ap_regex_t *regex, const int s,
-                    hl_entry* parent)
+hl_entry *hlist_new(apr_pool_t *p, const char *h, PyObject *o,
+                    const char *d, int d_is_fnmatch, ap_regex_t *d_regex,
+                    const char *l, int l_is_fnmatch, ap_regex_t *l_regex,
+                    const int s, hl_entry* parent)
 {
     hl_entry *hle;
 
@@ -45,7 +46,10 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, PyObject *o, const char *d,
     hle->callable = o;
     hle->directory = d;
     hle->d_is_fnmatch = d_is_fnmatch;
-    hle->regex = regex;
+    hle->d_regex = d_regex;
+    hle->location = l;
+    hle->l_is_fnmatch = l_is_fnmatch;
+    hle->l_regex = l_regex;
     hle->silent = s;
     hle->parent = parent;
 
@@ -61,9 +65,10 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, PyObject *o, const char *d,
  *  If hle is NULL, a new list is created.
  */
 
-hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                       PyObject *o, const char *d, int d_is_fnmatch,
-                       ap_regex_t *regex, const int s, hl_entry *parent)
+hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h, PyObject *o,
+                       const char *d, int d_is_fnmatch, ap_regex_t *d_regex,
+                       const char *l, int l_is_fnmatch, ap_regex_t *l_regex,
+                       const int s, hl_entry *parent)
 {
     hl_entry *nhle;
 
@@ -77,7 +82,10 @@ hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
     nhle->callable = o;
     nhle->directory = d;
     nhle->d_is_fnmatch = d_is_fnmatch;
-    nhle->regex = regex;
+    nhle->d_regex = d_regex;
+    nhle->location = l;
+    nhle->l_is_fnmatch = l_is_fnmatch;
+    nhle->l_regex = l_regex;
     nhle->silent = s;
     nhle->parent = parent;
 
@@ -102,7 +110,10 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
     head->callable = hle->callable;
     head->directory = hle->directory;
     head->d_is_fnmatch = hle->d_is_fnmatch;
-    head->regex = hle->regex;
+    head->d_regex = hle->d_regex;
+    head->location = hle->location;
+    head->l_is_fnmatch = hle->l_is_fnmatch;
+    head->l_regex = hle->l_regex;
     head->silent = hle->silent;
     head->parent = hle->parent;
 
@@ -115,7 +126,10 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
         nhle->callable = hle->callable;
         nhle->directory = hle->directory;
         nhle->d_is_fnmatch = hle->d_is_fnmatch;
-        nhle->regex = hle->regex;
+        nhle->d_regex = hle->d_regex;
+        nhle->location = hle->location;
+        nhle->l_is_fnmatch = hle->l_is_fnmatch;
+        nhle->l_regex = hle->l_regex;
         nhle->silent = hle->silent;
         nhle->parent = hle->parent;
         hle = hle->next;
@@ -146,7 +160,10 @@ void hlist_extend(apr_pool_t *p, hl_entry *hle1,
         hle1->callable = hle2->callable;
         hle1->directory = hle2->directory;
         hle1->d_is_fnmatch = hle2->d_is_fnmatch;
-        hle1->regex = hle2->regex;
+        hle1->d_regex = hle2->d_regex;
+        hle1->location = hle2->location;
+        hle1->l_is_fnmatch = hle2->l_is_fnmatch;
+        hle1->l_regex = hle2->l_regex;
         hle1->silent = hle2->silent;
         hle1->parent = hle2->parent;
         hle2 = hle2->next;
