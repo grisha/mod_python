@@ -55,6 +55,36 @@ PyObject * MpConn_FromConn(conn_rec *c)
 }
 
 /**
+ ** conn.log_error(conn self, string message, int level)
+ **
+ *     calls ap_log_cerror
+ */
+
+static PyObject * conn_log_error(connobject *self, PyObject *args)
+{
+    int level = 0;
+    char *message = NULL;
+
+    if (! PyArg_ParseTuple(args, "z|i", &message, &level))
+        return NULL; /* error */
+
+    if (message) {
+
+        if (! level)
+            level = APLOG_NOERRNO|APLOG_ERR;
+
+#if AP_MODULE_MAGIC_AT_LEAST(20020903,10)
+        ap_log_cerror(APLOG_MARK, level, 0, self->conn, "%s", message);
+#else
+        ap_log_error(APLOG_MARK, level, 0, self->conn->server, "%s", message);
+#endif
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
  ** conn.read(conn self, int bytes)
  **
  */
@@ -243,6 +273,7 @@ static PyObject * conn_write(connobject *self, PyObject *args)
 }
 
 static PyMethodDef connobjectmethods[] = {
+    {"log_error", (PyCFunction) conn_log_error, METH_VARARGS},
     {"read",      (PyCFunction) conn_read,      METH_VARARGS},
     {"readline",  (PyCFunction) conn_readline,  METH_VARARGS},
     {"write",     (PyCFunction) conn_write,     METH_VARARGS},

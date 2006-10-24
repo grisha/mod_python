@@ -178,6 +178,12 @@
       directory and no \code{DirectoryIndex} directive is specified which
       lists a valid PSP index file, then the same \code{apache.HTTP_NOT_FOUND}
       server error is returned to the client.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-196]{MODPYTHON-196})
+      For completeness, added \code{req.server.log_error()} and
+      \code{req.connection.log_error()}. The latter wraps
+      \code{ap_log_cerror()} (when available), allowing client information
+      to be logged along with message from a connection handler.
   \end{itemize}
 
   Bug Fixes

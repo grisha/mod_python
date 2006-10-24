@@ -82,6 +82,32 @@ static PyObject * server_get_options(serverobject *self)
 }
 
 /**
+ ** server.log_error(server self, string message, int level)
+ **
+ *     calls ap_log_error
+ */
+
+static PyObject * server_log_error(serverobject *self, PyObject *args)
+{
+    int level = 0;
+    char *message = NULL;
+
+    if (! PyArg_ParseTuple(args, "z|i", &message, &level))
+        return NULL; /* error */
+
+    if (message) {
+
+        if (! level)
+            level = APLOG_NOERRNO|APLOG_ERR;
+
+        ap_log_error(APLOG_MARK, level, 0, self->server, "%s", message);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+/**
  ** server.register_cleanup(req, handler, data)
  **
  *    same as request.register_cleanup, except the server pool is used.
@@ -141,6 +167,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
 static PyMethodDef server_methods[] = {
     {"get_config",           (PyCFunction) server_get_config,        METH_NOARGS},
     {"get_options",          (PyCFunction) server_get_options,       METH_NOARGS},
+    {"log_error",            (PyCFunction) server_log_error,         METH_VARARGS},
     {"register_cleanup",     (PyCFunction) server_register_cleanup,  METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
