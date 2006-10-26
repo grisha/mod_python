@@ -99,15 +99,77 @@ class StringField(str):
         """Return printable representation (to pass unit tests)."""
         return "Field(%s, %s)" % (`self.name`, `self.value`)
 
+class FieldList(list):
+
+    def __init__(self):
+        self.__table = None
+        list.__init__(self)
+
+    def table(self):
+        if self.__table is None:
+            self.__table = {}
+            for item in self:
+                if item.name in self.__table:
+                    self.__table[item.name].append(item)
+                else:
+                    self.__table[item.name] = [item]
+        return self.__table
+
+    def __delitem__(self, *args):
+        self.__table = None
+        return list.__delitem__(self, *args)
+
+    def __delslice__(self, *args):
+        self.__table = None
+        return list.__delslice__(self, *args)
+
+    def __iadd__(self, *args):
+        self.__table = None
+        return list.__iadd__(self, *args)
+
+    def __imul__(self, *args):
+        self.__table = None
+        return list.__imul__(self, *args)
+
+    def __setitem__(self, *args):
+        self.__table = None
+        return list.__setitem__(self, *args)
+
+    def __setslice__(self, *args):
+        self.__table = None
+        return list.__setslice__(self, *args)
+
+    def append(self, *args):
+        self.__table = None
+        return list.append(self, *args)
+
+    def extend(self, *args):
+        self.__table = None
+        return list.extend(self, *args)
+
+    def insert(self, *args):
+        self.__table = None
+        return list.insert(self, *args)
+
+    def pop(self, *args):
+        self.__table = None
+        return list.pop(self, *args)
+
+    def remove(self, *args):
+        self.__table = None
+        return list.remove(self, *args)
+
+
 class FieldStorage:
 
     def __init__(self, req, keep_blank_values=0, strict_parsing=0, file_callback=None, field_callback=None):
         #
-        # Whenever readline is called ALWAYS use the max size EVEN when not expecting a long line.
-        # - this helps protect against malformed content from exhausting memory.
-        #
+	# Whenever readline is called ALWAYS use the max size EVEN when
+	# not expecting a long line. - this helps protect against
+	# malformed content from exhausting memory.
+	#
 
-        self.list = []
+        self.list = FieldList()
 
         # always process GET-style parameters
         if req.args:
@@ -164,11 +226,11 @@ class FieldStorage:
             line = req.readline(readBlockSize)
             match = boundary.match(line)
             if (not line) or match:
-                # we stop if we reached the end of the stream or a stop boundary
-                # (which means '--' after the boundary)
-                # we continue to the next part if we reached a simple boundary
-                # in either case this would mean the entity is malformed, but we're
-                # tolerating it anyway.
+		# we stop if we reached the end of the stream or a stop
+		# boundary (which means '--' after the boundary) we
+		# continue to the next part if we reached a simple
+		# boundary in either case this would mean the entity is
+		# malformed, but we're tolerating it anyway.
                 end_of_stream = (not line) or (match.group(1) is not None)
                 continue
   
@@ -199,11 +261,12 @@ class FieldStorage:
                 line = nextline
                 match = boundary.match(line)
                 if (not line) or match:
-                    # we stop if we reached the end of the stream or a stop boundary
-                    # (which means '--' after the boundary)
-                    # we continue to the next part if we reached a simple boundary
-                    # in either case this would mean the entity is malformed, but we're
-                    # tolerating it anyway.
+		    # we stop if we reached the end of the stream or a
+		    # stop boundary (which means '--' after the
+		    # boundary) we continue to the next part if we
+		    # reached a simple boundary in either case this
+		    # would mean the entity is malformed, but we're
+		    # tolerating it anyway.
                     skip_this_part = True
                     end_of_stream = (not line) or (match.group(1) is not None)
                     break
@@ -284,8 +347,8 @@ class FieldStorage:
             elif line[-1:] == '\r':
                 # the line ends with \r, which is only possible if
                 # readBlockSize bytes have been read. In that case the
-                # \r COULD be part of the next boundary, so we save it for the next
-                # iteration
+                # \r COULD be part of the next boundary, so we save it
+                # for the next iteration
                 assert len(line) == readBlockSize
                 if file is not None:
                     if previous_delimiter is not None: file.write(previous_delimiter)
@@ -305,7 +368,7 @@ class FieldStorage:
 
     def __getitem__(self, key):
         """Dictionary style indexing."""
-        found = self.dictionary[key]
+        found = self.list.table()[key]
         if len(found) == 1:
             return found[0]
         else:
@@ -319,29 +382,29 @@ class FieldStorage:
 
     def keys(self):
         """Dictionary style keys() method."""
-        return self.dictionary.keys()
+        return self.list.table().keys()
 
     def has_key(self, key):
         """Dictionary style has_key() method."""
-        return (key in self.dictionary)
+        return (key in self.list.table())
 
     __contains__ = has_key
 
     def __len__(self):
         """Dictionary style len(x) support."""
-        return len(self.dictionary.keys())
+        return len(self.list.table().keys())
 
     def getfirst(self, key, default=None):
         """ return the first value received """
         try:
-            return self.dictionary[key][0]
+            return self.list.table()[key][0]
         except KeyError:
             return default
 
     def getlist(self, key):
         """ return a list of received values """
         try:
-            return self.dictionary[key]
+            return self.list.table()[key]
         except KeyError:
             return []
            
@@ -349,21 +412,7 @@ class FieldStorage:
         """Dictionary-style items(), except that items are returned in the same
         order as they were supplied in the form."""
         return [(item.name, item) for item in self.list]
-       
-    def __getattr__(self, name):
-        if name != 'dictionary':
-            raise AttributeError, name
-        list = self.list
-        if list is None:
-            raise TypeError, "not indexable"
-        result = {}
-        self.dictionary = result
-        for item in list:
-            if item.name in result:
-                result[item.name].append(item)
-            else:
-                result[item.name] = [item]
-        return result
+
 
 def parse_header(line):
     """Parse a Content-type like header.
