@@ -362,6 +362,11 @@ looks like this now:
   </Directory>
 \end{verbatim}          
 
+Note that depending on which version of Apache is being used, you may need
+to set either the \code{AuthAuthoritative} or \code{AuthBasicAuthoritative}
+directive to \code{Off} to tell Apache that you want allow the task of
+performing basic authentication to fall through to your handler.
+
 Now we need to write an authentication handler function in
 \file{myscript.py}. A basic authentication handler would look like
 this:
