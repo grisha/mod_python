@@ -422,7 +422,7 @@ class FieldStorage:
 
     def __len__(self):
         """Dictionary style len(x) support."""
-        return len(self.list.table().keys())
+        return len(self.list.table())
 
     def getfirst(self, key, default=None):
         """ return the first value received """
