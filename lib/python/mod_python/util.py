@@ -1,4 +1,15 @@
-
+ # vim: set sw=4 expandtab :
+ #
+ # Copyright 2004 Apache Software Foundation 
+ # 
+ # Licensed under the Apache License, Version 2.0 (the "License"); you
+ # may not use this file except in compliance with the License.  You
+ # may obtain a copy of the License at
+ #
+ #      http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # Unless required by applicable law or agreed to in writing, software
+ # distributed under the License is distributed on an "AS IS" BASIS,
 #
 # Copyright 2004 Apache Software Foundation
 #
@@ -51,12 +62,12 @@ class Field:
     def __init__(self, name, *args, **kwargs):
         self.name = name
 
-	# Some third party packages such as Trac create
-	# instances of the Field object and insert it
-	# directly into the list of form fields. To
-	# maintain backward compatibility check for
-	# where more than just a field name is supplied
-	# and invoke an additional initialisation step
+        # Some third party packages such as Trac create
+        # instances of the Field object and insert it
+        # directly into the list of form fields. To
+        # maintain backward compatibility check for
+        # where more than just a field name is supplied
+        # and invoke an additional initialisation step
         # to process the arguments. Ideally, third party
         # code should use the add_field() method of the
         # form, but if they need to maintain backward
@@ -194,10 +205,10 @@ class FieldStorage:
 
     def __init__(self, req, keep_blank_values=0, strict_parsing=0, file_callback=None, field_callback=None):
         #
-	# Whenever readline is called ALWAYS use the max size EVEN when
-	# not expecting a long line. - this helps protect against
-	# malformed content from exhausting memory.
-	#
+        # Whenever readline is called ALWAYS use the max size EVEN when
+        # not expecting a long line. - this helps protect against
+        # malformed content from exhausting memory.
+        #
 
         self.list = FieldList()
 
@@ -256,11 +267,11 @@ class FieldStorage:
             line = req.readline(readBlockSize)
             match = boundary.match(line)
             if (not line) or match:
-		# we stop if we reached the end of the stream or a stop
-		# boundary (which means '--' after the boundary) we
-		# continue to the next part if we reached a simple
-		# boundary in either case this would mean the entity is
-		# malformed, but we're tolerating it anyway.
+                # we stop if we reached the end of the stream or a stop
+                # boundary (which means '--' after the boundary) we
+                # continue to the next part if we reached a simple
+                # boundary in either case this would mean the entity is
+                # malformed, but we're tolerating it anyway.
                 end_of_stream = (not line) or (match.group(1) is not None)
                 continue
   
@@ -291,12 +302,12 @@ class FieldStorage:
                 line = nextline
                 match = boundary.match(line)
                 if (not line) or match:
-		    # we stop if we reached the end of the stream or a
-		    # stop boundary (which means '--' after the
-		    # boundary) we continue to the next part if we
-		    # reached a simple boundary in either case this
-		    # would mean the entity is malformed, but we're
-		    # tolerating it anyway.
+                    # we stop if we reached the end of the stream or a
+                    # stop boundary (which means '--' after the
+                    # boundary) we continue to the next part if we
+                    # reached a simple boundary in either case this
+                    # would mean the entity is malformed, but we're
+                    # tolerating it anyway.
                     skip_this_part = True
                     end_of_stream = (not line) or (match.group(1) is not None)
                     break
