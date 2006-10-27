@@ -137,7 +137,12 @@ class BaseSession(dict):
         
         dict.__init__(self)
 
-        session_cookie_name = req.get_options().get("session_cookie_name",COOKIE_NAME)
+        config = req.get_options()
+        if config.has_key("mod_python.session.cookie_name"):
+            session_cookie_name = config.get("mod_python.session.cookie_name", COOKIE_NAME)
+        else:
+            # For backwards compatability only.
+            session_cookie_name = config.get("session_cookie_name", COOKIE_NAME)
 
         if not self._sid:
             # check to see if cookie exists
@@ -185,7 +190,12 @@ class BaseSession(dict):
             self.cleanup()
 
     def make_cookie(self):
-        session_cookie_name = self._req.get_options().get("session_cookie_name",COOKIE_NAME)
+        config = self._req.get_options()
+        if config.has_key("mod_python.session.cookie_name"):
+            session_cookie_name = config.get("mod_python.session.cookie_name", COOKIE_NAME)
+        else:
+            # For backwards compatability only.
+            session_cookie_name = config.get("session_cookie_name", COOKIE_NAME)
 
         if self._secret:
             c = Cookie.SignedCookie(session_cookie_name, self._sid,
@@ -193,10 +203,12 @@ class BaseSession(dict):
         else:
             c = Cookie.Cookie(session_cookie_name, self._sid)
 
-        config = self._req.get_options()
         if config.has_key("mod_python.session.application_domain"): 
             c.domain = config["mod_python.session.application_domain"] 
-        if config.has_key("ApplicationPath"):
+        if config.has_key("mod_python.session.application_path"):
+            c.path = config["mod_python.session.application_path"]
+        elif config.has_key("ApplicationPath"):
+            # For backwards compatability only.
             c.path = config["ApplicationPath"]
         else:
             # the path where *Handler directive was specified
@@ -327,9 +339,17 @@ class DbmSession(BaseSession):
 
         if not dbm:
             opts = req.get_options()
-            if opts.has_key("session_dbm"):
+            if opts.has_key("mod_python.dbm_session.database_filename"):
+                dbm = opts["mod_python.dbm_session.database_filename"]
+            elif opts.has_key("session_dbm"):
+                # For backwards compatability only.
                 dbm = opts["session_dbm"]
+            elif opts.has_key("mod_python.dbm_session.database_directory"):
+                dbm = os.path.join(opts.get('mod_python.dbm_session.database_directory', tempdir), 'mp_sess.dbm')
+            elif opts.has_key("mod_python.session.database_directory"):
+                dbm = os.path.join(opts.get('mod_python.session.database_directory', tempdir), 'mp_sess.dbm')
             else:
+                # For backwards compatability only.
                 dbm = os.path.join(opts.get('session_directory', tempdir), 'mp_sess.dbm')
 
         self._dbmfile = dbm
@@ -404,18 +424,42 @@ class FileSession(BaseSession):
         opts = req.get_options()
 
         if fast_cleanup == -1:
-            self._fast_cleanup = true_or_false(opts.get('session_fast_cleanup', DFT_FAST_CLEANUP))
+            if opts.has_key('mod_python.file_session.enable_fast_cleanup'):
+                self._fast_cleanup = true_or_false(opts.get('mod_python.file_session.enable_fast_cleanup', DFT_FAST_CLEANUP))
+            else:
+                # For backwards compatability only.
+                self._fast_cleanup = true_or_false(opts.get('session_fast_cleanup', DFT_FAST_CLEANUP))
         else:
             self._fast_cleanup = fast_cleanup
 
         if verify_cleanup == -1:
-            self._verify_cleanup = true_or_false(opts.get('session_verify_cleanup', DFT_VERIFY_CLEANUP))
+            if opts.has_key('mod_python.file_session.verify_session_timeout'):
+                self._verify_cleanup = true_or_false(opts.get('mod_python.file_session.verify_session_timeout', DFT_VERIFY_CLEANUP))
+            else:
+                # For backwards compatability only.
+                self._verify_cleanup = true_or_false(opts.get('session_verify_cleanup', DFT_VERIFY_CLEANUP))
         else:
             self._verify_cleanup = verify_cleanup
-            
-        self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
-        self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
-        self._sessdir = os.path.join(opts.get('session_directory', tempdir), 'mp_sess')
+
+        if opts.has_key('mod_python.file_session.cleanup_grace_period'):
+            self._grace_period = int(opts.get('mod_python.file_session.cleanup_grace_period', DFT_GRACE_PERIOD))
+        else:
+            # For backwards compatability only.
+            self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
+
+        if opts.has_key('mod_python.file_session.cleanup_time_limit'):
+            self._cleanup_time_limit = int(opts.get('mod_python.file_session.cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
+        else:
+            # For backwards compatability only.
+            self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
+
+        if opts.has_key('mod_python.file_session.database_directory'):
+            self._sessdir = os.path.join(opts.get('mod_python.file_session.database_directory', tempdir), 'mp_sess')
+        elif opts.has_key('mod_python.session.database_directory'):
+            self._sessdir = os.path.join(opts.get('mod_python.session.database_directory', tempdir), 'mp_sess')
+        else:
+            # For backwards compatability only.
+            self._sessdir = os.path.join(opts.get('session_directory', tempdir), 'mp_sess')
 
         # FIXME
         if timeout:
@@ -708,8 +752,11 @@ class MemorySession(BaseSession):
 def Session(req, sid=0, secret=None, timeout=0, lock=1):
 
     opts = req.get_options()
-    if opts.has_key('session'):
-        # Check the apache config for the type of session
+    # Check the apache config for the type of session
+    if opts.has_key('mod_python.session.session_type'):
+        sess_type = opts['mod_python.session.session_type']
+    elif opts.has_key('session'):
+        # For backwards compatability only.
         sess_type = opts['session']
     else:
         # no session class in config so get the default for the platform

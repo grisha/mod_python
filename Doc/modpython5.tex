@@ -741,25 +741,33 @@ The following PythonOption keys are currently used by mod_python.
 % Note - Make sure you put a space character in any empty tables cells.
 %        Otherwise the formatting will be messed up.
 \begin{tableiii}{l|c|l}{textrm}{Key}{Required Value}{Notes}
-  \lineiii{mod_python.future.importer}{*}{Enables the experimental module importer.}
+  \lineiii{mod_python.legacy.importer}{*}{Enables the obsolete importer.}
   \lineiii{mod_python.mutex_directory}{ }{ }
   \lineiii{mod_python.mutex_locks}{ }{ }
   \lineiii{mod_python.psp.cache_database_filename}{ }{ }
   \lineiii{mod_python.session.session_type}{ }{ }
   \lineiii{mod_python.session.cookie_name}{ }{ }
+  \lineiii{mod_python.session.application_domain}{ }{ }
   \lineiii{mod_python.session.application_path}{ }{ }
+  \lineiii{mod_python.session.database_directory}{ }{ }
   \lineiii{mod_python.dbm_session.database_filename}{ }{ }
+  \lineiii{mod_python.dbm_session.database_directory}{ }{ }
   \lineiii{mod_python.file_session.enable_fast_cleanup}{ }{ }
   \lineiii{mod_python.file_session.verify_session_timeout}{ }{ }
   \lineiii{mod_python.file_session.cleanup_grace_period}{ }{ }
   \lineiii{mod_python.file_session.cleanup_time_limit}{ }{ }
+  \lineiii{mod_python.file_session.database_directory}{ }{ }
 
   \lineiii{session}{ }{Deprecated, use mod_python.session.session_type}
+  \lineiii{ApplicationPath}{ }{Deprecated, use mod_python.session.application_path}
+  \lineiii{session_cookie_name}{ }{Deprecated, use mod_python.session.cookie_name}
   \lineiii{session_directory}{ }{Deprecated, use mod_python.session.session_directory}
+  \lineiii{session_dbm}{ }{Deprecated, use mod_python.dbm_session.database_filename}
+  \lineiii{session_cleanup_time_limit}{ }{Deprecated, use mod_python.file_session.cleanup_time_limit}
   \lineiii{session_fast_cleanup}{ }{Deprecated, use mod_python.file_session.enable_fast_cleanup}
   \lineiii{session_grace_period}{ }{Deprecated, use mod_python.file_session.cleanup_grace_period}
   \lineiii{session_verify_cleanup}{ }{Deprecated, use mod_python.file_session.cleanup_session_timeout}
-  \lineiii{mod_python.}{ }{ }
+  \lineiii{PSPDbmCache}{ }{Deprecated, use mod_python.psp.cache_database_filename}
 \end{tableiii}
 
 

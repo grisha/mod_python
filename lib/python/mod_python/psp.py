@@ -1,3 +1,4 @@
+ # vim: set sw=4 expandtab :
  #
  # Copyright 2004 Apache Software Foundation 
  # 
@@ -130,7 +131,10 @@ class PSP:
     def cache_get(self, filename, mtime):
 
         opts = self.req.get_options()
-        if opts.has_key("PSPDbmCache"):
+        if opts.has_key("mod_python.psp.cache_database_filename"):
+            self.dbmcache = opts["mod_python.psp.cache_database_filename"]
+        elif opts.has_key("PSPDbmCache"):
+            # For backwards compatability only.
             self.dbmcache = opts["PSPDbmCache"]
 
         if self.dbmcache:
