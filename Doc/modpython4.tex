@@ -1741,16 +1741,25 @@ class. This class is similar to the standard library module
   consumed at this point, there should be no more than one
   \class{FieldStorage} class instantiated per single request, nor should
   you make any attempts to read client data before or after
-  instantiating a \class{FieldStorage}.
+  instantiating a \class{FieldStorage}. A suggested strategy for dealing
+  with this is that any handler should first check for the existance of
+  a \code{form} attribute within the request object. If this exists, it
+  should be taken to be an existing instance of the \class{FieldStorage}
+  class and that should be used. If the attribute does not exist
+  and needs to be created, it should be cached as the \code{form}
+  attribute of the request object so later handler code can use it.
 
-  The data read from the client is then parsed into separate fields and
-  packaged in \class{Field} objects, one per field. For HTML form inputs
-  of type \code{file}, a temporary file is created that can later be
-  accessed via the \member{file} attribute of a \class{Field} object.
+  When the \class{FieldStorage} class instance is created, the data read
+  from the client is then parsed into separate fields and packaged in
+  \class{Field} objects, one per field. For HTML form inputs of type
+  \code{file}, a temporary file is created that can later be accessed via
+  the \member{file} attribute of a \class{Field} object.
 
   The \class{FieldStorage} class has a mapping object interface, i.e. it
-  can be treated like a dictionary. When used as a mapping, the keys are
-  form input names, and the returned dictionary value can be:
+  can be treated like a dictionary in most instances, but is missing some
+  methods provided by dictionaries so is not completely compatible. When
+  used as a mapping, the keys are form input names, and the returned
+  dictionary value can be:
 
   \begin{itemize}
   \item
@@ -1786,6 +1795,24 @@ class. This class is similar to the standard library module
 
   \class{FieldStorage} methods:
 
+  \begin{methoddesc}[FieldStorage]{add_field}{name, value}
+    Adds an additional form field with \var{name} and \var{value}.
+    If a form field already exists with \var{name}, the \var{value}
+    will be added to the list of existing values for the form field.
+    This method should be used for adding additional fields in
+    preference to adding new fields direct to the list of fields.
+  \end{methoddesc}
+
+  \begin{methoddesc}[FieldStorage]{get}{name, default}
+    If there is only one value associated with form field \var{name}, that
+    single value will be returned. If there are multiple values, a list is
+    returned holding all values. If no such form field or value exists then
+    the method returns the value specified by the parameter \var{default}.
+    A subscript operator is also available which yields the same result
+    except that an exception will be raised where the form field \var{name}
+    does not exist.
+  \end{methoddesc}
+
   \begin{methoddesc}[FieldStorage]{getfirst}{name\optional{, default}}
     Always returns only one value associated with form field
     \var{name}. If no such form field or value exists then the method
@@ -1799,6 +1826,22 @@ class. This class is similar to the standard library module
     field \var{name}. The method returns an empty list if no such form
     field or value exists for \var{name}. It returns a list consisting
     of one item if only one such value exists.
+  \end{methoddesc}
+
+  \begin{methoddesc}[FieldStorage]{has_key}{name}
+    Returns \code{True} if \var{name} is a valid form field. The \code{in}
+    operator is also supported and will call this method.
+  \end{methoddesc}
+
+  \begin{methoddesc}[FieldStorage]{items}{}
+    Returns a list consisting of tuples for each combination of form
+    field name and value.
+  \end{methoddesc}
+
+  \begin{methoddesc}[FieldStorage]{keys}{}
+    This method returns the names of the form fields. The \code{len}
+    operator is also supported and will return the number of names
+    which would be returned by this method.
   \end{methoddesc}
 
 \end{classdesc}
