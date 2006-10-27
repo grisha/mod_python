@@ -65,7 +65,7 @@ class Field:
         # way of doing things and thus we need this code
         # for the forseeable future to cope with that.
 
-        if not args or not kwargs:
+        if args or kwargs:
             self.__bc_init__(*args, **kwargs)
 
     def __bc_init__(self, file, ctype, type_options,
