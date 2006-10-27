@@ -48,8 +48,38 @@ readBlockSize = 65368
 """
 
 class Field:
-    def __init__(self, name):
+    def __init__(self, name, *args, **kwargs):
         self.name = name
+
+	# Some third party packages such as Trac create
+	# instances of the Field object and insert it
+	# directly into the list of form fields. To
+	# maintain backward compatibility check for
+	# where more than just a field name is supplied
+	# and invoke an additional initialisation step
+        # to process the arguments. Ideally, third party
+        # code should use the add_field() method of the
+        # form, but if they need to maintain backward
+        # compatibility with older versions of mod_python
+        # they will not have a choice but to use old
+        # way of doing things and thus we need this code
+        # for the forseeable future to cope with that.
+
+        if not args or not kwargs:
+            self.__bc_init__(*args, **kwargs)
+
+    def __bc_init__(self, file, ctype, type_options,
+                    disp, disp_options, headers = {}):
+       self.file = file
+       self.type = ctype
+       self.type_options = type_options
+       self.disposition = disp
+       self.disposition_options = disp_options
+       if disp_options.has_key("filename"):
+           self.filename = disp_options["filename"]
+       else:
+           self.filename = None
+       self.headers = headers
 
     def __repr__(self):
         """Return printable representation."""
