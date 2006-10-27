@@ -1,3 +1,4 @@
+ # vim: set sw=4 expandtab :
  #
  # Copyright 2004 Apache Software Foundation
  #
@@ -415,9 +416,9 @@ class CallBack:
                         break
 
                 elif hlist.silent:
-		    # A missing handler when in silent mode will
-		    # only propagate DECLINED if it is the first
-		    # and only handler.
+                    # A missing handler when in silent mode will
+                    # only propagate DECLINED if it is the first
+                    # and only handler.
 
                     if result == HTTP_INTERNAL_SERVER_ERROR:
                         result = DECLINED

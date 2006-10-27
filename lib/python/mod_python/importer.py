@@ -232,14 +232,14 @@ def import_module(module_name, autoreload=None, log=None, path=None):
             file = os.path.join(directory, module_name)
 
     if file is None:
-	# If not an explicit file reference, it is a
-	# module name. Determine the list of directories
-	# that need to be searched for a module code
-	# file. These directories will be, the directory
-	# of the parent if also imported using this
-	# importer and any specified search path. When
-	# enabled, the handler root directory will also
-	# be searched.
+        # If not an explicit file reference, it is a
+        # module name. Determine the list of directories
+        # that need to be searched for a module code
+        # file. These directories will be, the directory
+        # of the parent if also imported using this
+        # importer and any specified search path. When
+        # enabled, the handler root directory will also
+        # be searched.
 
         search_path = []
 
@@ -981,12 +981,12 @@ class _ModuleImporter:
         if parent_info is None:
             return None
 
-	# Determine the list of directories that need to
-	# be searched for a module code file. These
-	# directories will be, the directory of the
-	# parent and any specified search path. When
-	# enabled, the handler root directory will also
-	# be searched.
+        # Determine the list of directories that need to
+        # be searched for a module code file. These
+        # directories will be, the directory of the
+        # parent and any specified search path. When
+        # enabled, the handler root directory will also
+        # be searched.
 
         search_path = []
 
@@ -1425,14 +1425,14 @@ def HandlerDispatch(self, req):
     try:
         (aborted, hlist) = False, req.hlist
 
-	# The actual handler root is the directory
-	# associated with the handler first in the
-	# chain. This may be a handler which was called
-	# in an earlier phase if the req.add_handler()
-	# method was used. The directory for those that
-	# follow the first may have been overridden by
-	# directory supplied to the req.add_handler()
-	# method.
+        # The actual handler root is the directory
+        # associated with the handler first in the
+        # chain. This may be a handler which was called
+        # in an earlier phase if the req.add_handler()
+        # method was used. The directory for those that
+        # follow the first may have been overridden by
+        # directory supplied to the req.add_handler()
+        # method.
 
         root = hlist.directory
         parent = hlist.parent
@@ -1673,15 +1673,15 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
             if str(etype) == "exceptions.IOError" \
                and str(evalue)[:5] == "Write":
 
-		# If this is an I/O error while writing to
-		# client, it is probably better not to try to
-		# write to the cleint even if debug is on.
+                # If this is an I/O error while writing to
+                # client, it is probably better not to try to
+                # write to the cleint even if debug is on.
 
-		# XXX Note that a failure to write back data in
-		# a response should be indicated by a special
-		# exception type which is caught here and not a
-		# generic I/O error as there could be false
-		# positives. See MODPYTHON-92.
+                # XXX Note that a failure to write back data in
+                # a response should be indicated by a special
+                # exception type which is caught here and not a
+                # generic I/O error as there could be false
+                # positives. See MODPYTHON-92.
 
                 debug = 0
 
@@ -1770,8 +1770,8 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
                 return apache.DONE
 
         except:
-	    # When all else fails try and dump traceback
-	    # directory standard error and flush it.
+            # When all else fails try and dump traceback
+            # directory standard error and flush it.
 
             traceback.print_exc()
             sys.stderr.flush()
