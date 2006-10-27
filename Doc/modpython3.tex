@@ -473,3 +473,12 @@ render your page, and then \code{return(apache.OK)}:
       req.write(pagebuffer)
       return(apache.OK)
 \end{verbatim}
+
+Note that if wishing to returning an error page from a handler phase other
+than the response handler, the value \code{apache.DONE} must be returned
+instead of \code{apache.OK}. If this is not done, subsequent handler phases
+will still be run. The value of \code{apache.DONE} indicates that processing
+of the request should be stopped immediately. If using stacked response
+handlers, then \code{apache.DONE} should also be returned in that situation
+to prevent subsequent handlers registered for that phase being run if
+appropriate.
