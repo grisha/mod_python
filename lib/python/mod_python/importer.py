@@ -57,6 +57,8 @@ except:
 # module on top of the old module, but loads the new
 # instance into a clean module.
 
+class _module_cache(dict): pass
+
 _request_modules_cache = {}
 
 def _cleanup_request_modules_cache(thread=None):
@@ -66,7 +68,7 @@ def _cleanup_request_modules_cache(thread=None):
 def _setup_request_modules_cache(req=None):
     thread = threading.currentThread()
     if not _request_modules_cache.has_key(thread):
-        _request_modules_cache[thread] = {}
+        _request_modules_cache[thread] = _module_cache()
         if req:
             req.register_cleanup(_cleanup_request_modules_cache, thread)
 
@@ -528,11 +530,26 @@ class _ModuleCache:
 
             cache.lock.acquire()
 
+            # If this per request modules cache has just
+            # been created for the first time, record some
+            # details in it about current cache state and
+            # run time of the request.
+
+            if not hasattr(modules, 'generation'):
+                modules.generation = self._generation
+                modules.stime = time.time()
+
+            # Import module or obtain it from cache as is
+            # appropriate.
+
             if load:
 
                 # Setup a new empty module to load the code for
-                # the module into.
+                # the module into. Increment the instance count
+                # and invalidate the generation so that if it
+                # fails to load we know about it.
 
+                cache.generation = 0
                 cache.instance = cache.instance + 1
 
                 module = imp.new_module(label)
@@ -1736,38 +1753,109 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
 
             if not debug or not req:
                 return apache.HTTP_INTERNAL_SERVER_ERROR
-            else:
-                req.status = apache.HTTP_INTERNAL_SERVER_ERROR
-                req.content_type = 'text/html'
 
-                text = '\n<pre>\nMOD_PYTHON ERROR\n\n'
-                text = text + 'PID: %s\n' % pid
-                text = text + 'Interpreter: %s\n' % `iname`
-                text = text + 'Phase: %s\n' % `phase`
+            output = StringIO.StringIO()
 
-                if req:
-                    text = text + '\n'
-                    text = text + 'URI: %s\n' % `req.uri`
-                    text = text + 'Location: %s\n' % `location`
-                    text = text + 'Directory: %s\n' % `directory`
-                    text = text + 'Filename: %s\n' % `req.filename`
-                    text = text + 'PathInfo: %s\n' % `req.path_info`
+            req.status = apache.HTTP_INTERNAL_SERVER_ERROR
+            req.content_type = 'text/html'
 
-                text = text + '\n'
-                text = text + 'Handler: %s\n' % cgi.escape(repr(hname))
-                text = text + '\n'
+            print >> output
+            print >> output, '<pre>'
+            print >> output, 'MOD_PYTHON ERROR'
+            print >> output
+            print >> output, 'PID: %s' % pid
+            print >> output, 'Interpreter: %s' % `iname`
+            print >> output, 'Phase: %s' % `phase`
 
-                for line in tb:
-                    text = text + cgi.escape(line) + '\n'
-                text = text + "</pre>\n"
+            if req:
+                print >> output
+                print >> output, 'URI: %s' % `req.uri`
+                print >> output, 'Location: %s' % `location`
+                print >> output, 'Directory: %s' % `directory`
+                print >> output, 'Filename: %s' % `req.filename`
+                print >> output, 'PathInfo: %s' % `req.path_info`
 
-                if filter:
-                    filter.write(text)
-                    filter.flush()
+            print >> output
+            print >> output, 'Handler: %s' % cgi.escape(repr(hname))
+            print >> output
+
+            for line in tb:
+                print >> output, cgi.escape(line)
+            print >> output, "</pre>"
+
+            modules = _get_request_modules_cache()
+
+            stime = time.asctime(time.localtime(modules.stime))
+
+            print >> output, '<pre>'
+            print >> output, 'MODULE CACHE DETAILS'
+            print >> output
+            print >> output, 'Generation: %s' % modules.generation
+            print >> output, 'FirstAccess: %s' % stime
+            print >> output
+
+            labels = modules.keys()
+            labels.sort()
+
+            for label in labels:
+
+                module = modules[label]
+
+                name = module.__name__
+                filename = module.__file__
+
+                cache = module.__mp_info__.cache
+
+                ctime = time.asctime(time.localtime(cache.ctime))
+                mtime = time.asctime(time.localtime(cache.mtime))
+                atime = time.asctime(time.localtime(cache.atime))
+                instance = cache.instance
+                generation = cache.generation
+                direct = cache.direct
+                indirect = cache.indirect
+                path = module.__mp_path__
+
+                print >> output, '%s {' % name
+                print >> output, '  Module: %s,' % `filename`
+                print >> output, '  Instance: %s,' % instance
+                if generation == 0:
+                    print >> output, '  Generation: %s [FAIL],' % generation
+                elif generation > modules.generation:
+                    print >> output, '  Generation: %s [NEW],' % generation
                 else:
-                    req.write(text)
+                    print >> output, '  Generation: %s,' % generation
+                print >> output, '  LastModified: %s,' % mtime
+                print >> output, '  LastImported: %s,' % ctime
+                print >> output, '  LastAccessed: %s,' % atime
+                print >> output, '  DirectHits: %s,' % direct
+                print >> output, '  IndirectHits: %s,' % indirect
+                print >> output, '  ModulePath: %s,' % path
 
-                return apache.DONE
+                print >> output, '  Children:',
+                children = module.__mp_info__.children
+                first = 1
+                for child_name in children:
+                    if first:
+                        first = 0
+                        print >> output, '%s' % child_name,
+                    else:
+                        print >> output, ', %s' % child_name,
+                print >> output
+
+                print >> output, '}'
+                print >> output
+
+            print >> output, '</pre>'
+
+            text = output.getvalue()
+
+            if filter:
+                filter.write(text)
+                filter.flush()
+            else:
+                req.write(text)
+
+            return apache.DONE
 
         except:
             # When all else fails try and dump traceback
