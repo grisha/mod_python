@@ -545,11 +545,8 @@ class _ModuleCache:
             if load:
 
                 # Setup a new empty module to load the code for
-                # the module into. Increment the instance count
-                # and invalidate the generation so that if it
-                # fails to load we know about it.
+                # the module into. Increment the instance count.
 
-                cache.generation = 0
                 cache.instance = cache.instance + 1
 
                 module = imp.new_module(label)
@@ -677,14 +674,13 @@ class _ModuleCache:
                     # import of the module, need to discard the
                     # cache entry entirely else a subsequent
                     # attempt to load the module will wrongly
-                    # think it was successfully loaded already.
-                    # If not a new import, need to ensure that
-                    # module will be reloaded again in future.
+		    # think it was successfully loaded already.
+		    # Reset modification time to ensure that
+		    # module will be reloaded again in future.
 
+                    cache.mtime = 0
                     if cache.module is None:
                         del self._cache[label]
-                    else:
-                        cache.mtime = 0
 
                     raise
 
@@ -1809,6 +1805,7 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
                 ctime = time.asctime(time.localtime(cache.ctime))
                 mtime = time.asctime(time.localtime(cache.mtime))
                 atime = time.asctime(time.localtime(cache.atime))
+
                 instance = cache.instance
                 generation = cache.generation
                 direct = cache.direct
@@ -1816,20 +1813,35 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
                 path = module.__mp_path__
 
                 print >> output, '%s {' % name
-                print >> output, '  Module: %s,' % `filename`
-                print >> output, '  Instance: %s,' % instance
-                if generation == 0:
-                    print >> output, '  Generation: %s [FAIL],' % generation
-                elif generation > modules.generation:
-                    print >> output, '  Generation: %s [NEW],' % generation
+                print >> output, '  Module: %s' % `filename`
+                if instance == 1 and (not cache.mtime or \
+                        generation > modules.generation):
+                    print >> output, '  Instance: %s [IMPORT]' % instance
+                elif not cache.mtime or generation > modules.generation:
+                    print >> output, '  Instance: %s [RELOAD]' % instance
                 else:
-                    print >> output, '  Generation: %s,' % generation
-                print >> output, '  LastModified: %s,' % mtime
-                print >> output, '  LastImported: %s,' % ctime
-                print >> output, '  LastAccessed: %s,' % atime
-                print >> output, '  DirectHits: %s,' % direct
-                print >> output, '  IndirectHits: %s,' % indirect
-                print >> output, '  ModulePath: %s,' % path
+                    print >> output, '  Instance: %s' % instance
+                if not cache.mtime:
+                    print >> output, '  Generation: %s [FAIL]' % generation
+                elif generation > modules.generation:
+                    print >> output, '  Generation: %s [NEW]' % generation
+                else:
+                    print >> output, '  Generation: %s' % generation
+                if cache.mtime:
+                    print >> output, '  LastModified: %s' % mtime
+                else:
+                    print >> output, '  LastModified:'
+                if cache.ctime:
+                    print >> output, '  LastImported: %s' % ctime
+                else:
+                    print >> output, '  LastImported:'
+                if cache.atime:
+                    print >> output, '  LastAccessed: %s' % atime
+                else:
+                    print >> output, '  LastAccessed:'
+                print >> output, '  DirectHits: %s' % direct
+                print >> output, '  IndirectHits: %s' % indirect
+                print >> output, '  ModulePath: %s' % path
 
                 print >> output, '  Children:',
                 children = module.__mp_info__.children
