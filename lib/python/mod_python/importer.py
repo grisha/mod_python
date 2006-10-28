@@ -674,9 +674,9 @@ class _ModuleCache:
                     # import of the module, need to discard the
                     # cache entry entirely else a subsequent
                     # attempt to load the module will wrongly
-		    # think it was successfully loaded already.
-		    # Reset modification time to ensure that
-		    # module will be reloaded again in future.
+                    # think it was successfully loaded already.
+                    # Reset modification time to ensure that
+                    # module will be reloaded again in future.
 
                     cache.mtime = 0
                     if cache.module is None:
@@ -782,6 +782,17 @@ class _ModuleCache:
             # Check if reloads have been disabled.
 
             if self._frozen or not autoreload:
+
+                # Still reload if current module has
+                # been marked as dirty. This can occur
+                # where cache was frozen or reload
+                # enabled after time there was a failed
+                # import for a module and it hasn't
+                # been successfully loaded since.
+
+                if cache.mtime == 0:
+                    return (cache, True)
+
                 return (cache, False)
 
             # Has modification time changed.
