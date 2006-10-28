@@ -314,6 +314,7 @@ class _CacheInfo:
         self.ctime = 0
         self.direct = 0
         self.indirect = 0
+        self.reload = 0
         self.lock = threading.Lock()
 
 class _InstanceInfo:
@@ -545,9 +546,12 @@ class _ModuleCache:
             if load:
 
                 # Setup a new empty module to load the code for
-                # the module into. Increment the instance count.
+                # the module into. Increment the instance count
+                # and set the reload flag to force a reload if
+                # the import fails.
 
                 cache.instance = cache.instance + 1
+                cache.reload = 1
 
                 module = imp.new_module(label)
 
@@ -675,18 +679,16 @@ class _ModuleCache:
                     # cache entry entirely else a subsequent
                     # attempt to load the module will wrongly
                     # think it was successfully loaded already.
-                    # Reset modification time to ensure that
-                    # module will be reloaded again in future.
 
-                    cache.mtime = 0
                     if cache.module is None:
                         del self._cache[label]
 
                     raise
 
-                # Update the cache.
+                # Update the cache and clear the reload flag.
 
                 cache.module = module
+                cache.reload = 0
 
                 # Need to also update the list of child modules
                 # stored in the cache entry with the actual
@@ -780,22 +782,15 @@ class _ModuleCache:
             cache = self._cache[label]
 
             # Check if reloads have been disabled.
+            # Only avoid a reload though if module
+            # hadn't been explicitly marked to be
+            # reloaded.
 
-            if self._frozen or not autoreload:
+            if not cache.reload:
+                if self._frozen or not autoreload:
+                    return (cache, False)
 
-                # Still reload if current module has
-                # been marked as dirty. This can occur
-                # where cache was frozen or reload
-                # enabled after time there was a failed
-                # import for a module and it hasn't
-                # been successfully loaded since.
-
-                if cache.mtime == 0:
-                    return (cache, True)
-
-                return (cache, False)
-
-            # Has modification time changed.
+            # Determine modification time of file.
 
             try:
                 mtime = os.path.getmtime(file)
@@ -812,7 +807,10 @@ class _ModuleCache:
 
                 return (cache, False)
 
-            if mtime != cache.mtime:
+            # Check if modification time has changed or
+            # if module has been flagged to be reloaded.
+
+            if cache.reload or mtime != cache.mtime:
                 cache.mtime = mtime
                 return (cache, True)
 
@@ -856,10 +854,10 @@ class _ModuleCache:
         current.indirect = current.indirect + 1
         current.atime = time.time()
 
-        # Check if current module has been marked as
-        # dirty.
+        # Check if current module has been marked
+        # for reloading.
 
-        if current.mtime == 0:
+        if current.reload:
             return True
 
         # Check if current module has been reloaded
@@ -1798,7 +1796,7 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
             print >> output, 'MODULE CACHE DETAILS'
             print >> output
             print >> output, 'Generation: %s' % modules.generation
-            print >> output, 'FirstAccess: %s' % stime
+            print >> output, 'Created: %s' % stime
             print >> output
 
             labels = modules.keys()
@@ -1825,14 +1823,14 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
 
                 print >> output, '%s {' % name
                 print >> output, '  Module: %s' % `filename`
-                if instance == 1 and (not cache.mtime or \
+                if instance == 1 and (cache.reload or \
                         generation > modules.generation):
                     print >> output, '  Instance: %s [IMPORT]' % instance
-                elif not cache.mtime or generation > modules.generation:
+                elif cache.reload or generation > modules.generation:
                     print >> output, '  Instance: %s [RELOAD]' % instance
                 else:
                     print >> output, '  Instance: %s' % instance
-                if not cache.mtime:
+                if cache.reload:
                     print >> output, '  Generation: %s [FAIL]' % generation
                 elif generation > modules.generation:
                     print >> output, '  Generation: %s [NEW]' % generation
