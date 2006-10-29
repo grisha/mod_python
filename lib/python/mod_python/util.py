@@ -419,6 +419,9 @@ class FieldStorage:
     def __iter__(self):
         return iter(self.keys())
 
+    def __repr__(self):
+        return repr(self.list.table())
+
     def has_key(self, key):
         """Dictionary style has_key() method."""
         return (key in self.list.table())
