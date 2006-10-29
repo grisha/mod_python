@@ -447,9 +447,9 @@ class FieldStorage:
 
     def __delitem__(self, key):
         table = self.list.table()
-        if key in table:
-            for value in table[key]:
-                self.list.remove(value)
+        values = table[key]
+        for value in values:
+            self.list.remove(value)
 
     def clear(self):
         self.list = FieldList()
