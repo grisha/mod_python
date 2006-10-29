@@ -1756,10 +1756,12 @@ class. This class is similar to the standard library module
   the \member{file} attribute of a \class{Field} object.
 
   The \class{FieldStorage} class has a mapping object interface, i.e. it
-  can be treated like a dictionary in most instances, but is missing some
-  methods provided by dictionaries so is not completely compatible. When
-  used as a mapping, the keys are form input names, and the returned
-  dictionary value can be:
+  can be treated like a dictionary in most instances, but is not strictly
+  compatible as is it missing some methods provided by dictionaries and
+  some methods don't behave entirely like their counterparts, especially
+  when there is more than one value associated with a form field. When used
+  as a mapping, the keys are form input names, and the returned dictionary
+  value can be:
 
   \begin{itemize}
   \item
@@ -1801,6 +1803,13 @@ class. This class is similar to the standard library module
     will be added to the list of existing values for the form field.
     This method should be used for adding additional fields in
     preference to adding new fields direct to the list of fields.
+    When the subscript operator is used to update the form with new
+    fields, it is actually this method that is called.
+  \end{methoddesc}
+
+  \begin{methoddesc}[FieldStorage]{clear}{}
+    Removes all form fields. Individual form fields can be deleted
+    using the \code{del} operator.
   \end{methoddesc}
 
   \begin{methoddesc}[FieldStorage]{get}{name, default}
