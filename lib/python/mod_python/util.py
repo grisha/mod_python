@@ -347,6 +347,8 @@ class FieldStorage:
         item.name = key
         self.list.append(item)
 
+    __setitem__ = add_field
+
     def read_to_boundary(self, req, boundary, file):
         previous_delimiter = None
         while True:
@@ -442,6 +444,15 @@ class FieldStorage:
         """Dictionary-style items(), except that items are returned in the same
         order as they were supplied in the form."""
         return [(item.name, item) for item in self.list]
+
+    def __delitem__(self, key):
+        table = self.list.table()
+        if key in table:
+            for value in table[key]:
+                self.list.remove(value)
+
+    def clear(self):
+        self.list = FieldList()
 
 
 def parse_header(line):
