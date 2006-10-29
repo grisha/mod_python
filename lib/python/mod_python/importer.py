@@ -197,6 +197,10 @@ def _find_module(module_name, path):
 
     for directory in path:
         if directory is not None:
+            if directory[:2] == '~/':
+                root = get_handler_root()
+                if root is not None:
+                    directory = os.path.join(root, directory[2:])
             file = os.path.join(directory, module_name) + '.py'
             if os.path.exists(file):
                 return file
