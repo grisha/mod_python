@@ -240,24 +240,29 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         func_code = func_object.func_code
         func_globals = func_object.func_globals
 
-        if "__auth__" in func_code.co_names:
-            i = list(func_code.co_names).index("__auth__")
-            __auth__ = func_code.co_consts[i+1]
-            if hasattr(__auth__, "co_name"):
-                __auth__ = new.function(__auth__, func_globals)
-            found_auth = 1
+        def lookup(name):
+            i = None
+            if name in func_code.co_names:
+                i = list(func_code.co_names).index(name)
+            elif func_code.co_argcount < len(func_code.co_varnames):
+                names = func_code.co_varnames[func_code.co_argcount:]
+                if name in names:
+                    i = list(names).index(name)
+            if i is not None:
+                return (1, func_code.co_consts[i+1])
+            return (0, None)
 
-        if "__access__" in func_code.co_names:
-            # first check the constant names
-            i = list(func_code.co_names).index("__access__")
-            __access__ = func_code.co_consts[i+1]
-            if hasattr(__access__, "co_name"):
-                __access__ = new.function(__access__, func_globals)
-            found_access = 1
+        (found_auth, __auth__) = lookup('__auth__')
+        if found_auth and type(__auth__) == types.CodeType:
+            __auth__ = new.function(__auth__, func_globals)
 
-        if "__auth_realm__" in func_code.co_names:
-            i = list(func_code.co_names).index("__auth_realm__")
-            realm = func_code.co_consts[i+1]
+        (found_access, __access__) = lookup('__access__')
+        if found_access and type(__access__) == types.CodeType:
+            __access__ = new.function(__access__, func_globals)
+
+        (found_realm, __auth_realm__) = lookup('__auth_realm__')
+        if found_realm:
+            realm = __auth_realm__
 
     else:
         if hasattr(object, "__auth__"):
