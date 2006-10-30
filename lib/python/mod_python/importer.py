@@ -69,6 +69,8 @@ def _setup_request_modules_cache(req=None):
     thread = threading.currentThread()
     if not _request_modules_cache.has_key(thread):
         _request_modules_cache[thread] = _module_cache()
+        _request_modules_cache[thread].generation = 0
+        _request_modules_cache[thread].ctime = 0
         if req:
             req.register_cleanup(_cleanup_request_modules_cache, thread)
 
@@ -540,9 +542,9 @@ class _ModuleCache:
             # details in it about current cache state and
             # run time of the request.
 
-            if not hasattr(modules, 'generation'):
+            if modules.ctime == 0:
                 modules.generation = self._generation
-                modules.stime = time.time()
+                modules.ctime = time.time()
 
             # Import module or obtain it from cache as is
             # appropriate.
@@ -1794,13 +1796,13 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
 
             modules = _get_request_modules_cache()
 
-            if hasattr(modules, 'generation'):
-                stime = time.asctime(time.localtime(modules.stime))
+            if modules.ctime != 0:
+                accessed = time.asctime(time.localtime(modules.ctime))
 
                 print >> output
                 print >> output, 'MODULE CACHE DETAILS'
                 print >> output
-                print >> output, 'Accessed:       %s' % stime
+                print >> output, 'Accessed:       %s' % accessed
                 print >> output, 'Generation:     %s' % modules.generation
                 print >> output
 
@@ -1854,70 +1856,43 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
                     if cache.ctime:
                         print >> output, '  Imported:     %s' % ctime
 
-                    if len(path):
-                        i = 0
-                        print >> output, '  ModulePath:  ',
-                        for entry in path:
-                            if i == 0:
-                                if i == (len(path) - 1):
-                                    print >> output, '%s' % `entry`,
-                                else:
-                                    print >> output, '%s,' % `entry`,
-                            else:
-                                print >> output
-                                print >> output, '                %s' % `entry`,
-                            i += 1
-                        print >> output
+                    if path:
+                        text = ',\n                '.join(map(repr, path))
+                        print >> output, '  ModulePath:   %s' % text
 
                     friends = []
+                    children = []
+
                     if cache.reload:
-                        children = module.__mp_info__.children
+                        for child in module.__mp_info__.children:
+                            entry = modules[child].__mp_info__.file
+                            children.append(entry)
                     else:
-                        children = module.__mp_info__.cache.children
-                        dependents = module.__mp_info__.children
-                        for entry in dependents:
-                            if entry not in children:
-                                friends.append(entry)
-
-                    if len(children):
-                        i = 0
-                        print >> output, '  Children:    ',
-                        for child_name in children:
-                            child_cache = modules[child_name]
-                            entry = child_cache.__mp_info__.file
-                            if i == 0:
-                                if i == (len(children) - 1):
-                                    print >> output, '%s' % `entry`,
-                                else:
-                                    print >> output, '%s,' % `entry`,
-                            else:
-                                print >> output
-                                print >> output, '                %s' % `entry`,
-                            i += 1
-                        print >> output
-
-                    if len(friends):
-                        i = 0
-                        print >> output, '  Friends:     ',
-                        for child_name in friends:
-                            try:
-                                child_cache = modules[child_name]
-                                entry = child_cache.__mp_info__.file
-                            except:
+                        for child in module.__mp_info__.cache.children:
+                            entry = modules[child].__mp_info__.file
+                            children.append(entry)
+                        for child in module.__mp_info__.children:
+                            if child not in module.__mp_info__.cache.children:
                                 try:
-                                    entry = apache.module_info(child_name).file
+                                    entry = modules[child].__mp_info__.file
+                                    friends.append(entry)
                                 except:
-                                    entry = child_name
-                            if i == 0:
-                                if i == (len(friends) - 1):
-                                    print >> output, '%s' % `entry`,
-                                else:
-                                    print >> output, '%s,' % `entry`,
-                            else:
-                                print >> output
-                                print >> output, '                %s' % `entry`,
-                            i += 1
-                        print >> output
+                                    try:
+                                        entry = apache.module_info(child).file
+                                        friends.append(entry)
+                                    except:
+                                        pass
+
+                    children.sort()
+                    friends.sort()
+
+                    if children:
+                        text = ',\n                '.join(map(repr, children))
+                        print >> output, '  Children:     %s' % text
+
+                    if friends:
+                        text = ',\n                '.join(map(repr, friends))
+                        print >> output, '  Friends:      %s' % text
 
                     print >> output, '}'
                     print >> output
