@@ -975,6 +975,7 @@ def _get_global_modules_cache():
 
 apache.freeze_modules = _global_modules_cache.freeze_modules
 apache.modules_graph = _global_modules_cache.modules_graph
+apache.module_info = _global_modules_cache.module_info
 
 
 class _ModuleLoader:
@@ -1772,103 +1773,154 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
             print >> output, '<pre>'
             print >> output, 'MOD_PYTHON ERROR'
             print >> output
-            print >> output, 'PID: %s' % pid
-            print >> output, 'Interpreter: %s' % `iname`
-            print >> output, 'Phase: %s' % `phase`
+            print >> output, 'ProcessId:      %s' % pid
+            print >> output, 'Interpreter:    %s' % `iname`
 
             if req:
                 print >> output
-                print >> output, 'URI: %s' % `req.uri`
-                print >> output, 'Location: %s' % `location`
-                print >> output, 'Directory: %s' % `directory`
-                print >> output, 'Filename: %s' % `req.filename`
-                print >> output, 'PathInfo: %s' % `req.path_info`
+                print >> output, 'URI:            %s' % `req.uri`
+                print >> output, 'Location:       %s' % `location`
+                print >> output, 'Directory:      %s' % `directory`
+                print >> output, 'Filename:       %s' % `req.filename`
+                print >> output, 'PathInfo:       %s' % `req.path_info`
 
             print >> output
-            print >> output, 'Handler: %s' % cgi.escape(repr(hname))
+            print >> output, 'Phase:          %s' % `phase`
+            print >> output, 'Handler:        %s' % cgi.escape(repr(hname))
             print >> output
 
             for line in tb:
                 print >> output, cgi.escape(line)
-            print >> output, "</pre>"
 
             modules = _get_request_modules_cache()
 
-            stime = time.asctime(time.localtime(modules.stime))
+            if hasattr(modules, 'generation'):
+                stime = time.asctime(time.localtime(modules.stime))
 
-            print >> output, '<pre>'
-            print >> output, 'MODULE CACHE DETAILS'
-            print >> output
-            print >> output, 'Generation: %s' % modules.generation
-            print >> output, 'Created: %s' % stime
-            print >> output
+                print >> output
+                print >> output, 'MODULE CACHE DETAILS'
+                print >> output
+                print >> output, 'Accessed:       %s' % stime
+                print >> output, 'Generation:     %s' % modules.generation
+                print >> output
 
-            labels = modules.keys()
-            labels.sort()
+                labels = {}
 
-            for label in labels:
+                keys = modules.keys()
+                for key in keys:
+                    module = modules[key]
+                    labels[module.__file__] = key
 
-                module = modules[label]
+                keys = labels.keys()
+                keys.sort()
 
-                name = module.__name__
-                filename = module.__file__
+                for key in keys:
+                    label = labels[key]
 
-                cache = module.__mp_info__.cache
+                    module = modules[label]
 
-                ctime = time.asctime(time.localtime(cache.ctime))
-                mtime = time.asctime(time.localtime(cache.mtime))
-                atime = time.asctime(time.localtime(cache.atime))
+                    name = module.__name__
+                    filename = module.__file__
 
-                instance = cache.instance
-                generation = cache.generation
-                direct = cache.direct
-                indirect = cache.indirect
-                path = module.__mp_path__
+                    cache = module.__mp_info__.cache
 
-                print >> output, '%s {' % name
-                print >> output, '  Module: %s' % `filename`
-                if instance == 1 and (cache.reload or \
-                        generation > modules.generation):
-                    print >> output, '  Instance: %s [IMPORT]' % instance
-                elif cache.reload or generation > modules.generation:
-                    print >> output, '  Instance: %s [RELOAD]' % instance
-                else:
-                    print >> output, '  Instance: %s' % instance
-                if cache.reload:
-                    print >> output, '  Generation: %s [FAIL]' % generation
-                elif generation > modules.generation:
-                    print >> output, '  Generation: %s [NEW]' % generation
-                else:
-                    print >> output, '  Generation: %s' % generation
-                if cache.mtime:
-                    print >> output, '  LastModified: %s' % mtime
-                else:
-                    print >> output, '  LastModified:'
-                if cache.ctime:
-                    print >> output, '  LastImported: %s' % ctime
-                else:
-                    print >> output, '  LastImported:'
-                if cache.atime:
-                    print >> output, '  LastAccessed: %s' % atime
-                else:
-                    print >> output, '  LastAccessed:'
-                print >> output, '  DirectHits: %s' % direct
-                print >> output, '  IndirectHits: %s' % indirect
-                print >> output, '  ModulePath: %s' % path
+                    ctime = time.asctime(time.localtime(cache.ctime))
+                    mtime = time.asctime(time.localtime(cache.mtime))
+                    atime = time.asctime(time.localtime(cache.atime))
 
-                print >> output, '  Children:',
-                children = module.__mp_info__.children
-                first = 1
-                for child_name in children:
-                    if first:
-                        first = 0
-                        print >> output, '%s' % child_name,
+                    instance = cache.instance
+                    generation = cache.generation
+                    direct = cache.direct
+                    indirect = cache.indirect
+                    path = module.__mp_path__
+
+                    print >> output, '%s {' % name
+                    print >> output, '  FileName:     %s' % `filename`
+                    print >> output, '  Instance:     %s' % instance,
+                    if instance == 1 and (cache.reload or \
+                            generation > modules.generation):
+                        print >> output, '[IMPORT]'
+                    elif cache.reload or generation > modules.generation:
+                        print >> output, '[RELOAD]'
                     else:
-                        print >> output, ', %s' % child_name,
-                print >> output
+                        print >> output
+                    print >> output, '  Generation:   %s' % generation,
+                    if cache.reload:
+                        print >> output, '[ERROR]'
+                    else:
+                        print >> output
+                    if cache.mtime:
+                        print >> output, '  Modified:     %s' % mtime
+                    if cache.ctime:
+                        print >> output, '  Imported:     %s' % ctime
 
-                print >> output, '}'
-                print >> output
+                    if len(path):
+                        i = 0
+                        print >> output, '  ModulePath:  ',
+                        for entry in path:
+                            if i == 0:
+                                if i == (len(path) - 1):
+                                    print >> output, '%s' % `entry`,
+                                else:
+                                    print >> output, '%s,' % `entry`,
+                            else:
+                                print >> output
+                                print >> output, '                %s' % `entry`,
+                            i += 1
+                        print >> output
+
+                    friends = []
+                    if cache.reload:
+                        children = module.__mp_info__.children
+                    else:
+                        children = module.__mp_info__.cache.children
+                        dependents = module.__mp_info__.children
+                        for entry in dependents:
+                            if entry not in children:
+                                friends.append(entry)
+
+                    if len(children):
+                        i = 0
+                        print >> output, '  Children:    ',
+                        for child_name in children:
+                            child_cache = modules[child_name]
+                            entry = child_cache.__mp_info__.file
+                            if i == 0:
+                                if i == (len(children) - 1):
+                                    print >> output, '%s' % `entry`,
+                                else:
+                                    print >> output, '%s,' % `entry`,
+                            else:
+                                print >> output
+                                print >> output, '                %s' % `entry`,
+                            i += 1
+                        print >> output
+
+                    if len(friends):
+                        i = 0
+                        print >> output, '  Friends:     ',
+                        for child_name in friends:
+                            try:
+                                child_cache = modules[child_name]
+                                entry = child_cache.__mp_info__.file
+                            except:
+                                try:
+                                    entry = apache.module_info(child_name).file
+                                except:
+                                    entry = child_name
+                            if i == 0:
+                                if i == (len(friends) - 1):
+                                    print >> output, '%s' % `entry`,
+                                else:
+                                    print >> output, '%s,' % `entry`,
+                            else:
+                                print >> output
+                                print >> output, '                %s' % `entry`,
+                            i += 1
+                        print >> output
+
+                    print >> output, '}'
+                    print >> output
 
             print >> output, '</pre>'
 
