@@ -144,9 +144,9 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     const char *dir = NULL;
     const char *currphase;
 
-    if (! PyArg_ParseTuple(args, "ss|s", &phase, &handler, &dir)) {
+    if (! PyArg_ParseTuple(args, "ss|z", &phase, &handler, &dir)) {
         PyErr_Clear();
-        if (! PyArg_ParseTuple(args, "sO|s", &phase, &callable, &dir)) {
+        if (! PyArg_ParseTuple(args, "sO|z", &phase, &callable, &dir)) {
             PyErr_SetString(PyExc_ValueError, 
                             "handler must be a string or callable object");
             return NULL;
