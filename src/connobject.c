@@ -76,7 +76,7 @@ static PyObject * conn_log_error(connobject *self, PyObject *args)
 #if AP_MODULE_MAGIC_AT_LEAST(20020903,10)
         ap_log_cerror(APLOG_MARK, level, 0, self->conn, "%s", message);
 #else
-        ap_log_error(APLOG_MARK, level, 0, self->conn->server, "%s", message);
+        ap_log_error(APLOG_MARK, level, 0, self->conn->base_server, "%s", message);
 #endif
     }
 
