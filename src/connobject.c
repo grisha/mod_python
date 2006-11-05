@@ -46,7 +46,6 @@ PyObject * MpConn_FromConn(conn_rec *c)
         return PyErr_NoMemory();
 
     result->conn = c;
-    result->server = NULL;
     result->base_server = NULL;
     result->notes = MpTable_FromTable(c->notes);
     result->hlo = NULL;
@@ -314,7 +313,6 @@ static struct memberlist conn_memberlist[] = {
 
 static void conn_dealloc(connobject *self)
 {  
-    Py_XDECREF(self->server);
     Py_XDECREF(self->base_server);
     Py_XDECREF(self->notes);
     Py_XDECREF(self->hlo);

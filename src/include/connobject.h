@@ -41,7 +41,6 @@ extern "C" {
     typedef struct connobject {
         PyObject_HEAD
         conn_rec     *conn;
-        PyObject     *server;
         PyObject     *base_server;
         PyObject     *notes;
         hlistobject  *hlo;
