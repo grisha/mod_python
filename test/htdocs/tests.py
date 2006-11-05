@@ -875,6 +875,8 @@ def req_sendfile3(req):
 def req_handler(req):
     if req.phase == "PythonFixupHandler":
         req.handler = "mod_python"
+        req.handler = None
+        req.handler = "mod_python"
         req.add_handler("PythonHandler","tests::req_handler")
         return apache.OK
     elif req.phase == "PythonHandler":
