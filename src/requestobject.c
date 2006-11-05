@@ -1681,6 +1681,10 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
     else if (strcmp(name, "handler") == 0) {
+        if (val == Py_None) {
+            self->request_rec->handler = 0;
+            return 0;
+        }
         if (! PyString_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "handler must be a string");
             return -1;
