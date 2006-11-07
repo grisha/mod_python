@@ -451,6 +451,10 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-189]{MODPYTHON-189})
       Fixed representation returned by calling \code{repr()} on a table object.
     \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-191]{MODPYTHON-191})
+      Session class will no longer accept a normal cookie if a signed cookie
+      was expected.
+    \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-194]{MODPYTHON-194})
       Fixed potential memory leak due to not clearing the state of thread state
       objects before deleting them.
@@ -458,6 +462,11 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-198]{MODPYTHON-198})
       Python 2.5 broke nested __auth__/__access__/__auth_realm__ in
       mod_python.publisher.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-200]{MODPYTHON-200})
+      Fixed problem whereby signed and marshalled cookies could not be used
+      at the same time. When expecting marshalled cookie, any signed, but
+      not marshalled cookies will be returned as normal cookies.
   \end{itemize}
 
 

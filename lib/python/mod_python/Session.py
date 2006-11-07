@@ -1,3 +1,4 @@
+ # vim: set sw=4 expandtab :
  #
  # Copyright 2004 Apache Software Foundation 
  # 
@@ -141,27 +142,35 @@ class BaseSession(dict):
         if config.has_key("mod_python.session.cookie_name"):
             session_cookie_name = config.get("mod_python.session.cookie_name", COOKIE_NAME)
         else:
-            # For backwards compatability only.
+            # For backwards compatability with versions
+            # of mod_python prior to 3.3.
             session_cookie_name = config.get("session_cookie_name", COOKIE_NAME)
 
         if not self._sid:
             # check to see if cookie exists
             if secret:  
-                cookies = Cookie.get_cookies(req, Class=Cookie.SignedCookie,
-                                             secret=self._secret)
+                cookie = Cookie.get_cookie(req, session_cookie_name,
+                                           Class=Cookie.SignedCookie,
+                                           secret=self._secret,
+                                           mismatch=Cookie.Cookie.IGNORE)
             else:
-                cookies = Cookie.get_cookies(req)
+                cookie = Cookie.get_cookie(req, session_cookie_name)
 
-            if cookies.has_key(session_cookie_name):
-                self._sid = cookies[session_cookie_name].value
-        
+            if cookie:
+                self._sid = cookie.value
+
         if self._sid:
-            # Validate the sid *before* locking the session
-            # _check_sid will raise an apache.SERVER_RETURN exception 
             if not _check_sid(self._sid):
-                self._req.log_error("mod_python.Session warning: The session id contains invalid characters, valid characters are only 0-9 and a-f",
-                        apache.APLOG_WARNING)
-                raise apache.SERVER_RETURN, apache.HTTP_INTERNAL_SERVER_ERROR
+                if sid:
+                    # Supplied explicitly by user of the class,
+                    # raise an exception and make the user code
+                    # deal with it.
+                    raise ValueError("Invalid Session ID: sid=%s" % sid)
+                else:
+                    # Derived from the cookie sent by browser,
+                    # wipe it out so it gets replaced with a
+                    # correct value.
+                    self._sid = None
 
         self.init_lock()
 
@@ -194,7 +203,8 @@ class BaseSession(dict):
         if config.has_key("mod_python.session.cookie_name"):
             session_cookie_name = config.get("mod_python.session.cookie_name", COOKIE_NAME)
         else:
-            # For backwards compatability only.
+            # For backwards compatability with versions
+            # of mod_python prior to 3.3.
             session_cookie_name = config.get("session_cookie_name", COOKIE_NAME)
 
         if self._secret:
@@ -208,7 +218,8 @@ class BaseSession(dict):
         if config.has_key("mod_python.session.application_path"):
             c.path = config["mod_python.session.application_path"]
         elif config.has_key("ApplicationPath"):
-            # For backwards compatability only.
+            # For backwards compatability with versions
+            # of mod_python prior to 3.3.
             c.path = config["ApplicationPath"]
         else:
             # the path where *Handler directive was specified
@@ -342,14 +353,16 @@ class DbmSession(BaseSession):
             if opts.has_key("mod_python.dbm_session.database_filename"):
                 dbm = opts["mod_python.dbm_session.database_filename"]
             elif opts.has_key("session_dbm"):
-                # For backwards compatability only.
+                # For backwards compatability with versions
+                # of mod_python prior to 3.3.
                 dbm = opts["session_dbm"]
             elif opts.has_key("mod_python.dbm_session.database_directory"):
                 dbm = os.path.join(opts.get('mod_python.dbm_session.database_directory', tempdir), 'mp_sess.dbm')
             elif opts.has_key("mod_python.session.database_directory"):
                 dbm = os.path.join(opts.get('mod_python.session.database_directory', tempdir), 'mp_sess.dbm')
             else:
-                # For backwards compatability only.
+                # For backwards compatability with versions
+                # of mod_python prior to 3.3.
                 dbm = os.path.join(opts.get('session_directory', tempdir), 'mp_sess.dbm')
 
         self._dbmfile = dbm
@@ -427,7 +440,8 @@ class FileSession(BaseSession):
             if opts.has_key('mod_python.file_session.enable_fast_cleanup'):
                 self._fast_cleanup = true_or_false(opts.get('mod_python.file_session.enable_fast_cleanup', DFT_FAST_CLEANUP))
             else:
-                # For backwards compatability only.
+                # For backwards compatability with versions
+                # of mod_python prior to 3.3.
                 self._fast_cleanup = true_or_false(opts.get('session_fast_cleanup', DFT_FAST_CLEANUP))
         else:
             self._fast_cleanup = fast_cleanup
@@ -436,7 +450,8 @@ class FileSession(BaseSession):
             if opts.has_key('mod_python.file_session.verify_session_timeout'):
                 self._verify_cleanup = true_or_false(opts.get('mod_python.file_session.verify_session_timeout', DFT_VERIFY_CLEANUP))
             else:
-                # For backwards compatability only.
+                # For backwards compatability with versions
+                # of mod_python prior to 3.3.
                 self._verify_cleanup = true_or_false(opts.get('session_verify_cleanup', DFT_VERIFY_CLEANUP))
         else:
             self._verify_cleanup = verify_cleanup
@@ -444,13 +459,15 @@ class FileSession(BaseSession):
         if opts.has_key('mod_python.file_session.cleanup_grace_period'):
             self._grace_period = int(opts.get('mod_python.file_session.cleanup_grace_period', DFT_GRACE_PERIOD))
         else:
-            # For backwards compatability only.
+            # For backwards compatability with versions
+            # of mod_python prior to 3.3.
             self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
 
         if opts.has_key('mod_python.file_session.cleanup_time_limit'):
             self._cleanup_time_limit = int(opts.get('mod_python.file_session.cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
         else:
-            # For backwards compatability only.
+            # For backwards compatability with versions
+            # of mod_python prior to 3.3.
             self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
 
         if opts.has_key('mod_python.file_session.database_directory'):
@@ -458,7 +475,8 @@ class FileSession(BaseSession):
         elif opts.has_key('mod_python.session.database_directory'):
             self._sessdir = os.path.join(opts.get('mod_python.session.database_directory', tempdir), 'mp_sess')
         else:
-            # For backwards compatability only.
+            # For backwards compatability with versions
+            # of mod_python prior to 3.3.
             self._sessdir = os.path.join(opts.get('session_directory', tempdir), 'mp_sess')
 
         # FIXME
@@ -756,7 +774,8 @@ def Session(req, sid=0, secret=None, timeout=0, lock=1):
     if opts.has_key('mod_python.session.session_type'):
         sess_type = opts['mod_python.session.session_type']
     elif opts.has_key('session'):
-        # For backwards compatability only.
+        # For backwards compatability with versions
+        # of mod_python prior to 3.3.
         sess_type = opts['session']
     else:
         # no session class in config so get the default for the platform
