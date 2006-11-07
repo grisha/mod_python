@@ -4,7 +4,7 @@ This is the Mod_Python README file. It consists of the following parts:
 
 1. Getting Started
 2. Flex
-3. New in 3.2
+3. New in 3.3
 4. New in 3.0
 5. Migrating from Mod_Python 2.7.8
 6. OS Hints
@@ -29,7 +29,11 @@ If you can't read instructions:
 
 2. ./configure will generate a WARNING if it cannot find flex, or it 
 is the wrong version. Generally you can ignore this warning and still
-successfully compile mod_python.
+successfully compile mod_python as the timestamp of the src/psp_parser.c
+file will be newer than that for the src/psp_parser.l file. If for some
+reason it still tries to run flex to regenerate the src/psp_parser.c
+file, running 'touch src/psp_parser.c' to update the timestamp should
+stop this and it will use the provided file.
 
 The parser used by psp is written in C generated using flex. This
 requires a reentrant version of flex, which at this time is 2.5.31.
@@ -41,7 +45,7 @@ src/psp_parser.c file, you must get the correct flex version.
 You can specify the path the flex binary by using 
 ./configure --with-flex=/path/to/flex/binary.
 
-3. New in 3.2
+3. New in 3.3
    Please refer to doc-html/ for more information.
 
 4. New in 3.0

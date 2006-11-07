@@ -1,3 +1,4 @@
+ # vim: set sw=4 expandtab :
  #
  # Copyright 2004 Apache Software Foundation 
  # 
@@ -107,14 +108,18 @@ class Cookie(object):
 
     __metaclass__ = metaCookie
 
-    def parse(Class, str):
+    DOWNGRADE = 0
+    IGNORE = 1
+    EXCEPTION = 3
+
+    def parse(Class, str, **kw):
         """
         Parse a Cookie or Set-Cookie header value, and return
         a dict of Cookies. Note: the string should NOT include the
         header name, only the value.
         """
 
-        dict = _parse_cookie(str, Class)
+        dict = _parse_cookie(str, Class, **kw)
         return dict
 
     parse = classmethod(parse)
@@ -173,18 +178,27 @@ class SignedCookie(Cookie):
     is still plainly visible as part of the cookie.
     """
 
-    def parse(Class, s, secret):
+    def parse(Class, s, secret, mismatch=Cookie.DOWNGRADE, **kw):
 
-        dict = _parse_cookie(s, Class)
+        dict = _parse_cookie(s, Class, **kw)
 
+        del_list = []
         for k in dict:
             c = dict[k]
             try:
                 c.unsign(secret)
             except CookieError:
-                # downgrade to Cookie
-                dict[k] = Cookie.parse(Cookie.__str__(c))[k]
-        
+                if mismatch == Cookie.EXCEPTION:
+                     raise
+                elif mismatch == Cookie.IGNORE:
+                     del_list.append(k)
+                else:
+                     # downgrade to Cookie
+                     dict[k] = Cookie.parse(Cookie.__str__(c))[k]
+
+        for k in del_list:
+            del dict[k]
+
         return dict
 
     parse = classmethod(parse)
@@ -244,17 +258,26 @@ class MarshalCookie(SignedCookie):
     http://groups.google.com/groups?hl=en&lr=&ie=UTF-8&selm=7xn0hcugmy.fsf%40ruckus.brouhaha.com
     """
 
-    def parse(Class, s, secret):
+    def parse(Class, s, secret, mismatch=Cookie.DOWNGRADE, **kw):
 
-        dict = _parse_cookie(s, Class)
+        dict = _parse_cookie(s, Class, **kw)
 
+        del_list = []
         for k in dict:
             c = dict[k]
             try:
                 c.unmarshal(secret)
-            except (CookieError, ValueError):
-                # downgrade to Cookie
-                dict[k] = Cookie.parse(Cookie.__str__(c))[k]
+            except CookieError:
+                if mismatch == Cookie.EXCEPTION:
+                     raise
+                elif mismatch == Cookie.IGNORE:
+                     del_list.append(k)
+                else:
+                     # downgrade to Cookie
+                     dict[k] = Cookie.parse(Cookie.__str__(c))[k]
+
+        for k in del_list:
+            del dict[k]
 
         return dict
 
@@ -279,8 +302,16 @@ class MarshalCookie(SignedCookie):
     def unmarshal(self, secret):
 
         self.unsign(secret)
-        self.value = marshal.loads(base64.decodestring(self.value))
 
+        try:
+            data = base64.decodestring(self.value)
+        except:
+            raise CookieError, "Cannot base64 Decode Cookie: %s=%s" % (self.name, self.value)
+
+        try:
+            self.value = marshal.loads(data)
+        except (EOFError, ValueError, TypeError):
+            raise CookieError, "Cannot Unmarshal Cookie: %s=%s" % (self.name, self.value)
 
 
 # This is a simplified and in some places corrected
@@ -301,7 +332,7 @@ _cookiePattern = re.compile(
     r"\s*;?"                      # probably ending in a semi-colon
     )
 
-def _parse_cookie(str, Class):
+def _parse_cookie(str, Class, names=None):
     # XXX problem is we should allow duplicate
     # strings
     result = {}
@@ -313,7 +344,7 @@ def _parse_cookie(str, Class):
 
         # We just ditch the cookies names which start with a dollar sign since
         # those are in fact RFC2965 cookies attributes. See bug [#MODPYTHON-3].
-        if key[0]!='$':
+        if key[0]!='$' and names is None or key in names:
             result[key] = Class(key, val)
 
     return result
@@ -351,3 +382,7 @@ def get_cookies(req, Class=Cookie, **kw):
 
     return Class.parse(cookies, **kw)
 
+def get_cookie(req, name, Class=Cookie, **kw):
+    cookies = get_cookies(req, Class, names=[name], **kw)
+    if cookies.has_key(name):
+        return cookies[name]

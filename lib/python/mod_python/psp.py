@@ -134,7 +134,8 @@ class PSP:
         if opts.has_key("mod_python.psp.cache_database_filename"):
             self.dbmcache = opts["mod_python.psp.cache_database_filename"]
         elif opts.has_key("PSPDbmCache"):
-            # For backwards compatability only.
+            # For backwards compatability with versions
+            # of mod_python prior to 3.3.
             self.dbmcache = opts["PSPDbmCache"]
 
         if self.dbmcache:

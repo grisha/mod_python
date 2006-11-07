@@ -2074,10 +2074,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn.putheader("Cookie", bad_cookie)
         conn.endheaders()
         response = conn.getresponse()
+        setcookie = response.getheader("set-cookie", None)
         status = response.status
         conn.close()
-        if status != 500:
-            self.fail("session accepted a sid with illegal characters")
+        if status != 200 or not setcookie:
+            self.fail("session id with illegal characters not replaced")
 
         bad_cookie = 'pysid=%s; path=/' % ('abcdef'*64)
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
@@ -2086,10 +2087,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn.putheader("Cookie", bad_cookie)
         conn.endheaders()
         response = conn.getresponse()
+        setcookie = response.getheader("set-cookie", None)
         status = response.status
         conn.close()
-        if status != 500:
-            self.fail("session accepted a sid which is too long")
+        if status != 200 or not setcookie:
+            self.fail("session id which is too long not replaced")
 
     def test_files_directive_conf(self):
         c = VirtualHost("*",
