@@ -346,7 +346,7 @@ objects. For a more in-depth look at Apache internals, see the
   information such as the source IP of the request to the log entry.
 \end{funcdesc}
 
-\begin{funcdesc}{import_module}{module_name\optional{, autoreload=1, log=0, path=None}}
+\begin{funcdesc}{import_module}{module_name\optional{, autoreload=None, log=None, path=None}}
   This function can be used to import modules taking advantage of
   mod_python's internal mechanism which reloads modules automatically
   if they have changed since last import. 
@@ -362,8 +362,31 @@ objects. For a more in-depth look at Apache internals, see the
 
   \begin{verbatim}
     from mod_python import apache
-    mymodule = apache.import_module('mymodule', log=1)
+    mymodule = apache.import_module('mymodule')
   \end{verbatim}
+
+  Note that as of mod_python 3.3, only Python modules contained in a single
+  file are candidates for automatic module reloading. Python packages will
+  never be reloaded. The default arguments for the \var{autoreload} and
+  \var{log} arguments have also been changed to \code{None}, with the
+  arguments effectively now being unnecessary except in exceptional
+  circumstances. When the arguments are left as the default of \code{None},
+  the Apache configuration in scope at the time of the call will always be
+  consulted automatically for any settings for the \code{PythonAutoReload}
+  and \code{PythonDebug} directives.
+
+  With the introduction of mod_python 3.3, the \var{module_name} argument
+  may also now be an absolute path name of an actual Python module
+  contained in a single file. For example:
+
+  \begin{verbatim}
+    from mod_python import apache
+    import os
+    here = os.path.dirname(__file__)
+    path = os.path.join(here, 'mymodule.py')
+    mymodule = apache.import_module(path)
+  \end{verbatim}
+
 \end{funcdesc}
 
 \begin{funcdesc}{allow_methods}{\optional{*args}}
@@ -562,19 +585,15 @@ between handlers.
   connection) handler directives,
   e.g. \samp{PythonHandler}. \var{handler} is a string containing the
   name of the module and the handler function, or the callable object
-  itself.  Optional \var{dir} is
-  a string containing the name of the directory to be added to the
-  pythonpath. If no directory is specified, then, if there is already
-  a handler of the same type specified, its directory is inherited,
-  otherwise the directory of the presently executing handler is
-  used. If there is a \code{PythonPath} directive in effect, then
-  \code{sys.path} will be set exactly according to it (no directories
-  added, the \var{dir} argument is ignored).
-  
+  itself. Optional \var{dir} is a string containing the name of the
+  directory to be added to the module search path when looking for the
+  handler. If no directory is specified, then the directory to search
+  in is inherited from the handler which is making the registration,
+
   A handler added this way only persists throughout the life of the
   request. It is possible to register more handlers while inside the
-  handler of the same type. One has to be careful as to not to create
-  an infinite loop this way.
+  handler of the same type. One has to be careful as to not to create an
+  infinite loop this way.
 
   Dynamic handler registration is a useful technique that allows the
   code to dynamically decide what will happen next. A typical example
@@ -873,10 +892,8 @@ require valid-user
   is a string which would then subsequently be used to identify the filter.
   \var{filter} is a string containing the name of the module and the filter
   function or the callable object itself.  Optional \var{dir} is a string
-  containing the name of the directory to be added to the pythonpath. If
-  there is a \code{PythonPath} directive in effect, then \code{sys.path}
-  will be set exactly according to it (no directories added, the \var{dir}
-  argument is ignored).
+  containing the name of the directory to be added to the module search when
+  looking for the module.
 
   The registration of the filter this way only persists for the life of the
   request. To actually add the filter into the chain of input filters for
@@ -890,10 +907,8 @@ require valid-user
   is a string which would then subsequently be used to identify the filter.
   \var{filter} is a string containing the name of the module and the filter
   function or the callable object itself. Optional \var{dir} is a string
-  containing the name of the directory to be added to the pythonpath. If
-  there is a \code{PythonPath} directive in effect, then \code{sys.path}
-  will be set exactly according to it (no directories added, the \var{dir}
-  argument is ignored).
+  containing the name of the directory to be added to the module search
+  path when looking for the handler.
 
   The registration of the filter this way only persists for the life of the
   request. To actually add the filter into the chain of output filters for
