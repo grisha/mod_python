@@ -741,6 +741,20 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
      */
     static int initialized = 0;
 
+#ifdef WIN32
+    /* No need to run python_init() in Win32 parent processes as
+     * the lack of fork on Win32 means we get no benefit as far as
+     * inheriting a preinitialized Python interpreter. Further,
+     * upon a restart on Win32 platform the python_init() function
+     * will be called again in the parent process but without some
+     * resources allocated by the previous call having being
+     * released properly, resulting in memory and Win32 resource
+     * leaks.
+     */
+    if (!getenv("AP_PARENT_PID"))
+        return OK;
+#endif /* WIN32 */
+
     apr_pool_userdata_get(&data, userdata_key, s->process->pool);
     if (!data) {
         apr_pool_userdata_set((const void *)1, userdata_key,
