@@ -2549,7 +2549,7 @@ if sess.is_new():
   dbmfile named \file{mp_sess.dbm} and stored in a temporary directory
   returned by \code{tempfile.gettempdir()} standard library
   function. An alternative directory can be specified using
-  \code{PythonOption mod_python.dbm_session.session_directory 
+  \code{PythonOption mod_python.dbm_session.database_directory 
   /path/to/directory}. The path and filename can can be overridden by
   setting \code{PythonOption mod_python.dbm_session.database_filename
   filename}.
@@ -2584,7 +2584,7 @@ if sess.is_new():
   The session files are saved in a directory named mp_sess in the 
   temporary directory returned by the \code{tempfile.gettempdir()} 
   standard library function. An alternate path can be set using 
-  \code{PythonOption mod_python.file_session.session_directory
+  \code{PythonOption mod_python.file_session.database_directory
   /path/to/directory}. This directory must exist and be readable and
   writeable by the apache process.
 
