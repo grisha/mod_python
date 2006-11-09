@@ -1902,7 +1902,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.psp"),
-                                  PythonOption('mod_python.session.session_directory "%s"' % TMP_DIR),
+                                  PythonOption('mod_python.session.database_directory "%s"' % TMP_DIR),
                                   PythonDebug("On")))
         return str(c)
 
