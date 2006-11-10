@@ -227,6 +227,34 @@
       The \code{req.no_cache} and \code{req.no_local_copy} attributes are
       now writable.
     \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-143]{MODPYTHON-143})
+      Completely reimplemented the module importer. This is now used
+      whenever modules are imported corresponding to any of the
+      \code{Python*Handler}, \code{Python*Filter} and \code{PythonImport}
+      directives. The module importer is still able to be used directly
+      using the \code{apache.import_module()} function. The new module
+      importer no longer supports automatic reloading of packages/modules
+      that appear on the standard Python module search path as defined by
+      the \code{PythonPath} directive or within an application by direct
+      changes to \code{sys.path}. Automatic module reloading is however
+      still performed on file based modules (not packages) which are
+      located within the document tree where handlers are located.
+      Locations within the document tree are however no longer added to the
+      standard Python module search path automatically as they are
+      maintained within a distinct importer search path. The
+      \code{PythonPath} directive MUST not be used to point at directories
+      within the document tree. To have additional directories be searched
+      by the module importer, they should be listed in the
+      \code{mod_python.importer.path} option using the \code{PythonOption}
+      directive. This is a path similar to how \code{PythonPath} argument
+      is supplied, but MUST not reference \code{sys.path} nor contain any
+      directories also listed in the standard Python module search path.
+      If an application does not appear to work under the module importer,
+      the old module importer can be reenabled by setting the
+      \code{mod_python.legacy.importer} option using the \code{PythonOption}
+      directive to the value '\code{*}'. This option must be set in the
+      global Apache configuration.
+    \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-152]{MODPYTHON-152})
       When in a sub request, when a request is the result of an internal
       redirect, or when when returning from such a request, the
