@@ -126,7 +126,14 @@ class ModPyExtension(Extension):
     """a class that actually builds the mod_python.so extension for Apache (yikes)"""
     def __init__(self, source_dir, include_dirs, library_dirs):
         if winbuild:
-            libraries = ['libhttpd', 'libapr', 'libaprutil', 'ws2_32']
+            apr1 = 0
+            for dir in library_dirs:
+                if os.path.exists(os.path.join(dir, 'libapr-1.dll')):
+                    apr1 = 1
+            if apr1:
+                libraries = ['libhttpd', 'libapr-1', 'libaprutil-1', 'ws2_32']
+            else:
+                libraries = ['libhttpd', 'libapr', 'libaprutil', 'ws2_32']
         else:
             libraries = ['apr-0', 'aprutil-0']
 
