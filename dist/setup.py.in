@@ -128,7 +128,7 @@ class ModPyExtension(Extension):
         if winbuild:
             apr1 = 0
             for dir in library_dirs:
-                if os.path.exists(os.path.join(dir, 'libapr-1.dll')):
+                if os.path.exists(os.path.join(dir, 'libapr-1.lib')):
                     apr1 = 1
             if apr1:
                 libraries = ['libhttpd', 'libapr-1', 'libaprutil-1', 'ws2_32']
