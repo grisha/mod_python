@@ -1680,6 +1680,15 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
         return 0;
     }
+    else if (strcmp(name, "args") == 0) {
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "args must be a string");
+            return -1;
+        }
+        self->request_rec->args = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
+    }
     else if (strcmp(name, "handler") == 0) {
         if (val == Py_None) {
             self->request_rec->handler = 0;
@@ -1914,7 +1923,7 @@ static PyGetSetDef request_getsets[] = {
     {"filename",      (getter)getreq_recmbr, (setter)setreq_recmbr, "The file name on disk that this request corresponds to", "filename"},
     {"canonical_filename", (getter)getreq_recmbr, (setter)setreq_recmbr, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
     {"path_info",     (getter)getreq_recmbr, (setter)setreq_recmbr, "Path_info, if any", "path_info"},
-    {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
+    {"args",          (getter)getreq_recmbr, (setter)setreq_recmbr, "QUERY_ARGS, if any", "args"},
     {"finfo",         (getter)getreq_rec_fi, (setter)setreq_recmbr, "File information", "finfo"},
     {"parsed_uri",    (getter)getreq_rec_uri, NULL, "Components of URI", "parsed_uri"},
     {"used_path_info", (getter)getreq_recmbr, (setter)setreq_recmbr, "Flag to accept or reject path_info on current request", "used_path_info"},
