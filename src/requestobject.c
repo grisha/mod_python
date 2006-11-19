@@ -1917,7 +1917,7 @@ static PyGetSetDef request_getsets[] = {
     {"args",          (getter)getreq_recmbr, NULL, "QUERY_ARGS, if any", "args"},
     {"finfo",         (getter)getreq_rec_fi, (setter)setreq_recmbr, "File information", "finfo"},
     {"parsed_uri",    (getter)getreq_rec_uri, NULL, "Components of URI", "parsed_uri"},
-    {"used_path_info", (getter)getreq_recmbr, NULL, "Flag to accept or reject path_info on current request", "used_path_info"},
+    {"used_path_info", (getter)getreq_recmbr, (setter)setreq_recmbr, "Flag to accept or reject path_info on current request", "used_path_info"},
     {"headers_in", (getter)getreq_recmbr, NULL, "Incoming headers", "headers_in"},
     {"headers_out", (getter)getreq_recmbr, NULL, "Outgoing headers", "headers_out"},
     {"err_headers_out", (getter)getreq_recmbr, NULL, "Outgoing headers for errors", "err_headers_out"},
