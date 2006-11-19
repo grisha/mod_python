@@ -280,6 +280,11 @@
       \code{req.connection.log_error()}. The latter wraps
       \code{ap_log_cerror()} (when available), allowing client information
       to be logged along with message from a connection handler.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-206]{MODPYTHON-206})
+      The attribute \code{req.used_path_info} is now modifiable and can
+      be set from within handlers. This is equivalent to having used the
+      \code{AcceptPathInfo} directive.
   \end{itemize}
 
   Bug Fixes
