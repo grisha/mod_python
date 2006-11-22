@@ -27,8 +27,7 @@ executing.
 Note that prior to mod_python 3.3, if any handler in the sequence, no
 matter which phase was executing, returned a value other than
 \code{apache.OK}, then execution of all subsequent handlers for that phase
-was aborted. This is now the case only for the \code{PythonHandler}
-directive.
+was aborted.
 
 The list of handlers can optionally be followed by a \code{|} followed
 by one or more file extensions. This would restrict the execution of
@@ -335,8 +334,14 @@ This is the main request handler. Many applications will only provide
 this one handler.
 
 Where multiple handlers are specified, if any handler in the sequence
-returns a value other than \code{apache.OK}, then execution of all
-subsequent handlers for this phase are aborted.
+returns a status value other than \code{apache.OK} or
+\code{apache.DECLINED}, then execution of subsequent handlers for the phase
+are skipped and the return status becomes that for the whole content
+handler phase. If all handlers are run, the return status of the final
+handler is what becomes the return status of the whole content handler
+phase. Where that final status is \code{apache.DECLINED}, Apache will fall
+back to using the \code{default-handler} and attempt to serve up the target
+as a static file.
 
 \subsection{PythonLogHandler\label{dir-handlers-plh}}
 \index{PythonLogHandler}

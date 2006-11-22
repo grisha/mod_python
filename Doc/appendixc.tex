@@ -199,24 +199,28 @@
       for \code{apr_stat()}.
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-129]{MODPYTHON-129})
-      When specifying multiple handlers for phases other than the content
-      phase as defined by \code{PythonHandler}, the status returned by each
-      handler is now treated the same as how Apache would treat the status
-      if the handler was registered using the low level C API. What this
-      means is that whereas previously stacked handlers of any phase would
-      in turn be executed as long as they returned \code{apache.OK}, this
-      is no longer the case and now only occurs for \code{PythonHandler}.
-      What happens for other phases is dependent on the phase, but in all
-      cases, a handler returning \code{apache.DECLINED} no longer causes
-      the execution of subsequent handlers for the phase to be skipped.
-      Instead, it will move to the next of the stacked handlers. In the
-      case of \code{PythonTransHandler}, \code{PythonAuthenHandler},
-      \code{PythonAuthzHandler} and \code{PythonTypeHandler}, as soon
-      as \code{apache.OK} is returned, subsequent handlers for the phase
-      will be skipped, as the result indicates that any processing pertinent
-      to that phase has been completed. For other phases, stacked handlers
-      will continue to be executed if \code{apache.OK} is returned as well
-      as when \code{apache.DECLINED} is returned.
+      When specifying multiple handlers for a phase, the status returned by
+      each handler is now treated the same as how Apache would treat the
+      status if the handler was registered using the low level C API. What
+      this means is that whereas stacked handlers of any phase would in
+      turn previously be executed as long as they returned \code{apache.OK},
+      this is no longer the case and what happens is dependent on the
+      phase. Specifically, a handler returning \code{apache.DECLINED} no
+      longer causes the execution of subsequent handlers for the phase to
+      be skipped. Instead, it will move to the next of the stacked
+      handlers. In the case of \code{PythonTransHandler},
+      \code{PythonAuthenHandler}, \code{PythonAuthzHandler} and
+      \code{PythonTypeHandler}, as soon as \code{apache.OK} is returned,
+      subsequent handlers for the phase will be skipped, as the result
+      indicates that any processing pertinent to that phase has been
+      completed. For other phases, stacked handlers will continue to be
+      executed if \code{apache.OK} is returned as well as when
+      \code{apache.DECLINED} is returned. This new interpretation of the
+      status returned also applies to stacked content handlers listed
+      against the \code{PythonHandler} directive even though Apache
+      notionally only ever calls at most one content handler. Where all
+      stacked content handlers in that phase run, the status returned from
+      the last handler becomes the overall status from the content phase.
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-141]{MODPYTHON-141})
       The \code{req.proxyreq} and \code{req.uri} attributes are now writable.
