@@ -1816,8 +1816,12 @@ class. This class is similar to the standard library module
     will be added to the list of existing values for the form field.
     This method should be used for adding additional fields in
     preference to adding new fields direct to the list of fields.
-    When the subscript operator is used to update the form with new
-    fields, it is actually this method that is called.
+
+    If the value associated with a field should be replaced when it
+    already exists, rather than an additional value being associated
+    with the field, the dictionary like subscript operator should
+    be used to set the value, or the existing field deleted altogether
+    first using the \code{del} operator.
   \end{methoddesc}
 
   \begin{methoddesc}[FieldStorage]{clear}{}
