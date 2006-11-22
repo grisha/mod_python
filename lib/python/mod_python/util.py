@@ -347,7 +347,15 @@ class FieldStorage:
         item.name = key
         self.list.append(item)
 
-    __setitem__ = add_field
+    def __setitem__(self, key, value):
+        table = self.list.table()
+        if table.has_key(key):
+            items = table[key]
+            for item in items:
+                self.list.remove(item)
+        item = StringField(value)
+        item.name = key
+        self.list.append(item)
 
     def read_to_boundary(self, req, boundary, file):
         previous_delimiter = None
