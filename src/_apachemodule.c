@@ -728,6 +728,9 @@ static PyObject *mp_stat(PyObject *self, PyObject *args)
     if (result == APR_INCOMPLETE || result == APR_SUCCESS)
         return (PyObject *)finfo;
 
+    if (result == APR_ENOENT)
+        return (PyObject *)finfo;
+
     Py_DECREF(finfo);
 
     PyErr_SetObject(PyExc_OSError,
