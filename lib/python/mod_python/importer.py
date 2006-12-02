@@ -1351,6 +1351,13 @@ def FilterDispatch(self, filter):
                         break
                     parent = parent.parent
 
+            # If directory for filter still not
+            # able to be determined, use the server
+            # document root.
+
+            if directory is None:
+                directory = filter.req.document_root()
+
             # Expand relative addressing shortcuts.
 
             if type(handler) == types.StringType:
@@ -1468,6 +1475,12 @@ def HandlerDispatch(self, req):
         while parent is not None:
             root = parent.directory
             parent = parent.parent
+
+	# If directory for handler still not able to be
+	# determined, use the server document root.
+
+        if root is None:
+            root = req.document_root()
 
         # Iterate over the handlers defined for the
         # current phase and execute each in turn
@@ -1752,6 +1765,11 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
                     location = context.location
                     directory = context.directory
 
+                hostname = req.server.server_hostname
+                root = req.document_root()
+
+                log_error('ServerName: %s' % `hostname`, flags)
+                log_error('DocumentRoot: %s' % `root`, flags)
                 log_error('URI: %s' % `req.uri`, flags)
                 log_error('Location: %s' % `location`, flags)
                 log_error('Directory: %s' % `directory`, flags)
@@ -1779,6 +1797,9 @@ def ReportError(self, etype, evalue, etb, conn=None, req=None, filter=None,
             print >> output, 'Interpreter:    %s' % `iname`
 
             if req:
+                print >> output
+                print >> output, 'ServerName:     %s' % `hostname`
+                print >> output, 'DocumentRoot:   %s' % `root`
                 print >> output
                 print >> output, 'URI:            %s' % `req.uri`
                 print >> output, 'Location:       %s' % `location`
