@@ -463,7 +463,7 @@ objects. For a more in-depth look at Apache internals, see the
   namespace is supported. When this mechanism is used, these modules will
   be candidates for reloading when found by the mod_python module importer.
 
-  In this scheme for maintaining a psuedo package, individual modules are
+  In this scheme for maintaining a pseudo package, individual modules are
   still placed into a directory, but there cannot be a \code{__init__.py}
   file in the directory. If such a file does exist, it will simply be
   ignored. To import a module from this pseudo package, rather than using
@@ -672,7 +672,7 @@ objects. For a more in-depth look at Apache internals, see the
   the handler root directory. In this case, the Python package should
   either be moved out of the document tree and the directory where it is
   located listed against the \code{PythonPath} directive, or the package
-  converted into the psuedo packages that mod_python supports and change
+  converted into the pseudo packages that mod_python supports and change
   the module imports used to access the package.
 
   Only modules which could be imported by the mod_python module importer
@@ -710,7 +710,7 @@ objects. For a more in-depth look at Apache internals, see the
   Using the new ability within mod_python 3.3 to have \code{PythonImport}
   call a specific function within a module after it has been imported,
   one could actually dispense with creating a module and instead call
-  the function directory out out the code{mod_python.apache} module.
+  the function directory out of the \code{mod_python.apache} module.
   For example:
 
   \begin{verbatim}
