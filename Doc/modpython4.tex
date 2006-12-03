@@ -661,6 +661,109 @@ objects. For a more in-depth look at Apache internals, see the
   converted into the psuedo packages that mod_python supports and change
   the module imports used to access the package.
 
+  Only modules which could be imported by the mod_python module importer
+  will be candidates for automatic reloading when changes are made to the
+  code file on disk. Any modules or packages which were located in a
+  directory listed in \code{sys.path} and which were imported using the
+  standard Python module importer will not be candidates for reloading.
+
+  Even where modules are candidates for module reloading, unless a true
+  value was explicitly supplied as the \var{autoreload} option to the
+  \code{apache.import_module()} function they will only be reloaded if the
+  \code{PythonAutoReload} directive is \code{On}. The default value when
+  the directive is not specified will be \code{On}, so the directive need
+  only be used when wishing to set it to \code{Off} to disable automatic
+  reloading, such as in a production system.
+
+  Where possible, the \code{PythonAutoReload} directive should only be
+  specified in one place and in the root context for a specific Python
+  interpreter instance. If the \code{PythonAutoReload} directive is used in
+  multiple places with different values, or doesn't cover all directories
+  pertaining to a specific Python interpreter instance, then problems can
+  result. This is because requests against some URLs may result in modules
+  being reloaded whereas others may not, even when through each URL the
+  same module may be imported from a common location.
+
+  If absolute certainty is required that module reloading is disabled and
+  that it isn't being enabled through some subset of URLs, the
+  \code{PythonImport} directive should be used to import a special module
+  whenever an Apache child process is being created. This module should
+  include a call to the \code{apache.freeze_modules()} function. This
+  will have the effect of permanently disabling module reloading for the
+  complete life of that Apache child process, irrespective of what value
+  the \code{PythonAutoReload} directive is set to.
+
+  Using the new ability within mod_python 3.3 to have \code{PythonImport}
+  call a specific function within a module after it has been imported,
+  one could actually dispense with creating a module and instead call
+  the function directory out out the code{mod_python.apache} module.
+  For example:
+
+  \begin{verbatim}
+    PythonImport mod_python.apache::freeze_modules interpreter_name
+  \end{verbatim}
+
+  Where module reloading is being undertaken, unlike the core module
+  importer in versions of mod_python prior to 3.3, they are not reloaded on
+  top of existing modules, but into a completely new module instance. This
+  means that any code that previously relied on state information or data
+  caches to be preserved across reloads will no longer work.
+
+  If it is necessary to transfer such information from an old module to the
+  new module, it is necessary to provide a hook function within modules to
+  transfer across the data that must be preserved. The name of this hook
+  function is \code{__mp_clone__()}. The argument given to the hook
+  function will be an empty module into which the new module will subsequently
+  be loaded.
+
+  When called, the hook function should copy any data from the old module
+  to the new module. In doing this, the code performing the copying should
+  be cognizant of the fact that within a multithread Apache MPM that other
+  request handlers could still be trying to access and update the data
+  to be copied. As such, the hook function should ensure that it uses any
+  thread locking mechanisms as appropriate when copying the data. Further,
+  it should copy the actual data locks themselves across to the new module
+  to ensure a clean transition.
+
+  For example:
+
+  \begin{verbatim}
+  import threading
+
+  if not globals().has_key('_lock'):
+    # Initial import of this module.
+    _lock = threading.Lock()
+    _data1 = {}
+    _data2 = {}
+
+  def __mp_clone__(module):
+    _lock.acquire()
+    module._lock = _lock
+    module._data1 = _data1
+    module._data2 = _data2
+    _lock.release()
+  \end{verbatim}
+
+  Because the old module is about to be discarded, the data which is
+  transferred should not consist of data objects which are dependent on
+  code within the old module. Data being copied across to the new module
+  should consist of standard Python data types, or be instances of classes
+  contained within modules which themselves are not candidates for
+  reloading. Otherwise, data should be migrated by transforming it into
+  some neutral intermediate state, with the new module transforming it back
+  when its code executes at the time of being imported.
+
+  If these guidelines aren't heeded and data is dependent on code objects
+  within the old module, it will prevent those code objects from being
+  unloaded and if this continues across multiple reloads, then process size
+  may increase over time due to old code objects being retained.
+
+  In any case, if for some reason the hook function fails and an exception
+  is raised then both the old and new modules will be discarded. As a last
+  opportunity to release any resources when this occurs, an extra hook
+  function called \code{__mp_purge__()} can be supplied. This function will
+  be called with no arguments.
+
 \end{funcdesc}
 
 \begin{funcdesc}{allow_methods}{\optional{*args}}
