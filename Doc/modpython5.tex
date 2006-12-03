@@ -39,9 +39,13 @@ A \emph{handler} has the following syntax:
 \code{module[::object]}
 
 Where \var{module} can be a full module name (package dot notation is
-accepted), and the optional \var{object} is the name of an object
-inside the module.
+accepted) or an actual path to a module code file. The module is loaded
+using the mod_python module importer as implemented by the
+\code{apache.import_module()} function. Reference should be made to
+the documentation of that function for further details of how module
+importing is managed.
 
+The optional \var{object} is the name of an object inside the module.
 Object can also contain dots, in which case it will be resolved from
 left to right. During resolution, if mod_python encounters an object
 of type \code{<class>}, it will try instantiating it passing it a single
@@ -411,6 +415,13 @@ omitted, it will default to \samp{inputfilter}. \var{Name} is the name under
 which the filter is registered, by convention filter names are usually
 in all caps.
 
+The \var{module} referred to by the handler can be a full module name
+(package dot notation is accepted) or an actual path to a module code file.
+The module is loaded using the mod_python module importer as implemented by
+the \code{apache.import_module()} function. Reference should be made to the
+documentation of that function for further details of how module importing
+is managed.
+
 To activate the filter, use the \code{AddInputFilter} directive.
 
 \subsection{PythonOutputFilter\label{dir-filter-of}}
@@ -429,6 +440,13 @@ Registers an output filter \var{handler} under name
 omitted, it will default to \samp{outputfilter}. \var{Name} is the name under
 which the filter is registered, by convention filter names are usually
 in all caps.
+
+The \var{module} referred to by the handler can be a full module name
+(package dot notation is accepted) or an actual path to a module code file.
+The module is loaded using the mod_python module importer as implemented by
+the \code{apache.import_module()} function. Reference should be made to the
+documentation of that function for further details of how module importing
+is managed.
 
 To activate the filter, use the \code{AddOutputFilter} directive.
 
@@ -451,6 +469,13 @@ the connection object.
 \var{Handler} is a module name optionally followed \code{::} and a
 callable object name. If callable object name is omitted, it will
 default to \samp{connectionhandler}.
+
+The \var{module} can be a full module name (package dot notation is
+accepted) or an absolute path to a module code file. The module is loaded
+using the mod_python module importer as implemented by the
+\code{apache.import_module()} function. Reference should be made to the
+documentation of that function for further details of how module importing
+is managed.
 
 \section{Other Directives\label{dir-other}}
 
@@ -516,11 +541,18 @@ under the specified interpreter name. The import takes place at child
 process initialization, so the module will actually be imported once for
 every child process spawned.
 
-This is useful for initialization tasks that could be time consuming and
-should not be done at the time of processing a request, e.g. initializing a
-database connection. Where such initialization code could fail and cause
-the importing of the module to fail, it should be placed in its own function
-and the alternate syntax used:
+The \var{module} can be a full module name (package dot notation is
+accepted) or an absolute path to a module code file. The module is loaded
+using the mod_python module importer as implemented by the
+\code{apache.import_module()} function. Reference should be made to
+the documentation of that function for further details of how module
+importing is managed.
+
+The \code{PythonImport} directive is useful for initialization tasks that
+could be time consuming and should not be done at the time of processing a
+request, e.g. initializing a database connection. Where such initialization
+code could fail and cause the importing of the module to fail, it should be
+placed in its own function and the alternate syntax used:
 
 \code{PythonImport \emph{module::function} \emph{interpreter_name}}
 
