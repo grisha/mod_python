@@ -355,8 +355,22 @@ objects. For a more in-depth look at Apache internals, see the
   rely on this documentation and instead refer to the documentation for
   the specific version you are using as the new importer does not behave
   exactly the same and has additional features.
+
+  If you are trying to port code from an older version of mod_python to
+  mod_python 3.3 and can't work out why the new importer is not working
+  for you, you can enable the old module importer for specific Python
+  interpreter instances by using:
+
+  \begin{verbatim}
+    PythonOption mod_python.legacy.importer name
+  \end{verbatim}
+
+  where 'name' is the name of the interpreter instance or '*' for it to
+  be applied to all interpreter instances. This option should be placed
+  at global context within the main Apache configuration files.
 \end{notice}
 
+  When using the \code{apache.import_module()} function, the
   \var{module_name} should be a string containing either the module name,
   or a path to the actual code file for the module; where a module is a
   candidate for automatic module reloading, \var{autoreload} indicates
