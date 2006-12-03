@@ -347,33 +347,128 @@ objects. For a more in-depth look at Apache internals, see the
 \end{funcdesc}
 
 \begin{funcdesc}{import_module}{module_name\optional{, autoreload=None, log=None, path=None}}
-  This function can be used to import modules taking advantage of
-  mod_python's internal mechanism which reloads modules automatically
-  if they have changed since last import. 
+  This function can be used to import modules.
 
-  \var{module_name} is a string containing the module name (it can
-  contain dots, e.g. \code{mypackage.mymodule}); \var{autoreload}
-  indicates whether the module should be reloaded if it has changed since
-  last import; when \var{log} is true, a message will be written to
-  the logs when a module is reloaded; \var{path} allows restricting
-  modules to specific paths.
+\begin{notice}
+  This function and the module importer were completely reimplemented in
+  mod_python 3.3. If you are using an older version of mod_python do not
+  rely on this documentation and instead refer to the documentation for
+  the specific version you are using as the new importer does not behave
+  exactly the same and has additional features.
+\end{notice}
+
+  \var{module_name} should be a string containing either the module name,
+  or a path to the actual code file for the module; where a module is a
+  candidate for automatic module reloading, \var{autoreload} indicates
+  whether the module should be reloaded if it has changed since the last
+  import; when \var{log} is true, a message will be written to the logs
+  when a module is reloaded; \var{path} can be a list specifying additional
+  directories to be searched for modules.
+
+  With the introduction of mod_python 3.3, the default arguments for the
+  \var{autoreload} and \var{log} arguments have been changed to
+  \code{None}, with the arguments effectively now being unnecessary except
+  in special circumstances. When the arguments are left as the default of
+  \code{None}, the Apache configuration in scope at the time of the call
+  will always be consulted automatically for any settings for the
+  \code{PythonAutoReload} and \code{PythonDebug} directives respectively.
 
   Example:
 
   \begin{verbatim}
     from mod_python import apache
-    mymodule = apache.import_module('mymodule')
+    module = apache.import_module('module_name')
   \end{verbatim}
 
-  Note that as of mod_python 3.3, only Python modules contained in a single
-  file are candidates for automatic module reloading. Python packages will
-  never be reloaded. The default arguments for the \var{autoreload} and
-  \var{log} arguments have also been changed to \code{None}, with the
-  arguments effectively now being unnecessary except in exceptional
-  circumstances. When the arguments are left as the default of \code{None},
-  the Apache configuration in scope at the time of the call will always be
-  consulted automatically for any settings for the \code{PythonAutoReload}
-  and \code{PythonDebug} directives.
+  The \code{apache.import_module()} function is not just a wrapper for the
+  standard Python module import mechanism. The purpose of the function and
+  the mod_python module importer in general, is to provide a means of being
+  able to import modules based on their exact location, with modules being
+  distinguished based on their location rather than just the name of the
+  module. Distinguishing modules in this way, rather than by name alone,
+  means that the same module name can be used for handlers and other code
+  in multiple directories and they will not interfere with each other.
+
+  A secondary feature of the module importer is to implement a means of
+  having modules automatically reloaded when the corresponding code file
+  has been changed on disk. Having modules be able to be reloaded in this
+  way means that it is possible to change the code for a web application
+  without having to restart the whole Apache web server. Although this was
+  always the intent of the module importer, prior to mod_python 3.3, its
+  effectiveness was limited. With mod_python 3.3 however, the module
+  reloading feature is much more robust and will correctly reload parent
+  modules even when it was only the child module what was changed.
+
+  When the \code{apache.import_module()} function is called with just the
+  name of the module, as opposed to a path to the actual code file for the
+  module, a search has to be made for the module. The first set of
+  directories that will be checked are those specified by the \var{path}
+  argument if supplied.
+  
+  Where the function is called from another module which had previously
+  been imported by the mod_python importer, the next directory which will
+  be checked will be the same directory as the parent module is located.
+  Where that same parent module contains a global data variable called
+  \code{__mp_path__} containing a list of directories, those directories
+  will also be searched.
+
+  Finally, the mod_python module importer will search directories
+  specified in a \code{PythonOption} called \code{mod_python.importer.path}.
+
+  For example:
+
+  \begin{verbatim}
+    PythonOption mod_python.importer.path "['/some/path']"
+  \end{verbatim}
+
+  The argument to the option must be in the form of a Python list. The
+  enclosing quotes are to ensure that Apache interprets the argument as a
+  single value. The list must be self contained and cannot reference any
+  prior value of the option. The list MUST NOT reference \code{sys.path}
+  nor should any directory which also appears in \code{sys.path} be
+  listed in the mod_python module importer search path.
+
+  When searching for the module, a check is made for any code file with the
+  name specified and having a '.py' extension. Because only modules
+  implemented as a single file will be found, packages will not be found
+  nor modules contained within a package.
+
+  In any case where a module cannot be found, control is handed off to the
+  standard Python module importer which will attempt to find the module or
+  package by searching \code{sys.path}.
+
+  Note that only modules found by the mod_python module importer are
+  candidates for automatic module reloading. That is, where the mod_python
+  module importer could not find a module and handed the search off to the
+  standard Python module importer, those modules or packages will not be
+  able to be reloaded.
+
+  Although true Python packages are not candidates for reloading and must
+  be located in a directory listed in \code{sys.path}, another form of
+  packaging up modules such that they can be maintained within their own
+  namespace is supported. When this mechanism is used, these modules will
+  be candidates for reloading.
+
+  In this scheme for maintaining a psuedo package, individual modules are
+  still placed into a directory, but there cannot be a \code{__init__.py}
+  file in the directory. If such a file does exist, it will simply be
+  ignored. To import a module from this pseudo package, rather than using
+  a '.' to distinguish a sub module from the parent (the directory name),
+  a '/' is used instead.
+
+  For example:
+
+  \begin{verbatim}
+    from mod_python import apache
+    module = apache.import_module('dirname/module_name')
+  \end{verbatim}
+
+  As a true Python package is not being used, if a module in the directory
+  needs to refer to another module in the same directory, it should use
+  just its name, it should not use any form of dotted path name via the
+  root of the package as with true Python packages. Modules in
+  subdirectories can be imported by using a '/' separated path where the
+  first part of the path is the name of the subdirectory.
 
   With the introduction of mod_python 3.3, the \var{module_name} argument
   may also now be an absolute path name of an actual Python module
