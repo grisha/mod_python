@@ -136,6 +136,15 @@
       interpreters, thereby allowing other modules to also embed Python
       and for there not to be a conflict with mod_python.
     \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-170]{MODPYTHON-170})
+      Added \code{req._request_rec}, \code{server._server_rec} and
+      \code{conn._conn_rec} semi private members for getting accessing to
+      underlying Apache struct as a Python CObject. These can be used for
+      use in implementing SWIG bindings for lower level APIs of Apache.
+      These members should be regarded as experimental and there are no
+      guarantees that they will remain present in this specific form in the
+      future.
+    \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-193]{MODPYTHON-193})
       Added new attribute available as \code{req.hlist.location}. For a
       handler executed directly as the result of a handler directive

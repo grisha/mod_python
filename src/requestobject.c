@@ -1610,6 +1610,9 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
             return PyLong_FromLong(l);
         }
     }
+    else if (strcmp(name, "_request_rec") == 0) {
+        return PyCObject_FromVoidPtr(self->request_rec, 0);
+    }
     else
         return PyMember_GetOne((char*)self->request_rec,
                                find_memberdef(request_rec_mbrs, name));
@@ -1938,6 +1941,7 @@ static PyGetSetDef request_getsets[] = {
     /* XXX filters and eos */
     {"eos_sent", (getter)getreq_recmbr, NULL, "EOS bucket sent", "eos_sent"},
     {"_bytes_queued", (getter)getreq_recmbr, NULL, "Bytes queued by handler", "_bytes_queued"},
+    {"_request_rec", (getter)getreq_recmbr, NULL, "Actual request_rec struct", "_request_rec"},
     {NULL}  /* Sentinel */
 };
 
