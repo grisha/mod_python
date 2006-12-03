@@ -199,7 +199,11 @@ def _find_module(module_name, path):
 
     for directory in path:
         if directory is not None:
-            if directory[:2] == '~/':
+            if directory == '~':
+                root = get_handler_root()
+                if root is not None:
+                    directory = root
+            elif directory[:2] == '~/':
                 root = get_handler_root()
                 if root is not None:
                     directory = os.path.join(root, directory[2:])
@@ -245,9 +249,7 @@ def import_module(module_name, autoreload=None, log=None, path=None):
         # that need to be searched for a module code
         # file. These directories will be, the directory
         # of the parent if also imported using this
-        # importer and any specified search path. When
-        # enabled, the handler root directory will also
-        # be searched.
+        # importer and any specified search path.
 
         search_path = []
 
