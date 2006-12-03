@@ -581,8 +581,8 @@ objects. For a more in-depth look at Apache internals, see the
   \code{VirtualHost} directive, or at global server scope, the handler root
   will be the relevant document root for the server.
   
-  To express path relatives to the handler root, the '~/' prefix should be
-  used. A forward slash must again always be used.
+  To express path relatives to the handler root, the '\textasciitilde/' prefix
+  should be used. A forward slash must again always be used.
 
   For example:
 
@@ -643,16 +643,16 @@ objects. For a more in-depth look at Apache internals, see the
   to the mod_python module importer, whether it be specified using the
   \code{PythonOption} called \code{mod_python.importer.path}, using the
   \var{path} argument to the \code{apache.import_module()} function or
-  in the \code{__mp_path__} attribute, the prefix '~/' can be used in
-  a path and that path will be taken as being relative to handler root.
-  For example:
+  in the \code{__mp_path__} attribute, the prefix '\textasciitilde/'
+  can be used in a path and that path will be taken as being relative
+  to handler root. For example:
 
   \begin{verbatim}
     PythonOption mod_python.importer.path "['~/modules']"
   \end{verbatim}
 
-  If wishing to refer to the handler root directory itself, then '~' can be
-  used and the trailing slash left off. For example:
+  If wishing to refer to the handler root directory itself, then
+  '\textasciitilde' can be used and the trailing slash left off. For example:
 
   \begin{verbatim}
     PythonOption mod_python.importer.path "['~']"
@@ -664,16 +664,17 @@ objects. For a more in-depth look at Apache internals, see the
   importer only when required, some existing code which expected to be able
   to import modules in the handler root directory from a module in a
   subdirectory may no longer work. In these situations it will be necessary
-  to set the mod_python module importer path to include '~' or list '~' in
-  the \code{__mp_path__} attribute of the module performing the import.
+  to set the mod_python module importer path to include '\textasciitilde'
+  or list '\textasciitilde' in the \code{__mp_path__} attribute of the module
+  performing the import.
 
-  This trick of listing '~' in the module importer path will not however
-  help in the case where Python packages were previously being placed into
-  the handler root directory. In this case, the Python package should
-  either be moved out of the document tree and the directory where it is
-  located listed against the \code{PythonPath} directive, or the package
-  converted into the pseudo packages that mod_python supports and change
-  the module imports used to access the package.
+  This trick of listing '\textasciitilde' in the module importer path 
+  will not however help in the case where Python packages were previously
+  being placed into the handler root directory. In this case, the Python
+  package should either be moved out of the document tree and the directory
+  where it is located listed against the \code{PythonPath} directive, or the
+  package converted into the pseudo packages that mod_python supports and
+  change the module imports used to access the package.
 
   Only modules which could be imported by the mod_python module importer
   will be candidates for automatic reloading when changes are made to the
