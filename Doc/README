@@ -23,3 +23,34 @@ make ps
 
 Good Luck!
 
+
+LaTeX Notes
+-----------
+
+Using the tilde character in LaTex is a bit of a headache as ~ is used for
+markup.
+
+The obvious solution of escaping it as \~ doesn't work, as this is also used
+for markup and actually adds a diactrical to the immediately following 
+character.
+
+If you want a ~ enclosed in double quotes you can use \character{\~}.
+So \character{\~} becomes "~" in the generated documentation.
+
+If you want a ~ without the quotes you can use \textasciitilde.
+For example ~/foo/bar should be written as \textasciitilde/foo/bar in the
+LaTeX source.
+
+Using \textasciitilde does not work if there is an alpha-numeric character 
+immediately following. For a url you can hex encode the ~ as %7e. For example:
+	http://people.apache.org/~jgallacher
+should be written as:
+	http://people.apache.org/\%7ejgallacher
+
+Note that the ~ character is handled properly within a {verbatim} section,
+so the following works without modification:
+
+  \begin{verbatim}
+	path = "~/foo/bar"
+  \end{verbatim}
+
