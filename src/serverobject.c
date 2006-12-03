@@ -224,6 +224,9 @@ static struct PyMemberDef server_rec_mbrs[] = {
 
 static PyObject *getsrv_recmbr(serverobject *self, void *name) 
 {
+    if (strcmp(name, "_server_rec") == 0) {
+        return PyCObject_FromVoidPtr(self->server, 0);
+    }
     return PyMember_GetOne((char*)self->server,
                            find_memberdef(server_rec_mbrs, name));
 }
@@ -319,6 +322,7 @@ static PyGetSetDef server_getsets[] = {
     {"limit_req_fields",    (getter)getsrv_recmbr, NULL, "limit on number of request header fields", "limit_req_fields"},
     {"my_generation",    (getter)my_generation, NULL, "Generation of this child", "my_generation"},
     {"restart_time",    (getter)restart_time, NULL, "Server restart time", "restart_time"},
+    {"_server_rec",    (getter)getsrv_recmbr, NULL, "Actual server_rec struct", "_server_rec"},
     {NULL}  /* Sentinel */
 };
 

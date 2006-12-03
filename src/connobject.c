@@ -425,6 +425,9 @@ static PyObject * conn_getattr(connobject *self, char *name)
         Py_INCREF(self->hlo);
         return (PyObject *)self->hlo;
     }
+    else if (strcmp(name, "_conn_rec") == 0) {
+        return PyCObject_FromVoidPtr(self->conn, 0);
+    }
     else
         return PyMember_Get((char *)self->conn, conn_memberlist, name);
 
