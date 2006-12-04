@@ -464,16 +464,27 @@ objects. For a more in-depth look at Apache internals, see the
   be candidates for reloading when found by the mod_python module importer.
 
   In this scheme for maintaining a pseudo package, individual modules are
-  still placed into a directory, but there cannot be a \code{__init__.py}
-  file in the directory. If such a file does exist, it will simply be
-  ignored. To import a module from this pseudo package, rather than using
-  a '.' to distinguish a sub module from the parent, a '/' is used instead.
-
-  For example:
+  still placed into a directory, but the \code{__init__.py} file in the
+  directory has no special meaning and will not be automatically imported
+  as is the case with true Python packages. Instead, any module within the
+  directory must always be explicitly identified when performing an import.
+  
+  To import a named module contained within these pseudo package, rather
+  than using a '.' to distinguish a sub module from the parent, a '/' is
+  used instead. For example:
 
   \begin{verbatim}
     from mod_python import apache
     module = apache.import_module('dirname/module_name')
+  \end{verbatim}
+
+  If an \code{__init__.py} file is present and it was necessary to import
+  it to achieve the same result as importing the root of a true Python
+  package, then \code{__init__} can be used as the module name. For example:
+
+  \begin{verbatim}
+    from mod_python import apache
+    module = apache.import_module('dirname/__init__')
   \end{verbatim}
 
   As a true Python package is not being used, if a module in the directory
