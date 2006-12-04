@@ -103,7 +103,10 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-130]{MODPYTHON-130})
       Added \code{req.set_etag()}, \code{req.set_last_modified()} and
       \code{req.update_mtime()} functions as wrappers for similar functions
-      provided by Apache C API.
+      provided by Apache C API. These are required to effectively use the
+      \code{req.meets_condition()} function. The documentation for
+      \code{req.meets_condition()} has also been updated as what it
+      previously described probably wouldn't actually work.
     \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-132]{MODPYTHON-132})
       New \code{req.construct_url()} method. Used to construct a fully
