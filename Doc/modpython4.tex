@@ -469,7 +469,7 @@ objects. For a more in-depth look at Apache internals, see the
   as is the case with true Python packages. Instead, any module within the
   directory must always be explicitly identified when performing an import.
   
-  To import a named module contained within these pseudo package, rather
+  To import a named module contained within these pseudo packages, rather
   than using a '.' to distinguish a sub module from the parent, a '/' is
   used instead. For example:
 
@@ -490,9 +490,9 @@ objects. For a more in-depth look at Apache internals, see the
   As a true Python package is not being used, if a module in the directory
   needs to refer to another module in the same directory, it should use
   just its name, it should not use any form of dotted path name via the
-  root of the package as with true Python packages. Modules in
-  subdirectories can be imported by using a '/' separated path where the
-  first part of the path is the name of the subdirectory.
+  root of the package as would be the case for true Python packages.
+  Modules in subdirectories can be imported by using a '/' separated path
+  where the first part of the path is the name of the subdirectory.
 
   As a new feature in mod_python 3.3, when using the standard Python
   'import' statement to import a module, if the import is being done from a
@@ -592,8 +592,8 @@ objects. For a more in-depth look at Apache internals, see the
   \code{VirtualHost} directive, or at global server scope, the handler root
   will be the relevant document root for the server.
   
-  To express path relatives to the handler root, the '\textasciitilde/' prefix
-  should be used. A forward slash must again always be used.
+  To express paths relative to the handler root, the '\textasciitilde/' prefix
+  should be used. A forward slash must again always be used, even on Windows.
 
   For example:
 
@@ -744,22 +744,27 @@ objects. For a more in-depth look at Apache internals, see the
 
   When called, the hook function should copy any data from the old module
   to the new module. In doing this, the code performing the copying should
-  be cognizant of the fact that within a multithread Apache MPM that other
-  request handlers could still be trying to access and update the data
-  to be copied. As such, the hook function should ensure that it uses any
-  thread locking mechanisms as appropriate when copying the data. Further,
-  it should copy the actual data locks themselves across to the new module
-  to ensure a clean transition.
+  be cognizant of the fact that within a multithreaded Apache MPM that
+  other request handlers could still be trying to access and update the
+  data to be copied. As such, the hook function should ensure that it uses
+  any thread locking mechanisms within the module as appropriate when
+  copying the data. Further, it should copy the actual data locks
+  themselves across to the new module to ensure a clean transition.
+  
+  Because copying integral values will result in the data then being
+  separate, it may be necessary to always store data within a dictionary so
+  as to provide a level of indirection which will allow the data to be
+  usable from both module instances while they still exist.
 
   For example:
 
   \begin{verbatim}
-  import threading
+  import threading, time
 
   if not globals().has_key('_lock'):
     # Initial import of this module.
     _lock = threading.Lock()
-    _data1 = {}
+    _data1 = { 'value1' : 0, 'value2': 0 }
     _data2 = {}
 
   def __mp_clone__(module):
