@@ -1,4 +1,23 @@
-Dec  9 2006 -  3.3.0b is being tagged
+Dec   9 2006 -  3.3.0b is being tagged
+
+Aug   7 2006 - 3.2.10 released
+
+July 19 2006 -  3.2.10 is being tagged from branches/3.2.x
+
+July 19 2006 -  The public release of 3.2.9 is being abandoned due to some
+                recently reported memory leaks. Although 3.2.9 is ready for
+		release, it is felt that it is prudent to address these now
+		and proceed immediately to 3.2.10. See MODPYTHON-172 for 
+		on the specific details on the issues.
+
+June 29 2006 -	3.2.9 is being tagged from branches/3.2.x
+
+Feb  19 2006 -	3.2.8 is being tagged from branches/3.2.x
+                3.2.8 is a security release to fix the possible
+		directory traversal attack in FileSession.
+
+Feb   9 2006 -  Created 3.2.x stable bugfix branch in svn as
+                branches/3.2.x
 
 Feb  3 2006 -	3.2.7 is being tagged
 
