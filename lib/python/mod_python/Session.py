@@ -703,7 +703,7 @@ def filesession_cleanup(data):
             total_time = 0.0
         else:
             req.log_error("FileSession cleanup incomplete: next cleanup will start at index %d (%02x)"
-                        % (next_i,),
+                        % (next_i, next_i),
                         apache.APLOG_NOTICE)
 
         status_file = file(os.path.join(sessdir, 'fs_status.txt'), 'w')
