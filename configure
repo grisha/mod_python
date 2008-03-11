@@ -272,7 +272,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="src/mod_python.c"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN PY_STD_LIB INCLUDES TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC MUTEX_DIR MAX_LOCKS LEX LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE APXS DSO ALL LIBEXECDIR SOLARIS_HACKS HTTPD AP_SRC AP_SRC_OWN AP_SRC_GRP STATIC PYTHON_BIN LDLIBS INCLUDES ARCHFLAGS TEST_SERVER_ROOT MOD_PYTHON_SO MP_VERSION PYTHON_SRC MUTEX_DIR MAX_LOCKS LEX LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -799,7 +799,7 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
---with-apxs=PATH 	Path to apxs
+  --with-apxs=NAME        name of the apxs executable [apxs]
 --with-apache=DIR 	Path to Apache sources
 --with-python=PATH	Path to specific Python binary
 --with-python-src=DIR	Path to python sources - required if you want to generate the documenation
@@ -910,7 +910,7 @@ esac
     else
       echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2
     fi
-    cd "$ac_popdir"
+    cd $ac_popdir
   done
 fi
 
@@ -1829,7 +1829,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -1887,7 +1888,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2003,7 +2005,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2057,7 +2060,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2102,7 +2106,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2146,7 +2151,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2395,7 +2401,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2506,7 +2513,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
@@ -2552,51 +2560,18 @@ echo "$as_me: checking whether apxs is available..." >&6;}
 
 
 # check for --with-apxs
-echo "$as_me:$LINENO: checking for --with-apxs" >&5
-echo $ECHO_N "checking for --with-apxs... $ECHO_C" >&6
 
 # Check whether --with-apxs or --without-apxs was given.
 if test "${with_apxs+set}" = set; then
   withval="$with_apxs"
-
-  if test -x "$withval"
-  then
-    echo "$as_me:$LINENO: result: $withval executable, good" >&5
-echo "${ECHO_T}$withval executable, good" >&6
-    APXS=$withval
-  else
-    echo
-    { { echo "$as_me:$LINENO: error: $withval not found or not executable" >&5
-echo "$as_me: error: $withval not found or not executable" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
+  APXS="$with_apxs"
 fi;
 
-# if no apxs found yet, check /usr/local/apache/sbin
-# since it's the default Apache location
-if test -z "$APXS"; then
-  echo "$as_me:$LINENO: checking for apxs in /usr/local/apache/sbin" >&5
-echo $ECHO_N "checking for apxs in /usr/local/apache/sbin... $ECHO_C" >&6
-  if test -x /usr/local/apache/sbin/apxs; then
-    APXS=/usr/local/apache/sbin/apxs
-    echo "$as_me:$LINENO: result: found, we'll use this. Use --with-apxs to specify another." >&5
-echo "${ECHO_T}found, we'll use this. Use --with-apxs to specify another." >&6
-  else
-    echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-  fi
-fi
-
-# second last resort
-if test -z "$APXS"; then
-  echo "$as_me:$LINENO: checking for apxs in your PATH" >&5
-echo $ECHO_N "checking for apxs in your PATH... $ECHO_C" >&6
-  # Extract the first word of "apxs", so it can be a program name with args.
-set dummy apxs; ac_word=$2
+if test -z "${APXS}"; then
+    for ac_prog in apxs2 apxs
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
 if test "${ac_cv_path_APXS+set}" = set; then
@@ -2608,7 +2583,8 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
+as_dummy="$PATH:/usr/local/apache/bin:/usr/sbin"
+for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -2634,61 +2610,9 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-  if test -n "$APXS"; then
-    echo "$as_me:$LINENO: result: found $APXS, we'll use this. Use --with-apxs to specify another." >&5
-echo "${ECHO_T}found $APXS, we'll use this. Use --with-apxs to specify another." >&6
-  fi
-fi
-
-# last resort
-# some linux distributions use apxs2 for apache2 installations,
-# so check for apxs2 before we give up.
-if test -z "$APXS"; then
-  echo "$as_me:$LINENO: checking for apxs2 in your PATH" >&5
-echo $ECHO_N "checking for apxs2 in your PATH... $ECHO_C" >&6
-  # Extract the first word of "apxs2", so it can be a program name with args.
-set dummy apxs2; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_path_APXS+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $APXS in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_APXS="$APXS" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_APXS="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
+  test -n "$APXS" && break
 done
 
-  ;;
-esac
-fi
-APXS=$ac_cv_path_APXS
-
-if test -n "$APXS"; then
-  echo "$as_me:$LINENO: result: $APXS" >&5
-echo "${ECHO_T}$APXS" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  if test -n "$APXS"; then
-    echo "$as_me:$LINENO: result: found $APXS, we'll use this. Use --with-apxs to specify another." >&5
-echo "${ECHO_T}found $APXS, we'll use this. Use --with-apxs to specify another." >&6
-  fi
 fi
 
 # if apxs was still not found, then no DSO
@@ -2879,153 +2803,139 @@ echo "$as_me: error: This version of mod_python only works with Python major ver
    { (exit 1); exit 1; }; }
 fi
 
-# find out compiled in install prefix
-echo "$as_me:$LINENO: checking Python install prefix" >&5
-echo $ECHO_N "checking Python install prefix... $ECHO_C" >&6
-PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
-echo "$as_me:$LINENO: result: $PyEXEC_INSTALLDIR" >&5
-echo "${ECHO_T}$PyEXEC_INSTALLDIR" >&6
+# calculate compiler options
+CPPFLAGS1=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+    print "-I" + sysconfig.get_config_var("INCLUDEPY")'`
 
-# this is where the Python libraries will get installed
+CPPFLAGS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+    print " ".join(filter(lambda x: x.startswith("-D"), \
+    sysconfig.get_config_var("CFLAGS").split()))'`
 
-echo "$as_me:$LINENO: checking checking where python libraries are installed" >&5
-echo $ECHO_N "checking checking where python libraries are installed... $ECHO_C" >&6
-PY_STD_LIB=`$PYTHON_BIN -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib=1)'`
-echo "$as_me:$LINENO: result: $PY_STD_LIB" >&5
-echo "${ECHO_T}$PY_STD_LIB" >&6
-# set python std library variable
+CPPFLAGS="${CPPFLAGS1} ${CPPFLAGS2}"
 
 
-PyLIBP=${PY_STD_LIB}
-PyLIBPL=${PyLIBP}/config
-PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-PyLIBS=`grep "^LIB[SMC]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-PyFRAMEWORK=`grep "^PYTHONFRAMEWORK=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-PyFRAMEWORKDIR=`grep "^PYTHONFRAMEWORKDIR=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   ' | awk '{print $1}'`
 
-save_LDFLAGS="$LDFLAGS"
-save_LIBS="$LIBS"
-if test "$PyFRAMEWORKDIR" != "no-framework"; then
-  if test -n "$PyFRAMEWORK"; then
-    PyPYTHONLIBS="-framework $PyFRAMEWORK"
-    LDFLAGS="${LDFLAGS} -Wl,-framework,Python"
-  fi
+PYTHONFRAMEWORKDIR=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+    print sysconfig.get_config_var("PYTHONFRAMEWORKDIR")'`
+PYTHONFRAMEWORKPREFIX=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+    print sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX")'`
+PYTHONFRAMEWORK=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+    print sysconfig.get_config_var("PYTHONFRAMEWORK")'`
+
+if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
+    LDFLAGS=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
+        print "-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
+        standard_lib=1) +"/config"'`
+
+    LDLIBS1="-lpython${PyVERSION}"
+    LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+        print sysconfig.get_config_var("LIBS")'`
+
+    LDLIBS="${LDLIBS1} ${LDLIBS2}"
 else
-  LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
-  as_ac_Lib=`echo "ac_cv_lib_python${PyVERSION}''_Py_NewInterpreter" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for Py_NewInterpreter in -lpython${PyVERSION}" >&5
-echo $ECHO_N "checking for Py_NewInterpreter in -lpython${PyVERSION}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_Lib+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpython${PyVERSION}  ${PyLIBS} ${PyMODLIBS}   $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
+    LDFLAGS1="-Wl,-F${PYTHONFRAMEWORKPREFIX} -framework ${PYTHONFRAMEWORK}"
 
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char Py_NewInterpreter ();
-int
-main ()
-{
-Py_NewInterpreter ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  eval "$as_ac_Lib=yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+    STRING="${PYTHONFRAMEWORKDIR}/Versions/${PyVERSION}/${PYTHONFRAMEWORK}"
+    LDFLAGS2=`${PYTHON_BIN} -c "from distutils import sysconfig; \
+        print sysconfig.get_config_var(\"LINKFORSHARED\").replace( \
+        \"${STRING}\", '')"`
 
-eval "$as_ac_Lib=no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Lib'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_Lib'}'`" >&6
-if test `eval echo '${'$as_ac_Lib'}'` = yes; then
-   PyPYTHONLIBS="-lpython${PyVERSION}"
-else
-   LDFLAGS="$save_LDFLAGS"
-               if test -f ${PyLIBPL}/libpython${PyVERSION}.a; then
-                  PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-               else
-                  { { echo "$as_me:$LINENO: error: Can not link to python" >&5
-echo "$as_me: error: Can not link to python" >&2;}
-   { (exit 1); exit 1; }; }
-               fi
+    LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
+    LDLIBS=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+        print sysconfig.get_config_var("LIBS")'`
 fi
 
+CFLAGS=""
+ARCHFLAGS=""
+if test -x /usr/bin/lipo; then
+    LDFLAGS3=""
+    ARCHITECTURES=`/usr/bin/lipo -info $HTTPD | sed -e 's/.*://'`
+    for ARCH in $ARCHITECTURES; do
+        CFLAGS="${CFLAGS} -Wc,'-arch ${ARCH}'"
+        LDFLAGS3="${LDFLAGS3} -arch ${ARCH}"
+        ARCHFLAGS="${ARCHFLAGS} -arch ${ARCH}"
+    done
+    LDFLAGS="${LDFLAGS3} ${LDFLAGS}"
 fi
-LIBS="$save_LIBS"
 
-# (actually this check already just happened above)
-echo "$as_me:$LINENO: checking what libraries Python was linked with" >&5
-echo $ECHO_N "checking what libraries Python was linked with... $ECHO_C" >&6
-PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
 
-## XXX this is a small work around for a weird RedHat problem
-## erase -lieee from library list
-if test -f /etc/redhat-release; then
-  PY_LIBS="`echo $PY_LIBS | sed s/-lieee//`"
-fi
 
-LIBS="${LIBS} ${PY_LIBS}"
-echo "$as_me:$LINENO: result: $PY_LIBS" >&5
-echo "${ECHO_T}$PY_LIBS" >&6
 
-echo "$as_me:$LINENO: checking linker flags used to link Python" >&5
-echo $ECHO_N "checking linker flags used to link Python... $ECHO_C" >&6
 
-PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
-LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
-echo "$as_me:$LINENO: result: $PY_LDFLAGS" >&5
-echo "${ECHO_T}$PY_LDFLAGS" >&6
 
-echo "$as_me:$LINENO: checking where Python include files are" >&5
-echo $ECHO_N "checking where Python include files are... $ECHO_C" >&6
 
-PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
-INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
-echo "$as_me:$LINENO: result: $PY_INCLUDES" >&5
-echo "${ECHO_T}$PY_INCLUDES" >&6
+
+
+### # find out compiled in install prefix
+### AC_MSG_CHECKING(Python install prefix)
+### PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
+### AC_MSG_RESULT($PyEXEC_INSTALLDIR)
+###
+### # this is where the Python libraries will get installed
+### AC_SUBST(PY_STD_LIB)
+### AC_MSG_CHECKING(checking where python libraries are installed)
+### PY_STD_LIB=`$PYTHON_BIN -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib=1)'`
+### AC_MSG_RESULT($PY_STD_LIB)
+### # set python std library variable
+### AC_SUBST(LIBS)
+###
+### PyLIBP=${PY_STD_LIB}
+### PyLIBPL=${PyLIBP}/config
+### PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+### PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+### PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+### PyFRAMEWORK=`grep "^PYTHONFRAMEWORK=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+### PyFRAMEWORKDIR=`grep "^PYTHONFRAMEWORKDIR=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   ' | awk '{print $1}'`
+###
+### save_LDFLAGS="$LDFLAGS"
+### save_LIBS="$LIBS"
+### if test "$PyFRAMEWORKDIR" != "no-framework"; then
+###   if test -n "$PyFRAMEWORK"; then
+###     PyPYTHONLIBS="-framework $PyFRAMEWORK"
+###     LDFLAGS="${LDFLAGS} -Wl,-framework,Python"
+###   fi
+### else
+###   LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
+###   AC_CHECK_LIB(python${PyVERSION}, Py_NewInterpreter,
+###              [ PyPYTHONLIBS="-lpython${PyVERSION}" ],
+###              [ LDFLAGS="$save_LDFLAGS"
+###                if test -f ${PyLIBPL}/libpython${PyVERSION}.a; then
+###                   PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
+###                else
+###                   AC_ERROR(Can not link to python)
+###                fi
+###               ],
+###               [ ${PyLIBS} ${PyMODLIBS} ] )
+### fi
+### LIBS="$save_LIBS"
+###
+### # (actually this check already just happened above)
+### AC_MSG_CHECKING(what libraries Python was linked with)
+### PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
+###
+### ## XXX this is a small work around for a weird RedHat problem
+### ## erase -lieee from library list
+### if test -f /etc/redhat-release; then
+###   PY_LIBS="`echo $PY_LIBS | sed s/-lieee//`"
+### fi
+###
+### LIBS="${LIBS} ${PY_LIBS}"
+### AC_MSG_RESULT($PY_LIBS)
+###
+### AC_MSG_CHECKING(linker flags used to link Python)
+### AC_SUBST(LDFLAGS)
+### PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+### PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
+### LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
+### LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
+### AC_MSG_RESULT($PY_LDFLAGS)
+###
+### AC_MSG_CHECKING(where Python include files are)
+### AC_SUBST(INCLUDES)
+### PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
+### INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
+### AC_MSG_RESULT($PY_INCLUDES)
 
 # this for the test.py script
 
@@ -3879,8 +3789,9 @@ s,@AP_SRC_OWN@,$AP_SRC_OWN,;t t
 s,@AP_SRC_GRP@,$AP_SRC_GRP,;t t
 s,@STATIC@,$STATIC,;t t
 s,@PYTHON_BIN@,$PYTHON_BIN,;t t
-s,@PY_STD_LIB@,$PY_STD_LIB,;t t
+s,@LDLIBS@,$LDLIBS,;t t
 s,@INCLUDES@,$INCLUDES,;t t
+s,@ARCHFLAGS@,$ARCHFLAGS,;t t
 s,@TEST_SERVER_ROOT@,$TEST_SERVER_ROOT,;t t
 s,@MOD_PYTHON_SO@,$MOD_PYTHON_SO,;t t
 s,@MP_VERSION@,$MP_VERSION,;t t
@@ -4056,6 +3967,11 @@ esac
   *) ac_INSTALL=$ac_top_builddir$INSTALL ;;
   esac
 
+  if test x"$ac_file" != x-; then
+    { echo "$as_me:$LINENO: creating $ac_file" >&5
+echo "$as_me: creating $ac_file" >&6;}
+    rm -f "$ac_file"
+  fi
   # Let's still pretend it is `configure' which instantiates (i.e., don't
   # use $as_me), people would be surprised to read:
   #    /* config.h.  Generated by config.status.  */
@@ -4094,12 +4010,6 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
 	 fi;;
       esac
     done` || { (exit 1); exit 1; }
-
-  if test x"$ac_file" != x-; then
-    { echo "$as_me:$LINENO: creating $ac_file" >&5
-echo "$as_me: creating $ac_file" >&6;}
-    rm -f "$ac_file"
-  fi
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF
   sed "$ac_vpsub

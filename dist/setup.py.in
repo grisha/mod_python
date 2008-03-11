@@ -15,11 +15,12 @@
  #
  # $Id$
 
+import os
+
 from distutils.core import setup, Extension
 
 import sys
 import re
-import os.path
 
 try:
   __file__
@@ -99,13 +100,17 @@ VER = getmp_version()
 # TODO: improve the intelligence here...
 winbuild = ("bdist_wininst" in sys.argv) or (os.name == "nt")
 
+ARCHFLAGS='@ARCHFLAGS@'.strip().split()
+
 class PSPExtension(Extension):
     """a class that helps build the PSP extension"""
     def __init__(self, source_dir, include_dirs):
         Extension.__init__(self, "mod_python._psp",
                                [os.path.join(source_dir, source_file) for source_file in
                                     ("psp_string.c", "psp_parser.c", "_pspmodule.c")],
-                                include_dirs=include_dirs
+                                include_dirs=include_dirs,
+                                extra_link_args=ARCHFLAGS,
+                                extra_compile_args=ARCHFLAGS,
                            )
 
         if winbuild:

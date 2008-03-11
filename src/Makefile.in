@@ -23,10 +23,10 @@ MKDEP=@MKDEP@
 # requires flex 2.5.31 for reentrant support
 LEX=@LEX@
 INCLUDES=@INCLUDES@
-LIBS=@LIBS@
+CPPFLAGS=@CPPFLAGS@
+CFLAGS=@CFLAGS@
+LDLIBS=@LDLIBS@
 LDFLAGS=@LDFLAGS@
-OPT=
-CFLAGS=$(OPT) $(INCLUDES) 
 srcdir=.
 
 SRCS=	mod_python.c _apachemodule.c requestobject.c tableobject.c util.c \
@@ -46,7 +46,7 @@ mod_python.so: $(SRCS) @SOLARIS_HACKS@
 	@echo
 	@echo 'Compiling for DSO.'
 	@echo
-	$(APXS) $(INCLUDES) -c $(SRCS) $(LDFLAGS) $(LIBS) @SOLARIS_HACKS@
+	$(APXS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -c $(SRCS) $(LDFLAGS) $(LDLIBS) @SOLARIS_HACKS@
 	@rm -f mod_python.so
 	@ln -s .libs/mod_python.so mod_python.so
 clean:
