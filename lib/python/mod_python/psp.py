@@ -239,6 +239,20 @@ class PSP:
 
             global_scope.update(self.vars) # passed in __init__()
             global_scope.update(vars)      # passed in run()
+
+            class _InstanceInfo:
+
+                def __init__(self, label, file, cache):
+                    self.label = label
+                    self.file = file
+                    self.cache = cache
+                    self.children = {}
+
+            global_scope["__file__"] = req.filename
+            global_scope["__mp_info__"] = _InstanceInfo(
+                    None, req.filename, None)
+            global_scope["__mp_path__"] = [] 
+
             try:
                 exec code in global_scope
                 if flush:
