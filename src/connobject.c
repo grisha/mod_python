@@ -447,6 +447,14 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
                         "can't delete connection attributes");
         return -1;
     }
+    else if (strcmp(name, "keepalive") == 0) {
+        if (! PyInt_Check(value)) {
+            PyErr_SetString(PyExc_TypeError, "keepalive must be a integer");
+            return -1;
+        }
+        self->conn->keepalive = PyInt_AsLong(value);
+        return 0;
+    }
     else
         return PyMember_Set((char *)self->conn, conn_memberlist, name, value);
 
