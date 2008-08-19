@@ -1737,6 +1737,15 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         self->request_rec->chunked = PyInt_AsLong(val);
         return 0;
     }
+    else if (strcmp(name, "status_line") == 0) {
+        if (! PyString_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "status line must be a string");
+            return -1;
+        }
+        self->request_rec->status_line = 
+            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+        return 0;
+    }
     
     return PyMember_SetOne((char*)self->request_rec, 
                            find_memberdef(request_rec_mbrs, (char*)name),
@@ -1902,7 +1911,7 @@ static PyGetSetDef request_getsets[] = {
     {"proto_num",    (getter)getreq_recmbr, NULL, "Protocol version. 1.1 = 1001", "proto_num"},
     {"hostname",     (getter)getreq_recmbr, NULL, "Host, as set by full URI or Host:", "hostname"},
     {"request_time", (getter)getreq_recmbr_time, NULL, "When request started", "request_time"},
-    {"status_line",  (getter)getreq_recmbr, NULL, "Status line, if set by script", "status_line"},
+    {"status_line",  (getter)getreq_recmbr, (setter)setreq_recmbr, "Status line, if set by script", "status_line"},
     {"status",       (getter)getreq_recmbr, (setter)setreq_recmbr, "Status", "status"},
     {"method",       (getter)getreq_recmbr, NULL, "Request method", "method"},
     {"method_number", (getter)getreq_recmbr, NULL, "Request method number, one of apache.M_*", "method_number"},
