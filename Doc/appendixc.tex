@@ -34,8 +34,14 @@
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-220]{MODPYTHON-220})
       Fix 'import' from same directory as PSP file.
   \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-238]{MODPYTHON-238})
+      Make \code{req.chunked} and \code{req.connection.keepalive} writable.
+      Being able to set these allows chunking to be turned off when HTTP/1.1
+      is used but no content length supplied in response.
+  \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-245]{MODPYTHON-245})
-      Fix prototype of optional exported function mp_release_interpreter().
+      Fix prototype of optional exported function
+      \code{mp_release_interpreter()}.
   \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-249]{MODPYTHON-249})
       Fixed incorrect use of APR bucket brigades shown up by APR 1.3.2.

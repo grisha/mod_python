@@ -1729,6 +1729,14 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
 
         return 0;
     }
+    else if (strcmp(name, "chunked") == 0) {
+        if (! PyInt_Check(val)) {
+            PyErr_SetString(PyExc_TypeError, "chunked must be a integer");
+            return -1;
+        }
+        self->request_rec->chunked = PyInt_AsLong(val);
+        return 0;
+    }
     
     return PyMember_SetOne((char*)self->request_rec, 
                            find_memberdef(request_rec_mbrs, (char*)name),
@@ -1904,7 +1912,7 @@ static PyGetSetDef request_getsets[] = {
     {"sent_bodyct",  (getter)getreq_recmbr_off, NULL, "Byte count in stream for body", "sent_bodyct"},
     {"bytes_sent",   (getter)getreq_recmbr_off, NULL, "Bytes sent", "bytes_sent"},
     {"mtime",        (getter)getreq_recmbr_time, NULL, "Time resource was last modified", "mtime"},
-    {"chunked",      (getter)getreq_recmbr, NULL, "Sending chunked transfer-coding", "chunked"},
+    {"chunked",      (getter)getreq_recmbr, (setter)setreq_recmbr, "Sending chunked transfer-coding", "chunked"},
     {"range",        (getter)getreq_recmbr, NULL, "The Range: header", "range"},
     {"clength",      (getter)getreq_recmbr_off, NULL, "The \"real\" contenct length", "clength"},
     {"remaining",    (getter)getreq_recmbr_off, NULL, "Bytes left to read", "remaining"},
