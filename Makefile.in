@@ -23,6 +23,8 @@ AP_SRC_GRP=@AP_SRC_GRP@
 INSTALL=@INSTALL@
 PYTHON_BIN=@PYTHON_BIN@
 
+.PHONY: all test clean
+
 all: @ALL@
 
 dso: @DSO@
@@ -48,6 +50,7 @@ no_static:
 	@echo "Static compilation not available. (Probably because --with-apache was not specified)."
 	@echo
 
+# ZZZ also should depend on @ALL@
 install: src/.install
 	@if test "`cat src/.install`" = "dso"; then \
 		$(MAKE) install_dso; \
@@ -84,5 +87,5 @@ distclean: clean
 	rm -rf Makefile config.h config.status config.cache config.log \
 		test/testconf.py 
 
-check:
-	cd test && $(MAKE) check
+test:	@ALL@
+	cd test && $(MAKE) test

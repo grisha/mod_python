@@ -16,7 +16,7 @@
  #
 PYTHON_BIN=@PYTHON_BIN@
 
-check:
+test:
 	$(PYTHON_BIN) test.py
 
 clean:

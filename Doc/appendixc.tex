@@ -124,14 +124,6 @@
       originally created by Microsoft, but now getting more widespread use
       in the battle against cross site-scripting attacks.
     \item
-      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-172]{MODPYTHON-172})
-      Fixed three memory leaks that were found in _apachemodule.parse_qsl, req.readlines
-      and util.cfgtree_walk.
-    \item
-      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-179]{MODPYTHON-179})
-      Fixed the behaviour of req.readlines() when a size hint was provided. Previously,
-      it would always return a single line when a size hint was provided.
-    \item
       (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-164]{MODPYTHON-164})
       The \code{req.add_handler()}, \code{req.register_input_filter()} and
       \code{req.register_output_filter()} methods can now take a direct
@@ -153,14 +145,6 @@
       These members should be regarded as experimental and there are no
       guarantees that they will remain present in this specific form in the
       future.
-    \item
-      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-193]{MODPYTHON-193})
-      Added new attribute available as \code{req.hlist.location}. For a
-      handler executed directly as the result of a handler directive
-      within a \code{Location} directive, this will be set to the value
-      of the \code{Location} directive. If \code{LocationMatch}, or
-      wildcards or regular expressions are used with \code{Location},
-      the value will be the matched value in the URL and not the pattern.
   \end{itemize}
 
   Improvements
@@ -534,14 +518,6 @@
       of Python options set at global scope within the Apache configuration.
       That is, outside of the context of any VirtualHost, Location, Directory
       or Files directives.
-    \item
-      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-145]{MODPYTHON-145})
-      The number of mutex locks can now be specified at run time with
-      \code{PythonOption mod_python.mutex_locks value}.
-    \item
-     (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-172]{MODPYTHON-172})
-      Fixed three memory leaks that were found in _apachemodule.parse_qsl, req.readlines
-      and util.cfgtree_walk.
   \end{itemize}
 
   Improvements
@@ -562,6 +538,14 @@
       Added additional debugging and logging output for where mod_python
       cannot initialise itself properly due to Python or mod_python version
       mismatches or missing Python module code files.
+    \item
+      (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-145]{MODPYTHON-145})
+      The number of mutex locks can now be specified at run time with
+      \code{PythonOption mod_python.mutex_locks value}.
+    \item
+     (\citetitle[http://issues.apache.org/jira/browse/MODPYTHON-172]{MODPYTHON-172})
+      Fixed three memory leaks that were found in _apachemodule.parse_qsl, req.readlines
+      and util.cfgtree_walk.
   \end{itemize}
 
   Bug Fixes

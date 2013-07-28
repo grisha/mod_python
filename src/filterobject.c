@@ -552,27 +552,6 @@ static PyObject * filter_getattr(filterobject *self, char *name)
             return (PyObject *)self->request_obj;
         }
     }
-    else if (strcmp(name, "handler") == 0) {
-        if (self->callable) {
-            Py_INCREF(self->callable);
-            return self->callable;
-        } else if (self->handler) {
-            return PyString_FromString(self->handler);
-        }
-        else {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-    }
-    else if (strcmp(name, "parent") == 0) {
-        if (self->parent) {
-            return MpHList_FromHLEntry(self->parent);
-        }
-        else {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-    }
     else
         return PyMember_Get((char *)self, filter_memberlist, name);
 }

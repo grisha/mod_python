@@ -191,9 +191,13 @@ PYTHONFRAMEWORK=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
     print sysconfig.get_config_var("PYTHONFRAMEWORK")'`
 
 if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
-    LDFLAGS=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
+    # this directory may contain the .so library, our preference, list 1st
+    LDFLAGS1=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
+        print "-L" + distutils.sysconfig.get_config_var("LIBDIR")'`
+    LDFLAGS2=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
         print "-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
         standard_lib=1) +"/config"'`
+    LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
     LDLIBS1="-lpython${PyVERSION}"
     LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
@@ -234,76 +238,6 @@ AC_SUBST(LDLIBS)
 AC_SUBST(INCLUDES)
 
 AC_SUBST(ARCHFLAGS)
-
-### # find out compiled in install prefix
-### AC_MSG_CHECKING(Python install prefix)
-### PyEXEC_INSTALLDIR=`$PYTHON_BIN -c "import sys; print sys.exec_prefix"`
-### AC_MSG_RESULT($PyEXEC_INSTALLDIR)
-### 
-### # this is where the Python libraries will get installed
-### AC_SUBST(PY_STD_LIB)
-### AC_MSG_CHECKING(checking where python libraries are installed)
-### PY_STD_LIB=`$PYTHON_BIN -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=1, standard_lib=1)'`
-### AC_MSG_RESULT($PY_STD_LIB)
-### # set python std library variable
-### AC_SUBST(LIBS)
-### 
-### PyLIBP=${PY_STD_LIB}
-### PyLIBPL=${PyLIBP}/config
-### PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-### PyLIBS=`grep "^LIB[[SMC]]=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-### PyMODLIBS=`grep "^LOCALMODLIBS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-### PyFRAMEWORK=`grep "^PYTHONFRAMEWORK=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-### PyFRAMEWORKDIR=`grep "^PYTHONFRAMEWORKDIR=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   ' | awk '{print $1}'`
-### 
-### save_LDFLAGS="$LDFLAGS"
-### save_LIBS="$LIBS"
-### if test "$PyFRAMEWORKDIR" != "no-framework"; then
-###   if test -n "$PyFRAMEWORK"; then
-###     PyPYTHONLIBS="-framework $PyFRAMEWORK"
-###     LDFLAGS="${LDFLAGS} -Wl,-framework,Python"
-###   fi
-### else
-###   LDFLAGS="${LDFLAGS} -L${PyLIBPL}"
-###   AC_CHECK_LIB(python${PyVERSION}, Py_NewInterpreter,
-###              [ PyPYTHONLIBS="-lpython${PyVERSION}" ],
-###              [ LDFLAGS="$save_LDFLAGS"
-###                if test -f ${PyLIBPL}/libpython${PyVERSION}.a; then
-###                   PyPYTHONLIBS=${PyLIBPL}/libpython${PyVERSION}.a
-###                else
-###                   AC_ERROR(Can not link to python)
-###                fi
-###               ], 
-###               [ ${PyLIBS} ${PyMODLIBS} ] )
-### fi
-### LIBS="$save_LIBS"
-### 
-### # (actually this check already just happened above)
-### AC_MSG_CHECKING(what libraries Python was linked with) 
-### PY_LIBS="${PyPYTHONLIBS} ${PyLIBS} ${PyMODLIBS}"
-###  
-### ## XXX this is a small work around for a weird RedHat problem
-### ## erase -lieee from library list
-### if test -f /etc/redhat-release; then
-###   PY_LIBS="`echo $PY_LIBS | sed s/-lieee//`"
-### fi
-### 
-### LIBS="${LIBS} ${PY_LIBS}"
-### AC_MSG_RESULT($PY_LIBS)
-### 
-### AC_MSG_CHECKING(linker flags used to link Python)
-### AC_SUBST(LDFLAGS)
-### PyLFS=`grep "^LINKFORSHARED=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-### PyLDFLAGS=`grep "^LDFLAGS=" ${PyLIBPL}/Makefile | cut -f2 -d= | tr '\011\012\015' '   '`
-### LDFLAGS="${LDFLAGS} ${PyLFS} ${PyLDFLAGS}"
-### LDFLAGS="${LDFLAGS} ${PY_LDFLAGS}"
-### AC_MSG_RESULT($PY_LDFLAGS)
-### 
-### AC_MSG_CHECKING(where Python include files are)
-### AC_SUBST(INCLUDES)
-### PY_INCLUDES="-I${PyEXEC_INSTALLDIR}/include/python${PyVERSION}"
-### INCLUDES="${INCLUDES} ${AP_INCLUDES} ${PY_INCLUDES}"
-### AC_MSG_RESULT($PY_INCLUDES)
 
 # this for the test.py script
 AC_SUBST(TEST_SERVER_ROOT)

@@ -21,7 +21,7 @@
  *
  * mod_python.h 
  *
- * $Id$
+ * $Id: mod_python.h 231054 2005-08-09 15:37:04Z jgallacher $
  *
  * See accompanying documentation and source code comments 
  * for details.

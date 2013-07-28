@@ -46,8 +46,8 @@ extern "C" {
     hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
                         int d_is_fnmatch, ap_regex_t *regex, const int s);
     hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                           PyObject* o, const char *d, int d_is_fnmatch,
-                           ap_regex_t *regex, const int s, hl_entry* parent);
+                           const char *d, int d_is_fnmatch, ap_regex_t *regex,
+                           const int s);
 
     hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle);
     void hlist_extend(apr_pool_t *p, hl_entry *hle1, const hl_entry *hle2);

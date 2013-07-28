@@ -69,10 +69,6 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->content_type_set = 0;
     result->bytes_queued = 0;
     result->hlo = NULL;
-    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
-    result->callbacks = PyList_New(0);
-    if (!result->callbacks)
-        return PyErr_NoMemory();
     result->rbuff = NULL;
     result->rbuff_pos = 0;
     result->rbuff_len = 0;
@@ -143,14 +139,8 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     const char *dir = NULL;
     const char *currphase;
 
-    if (! PyArg_ParseTuple(args, "ss|z", &phase, &handler, &dir)) {
-        PyErr_Clear();
-        if (! PyArg_ParseTuple(args, "sO|z", &phase, &callable, &dir)) {
-            PyErr_SetString(PyExc_ValueError, 
-                            "handler must be a string or callable object");
-            return NULL;
-        }
-    }
+    if (! PyArg_ParseTuple(args, "ss|z", &phase, &handler, &dir))
+        return NULL;
 
     if (! valid_phase(phase)) {
         PyErr_SetString(PyExc_IndexError, 
@@ -199,8 +189,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
 
         /* then just append to hlist */
         hlist_append(self->request_rec->pool, self->hlo->head,
-                     handler, callable, dir, 0, NULL, NOTSILENT,
-                     self->hlo->head);
+                     handler, dir, 0, NULL, NOTSILENT);
     }
     else {
         /* this is a phase that we're not in */
@@ -1171,41 +1160,42 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
 
 static PyObject * req_requires(requestobject *self)
 {
+/* ZZZZ fix this */
+    /* /\* This function returns everything specified after the "requires" */
+    /*    as is, without any attempts to parse/organize because */
+    /*    "requires" args only need to be grokable by mod_auth if it is */
+    /*    authoritative. When AuthAuthoritative is off, anything can */
+    /*    follow requires, e.g. "requires role terminator". */
+    /* *\/ */
 
-    /* This function returns everything specified after the "requires"
-       as is, without any attempts to parse/organize because
-       "requires" args only need to be grokable by mod_auth if it is
-       authoritative. When AuthAuthoritative is off, anything can
-       follow requires, e.g. "requires role terminator".
-    */
+    /* const apr_array_header_t *reqs_arr = ap_requires(self->request_rec); */
+    /* require_line *reqs; */
+    /* int i, ti = 0; */
 
-    const apr_array_header_t *reqs_arr = ap_requires(self->request_rec);
-    require_line *reqs;
-    int i, ti = 0;
+    /* PyObject *result; */
 
-    PyObject *result;
+    /* if (!reqs_arr) { */
+    /*     return Py_BuildValue("()"); */
+    /* } */
 
-    if (!reqs_arr) {
-        return Py_BuildValue("()");
-    }
+    /* /\* PYTHON 2.5: 'PyTuple_New' uses Py_ssize_t for input parameters *\/ */
+    /* result = PyTuple_New(reqs_arr->nelts); */
 
-    /* PYTHON 2.5: 'PyTuple_New' uses Py_ssize_t for input parameters */
-    result = PyTuple_New(reqs_arr->nelts);
+    /* reqs = (require_line *) reqs_arr->elts; */
 
-    reqs = (require_line *) reqs_arr->elts;
+    /* for (i = 0; i < reqs_arr->nelts; ++i) { */
+    /*     if (reqs[i].method_mask & (AP_METHOD_BIT << self->request_rec->method_number)) { */
+    /*     /\* PYTHON 2.5: 'PyTuple_SetItem' uses Py_ssize_t for input parameters *\/ */
+    /*         PyTuple_SetItem(result, ti++,  */
+    /*                         PyString_FromString(reqs[i].requirement)); */
+    /*     } */
+    /* } */
 
-    for (i = 0; i < reqs_arr->nelts; ++i) {
-        if (reqs[i].method_mask & (AP_METHOD_BIT << self->request_rec->method_number)) {
-        /* PYTHON 2.5: 'PyTuple_SetItem' uses Py_ssize_t for input parameters */
-            PyTuple_SetItem(result, ti++, 
-                            PyString_FromString(reqs[i].requirement));
-        }
-    }
+    /* /\* PYTHON 2.5: '_PyTuple_Resize' uses Py_ssize_t for input parameters *\/ */
+    /* _PyTuple_Resize(&result, ti); */
 
-    /* PYTHON 2.5: '_PyTuple_Resize' uses Py_ssize_t for input parameters */
-    _PyTuple_Resize(&result, ti);
-
-    return result;
+    /* return result; */
+    return NULL;
 }
 
 /**
@@ -1949,7 +1939,6 @@ static int request_tp_clear(requestobject *self)
     CLEAR_REQUEST_MEMBER(self->notes);
     CLEAR_REQUEST_MEMBER(self->phase);
     CLEAR_REQUEST_MEMBER(self->hlo);
-    CLEAR_REQUEST_MEMBER(self->callbacks);
     
     return 0;
 }

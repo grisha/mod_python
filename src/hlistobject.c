@@ -105,26 +105,6 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
         return Py_None;
     }
 
-    if (strcmp(name, "handler") == 0) {
-        if (self->head->callable) {
-            Py_INCREF(self->head->callable);
-            return self->head->callable;
-        } else if (self->head->handler) {
-            return PyString_FromString(self->head->handler);
-        } else {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-    }
-    else if (strcmp(name, "parent") == 0) {
-        if (self->head->parent) {
-            return MpHList_FromHLEntry(self->head->parent);
-        } else {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-    }
-
     return PyMember_Get((char *)self->head, hlist_memberlist, name);
 
 }
@@ -144,9 +124,6 @@ static PyObject *hlist_repr(hlistobject *self)
         t = PyString_FromString(self->head->handler);
         PyString_ConcatAndDel(&s, PyObject_Repr(t));
         Py_XDECREF(t);
-    } else if (self->head->callable) {
-        PyString_ConcatAndDel(&s, PyString_FromString("'handler':"));
-        PyString_ConcatAndDel(&s, PyObject_Repr(self->head->callable));
     }
     if (self->head->directory) {
         PyString_ConcatAndDel(&s, PyString_FromString(",'directory':"));

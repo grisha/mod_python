@@ -287,7 +287,11 @@ static struct memberlist conn_memberlist[] = {
     /* XXX client_socket? */
     {"local_addr",         T_OBJECT,    0,                       RO},
     {"remote_addr",        T_OBJECT,    0,                       RO},
+#if AP_MODULE_MAGIC_AT_LEAST(20111130,0) /* ZZZ again this needs to be done correctly, exposing the right API */
+    {"remote_ip",          T_STRING,    OFF(client_ip),          RO},
+#else
     {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
+#endif
     {"remote_host",        T_STRING,    OFF(remote_host),        RO},
     {"remote_logname",     T_STRING,    OFF(remote_logname),     RO},
     {"aborted",            T_INT,       0,                       RO},
@@ -415,7 +419,11 @@ static PyObject * conn_getattr(connobject *self, char *name)
         return makesockaddr(self->conn->local_addr);
     }
     else if (strcmp(name, "remote_addr") == 0) {
+#if AP_MODULE_MAGIC_AT_LEAST(20111130,0) /* ZZZ again this needs to be done correctly, exposing the right API */
+        return makesockaddr(self->conn->client_addr);
+#else
         return makesockaddr(self->conn->remote_addr);
+#endif
     }
     else if (strcmp(name, "notes") == 0) {
         Py_INCREF(self->notes);
