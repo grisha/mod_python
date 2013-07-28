@@ -141,6 +141,9 @@ static PyObject * make_obcallback(char *name)
         PyErr_Print();
         fflush(stderr); 
 
+        //ZZZ I don't understand this - why "mod_python" and not MODULENAME
+        //and why only after there is an error? this should be checked *always*?
+
         m = PyImport_ImportModule("mod_python");
         if (m) {
             d = PyModule_GetDict(m);
@@ -162,7 +165,7 @@ static PyObject * make_obcallback(char *name)
         }
     }
 
-      Py_XDECREF(m);
+    Py_XDECREF(m);
     
     return obCallBack;
 }
@@ -554,17 +557,17 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
         }
         else {
 
-            /*XXX As of httpd 2.0.4, the below should be just
-              a call to unixd_set_global_mutex_perms(mutex[n]); and
-              nothing else... For now, while 2.0.48 isn't commonplace yet,
-              this ugly code should be here */
+/*             /\*XXX As of httpd 2.0.4, the below should be just */
+/*               a call to unixd_set_global_mutex_perms(mutex[n]); and */
+/*               nothing else... For now, while 2.0.48 isn't commonplace yet, */
+/*               this ugly code should be here *\/ */
 
-#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
-            if  (!geteuid()) {
-                chown(fname, unixd_config.user_id, -1);
-                unixd_set_global_mutex_perms(mutex[n]);
-            }
-#endif
+/* #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE) */
+/*             if  (!geteuid()) { */
+/*                 chown(fname, ap_unixd_config.user_id, -1); */
+                ap_unixd_set_global_mutex_perms(mutex[n]);
+/*             } */
+/* #endif */
         }
     }
     return APR_SUCCESS;
@@ -1548,7 +1551,7 @@ static int python_handler(request_rec *req, char *phase)
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
-     * >>> resultobject = obCallBack.Dispatch(request_object, phase)
+     * >>> resultobject = obCallBack.HandlerDispatch(request_object)
      */
     resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch",
                                        "O", request_obj);
@@ -1730,7 +1733,7 @@ static apr_status_t python_connection(conn_rec *con)
     /* 
      * Here is where we call into Python!
      * This is the C equivalent of
-     * >>> resultobject = obCallBack.Dispatch(request_object, phase)
+     * >>> resultobject = obCallBack.ConnectionDispatch(request_object)
      */
     resultobject = PyObject_CallMethod(idata->obcallback, "ConnectionDispatch",
                                        "O", conn_obj);

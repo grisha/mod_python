@@ -20,6 +20,8 @@
 __all__ = ["apache", "cgihandler", "psp",
            "publisher", "util", "python22"]
 
-version = "3.3.2-dev-20080819"
+version = "4.0.0-dev-20130802" # ZZZ this is wrong
+
+import apache
 
 

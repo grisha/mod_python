@@ -191,7 +191,7 @@ static struct PyMemberDef server_rec_mbrs[] = {
     {"server_hostname",    T_STRING,  OFF(server_hostname)},
     {"port",               T_SHORT,   OFF(port)},
     {"error_fname",        T_STRING,  OFF(error_fname)},
-    {"loglevel",           T_INT,     OFF(loglevel)},
+    {"loglevel",           T_INT,     OFF(log.level)},
     {"is_virtual",         T_INT,     OFF(is_virtual)},
     /* XXX implement module_config ? */
     /* XXX implement lookup_defaults ? */
@@ -288,7 +288,13 @@ static PyObject *getmakeobj(serverobject* self, void *objname)
 
 static PyObject *my_generation(serverobject *self, void *objname)
 {
-    return PyInt_FromLong((long)ap_my_generation);
+    int mpm_generation = 0;
+#if defined(AP_MPMQ_GENERATION)
+    ap_mpm_query(AP_MPMQ_GENERATION, &mpm_generation);
+#else
+    mpm_generation = ap_my_generation;
+#endif
+    return PyInt_FromLong((long)mpm_generation);
 }
 
 static PyObject *restart_time(serverobject *self, void *objname)

@@ -429,8 +429,8 @@ class SimpleTestCase(unittest.TestCase):
             self.fail("server.is_virtual should be 1")
         
         log("    server.timeout: %s" % `server.timeout`)
-        if not server.timeout in (5.0, 300.0):
-            self.fail("server.timeout should be 5.0 or 300.0")
+        if not server.timeout in (5.0, 60.0):
+            self.fail("server.timeout should be 5.0 or 60.0")
         
         log("    server.keep_alive_timeout: %s" % `server.keep_alive_timeout`)
         if server.keep_alive_timeout != 15.0:
@@ -535,9 +535,10 @@ class SimpleTestCase(unittest.TestCase):
         if conn.local_host is not None:
             self.fail("conn.local_host should be None")
 
-        log("    connection.id: %s" % `conn.id`)
-        if conn.id > 100:
-            self.fail("conn.id should not be this high")
+#ZZZ
+###        log("    connection.id: %s" % `conn.id`)
+###        if conn.id > 100:
+###            self.fail("conn.id should not be this high")
         
         log("    connection.notes: %s" % `conn.notes`)
         if `conn.notes` != '{}':
@@ -590,9 +591,10 @@ def simple_handler(req):
 def req_add_bad_handler(req):
     # bad_handler does not exist so adding it should 
     # should raise an AttributeError exception
-    
-    req.log_error("req_add_bad_handler")
+
+    req.log_error("req_add_bad_handler " + req.hlist.handler)
     req.add_handler("PythonHandler", "tests::bad_handler")
+    req.log_error("req_add_bad_handler " + req.hlist.handler)
     req.write("test ok")
 
     return apache.OK

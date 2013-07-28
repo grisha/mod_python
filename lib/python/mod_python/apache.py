@@ -557,6 +557,7 @@ class CallBack:
             except:
                 # last try
                 traceback.print_exc()
+                sys.stderr.flush()
 
         finally:
             # erase the traceback
@@ -1002,7 +1003,7 @@ except ImportError:
     APLOG_INFO = 6
     APLOG_DEBUG = 7
 
-APLOG_NOERRNO = 8
+APLOG_NOERRNO = 0 #ZZZ remove me altogether?
 
 OK = REQ_PROCEED = 0
 DONE = -2

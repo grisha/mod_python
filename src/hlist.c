@@ -41,7 +41,6 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d,
     hle = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
 
     hle->handler = h;
-    hle->callable = o;
     hle->directory = d;
     hle->d_is_fnmatch = d_is_fnmatch;
     hle->regex = regex;
@@ -72,7 +71,6 @@ hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
     nhle = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
 
     nhle->handler = h;
-    nhle->callable = o;
     nhle->directory = d;
     nhle->d_is_fnmatch = d_is_fnmatch;
     nhle->regex = regex;
@@ -96,7 +94,6 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
 
     head = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
     head->handler = hle->handler;
-    head->callable = hle->callable;
     head->directory = hle->directory;
     head->d_is_fnmatch = hle->d_is_fnmatch;
     head->regex = hle->regex;
@@ -108,7 +105,6 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
         nhle->next = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
         nhle = nhle->next;
         nhle->handler = hle->handler;
-        nhle->callable = hle->callable;
         nhle->directory = hle->directory;
         nhle->d_is_fnmatch = hle->d_is_fnmatch;
         nhle->regex = hle->regex;
@@ -137,12 +133,10 @@ void hlist_extend(apr_pool_t *p, hl_entry *hle1,
         hle1->next = (hl_entry *)apr_pcalloc(p, sizeof(hl_entry));
         hle1 = hle1->next;
         hle1->handler = hle2->handler;
-        hle1->callable = hle2->callable;
         hle1->directory = hle2->directory;
         hle1->d_is_fnmatch = hle2->d_is_fnmatch;
         hle1->regex = hle2->regex;
         hle1->silent = hle2->silent;
-        hle1->parent = hle2->parent;
         hle2 = hle2->next;
     }
 }
