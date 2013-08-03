@@ -20,7 +20,6 @@ If you can't read instructions:
 
 ```shell
 $ ./configure --with-apxs=/usr/local/apache/sbin/apxs
-
 $ make
 $ su
 # make install
