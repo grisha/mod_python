@@ -3,12 +3,12 @@ Mod_Python
 
 This is the Mod_Python README file. It consists of the following parts:
 
-1. Getting Started
-2. Flex
-3. New in 3.3
-4. New in 3.0
-5. Migrating from Mod_Python 2.7.8
-6. OS Hints
+1. [Getting Started](#1-getting-started)
+2. [Flex](#2-flex)
+3. [New in 3.3](#3-new-in-33)
+4. [New in 3.0](#4-new-in-30)
+5. [Migrating from Mod_Python 2.7.8](#5-migrating-from-mod_python-278)
+6. [OS Hints](#6-os-hints)
 
 
 1. Getting Started
@@ -45,7 +45,7 @@ You can specify the path the flex binary by using:
 3. New in 3.3
 -------------
 
-Please refer to doc-html/ for more information.
+Please refer to `doc-html/` for more information.
 
 4. New in 3.0
 -------------
