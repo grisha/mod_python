@@ -75,8 +75,7 @@
 
 PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_input,
                               ap_input_mode_t mode, apr_size_t readbytes,
-                              char *handler, PyObject *callable, char *dir,
-                              hl_entry *parent)
+                              char * handler, char *dir)
 {
     filterobject *result;
 
@@ -106,9 +105,7 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
     result->softspace = 0;
 
     result->handler = handler;
-    result->callable = callable;
     result->dir = dir;
-    result->parent = parent;
 
     result->request_obj = NULL; 
 
@@ -499,6 +496,7 @@ static struct memberlist filter_memberlist[] = {
     {"name",               T_OBJECT,    0,                       RO},
     {"req",                T_OBJECT,    OFF(request_obj),          },
     {"is_input",           T_INT,       OFF(is_input),           RO},
+    {"handler",            T_STRING,    OFF(handler),            RO},
     {"dir",                T_STRING,    OFF(dir),                RO},
     {NULL}  /* Sentinel */
 };

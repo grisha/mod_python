@@ -346,46 +346,17 @@ objects. For a more in-depth look at Apache internals, see the
   information such as the source IP of the request to the log entry.
 \end{funcdesc}
 
-\begin{funcdesc}{import_module}{module_name\optional{, autoreload=None, log=None, path=None}}
-  This function can be used to import modules.
+\begin{funcdesc}{import_module}{module_name\optional{, autoreload=1, log=0, path=None}}
+  This function can be used to import modules taking advantage of
+  mod_python's internal mechanism which reloads modules automatically
+  if they have changed since last import. 
 
-\begin{notice}
-  This function and the module importer were completely reimplemented in
-  mod_python 3.3. If you are using an older version of mod_python do not
-  rely on this documentation and instead refer to the documentation for
-  the specific version you are using as the new importer does not behave
-  exactly the same and has additional features.
-
-  If you are trying to port code from an older version of mod_python to
-  mod_python 3.3 and can't work out why the new importer is not working
-  for you, you can enable the old module importer for specific Python
-  interpreter instances by using:
-
-  \begin{verbatim}
-    PythonOption mod_python.legacy.importer name
-  \end{verbatim}
-
-  where 'name' is the name of the interpreter instance or '*' for it to
-  be applied to all interpreter instances. This option should be placed
-  at global context within the main Apache configuration files.
-\end{notice}
-
-  When using the \code{apache.import_module()} function, the
-  \var{module_name} should be a string containing either the module name,
-  or a path to the actual code file for the module; where a module is a
-  candidate for automatic module reloading, \var{autoreload} indicates
-  whether the module should be reloaded if it has changed since the last
-  import; when \var{log} is true, a message will be written to the logs
-  when a module is reloaded; \var{path} can be a list specifying additional
-  directories to be searched for modules.
-
-  With the introduction of mod_python 3.3, the default arguments for the
-  \var{autoreload} and \var{log} arguments have been changed to
-  \code{None}, with the arguments effectively now being unnecessary except
-  in special circumstances. When the arguments are left as the default of
-  \code{None}, the Apache configuration in scope at the time of the call
-  will always be consulted automatically for any settings for the
-  \code{PythonAutoReload} and \code{PythonDebug} directives respectively.
+  \var{module_name} is a string containing the module name (it can
+  contain dots, e.g. \code{mypackage.mymodule}); \var{autoreload}
+  indicates whether the module should be reloaded if it has changed since
+  last import; when \var{log} is true, a message will be written to
+  the logs when a module is reloaded; \var{path} allows restricting
+  modules to specific paths.
 
   Example:
 
@@ -992,16 +963,19 @@ between handlers.
   containing the name of any of the apache request (but not filter or
   connection) handler directives,
   e.g. \samp{PythonHandler}. \var{handler} is a string containing the
-  name of the module and the handler function, or the callable object
-  itself. Optional \var{dir} is a string containing the name of the
-  directory to be added to the module search path when looking for the
-  handler. If no directory is specified, then the directory to search
-  in is inherited from the handler which is making the registration,
-
+  name of the module and the handler function.  Optional \var{dir} is
+  a string containing the name of the directory to be added to the
+  pythonpath. If no directory is specified, then, if there is already
+  a handler of the same type specified, its directory is inherited,
+  otherwise the directory of the presently executing handler is
+  used. If there is a \code{PythonPath} directive in effect, then
+  \code{sys.path} will be set exactly according to it (no directories
+  added, the \var{dir} argument is ignored).
+  
   A handler added this way only persists throughout the life of the
   request. It is possible to register more handlers while inside the
-  handler of the same type. One has to be careful as to not to create an
-  infinite loop this way.
+  handler of the same type. One has to be careful as to not to create
+  an infinite loop this way.
 
   Dynamic handler registration is a useful technique that allows the
   code to dynamically decide what will happen next. A typical example
@@ -1300,9 +1274,10 @@ require valid-user
   Allows dynamic registration of mod_python input filters. \var{filter_name}
   is a string which would then subsequently be used to identify the filter.
   \var{filter} is a string containing the name of the module and the filter
-  function or the callable object itself.  Optional \var{dir} is a string
-  containing the name of the directory to be added to the module search when
-  looking for the module.
+  function.  Optional \var{dir} is a string containing the name of the
+  directory to be added to the pythonpath. If there is a \code{PythonPath}
+  directive in effect, then \code{sys.path} will be set exactly according
+  to it (no directories added, the \var{dir} argument is ignored).
 
   The registration of the filter this way only persists for the life of the
   request. To actually add the filter into the chain of input filters for
@@ -1315,9 +1290,10 @@ require valid-user
   Allows dynamic registration of mod_python output filters. \var{filter_name}
   is a string which would then subsequently be used to identify the filter.
   \var{filter} is a string containing the name of the module and the filter
-  function or the callable object itself. Optional \var{dir} is a string
-  containing the name of the directory to be added to the module search
-  path when looking for the handler.
+  function. Optional \var{dir} is a string containing the name of the directory
+  to be added to the pythonpath. If there is a \code{PythonPath} directive in
+  effect, then \code{sys.path} will be set exactly according to it (no
+  directories added, the \var{dir} argument is ignored).
 
   The registration of the filter this way only persists for the life of the
   request. To actually add the filter into the chain of output filters for

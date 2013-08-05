@@ -325,7 +325,6 @@ class HttpdCtrl:
             Listen(PORT),
             PythonOption('mod_python.mutex_directory %s' % TMP_DIR),
             PythonOption('PythonOptionTest sample_value'),
-            # PythonOption('mod_python.legacy.importer *'),
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
 
@@ -514,7 +513,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.add_handler()"
         rsp = self.vhost_get("test_req_add_handler")
 
-        if (rsp != 2*"test ok"):
+        if (rsp != "test ok"):
             self.fail(`rsp`)
 
     def test_req_add_bad_handler_conf(self):
@@ -1681,7 +1680,7 @@ class PerRequestTestCase(unittest.TestCase):
                         SetHandler("mod_python"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::simplehandler"),
-                        PythonOutputFilter("tests::outputfilter1 MP_TEST_FILTER"),
+                        PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
                         PythonDebug("On"),
                         AddOutputFilter("MP_TEST_FILTER .py"))
         return str(c)
@@ -1702,7 +1701,7 @@ class PerRequestTestCase(unittest.TestCase):
                         SetHandler("mod_python"),
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::req_add_output_filter"),
-                        PythonOutputFilter("tests::outputfilter1 MP_TEST_FILTER"),
+                        PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
                         PythonDebug("On"))
         return str(c)
 
@@ -1730,7 +1729,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.register_output_filter"
         rsp = self.vhost_get("test_req_register_output_filter")
 
-        if (rsp != "TTEESSTT  OOKK"):
+        if (rsp != "TEST OK"):
             self.fail(`rsp`)
 
     def test_connectionhandler_conf(self):
@@ -1771,6 +1770,8 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("tests"),
+                                  PythonOption('PythonOptionTest ""'),
+                                  PythonOption('mod_python.mutex_directory ""'),
                                   PythonOption("testing 123"),
                                   PythonDebug("On")))
         return str(c)

@@ -53,11 +53,6 @@ PyObject *MpHList_FromHLEntry(hl_entry *hle)
 
 static PyObject *hlist_next(hlistobject *self, PyObject *args)
 {
-    if (! self->head) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-
     self->head = self->head->next;
 
     Py_INCREF(Py_None);
@@ -72,8 +67,8 @@ static PyMethodDef hlistmethods[] = {
 #define OFF(x) offsetof(hl_entry, x)
 
 static struct memberlist hlist_memberlist[] = {
+    {"handler",            T_STRING,    OFF(handler),              RO},
     {"directory",          T_STRING,    OFF(directory),            RO},
-    {"location",           T_STRING,    OFF(location),             RO},
     {"silent",             T_INT,       OFF(silent),               RO},
     {NULL}  /* Sentinel */
 };
@@ -143,14 +138,7 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
 static PyObject *hlist_repr(hlistobject *self)
 {
     PyObject *t;
-    PyObject *s;
-
-    if (! self->head) {
-        s = PyString_FromString("None");
-        return s;
-    }
-
-    s = PyString_FromString("{");
+    PyObject *s = PyString_FromString("{");
     if (self->head->handler) {
         PyString_ConcatAndDel(&s, PyString_FromString("'handler':"));
         t = PyString_FromString(self->head->handler);
@@ -163,12 +151,6 @@ static PyObject *hlist_repr(hlistobject *self)
     if (self->head->directory) {
         PyString_ConcatAndDel(&s, PyString_FromString(",'directory':"));
         t = PyString_FromString(self->head->directory);
-        PyString_ConcatAndDel(&s, PyObject_Repr(t));
-        Py_XDECREF(t);
-    }
-    if (self->head->location) {
-        PyString_ConcatAndDel(&s, PyString_FromString(",'location':"));
-        t = PyString_FromString(self->head->location);
         PyString_ConcatAndDel(&s, PyObject_Repr(t));
         Py_XDECREF(t);
     }

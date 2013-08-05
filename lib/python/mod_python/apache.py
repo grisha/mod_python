@@ -171,6 +171,18 @@ class CallBack:
 
         try:
 
+            # split module::handler
+            l = filter.handler.split('::', 1)
+            module_name = l[0]
+            if len(l) == 1:
+                # no oject, provide default
+                if filter.is_input:
+                    object_str = "inputfilter"
+                else:
+                    object_str = "outputfilter"
+            else:
+                object_str = l[1]
+
             # add the directory to pythonpath if
             # not there yet, or evaluate pythonpath
             # and set sys.path to resulting value
@@ -190,29 +202,13 @@ class CallBack:
                 if filter.dir and (filter.dir not in sys.path):
                     sys.path[:0] = [filter.dir]
 
-            if not callable(filter.handler):
+            # import module
+            module = import_module(module_name,
+                                   autoreload=int(config.get("PythonAutoReload", 1)),
+                                   log=debug)
 
-                # split module::handler
-                l = filter.handler.split('::', 1)
-                module_name = l[0]
-                if len(l) == 1:
-                    # no oject, provide default
-                    if filter.is_input:
-                        object_str = "inputfilter"
-                    else:
-                        object_str = "outputfilter"
-                else:
-                    object_str = l[1]
-
-                # import module
-                module = import_module(module_name,
-                                       autoreload=int(config.get("PythonAutoReload", 1)),
-                                       log=debug)
-
-                # find the object
-                object = resolve_object(module, object_str, arg=filter, silent=0)
-            else:
-                object = filter.handler
+            # find the object
+            object = resolve_object(module, object_str, arg=filter, silent=0)
 
             # Only permit debugging using pdb if Apache has
             # actually been started in single process mode.
@@ -318,6 +314,16 @@ class CallBack:
 
             while hlist.handler is not None:
 
+                # split module::handler
+                l = hlist.handler.split('::', 1)
+
+                module_name = l[0]
+                if len(l) == 1:
+                    # no object, provide default
+                    object_str = default_object_str
+                else:
+                    object_str = l[1]
+
                 # add the directory to pythonpath if
                 # not there yet, or evaluate pythonpath
                 # and set sys.path to resulting value
@@ -338,29 +344,14 @@ class CallBack:
                     if dir and (dir not in sys.path):
                         sys.path[:0] = [dir]
 
-                if not callable(hlist.handler):
+                # import module
+                module = import_module(module_name,
+                                       autoreload=int(config.get("PythonAutoReload", 1)),
+                                       log=debug)
 
-                    # split module::handler
-                    l = hlist.handler.split('::', 1)
-
-                    module_name = l[0]
-                    if len(l) == 1:
-                        # no object, provide default
-                        object_str = default_object_str
-                    else:
-                        object_str = l[1]
-
-                    # import module
-                    module = import_module(module_name,
-                                           autoreload=int(config.get("PythonAutoReload", 1)),
-                                           log=debug)
-
-                    # find the object
-                    object = resolve_object(module, object_str,
-                                            arg=req, silent=hlist.silent)
-
-                else:
-                    object = hlist.handler
+                # find the object
+                object = resolve_object(module, object_str,
+                                        arg=req, silent=hlist.silent)
 
                 if not hlist.silent or object is not None:
 
@@ -456,7 +447,6 @@ class CallBack:
                 filter.req.ssi_globals = {}
 
             filter.req.ssi_globals["filter"] = filter
-
             filter.req.ssi_globals["__file__"] = filter.req.filename
 
             code = code.replace('\r\n', '\n').rstrip()
@@ -473,8 +463,10 @@ class CallBack:
         except:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
+                filter.disable()
                 result = self.ReportError(exc_type, exc_value, exc_traceback,
-                                          filter=filter, phase=filter.name,
+                                          req=filter.req, filter=filter,
+                                          phase=filter.name,
                                           hname=filter.req.filename,
                                           debug=debug)
             finally:
@@ -565,7 +557,6 @@ class CallBack:
             except:
                 # last try
                 traceback.print_exc()
-                sys.stderr.flush()
 
         finally:
             # erase the traceback
@@ -924,18 +915,6 @@ def init(name, server):
 
     global _callback
     _callback = CallBack()
-
-    options = main_server.get_options()
-    #interpreters = options.get('mod_python.future.importer', None)
-    interpreters = options.get('mod_python.legacy.importer', None)
-    if interpreters:
-        interpreters = map(lambda x: x.strip(), interpreters.split(','))
-        #if '*' in interpreters or interpreter in interpreters:
-        if not ('*' in interpreters or interpreter in interpreters):
-            from mod_python import importer
-    else:
-        from mod_python import importer
-
     return _callback
 
 ## Some functions made public
