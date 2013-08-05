@@ -138,9 +138,8 @@ static int valid_phase(const char *p)
 
 static PyObject *req_add_handler(requestobject *self, PyObject *args)
 {
-    char *phase = NULL;
-    char *handler = NULL;
-    PyObject *callable = NULL;
+    char *phase;
+    char *handler;
     const char *dir = NULL;
     const char *currphase;
 
@@ -158,20 +157,6 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
                         apr_psprintf(self->request_rec->pool,
                                      "Invalid phase: %s", phase));
         return NULL;
-    }
-
-    if (callable) {
-        if (!PyCallable_Check(callable)) {
-            PyErr_SetString(PyExc_ValueError, 
-                            "handler must be a string or callable object");
-            return NULL;
-        } else {
-            /* Cache reference in list of callable handler objects
-             * so that they can be dereferenced when request object
-             * destroyed at end of phase. */
-            if (PyList_Append(self->callbacks, callable) == -1)
-                return NULL;
-        }
     }
 
     /* Canonicalize path and add trailing slash at
@@ -214,7 +199,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
 
         /* then just append to hlist */
         hlist_append(self->request_rec->pool, self->hlo->head,
-                     handler, callable, dir, 0, NULL, NULL, 0, NULL, NOTSILENT,
+                     handler, callable, dir, 0, NULL, NOTSILENT,
                      self->hlo->head);
     }
     else {
@@ -231,13 +216,11 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
         hle = apr_hash_get(req_config->dynhls, phase, APR_HASH_KEY_STRING);
 
         if (! hle) {
-            hle = hlist_new(self->request_rec->pool, handler, callable, dir,
-                            0, NULL, NULL, 0, NULL, NOTSILENT, self->hlo->head);
+            hle = hlist_new(self->request_rec->pool, handler, dir, 0, NULL, NOTSILENT);
             apr_hash_set(req_config->dynhls, phase, APR_HASH_KEY_STRING, hle);
         }
         else {
-            hlist_append(self->request_rec->pool, hle, handler, callable, dir,
-                         0, NULL, NULL, 0, NULL, NOTSILENT, self->hlo->head);
+            hlist_append(self->request_rec->pool, hle, handler, dir, 0, NULL, NOTSILENT);
         }
     }
     
@@ -321,29 +304,14 @@ static PyObject *req_add_output_filter(requestobject *self, PyObject *args)
 
 static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
 {
-    char *name = NULL;
-    char *handler = NULL;
-    PyObject *callable = NULL;
+    char *name;
+    char *handler;
     char *dir = NULL;
     py_req_config *req_config;
     py_handler *fh;
 
-    if (! PyArg_ParseTuple(args, "ss|s", &name, &handler, &dir)) {
-        PyErr_Clear();
-        if (! PyArg_ParseTuple(args, "sO|s", &name, &callable, &dir)) {
-            PyErr_SetString(PyExc_ValueError, 
-                            "handler must be a string or callable object");
-            return NULL;
-        }
-    }
-
-    if (callable) {
-        /* Cache reference in list of callable filter objects
-         * so that they can be dereferenced when request object
-         * destroyed at end of phase. */
-        if (PyList_Append(self->callbacks, callable) == -1)
-            return NULL;
-    }
+    if (! PyArg_ParseTuple(args, "ss|s", &name, &handler, &dir)) 
+        return NULL;
 
     req_config = (py_req_config *) ap_get_module_config(
                   self->request_rec->request_config, &python_module);
@@ -351,8 +319,6 @@ static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
     fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
-    fh->callable = callable;
-    fh->parent = self->hlo->head;
 
     /* Canonicalize path and add trailing slash at
      * this point if directory was provided. */
@@ -396,29 +362,14 @@ static PyObject *req_register_input_filter(requestobject *self, PyObject *args)
 
 static PyObject *req_register_output_filter(requestobject *self, PyObject *args)
 {
-    char *name = NULL;
-    char *handler = NULL;
-    PyObject *callable = NULL;
+    char *name;
+    char *handler;
     char *dir = NULL;
     py_req_config *req_config;
     py_handler *fh;
 
-    if (! PyArg_ParseTuple(args, "ss|s", &name, &handler, &dir))  {
-        PyErr_Clear();
-        if (! PyArg_ParseTuple(args, "sO|s", &name, &callable, &dir)) {
-            PyErr_SetString(PyExc_ValueError, 
-                            "handler must be a string or callable object");
-            return NULL;
-        }
-    }
-
-    if (callable) {
-        /* Cache reference in list of callable filter objects
-         * so that they can be dereferenced when request object
-         * destroyed at end of phase. */
-        if (PyList_Append(self->callbacks, callable) == -1)
-            return NULL;
-    }
+    if (! PyArg_ParseTuple(args, "ss|s", &name, &handler, &dir)) 
+        return NULL;
 
     req_config = (py_req_config *) ap_get_module_config(
                   self->request_rec->request_config, &python_module);
@@ -426,8 +377,6 @@ static PyObject *req_register_output_filter(requestobject *self, PyObject *args)
     fh = (py_handler *) apr_pcalloc(self->request_rec->pool,
                                     sizeof(py_handler));
     fh->handler = apr_pstrdup(self->request_rec->pool, handler);
-    fh->callable = callable;
-    fh->parent = self->hlo->head;
 
     /* Canonicalize path and add trailing slash at
      * this point if directory was provided. */
