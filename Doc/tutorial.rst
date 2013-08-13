@@ -11,7 +11,7 @@ This is a quick guide to getting started with mod_python programming
 once you have it installed. This is not an installation manual.
 
 It is also highly recommended to read (at least the top part of)
-section :ref:`pythonapi` ZZZ, after completing this tutorial.
+section :ref:`pythonapi`, after completing this tutorial.
 
 .. _tut-pub:
 
@@ -104,7 +104,7 @@ Note the ``action`` element of the ``<form>`` tag points to
        return s
 
 When the user clicks the Submit button, the publisher handler will
-load the :function:`email` function in the :module:`form` module,
+load the :func:`email` function in the :mod:`form` module,
 passing it the form fields as keyword arguments. It will also pass the
 request object as ``req``.
 
@@ -120,12 +120,12 @@ great deal, all the power of mod_python is still available to this
 program, since it has access to the request object. You can do all the
 same things you can do with a "native" mod_python handler, e.g. set
 custom headers via ``req.headers_out``, return errors by raising
-:exception:`apache.SERVER_ERROR` exceptions, write or read directly to
-and from the client via :method:`req.write()` and :method:`req.read()`,
+:exc:`apache.SERVER_ERROR` exceptions, write or read directly to
+and from the client via :meth:`req.write()` and :meth:`req.read()`,
 etc.
 
-Read Section :ref:`hand-pub` Publisher Handler ZZZ for more
-information on the publisher handler.
+Read Section :ref:`hand-pub` for more information on the publisher
+handler.
 
 .. _tut-overview:
 
@@ -166,7 +166,7 @@ provided. Because it has no name, it is sometimes referred to as as
 :dfn:`generic` handler. The default Apache action for this handler is
 to read the file and send it to the client. Most applications you will
 write will override this one handler. To see all the possible
-handlers, refer to Section :ref:`directives` Apache Directives ZZZ.
+handlers, refer to Section :ref:`directives`.
 
 .. _tut-what-it-do:
 
@@ -255,12 +255,12 @@ the following:
     handler function was called ``'spam'``, then the directive would
     be ``'PythonHandler myscript::spam'``.
 
-    Note that a handler must take one argument - the request ZZZ - add ref
-    object. The request object is an object that provides all of the
+    Note that a handler must take one argument - the :ref:`pyapi-mprequest`.
+    The request object is an object that provides all of the
     information about this particular request - such as the IP of
     client, the headers, the URI, etc. The communication back to the
     client is also done via the request object, i.e. there is no
-    ``response'' object.
+    "response" object.
 
   * ::
 
@@ -407,7 +407,7 @@ Let's look at this line by line:
   were expecting, we tell Apache to go ahead and proceed by returning
   :const:`apache.OK`. Apache will then consider this phase of the
   request complete, and proceed to the next phase. (Which in this case
-  would be :function:`handler()` if it's a ``'.py'`` file).
+  would be :func:`handler()` if it's a ``'.py'`` file).
 
 * ::
 

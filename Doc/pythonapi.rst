@@ -43,12 +43,11 @@ to name interpreters using the Apache virtual server name
 virtual server execute in the same subinterpreter, but scripts in
 different virtual servers execute in different subinterpreters with
 completely separate namespaces.
-:ref:`dir-other-ipd` PythonInterpPerDirectory ZZZ and
-:ref:`dir-other-ipdv` PythonInterpPerDirective ZZZ
+:ref:`dir-other-ipd`  and :ref:`dir-other-ipdv`
 directives alter the naming convention to use the absolute path of the
 directory being accessed, or the directory in which the
 ``Python*Handler`` was encountered, respectively.
-:ref:`dir-other-pi` PythonInterpreter ZZZ can be used to
+:ref:`dir-other-pi` can be used to
 force the interpreter name to a specific string overriding any naming
 conventions.
 
@@ -902,7 +901,7 @@ Table Object (mp_table)
 .. class:: table([mapping-or-sequence])
 
    Returns a new empty object of type ``mp_table``. See Section
-   :ref:`pyapi-mptable` ZZZ for description of the table object. The
+   :ref:`pyapi-mptable` for description of the table object. The
    *mapping-or-sequence* will be used to provide initial values for
    the table.
 
@@ -1395,14 +1394,14 @@ Request Members
 .. attribute:: request.connection
 
    A ``connection`` object associated with this request. See
-   :ref:`pyapi-mpconn` ZZZ Connection Object for more details.
+   :ref:`pyapi-mpconn` Object for more details.
    *(Read-Only)*
 
 
 .. attribute:: request.server
 
    A server object associated with this request. See 
-   :ref:`pyapi-mpserver` ZZZ Server Object for more details.
+   :ref:`pyapi-mpserver` for more details.
    *(Read-Only)*
 
 
@@ -1501,7 +1500,7 @@ Request Members
    :const:`HTTP_NOT_IMPLEMENTED`. This field is for Apache's
    internal use, to set the ``Allowed:`` methods use
    :meth:`request.allow_methods` method, described in section
-   :ref:`pyapi-mprequest-meth`. ZZZ  *(Read-Only)*
+   :ref:`pyapi-mprequest-meth`. *(Read-Only)*
 
 
 .. attribute:: request.allowed_xmethods
@@ -1514,7 +1513,7 @@ Request Members
    Tuple. List of allowed methods. Used in relation with
    :const:`METHOD_NOT_ALLOWED`. This member can be modified via
    :meth:`request.allow_methods` described in section
-   :ref:`pyapi-mprequest-meth`. ZZZ *(Read-Only)*
+   :ref:`pyapi-mprequest-meth`. *(Read-Only)*
 
 
 .. attribute:: request.sent_bodyct
@@ -2239,11 +2238,11 @@ class. This class is similar to the standard library module
    blank strings. The default is false, which means that blank values
    are ignored as if they were not included.
 
-   The optional argument *strict_parsing* is not yet implemented. ZZZ
+   The optional argument *strict_parsing* is not yet implemented.
 
    The optional argument *file_callback* allows the application to
    override both file creation/deletion semantics and location. See
-   :ref:`pyapi-util-fstor-examples` ZZZ FieldStorage Examples for
+   :ref:`pyapi-util-fstor-examples` for
    additional information. *New in version 3.2*
 
    The optional argument *field_callback* allows the application to
@@ -2633,7 +2632,7 @@ specification published by Netscape.
 
 .. seealso::
 
-   `ZZZ Persistent Client State - HTTP Cookies <http://wp.netscape.com/newsref/std/cookie_spec.html>`_
+   `Persistent Client State - HTTP Cookies <http://web.archive.org/web/20070202195439/http://wp.netscape.com/newsref/std/cookie_spec.html>`_
       for the original Netscape specification.
 
    :rfc:`2109`
@@ -3274,6 +3273,9 @@ The following example demonstrates a simple hit counter.::
 
 .. _pyapi-psp:
 
+:mod:`psp` -- Python Server Pager
+=================================
+
 .. module:: psp
    :synopsis: Python Server Pages
 .. moduleauthor:: Gregory Trubetskoy grisha@modpython.org
@@ -3289,14 +3291,13 @@ JSP and others.
 The parser used by :mod:`psp` is written in C (generated using flex)
 and is therefore very fast.
 
-See :ref:`hand-psp` ZZZ ``PSP Handler`` for additional PSP
-information.
+See :ref:`hand-psp` for additional PSP information.
 
 Inside the document, Python :dfn:`code` needs to be surrounded by
-``'<\%'`` and ``'\%>'``. Python :dfn:`expressions` are enclosed in
-``'<\%='`` and ``'\%>'``. A :dfn:`directive` can be enclosed in
-``'<\%@'`` and ``'\%>'``. A comment (which will never be part of
-the resulting code) can be enclosed in ``'<\%--'`` and ``'--\%>'``
+``'<%'`` and ``'%>'``. Python :dfn:`expressions` are enclosed in
+``'<%='`` and ``'%>'``. A :dfn:`directive` can be enclosed in
+``'<%@'`` and ``'%>'``. A comment (which will never be part of
+the resulting code) can be enclosed in ``'<%--'`` and ``'--%>'``
 
 Here is a primitive PSP page that demonstrated use of both code and
 expression embedded in an HTML document::
@@ -3362,7 +3363,7 @@ The above will be internally translated to the following Python code::
 
 The parser is also smart enough to figure out the indent if the last
 line of Python ends with ``':'`` (colon). Considering this, and that the
-indent is reset when a newline is encountered inside ``'<\% \%>'``, the
+indent is reset when a newline is encountered inside ``'<% %>'``, the
 above page can be written as::
 
    <html>

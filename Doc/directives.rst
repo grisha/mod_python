@@ -25,10 +25,10 @@ Python*Handler Directive Syntax
 
 All request handler directives have the following syntax: 
 
-``Python*Handler *handler [handler ...] [ | .ext [.ext ...] ]* ``
+``Python*Handler handler [handler ...] [ | .ext [.ext ...] ]``
 
 Where *handler* is a callable object that accepts a single argument -
-request object, and *.ext* is a file extension.
+request object, and *.ext* is an optional file extension.
 
 Multiple handlers can be specified on a single line, in which case
 they will be called sequentially, from left to right. Same handler
@@ -89,6 +89,13 @@ un-Python-like) ``'::'`` takes the time consuming work of figuring out
 where the module part ends and the object inside of it begins away
 from mod_python resulting in a modest performance gain.
 
+.. index::
+   pair: phase; order
+
+The handlers below are documented in order in which phases are
+processed by Apache.
+
+
 .. _dir-handlers-prrh:
 
 PythonPostReadRequestHandler
@@ -126,54 +133,7 @@ execution of all subsequent handlers for this phase are aborted.
    this server (not just python programs), which is an important
    consideration if performance is a priority.
 
-.. index::
-   pair: phase; order
 
-The handlers below are documented in order in which phases are
-processed by Apache.
-
-.. _dir-handlers-th:
-
-PythonTransHandler
-------------------
-
-.. index::
-   single: PythonTransHandler
-
-`Syntax: <http://httpd.apache.org/docs-2.4/mod/directive-dict.html#Syntax>`_ *Python\*Handler Syntax* |br|
-`Context: <http://httpd.apache.org/docs-2.4/mod/directive-dict.html#Context>`_ server config, virtual host |br|
-`Override: <http://httpd.apache.org/docs-2.4/mod/directive-dict.html#Override>`_ not None |br|
-`Module: <http://httpd.apache.org/docs-2.4/mod/directive-dict.html#Module>`_ mod_python.c |br|
-
-
-This handler is called after the request has been read but before any
-other phases have been processed. This is useful to make decisions
-based upon the input header fields.
-
-Where multiple handlers are specified, if any handler in the sequence
-returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
-execution of all subsequent handlers for this phase are aborted.
-
-.. note::
-
-   When this phase of the request is processed, the URI has not yet
-   been translated into a path name, therefore this directive could
-   never be executed by Apache if it could specified within
-   ``<Directory>``, ``<Location>``, ``<File>`` directives or in an
-   :file:`.htaccess` file. The only place this directive is allowed is
-   the main configuration file, and the code for it will execute in
-   the main interpreter. And because this phase happens before any
-   identification of the type of content being requested is done
-   (i.e. is this a python program or a gif?), the python routine
-   specified with this handler will be called for *ALL* requests on
-   this server (not just python programs), which is an important
-   consideration if performance is a priority.
-
-.. index::
-   pair: phase; order
-
-The handlers below are documented in order in which phases are
-processed by Apache.
 
 .. _dir-handlers-th:
 
@@ -190,7 +150,7 @@ PythonTransHandler
 `Override: <http://httpd.apache.org/docs-2.4/mod/directive-dict.html#Override>`_ not None |br|
 `Module: <http://httpd.apache.org/docs-2.4/mod/directive-dict.html#Module>`_ mod_python.c |br|
 
-This handler gives allows for an opportunity to translate the URI into
+This handler allows for an opportunity to translate the URI into
 an actual filename, before the server's default rules (Alias
 directives and the like) are followed.
 
@@ -208,10 +168,11 @@ subsequent handlers for this phase are aborted.
    main configuration file, and the code for it will execute in the
    main interpreter.
 
+
 .. _dir-handlers-hph:
 
-PythonTransHandler
-------------------
+PythonHeaderParserHandler
+-------------------------
 
 .. index::
    single: PythonHeaderParserHandler
@@ -229,6 +190,7 @@ processing sequence.
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
 execution of all subsequent handlers for this phase are aborted.
+
 
 .. _dir-handlers-pih:
 
@@ -259,13 +221,13 @@ alias to ``PostReadRequestHandler``. When specified inside directory
 (where ``PostReadRequestHandler`` is not allowed), it aliases to
 ``PythonHeaderParserHandler``.
 
-*(This idea was borrowed from mod_perl)
+\*(This idea was borrowed from mod_perl)
 
 
 .. _dir-handlers-ach:
 
 PythonAccessHandler
-------------------
+-------------------
 
 .. index::
    single: PythonAccessHandler
@@ -337,7 +299,7 @@ An example authentication handler might look like this::
 
    :meth:`request.get_basic_auth_pw` must be called prior to using the
    :attr:`request.user` value. Apache makes no attempt to decode the
-   authentication information unless :method:`request.get_basic_auth_pw` is called.
+   authentication information unless :meth:`request.get_basic_auth_pw` is called.
 
 
 .. _dir-handlers-auzh:
@@ -738,7 +700,7 @@ different interpreters, one for each directory.
 
 .. seealso::
    
-   :ref:`pyapi-interps` Mulitple Interpreters ZZZ
+   :ref:`pyapi-interps`
        for more information
 
 
@@ -773,7 +735,7 @@ one for each directive.
 
 .. seealso::
 
-   :ref:`pyapi-interps` Mulitple Interpreters ZZZ
+   :ref:`pyapi-interps`
        for more information
 
 .. _dir-other-pi:
@@ -791,9 +753,8 @@ PythonInterpreter
 
 
 Forces mod_python to use interpreter named *name*, overriding the
-default behaviour or behaviour dictated by
-:ref:`dir-other-ipd` ZZZ ``PythonInterpPerDirectory`` or
-:ref:`dir-other-ipdv` ZZZ ``PythonInterpPerDirective`` directive.
+default behaviour or behaviour dictated by a :ref:`dir-other-ipd` or
+:ref:`dir-other-ipdv` direcive.
 
 This directive can be used to force execution that would normally
 occur in different subinterpreters to run in the same one. When
@@ -802,7 +763,7 @@ subinterpreter.
 
 .. seealso::
 
-   :ref:`pyapi-interps` Mulitple Interpreters ZZZ
+   :ref:`pyapi-interps`
        for more information
 
 .. _dir-other-phm:

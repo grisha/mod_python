@@ -21,6 +21,8 @@ a user guide and a tutorial all-in-one.
    tutorial.rst
    pythonapi.rst
    directives.rst
+   handlers.rst
+   ssi.rst
    about.rst
    copyright.rst
    license.rst

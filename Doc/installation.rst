@@ -107,8 +107,8 @@ standard autoconf stuff, :file:`./configure` does the following:
      $ ./configure --with-mutex-dir=/var/run/mod_python
 
   The mutex directory can also be specified in using a 
-  :ref:`PythonOption` ZZZ directive. 
-  See :ref:`Configuring Apache` ZZZ.
+  :ref:`dir-other-po`
+  See :ref:`inst-apacheconfig`.
 
   New in version 3.3.0
 
@@ -126,8 +126,8 @@ standard autoconf stuff, :file:`./configure` does the following:
      $ ./configure --with-max-locks=32
 
   The number of locks can also be specified in using a 
-  :ref:`PythonOption` ZZZ  directive. 
-  See :ref:`Configuring Apache` ZZZ.
+  :ref:`dir-other-po` directive. 
+  See :ref:`inst-apacheconfig`.
 
   New in version 3.2.0
 
@@ -185,10 +185,10 @@ Running :file:`make`
 Installing
 ==========
 
-.. _inst-makeinstall
+.. _inst-makeinstall:
 
 .. index::
-   paris: make; install
+   pair: make; install
 
 Running :file:`make install`
 
@@ -244,10 +244,10 @@ Configuring Apache
 
   The default directory for mutex lock files is :file:`/tmp`. The
   default value can be be specified at compile time using
-  :ref:`./configure ----with-mutex-dir` ZZZ.
+  ``./configure --with-mutex-dir``.
 
   Alternatively this value can be overriden at apache startup using 
-  a :ref:`PythonOption`::
+  a :ref:`dir-other-po`::
 
      PythonOption mod_python.mutex_directory "/tmp"
 
@@ -279,10 +279,10 @@ Configuring Apache
   higher performance might be 32.
 
   The maximum number of locks can be specified at compile time
-  using :ref:`./configure ----with-max-locks` ZZZ.
+  using ``./configure ----with-max-locks``.
 
   Alternatively this value can be overriden at apache startup using 
-  a :ref:`PythonOption` ZZZ::
+  a :ref:`dir-other-po`::
 
      PythonOption mod_python.mutex_locks 8 
 
@@ -329,7 +329,7 @@ Testing
    (Substitute :file:`/some/directory` above for something applicable to
    your system, usually your Apache ServerRoot)
 
-#. This redirects all requests for URLs ending in :file:`.py} to the
+#. This redirects all requests for URLs ending in :file:`.py`} to the
    mod_python handler. mod_python receives those requests and looks
    for an appropriate PythonHandler to handle them. Here, there is a
    single PythonHandler directive defining mptest as the python
@@ -362,7 +362,7 @@ Testing
    :file:`mptest.py`. That's because you explicitely set the handler
    to always be :file:`mptest`, whatever the requested file was.
 
-#. If everything worked well, move on to Chapter :ref:`Tutorial` ZZZ.
+#. If everything worked well, move on to Chapter :ref:`tutorial`.
 
 
 .. _inst-trouble:
@@ -378,7 +378,7 @@ There are a few things you can try to identify the problem:
 
 * Try running Apache from the command line in single process mode::
 
-     ./httpd -X ZZZ does this even work?
+     ./httpd -X # ZZZ does this even work?
 
   This prevents it from backgrounding itself and may provide some useful
   information.

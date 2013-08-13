@@ -11,13 +11,13 @@ SVNROOT      = http://svn.python.org/projects
 SPHINXOPTS   =
 PAPER        =
 SOURCES      =
-DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py)
+DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py) #ZZZ
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help checkout update build html htmlhelp latex text changes linkcheck \
-	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
+	suspicious coverage htmlview clean dist check serve \
 	autobuild-dev autobuild-stable
 
 help:
@@ -26,13 +26,11 @@ help:
 	@echo "  update     to update build tools"
 	@echo "  html       to make standalone HTML files"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
-	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter (NB: you'll need to backslash escape the _ in Mod_python in the .tex file)"
 	@echo "  text       to make plain text files"
 	@echo "  changes    to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  coverage   to check documentation coverage for library and C API"
-	@echo "  doctest    to run doctests in the documentation"
-	@echo "  pydoc-topics  to regenerate the pydoc topics file"
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
 	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  check      to run a check for frequent markup errors"
@@ -102,16 +100,6 @@ coverage: BUILDER = coverage
 coverage: build
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
 
-doctest: BUILDER = doctest
-doctest: build
-	@echo "Testing of doctests in the sources finished, look at the" \
-	      "results in build/doctest/output.txt"
-
-pydoc-topics: BUILDER = pydoc-topics
-pydoc-topics: build
-	@echo "Building finished; now copy build/pydoc-topics/topics.py" \
-	      "to Lib/pydoc_data/topics.py"
-
 htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
 
@@ -128,43 +116,43 @@ dist:
 
 	# archive the HTML
 	make html
-	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
-	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
-	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
-	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)
-	rm -r dist/python-$(DISTVERSION)-docs-html
-	rm dist/python-$(DISTVERSION)-docs-html.tar
+	cp -pPR build/html dist/mod_python-$(DISTVERSION)-docs-html
+	tar -C dist -cf dist/mod_python-$(DISTVERSION)-docs-html.tar mod_python-$(DISTVERSION)-docs-html
+	bzip2 -9 -k dist/mod_python-$(DISTVERSION)-docs-html.tar
+	(cd dist; zip -q -r -9 mod_python-$(DISTVERSION)-docs-html.zip mod_python-$(DISTVERSION)-docs-html)
+	rm -r dist/mod_python-$(DISTVERSION)-docs-html
+	rm dist/mod_python-$(DISTVERSION)-docs-html.tar
 
 	# archive the text build
 	make text
-	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
-	tar -C dist -cf dist/python-$(DISTVERSION)-docs-text.tar python-$(DISTVERSION)-docs-text
-	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-text.tar
-	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-text.zip python-$(DISTVERSION)-docs-text)
-	rm -r dist/python-$(DISTVERSION)-docs-text
-	rm dist/python-$(DISTVERSION)-docs-text.tar
+	cp -pPR build/text dist/mod_python-$(DISTVERSION)-docs-text
+	tar -C dist -cf dist/mod_python-$(DISTVERSION)-docs-text.tar mod_python-$(DISTVERSION)-docs-text
+	bzip2 -9 -k dist/mod_python-$(DISTVERSION)-docs-text.tar
+	(cd dist; zip -q -r -9 mod_python-$(DISTVERSION)-docs-text.zip mod_python-$(DISTVERSION)-docs-text)
+	rm -r dist/mod_python-$(DISTVERSION)-docs-text
+	rm dist/mod_python-$(DISTVERSION)-docs-text.tar
 
 	# archive the A4 latex
 	rm -rf build/latex
 	make latex PAPER=a4
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
-	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
-	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
+	cp build/latex/docs-pdf.zip dist/mod_python-$(DISTVERSION)-docs-pdf-a4.zip
+	cp build/latex/docs-pdf.tar.bz2 dist/mod_python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 
 	# archive the letter latex
 	rm -rf build/latex
 	make latex PAPER=letter
 	-sed -i 's/makeindex/makeindex -q/' build/latex/Makefile
 	(cd build/latex; make clean && make all-pdf && make FMT=pdf zip bz2)
-	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
-	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
+	cp build/latex/docs-pdf.zip dist/mod_python-$(DISTVERSION)-docs-pdf-letter.zip
+	cp build/latex/docs-pdf.tar.bz2 dist/mod_python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools
 
 serve:
-	../Tools/scripts/serve.py build/html
+	./tools/serve.py build/html
 
 # Targets for daily automated doc build
 
