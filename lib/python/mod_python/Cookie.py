@@ -16,7 +16,6 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id$
 
 """
 

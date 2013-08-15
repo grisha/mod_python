@@ -24,7 +24,6 @@ extern "C" {
  *
  * serverobject.h
  *
- * $Id$
  *
  */
 

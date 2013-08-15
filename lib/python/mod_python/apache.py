@@ -16,7 +16,6 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id$
 
 import sys
 import traceback

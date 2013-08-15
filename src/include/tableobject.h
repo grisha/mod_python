@@ -24,7 +24,6 @@ extern "C" {
  *
  * tableobject.h
  *
- * $Id$
  *
  */
 

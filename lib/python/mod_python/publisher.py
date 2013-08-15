@@ -15,7 +15,6 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id$
 
 """
   This handler is conceptually similar to Zope's ZPublisher, except

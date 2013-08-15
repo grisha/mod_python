@@ -15,7 +15,6 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id$
 
 import apache
 import imp

@@ -15,7 +15,6 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id$
 
 __all__ = ["apache", "cgihandler", "psp",
            "publisher", "util", "python22"]

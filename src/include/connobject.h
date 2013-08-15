@@ -24,7 +24,6 @@ extern "C" {
  *
  * connobject.h
  *
- * $Id$
  *
  */
 

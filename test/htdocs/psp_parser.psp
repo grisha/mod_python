@@ -1,4 +1,3 @@
-<%-- $Id$ --%>
 # format of this file
 # Comment lines are ignored (python or psp).
 # Lines beginning with test will be included, which 

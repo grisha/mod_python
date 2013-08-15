@@ -18,7 +18,6 @@
  *
  * mod_python.c 
  *
- * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.

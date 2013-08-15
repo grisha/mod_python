@@ -1,4 +1,3 @@
-# $Id$
 #
 # Usage:
 #   <Directory /where/ever>

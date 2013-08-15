@@ -15,7 +15,6 @@
  #
  # Originally developed by Gregory Trubetskoy.
  #
- # $Id$
 
 # This file contains a bunch of hacks used to support Python 2.2
 

@@ -16,7 +16,6 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.

@@ -18,7 +18,6 @@
  *
  * hlist.c 
  *
- * $Id$
  *
  * See accompanying documentation and source code comments 
  * for details.

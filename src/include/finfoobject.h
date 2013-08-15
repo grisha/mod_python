@@ -18,7 +18,6 @@
  *
  * finfoobject.h 
  *
- * $Id$
  *
  */
 

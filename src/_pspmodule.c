@@ -15,7 +15,6 @@
  *
  * This file originally written by Stering Hughes
  * 
- * $Id$
  *
  * See accompanying documentation and source code comments for
  * details.

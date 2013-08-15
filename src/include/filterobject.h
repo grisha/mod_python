@@ -18,7 +18,6 @@
  *
  * filterobject.h 
  *
- * $Id$
  *
  */
 

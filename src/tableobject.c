@@ -18,7 +18,6 @@
  *
  * tableobject.c 
  *
- * $Id$
  *
  */
 

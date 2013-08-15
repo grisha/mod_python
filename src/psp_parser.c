@@ -491,7 +491,6 @@ static yyconst flex_int16_t yy_chk[115] =
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
  *
- * $Id$
  *
  * This file originally written by Sterling Hughes.
  * 

@@ -18,7 +18,6 @@
  # This was donated by Nicolas Lehuen, and also posted to the Python Cookbook
  # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/302997
  # 
- # $Id$
 
 from os import stat
 from time import time, mktime

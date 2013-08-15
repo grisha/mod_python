@@ -13,7 +13,6 @@
  # implied.  See the License for the specific language governing
  # permissions and limitations under the License.
  #
- # $Id$
  #
  # Config maker, a la HTMLGen. This could grow into something useful.
  #

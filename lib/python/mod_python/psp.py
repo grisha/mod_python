@@ -16,7 +16,6 @@
  #
  # This file originally written by Sterling Hughes
  #
- # $Id$
 
 import apache, Session, util, _psp
 import _apache

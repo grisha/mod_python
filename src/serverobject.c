@@ -18,7 +18,6 @@
  *
  * serverobject.c 
  *
- * $Id$
  *
  */
 

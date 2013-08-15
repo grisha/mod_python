@@ -18,7 +18,6 @@
  *
  * _apachemodule.c 
  *
- * $Id$
  *
  */
 

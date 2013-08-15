@@ -18,7 +18,6 @@
  *
  * requestobject.c 
  *
- * $Id$
  *
  */
 
