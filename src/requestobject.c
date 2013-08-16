@@ -755,7 +755,7 @@ static PyObject * req_log_error(requestobject *self, PyObject *args)
     if (message) {
 
         if (! level)
-            level = APLOG_NOERRNO|APLOG_ERR;
+            level = APLOG_ERR;
 
         ap_log_rerror(APLOG_MARK, level, 0, self->request_rec, "%s", message);
     }

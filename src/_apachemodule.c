@@ -50,7 +50,7 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
     if (message) {
 
         if (! level) 
-            level = APLOG_NOERRNO|APLOG_ERR;
+            level = APLOG_ERR;
       
         if (!server || (PyObject *)server == Py_None)
             serv_rec = NULL;

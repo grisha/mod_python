@@ -110,8 +110,6 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 /** Things specific to mod_python, as an Apache module **/
 
 #define MP_CONFIG_KEY "mod_python_config"
-#define MODULENAME "mod_python.apache"
-#define INITFUNC "init"
 #define MAIN_INTERPRETER "main_interpreter"
 #define FILTER_NAME "MOD_PYTHON"
 

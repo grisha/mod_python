@@ -341,7 +341,7 @@ Functions
       APLOG_NOTICE
       APLOG_INFO
       APLOG_DEBUG
-      APLOG_NOERRNO
+      APLOG_NOERRNO // DEPRECATED
   
   *server* is a reference to a :meth:`request.server` object. If
   *server* is not specified, then the error will be logged to the

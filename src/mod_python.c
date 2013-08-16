@@ -59,7 +59,7 @@ static PyInterpreterState *make_interpreter(const char *name)
 
     if (! tstate) {
         /* couldn't create an interpreter, this is bad */
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
         return NULL;
     }
@@ -103,63 +103,69 @@ static PyObject * make_obcallback(char *name)
      * in the __main__ module to start up Python.
      */
 
-    if (! ((m = PyImport_ImportModule(MODULENAME)))) {
+    m = PyImport_ImportModule("mod_python.apache");
+    if (!m) {
         PyObject *path;
 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
-                     "make_obcallback: could not import %s.\n",
-                     (!MODULENAME) ? "<null>" : MODULENAME);
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                     "make_obcallback: could not import mod_python.apache.\n");
 
         PyErr_Print();
         fflush(stderr); 
 
         path = PyObject_Repr(PySys_GetObject("path"));
 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "make_obcallback: Python path being used \"%s\".",
                      PyString_AsString(path));
 
         Py_DECREF(path);
 
         return NULL;
-    }
-    
-    if (m && ! ((obCallBack = PyObject_CallMethod(m,
-                 INITFUNC, "sO", name, MpServer_FromServer(main_server))))) {
+
+    } else {
 
         const char *mp_dynamic_version = "<unknown>";
+        PyObject *mp = NULL;
         PyObject *o = NULL;
         PyObject *d = NULL;
         PyObject *f = NULL;
 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
-                     "make_obcallback: could not call %s.\n",
-                     (!INITFUNC) ? "<null>" : INITFUNC);
+        /* First make sure that C and Python code have the same version */
 
-        PyErr_Print();
-        fflush(stderr); 
-
-        //ZZZ I don't understand this - why "mod_python" and not MODULENAME
-        //and why only after there is an error? this should be checked *always*?
-
-        m = PyImport_ImportModule("mod_python");
-        if (m) {
-            d = PyModule_GetDict(m);
+        mp = PyImport_ImportModule("mod_python");
+        if (mp) {
+            d = PyModule_GetDict(mp);
             o = PyDict_GetItemString(d, "version");
             f = PyDict_GetItemString(d, "__file__");
 
-            if (o) {
+            if (o)
                 mp_dynamic_version = PyString_AsString(o);
-            }
-        }
 
-        if (strcmp(mp_version_string, mp_dynamic_version) != 0) {
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
-                         "make_obcallback: mod_python version mismatch, expected '%s', found '%s'.",
-                         mp_version_string, mp_dynamic_version);
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
-                         "make_obcallback: mod_python modules location '%s'.",
-                         PyString_AsString(f));
+            if (strcmp(mp_version_string, mp_dynamic_version) != 0) {
+                ap_log_error(APLOG_MARK, APLOG_WARNING, 0, main_server,
+                             "WARNING: mod_python version mismatch, expected '%s', found '%s'.",
+                             mp_version_string, mp_dynamic_version);
+                ap_log_error(APLOG_MARK, APLOG_WARNING, 0, main_server,
+                             "WARNING: mod_python modules location '%s'.",
+                             PyString_AsString(f));
+            }
+            Py_XDECREF(mp);
+
+            /* call init to get obCallBack */
+
+            if (! (obCallBack = PyObject_CallMethod(
+                       m, "init", "sO", name, MpServer_FromServer(main_server)))) {
+
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                             "make_obcallback: could not call init().\n");
+
+                PyErr_Print();
+                fflush(stderr);
+            }
+        } else {
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                         "make_obcallback: could not import mod_python");
         }
     }
 
@@ -242,7 +248,7 @@ static interpreterdata *get_interpreter(const char *name)
 #endif
 
     if (!interpreters) {
-         ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
+         ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                        "get_interpreter: interpreters dictionary not initialised.");
 #ifdef WITH_THREAD
         PyEval_ReleaseLock();
@@ -270,7 +276,7 @@ static interpreterdata *get_interpreter(const char *name)
 #endif
 
     if (! idata) {
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "get_interpreter: cannot get interpreter data (no more memory?)");
 #if APR_HAS_THREADS
         apr_thread_mutex_unlock(interpreters_lock);
@@ -299,7 +305,7 @@ static interpreterdata *get_interpreter(const char *name)
             PyThreadState_Swap(NULL);
 #endif
             PyThreadState_Delete(tstate);
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                       "get_interpreter: no interpreter callback found.");
 #if APR_HAS_THREADS
             apr_thread_mutex_unlock(interpreters_lock);
@@ -382,21 +388,21 @@ apr_status_t python_cleanup(void *data)
         Py_XDECREF(ptb);
 
         if (ci->request_rec) {
-            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, 
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, 
                           ci->request_rec,
                           "python_cleanup: Error calling cleanup object %s", 
                           PyString_AsString(handler));
-            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0,
                           ci->request_rec,
                           "    %s: %s", PyString_AsString(stype), 
                           PyString_AsString(svalue));
         }
         else {
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0,
                          ci->server_rec,
                          "python_cleanup: Error calling cleanup object %s", 
                          PyString_AsString(handler));
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0,
                          ci->server_rec,
                          "    %s: %s", PyString_AsString(stype), 
                          PyString_AsString(svalue));
@@ -769,13 +775,13 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     py_dynamic_version = strtok((char *)Py_GetVersion(), " ");
 
     if (strcmp(py_compile_version, py_dynamic_version) != 0) {
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                      "python_init: Python version mismatch, expected '%s', found '%s'.",
                      py_compile_version, py_dynamic_version);
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                      "python_init: Python executable found '%s'.",
                      Py_GetProgramFullPath());
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                      "python_init: Python path being used '%s'.",
                      Py_GetPath());
     }
@@ -812,7 +818,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* create the obCallBack dictionary */
         interpreters = PyDict_New();
         if (! interpreters) {
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                          "python_init: PyDict_New() failed! No more memory?");
             exit(1);
         }
@@ -1530,7 +1536,7 @@ static int python_handler(request_rec *req, char *phase)
     idata = get_interpreter(interp_name);
 
     if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                       "python_handler: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -1562,7 +1568,7 @@ static int python_handler(request_rec *req, char *phase)
     release_interpreter();
 
     if (! resultobject) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req, 
                       "python_handler: Dispatch() returned nothing.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -1570,7 +1576,7 @@ static int python_handler(request_rec *req, char *phase)
         /* Attempt to analyze the result as a string indicating which
            result to return */
         if (! PyInt_Check(resultobject)) {
-            ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req, 
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req, 
                           "python_handler: Dispatch() returned non-integer.");
             return HTTP_INTERNAL_SERVER_ERROR;
         }
@@ -1587,7 +1593,7 @@ static int python_handler(request_rec *req, char *phase)
                    XXX Remove in the future
                 */
                 if (result == OK && !req->user) {
-                    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                                   "python_handler: After PythonAuthenHandler req->user is NULL. "
                                   "Assign something to req.user if returning OK to avoid this error.");
                     return HTTP_INTERNAL_SERVER_ERROR;
@@ -1717,7 +1723,7 @@ static apr_status_t python_connection(conn_rec *con)
     idata = get_interpreter(interp_name);
 
     if (!idata) {
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, con->base_server,
                       "python_connection: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -1740,7 +1746,7 @@ static apr_status_t python_connection(conn_rec *con)
     release_interpreter();
 
     if (! resultobject) {
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server, 
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, con->base_server, 
                      "python_connection: ConnectionDispatch() returned nothing.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -1748,7 +1754,7 @@ static apr_status_t python_connection(conn_rec *con)
         /* Attempt to analyze the result as a string indicating which
            result to return */
         if (! PyInt_Check(resultobject)) {
-            ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, con->base_server, 
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, con->base_server, 
                          "python_connection: ConnectionDispatch() returned non-integer.");
             return HTTP_INTERNAL_SERVER_ERROR;
         }
@@ -1827,7 +1833,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     }
 
     if (!fh) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                       "python_filter: Could not find registered filter.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -1839,7 +1845,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     idata = get_interpreter(interp_name);
    
     if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                       "python_filter: Can't get/create interpreter.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -2013,7 +2019,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     idata = get_interpreter(interp_name);
    
     if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                       "handle_python: Can't get/create interpreter.");
 
         Py_XDECREF(tagobject);
@@ -2154,7 +2160,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     idata = get_interpreter(interp_name);
    
     if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, req,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                       "handle_python: Can't get/create interpreter.");
 
         Py_XDECREF(tagobject);
@@ -2715,7 +2721,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
                         PyErr_Print();
                         fflush(stderr); 
                     }
-                    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, s,
+                    ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                                  "directive_PythonImport: error importing %s",
                                  (!module_name) ? "<null>" : module_name);
                 }

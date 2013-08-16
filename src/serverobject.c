@@ -97,7 +97,7 @@ static PyObject * server_log_error(serverobject *self, PyObject *args)
     if (message) {
 
         if (! level)
-            level = APLOG_NOERRNO|APLOG_ERR;
+            level = APLOG_ERR;
 
         ap_log_error(APLOG_MARK, level, 0, self->server, "%s", message);
     }

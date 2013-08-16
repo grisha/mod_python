@@ -258,7 +258,7 @@ class CallBack:
                 if type(result) != type(7):
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
                     s = s + "%s, but it must be a tuple or an int." % type(result)
-                    _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, req.server)
+                    _apache.log_error(s, APLOG_ERR, req.server)
 
                     return
 
@@ -530,9 +530,9 @@ class CallBack:
                 for e in traceback.format_exception(etype, evalue, etb):
                     s = "%s %s: %s" % (phase, hname, e[:-1])
                     if req:
-                        req.log_error(s, APLOG_NOERRNO|APLOG_ERR)
+                        req.log_error(s, APLOG_ERR)
                     else:
-                        _apache.log_error(s, APLOG_NOERRNO|APLOG_ERR, srv)
+                        _apache.log_error(s, APLOG_ERR, srv)
 
                 if not debug or not req:
                     return HTTP_INTERNAL_SERVER_ERROR
@@ -609,7 +609,7 @@ def import_module(module_name, autoreload=1, log=0, path=None):
                     s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
                 else:
                     s = "mod_python: (Re)importing module '%s'" % module_name
-                _apache.log_error(s, APLOG_NOERRNO|APLOG_NOTICE)
+                _apache.log_error(s, APLOG_NOTICE)
 
             parent = None
             parts = module_name.split('.')
@@ -1002,8 +1002,7 @@ except ImportError:
     APLOG_INFO = 6
     APLOG_DEBUG = 7
 
-APLOG_NOERRNO = 0 #ZZZ remove me altogether?
-
+APLOG_NOERRNO = 0 # DEPRECATED
 OK = REQ_PROCEED = 0
 DONE = -2
 DECLINED = REQ_NOACTION = -1
