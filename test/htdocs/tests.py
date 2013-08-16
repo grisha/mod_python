@@ -1489,3 +1489,6 @@ def _test_table():
 
     log("    _test_table test finished")
 
+def okay(req):
+    req.write("test ok")
+    return apache.OK

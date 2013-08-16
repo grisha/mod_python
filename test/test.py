@@ -2612,6 +2612,50 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
                         "%s does not appear to load, Server header does not contain Python"
                         % MOD_PYTHON_SO)
 
+    def testVersionCheck(self):
+
+        print "\n* Testing C/Py version mismatch warning"
+
+        c = Directory(DOCUMENT_ROOT,
+                      SetHandler("mod_python"),
+                      PythonHandler("tests::okay"),
+                      PythonDebug("On"))
+        self.makeConfig(str(c))
+
+        self.startHttpd()
+        urllib2.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        self.stopHttpd()
+
+        # see what's in the log now
+        time.sleep(0.1)
+        log = open(os.path.join(SERVER_ROOT, "logs/error_log")).read()
+        if "mod_python version mismatch" in log:
+            self.fail("version mismatch found in logs, but versions should be same?")
+
+        from distutils.sysconfig import get_python_lib
+        version_path = os.path.join(get_python_lib(), "mod_python", "version.py")
+
+        # the rest of this test requires write perms to site-packages/mod_python
+        if os.access(version_path, os.W_OK):
+
+            # change the version to not match
+            v = open(version_path).read()
+            wrong_v = v + "\nversion = 'WRONG VERSION'\n"
+            open(version_path, "w").write(wrong_v)
+
+            try:
+                self.startHttpd()
+                urllib2.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+                self.stopHttpd()
+
+                time.sleep(0.1)
+                log = open(os.path.join(SERVER_ROOT, "logs/error_log")).read()
+                if "mod_python version mismatch" not in log:
+                    self.fail("version are different, no version mismatch found in logs")
+            finally:
+                # restore version.py
+                open(version_path, "w").write(v)
+
     def test_global_lock(self):
 
         print "\n  * Testing _global_lock"
@@ -2840,6 +2884,7 @@ def suite():
 
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(PerInstanceTestCase("testLoadModule"))
+    mpTestSuite.addTest(PerInstanceTestCase("testVersionCheck"))
     mpTestSuite.addTest(PerInstanceTestCase("test_srv_register_cleanup"))
     mpTestSuite.addTest(PerInstanceTestCase("test_apache_register_cleanup"))
     mpTestSuite.addTest(PerInstanceTestCase("test_apache_exists_config_define"))
