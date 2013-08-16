@@ -127,7 +127,6 @@ static PyObject * make_obcallback(char *name)
     if (m && ! ((obCallBack = PyObject_CallMethod(m,
                  INITFUNC, "sO", name, MpServer_FromServer(main_server))))) {
 
-        const char *mp_compile_version = MPV_STRING;
         const char *mp_dynamic_version = "<unknown>";
         PyObject *o = NULL;
         PyObject *d = NULL;
@@ -154,10 +153,10 @@ static PyObject * make_obcallback(char *name)
             }
         }
 
-        if (strcmp(mp_compile_version, mp_dynamic_version) != 0) {
+        if (strcmp(mp_version_string, mp_dynamic_version) != 0) {
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                          "make_obcallback: mod_python version mismatch, expected '%s', found '%s'.",
-                         mp_compile_version, mp_dynamic_version);
+                         mp_version_string, mp_dynamic_version);
             ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, main_server,
                          "make_obcallback: mod_python modules location '%s'.",
                          PyString_AsString(f));
@@ -765,7 +764,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     }
 
     /* mod_python version */
-    ap_add_version_component(p, VERSION_COMPONENT);
+    ap_add_version_component(p, mp_version_component);
 
     py_dynamic_version = strtok((char *)Py_GetVersion(), " ");
 

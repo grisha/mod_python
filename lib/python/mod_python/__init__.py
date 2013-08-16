@@ -17,9 +17,12 @@
  #
 
 __all__ = ["apache", "cgihandler", "psp",
-           "publisher", "util", "python22"]
+           "publisher", "util", "python22", "version"]
 
-version = "4.0.0-dev-20130802" # ZZZ this is wrong
+# This is used by mod_python.c to make sure the version of C
+# code matches the Python code.
+import version
+version = version.version
 
 import apache
 

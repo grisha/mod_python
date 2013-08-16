@@ -1,6 +1,6 @@
 #define APSTUDIO_READONLY_SYMBOLS
 #include "afxres.h"
-#include "include\mpversion.h"
+#include "include\mp_version.h"
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
@@ -20,8 +20,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION MPV_MAJOR,MPV_MINOR,MPV_PATCH,MPV_BUILD
- PRODUCTVERSION MPV_MAJOR,MPV_MINOR,MPV_PATCH,MPV_BUILD
+ FILEVERSION MP_VERSION_MAJOR,MP_VERSION_MINOR,MP_VERSION_PATCH
+ PRODUCTVERSION MP_VERSION_MAJOR,MP_VERSION_MINOR,MP_VERSION_PATCH
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -39,14 +39,14 @@ BEGIN
             VALUE "Comments", "Mod_python allows embedding Python within the Apache http server for a considerable boost in performance and added flexibility in designing web based applications. \0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Embedding Python within Apache.\0"
-            VALUE "FileVersion", MPV_STRING "\0"
+            VALUE "FileVersion", MP_VERSION_STRING "\0"
             VALUE "InternalName", "mod_python\0"
             VALUE "LegalCopyright", "Copyright © 2000-2002 Apache Software Foundation.\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "mod_python\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "mod_python\0"
-            VALUE "ProductVersion", MPV_STRING "\0"
+            VALUE "ProductVersion", MP_VERSION_STRING "\0"
             VALUE "SpecialBuild", "\0"
         END
     END

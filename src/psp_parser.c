@@ -516,7 +516,7 @@ static yyconst flex_int16_t yy_chk[115] =
 
 
 
-#line 521 "psp_parser.c"
+#line 520 "psp_parser.c"
 
 #define INITIAL 0
 #define TEXT 1
@@ -745,10 +745,10 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 47 "psp_parser.l"
+#line 46 "psp_parser.l"
 
 
-#line 753 "psp_parser.c"
+#line 752 "psp_parser.c"
 
 	if ( !yyg->yy_init )
 		{
@@ -835,7 +835,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 49 "psp_parser.l"
+#line 48 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
@@ -845,7 +845,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 56 "psp_parser.l"
+#line 55 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
 
@@ -855,28 +855,28 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 63 "psp_parser.l"
+#line 62 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\\n"));
 }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 67 "psp_parser.l"
+#line 66 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\\r"));
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 71 "psp_parser.l"
+#line 70 "psp_parser.l"
 {
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\\t"));
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 75 "psp_parser.l"
+#line 74 "psp_parser.l"
 {    /* expression */
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0); req.write(str("));
     PSP_PG(is_psp_echo) = 1;
@@ -886,7 +886,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 82 "psp_parser.l"
+#line 81 "psp_parser.l"
 {     /* python code */
     psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0);")); 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
@@ -896,14 +896,14 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 89 "psp_parser.l"
+#line 88 "psp_parser.l"
 {     /* directive */
     BEGIN DIR;
 }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 93 "psp_parser.l"
+#line 92 "psp_parser.l"
 {    /* comment */
     BEGIN COMMENT;
 }
@@ -911,14 +911,14 @@ YY_RULE_SETUP
 case 10:
 /* rule 10 can match eol */
 YY_RULE_SETUP
-#line 97 "psp_parser.l"
+#line 96 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), '\n');
 }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 101 "psp_parser.l"
+#line 100 "psp_parser.l"
 {
     if (yytext[0] == '"') {
         psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\\\""));
@@ -928,7 +928,7 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 case YY_STATE_EOF(TEXT):
-#line 109 "psp_parser.l"
+#line 108 "psp_parser.l"
 {
     yypop_buffer_state(yyscanner);
     if (!YY_CURRENT_BUFFER) {
@@ -945,7 +945,7 @@ case YY_STATE_EOF(TEXT):
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 122 "psp_parser.l"
+#line 121 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), '\n');
         
@@ -955,7 +955,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 129 "psp_parser.l"
+#line 128 "psp_parser.l"
 {
 
     if (PSP_PG(is_psp_echo)) {
@@ -983,7 +983,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 154 "psp_parser.l"
+#line 153 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), yytext[0]);
     PSP_PG(after_colon) = 1;
@@ -991,7 +991,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 159 "psp_parser.l"
+#line 158 "psp_parser.l"
 {
     psp_string_appendc(&PSP_PG(pycode), yytext[0]);
     PSP_PG(after_colon) = 0;
@@ -999,7 +999,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 164 "psp_parser.l"
+#line 163 "psp_parser.l"
 {
 
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
@@ -1011,7 +1011,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 173 "psp_parser.l"
+#line 172 "psp_parser.l"
 {
     yyless(0);
     BEGIN PYCODE;
@@ -1020,7 +1020,7 @@ YY_RULE_SETUP
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 178 "psp_parser.l"
+#line 177 "psp_parser.l"
 {
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     yyless(0);
@@ -1029,7 +1029,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 184 "psp_parser.l"
+#line 183 "psp_parser.l"
 {
     CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
     yyless(0);
@@ -1039,7 +1039,7 @@ YY_RULE_SETUP
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 190 "psp_parser.l"
+#line 189 "psp_parser.l"
 {
 
     char *filename;
@@ -1083,24 +1083,24 @@ YY_RULE_SETUP
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 232 "psp_parser.l"
+#line 231 "psp_parser.l"
 {
     BEGIN TEXT;
 }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 236 "psp_parser.l"
+#line 235 "psp_parser.l"
 {
     BEGIN TEXT;
 }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 240 "psp_parser.l"
+#line 239 "psp_parser.l"
 ECHO;
 	YY_BREAK
-#line 1105 "psp_parser.c"
+#line 1104 "psp_parser.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PYCODE):
 case YY_STATE_EOF(INDENT):
@@ -2262,7 +2262,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 240 "psp_parser.l"
+#line 239 "psp_parser.l"
 
 
 

@@ -95,7 +95,6 @@ extern apr_pool_t *child_init_pool;
 /* Apache module declaration */
 extern module AP_MODULE_DECLARE_DATA python_module;
 
-#include "mpversion.h"
 #include "util.h"
 #include "hlist.h"
 #include "hlistobject.h"
@@ -111,7 +110,6 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 /** Things specific to mod_python, as an Apache module **/
 
 #define MP_CONFIG_KEY "mod_python_config"
-#define VERSION_COMPONENT "mod_python/" MPV_STRING
 #define MODULENAME "mod_python.apache"
 #define INITFUNC "init"
 #define MAIN_INTERPRETER "main_interpreter"
@@ -135,6 +133,14 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #ifndef LONG_LONG
 #define LONG_LONG PY_LONG_LONG
 #endif
+
+/* version stuff */
+extern const char * const mp_git_sha;
+extern const int mp_version_major;
+extern const int mp_version_minor;
+extern const int mp_version_patch;
+extern const char * const mp_version_string;
+extern const char * const mp_version_component;
 
 /* structure to hold interpreter data */
 typedef struct {

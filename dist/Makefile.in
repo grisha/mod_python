@@ -18,7 +18,6 @@
  #
 
 PYTHON_BIN=@PYTHON_BIN@
-MP_VERSION=@MP_VERSION@
 
 build: mod_python src
 	@cd src; $(MAKE) psp_parser.c
