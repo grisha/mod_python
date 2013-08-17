@@ -362,6 +362,23 @@ class SimpleTestCase(unittest.TestCase):
         if req.eos_sent:
             self.fail("req.eos_sent says we sent EOS, but we didn't")
 
+        if apache.MODULE_MAGIC_NUMBER_MAJOR > 20111130:
+
+            try:
+                import socket
+                localip = socket.gethostbyname("localhost")
+            except:
+                localip = "127.0.0.1"
+
+            log("    req.useragent_ip: %s" % `req.useragent_ip`)
+            if not req.useragent_ip in ("127.0.0.1", localip):
+                self.fail("req.useragent_ip should be '127.0.0.1'")
+
+            log("    req.useragent_addr: %s" % `req.useragent_addr`)
+            if not req.useragent_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
+                self.fail("req.useragent_addr[0] should be '127.0.0.1' or '0.0.0.0'")
+
+
     def test_req_get_config(self):
 
         req = self.req
@@ -494,13 +511,25 @@ class SimpleTestCase(unittest.TestCase):
         if not conn.local_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
             self.fail("conn.local_addr[0] should be '127.0.0.1' or '0.0.0.0'")
         
-        log("    connection.remote_addr: %s" % `conn.remote_addr`)
-        if not conn.remote_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
-            self.fail("conn.remote_addr[0] should be '127.0.0.1' or '0.0.0.0'")
+        if apache.MODULE_MAGIC_NUMBER_MAJOR > 20111130:
 
-        log("    connection.remote_ip: %s" % `conn.remote_ip`)
-        if not conn.remote_ip in ("127.0.0.1", localip):
-            self.fail("conn.remote_ip should be '127.0.0.1'")
+            log("    connection.client_addr: %s" % `conn.client_addr`)
+            if not conn.client_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
+                self.fail("conn.client_addr[0] should be '127.0.0.1' or '0.0.0.0'")
+
+            log("    connection.client_ip: %s" % `conn.client_ip`)
+            if not conn.client_ip in ("127.0.0.1", localip):
+                self.fail("conn.client_ip should be '127.0.0.1'")
+
+        else:
+
+            log("    connection.remote_addr: %s" % `conn.remote_addr`)
+            if not conn.remote_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
+                self.fail("conn.remote_addr[0] should be '127.0.0.1' or '0.0.0.0'")
+
+            log("    connection.remote_ip: %s" % `conn.remote_ip`)
+            if not conn.remote_ip in ("127.0.0.1", localip):
+                self.fail("conn.remote_ip should be '127.0.0.1'")
 
         log("    connection.remote_host: %s" % `conn.remote_host`)
         if conn.remote_host is not None:
@@ -1140,7 +1169,6 @@ def global_lock(req):
 def Session_Session(req):
 
     from mod_python import Session, Cookie
-
     s = Session.Session(req)
     if s.is_new():
         s.save()

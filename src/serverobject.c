@@ -184,7 +184,7 @@ static PyMethodDef server_methods[] = {
 
 #define OFF(x) offsetof(server_rec, x)
 
-static struct PyMemberDef server_rec_mbrs[] = {
+static PyMemberDef server_rec_mbrs[] = {
     {"defn_name",          T_STRING,  OFF(defn_name)},
     {"defn_line_number",   T_INT,     OFF(defn_line_number)},
     {"server_admin",       T_STRING,  OFF(server_admin)},

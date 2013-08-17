@@ -286,10 +286,13 @@ static struct memberlist conn_memberlist[] = {
     /* XXX vhost_lookup_data? */
     /* XXX client_socket? */
     {"local_addr",         T_OBJECT,    0,                       RO},
-    {"remote_addr",        T_OBJECT,    0,                       RO},
-#if AP_MODULE_MAGIC_AT_LEAST(20111130,0) /* ZZZ again this needs to be done correctly, exposing the right API */
+#if AP_MODULE_MAGIC_AT_LEAST(20111130,0)
+    {"client_addr",        T_OBJECT,    0,                       RO},
+    {"client_ip",          T_STRING,    OFF(client_ip),          RO},
+    /* ZZZ bw compat - needs a deprectaion warning */
     {"remote_ip",          T_STRING,    OFF(client_ip),          RO},
 #else
+    {"remote_addr",        T_OBJECT,    0,                       RO},
     {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
 #endif
     {"remote_host",        T_STRING,    OFF(remote_host),        RO},
@@ -298,8 +301,9 @@ static struct memberlist conn_memberlist[] = {
     {"keepalive",          T_INT,       0,                       RO},
     {"double_reverse",     T_INT,       0,                       RO},
     {"keepalives",         T_INT,       OFF(keepalives),         RO},
-    {"local_ip",           T_STRING,    OFF(local_ip),          RO},
-    {"local_host",         T_STRING,    OFF(local_host),        RO},
+    {"local_addr",         T_OBJECT,    0,                       RO},
+    {"local_ip",           T_STRING,    OFF(local_ip),           RO},
+    {"local_host",         T_STRING,    OFF(local_host),         RO},
     {"id",                 T_LONG,      OFF(id),                 RO},
     /* XXX conn_config? */
     {"notes",              T_OBJECT,    0,                       RO},
@@ -323,51 +327,6 @@ static void conn_dealloc(connobject *self)
     PyObject_Del(self);
 }
 
-/**
- ** makeipaddr
- **
- *  utility func to make an ip address
- */
-
-static PyObject *makeipaddr(struct apr_sockaddr_t *addr)
-{
-    char *str = NULL;
-    apr_status_t rc;
-    PyObject *ret = NULL;
-
-    rc = apr_sockaddr_ip_get( &str, addr );
-    if (rc==APR_SUCCESS) {
-        ret = PyString_FromString( str );
-    }
-    else {
-        PyErr_SetString(PyExc_SystemError,"apr_sockaddr_ip_get failure");
-    }
-    
-    return ret; 
-}
-
-/**
- ** makesockaddr
- **
- *  utility func to make a socket address
- */
-
-static PyObject *makesockaddr(struct apr_sockaddr_t *addr)
-{
-    PyObject *addrobj = makeipaddr(addr);
-    PyObject *ret = NULL;
-
-    /* apr_sockaddr_port_get was deprecated and removed in apr 1.x
-     * Access the port directly instead
-     */
-    if (addrobj) {
-        apr_port_t port;
-        port = addr->port; 
-        ret = Py_BuildValue("Oi", addrobj, port );
-        Py_DECREF(addrobj);
-    }
-    return ret;
-}
 
 /**
  ** conn_getattr
@@ -418,10 +377,15 @@ static PyObject * conn_getattr(connobject *self, char *name)
     else if (strcmp(name, "local_addr") == 0) {
         return makesockaddr(self->conn->local_addr);
     }
+#if AP_MODULE_MAGIC_AT_LEAST(20111130,0)
+    else if (strcmp(name, "client_addr") == 0) {
+        return makesockaddr(self->conn->client_addr);
+    }
     else if (strcmp(name, "remote_addr") == 0) {
-#if AP_MODULE_MAGIC_AT_LEAST(20111130,0) /* ZZZ again this needs to be done correctly, exposing the right API */
+        /* ZZZ need a deprecation warning here */
         return makesockaddr(self->conn->client_addr);
 #else
+    else if (strcmp(name, "remote_addr") == 0) {
         return makesockaddr(self->conn->remote_addr);
 #endif
     }

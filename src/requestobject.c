@@ -1487,6 +1487,10 @@ static struct PyMemberDef request_rec_mbrs[] = {
     {"parsed_uri",         T_OBJECT,  OFF(parsed_uri)},
     {"used_path_info",     T_INT,     OFF(used_path_info)},
     {"eos_sent",           T_INT,     OFF(eos_sent)},
+#if AP_MODULE_MAGIC_AT_LEAST(20111130,0)
+    {"useragent_addr",     T_OBJECT,  OFF(useragent_addr)},
+    {"useragent_ip",       T_STRING,  OFF(useragent_ip)},
+#endif
     {NULL}  /* Sentinel */
 };
 
@@ -1689,6 +1693,19 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
     return PyMember_SetOne((char*)self->request_rec, 
                            find_memberdef(request_rec_mbrs, (char*)name),
                            val);
+}
+
+/**
+ ** getreq_recmbr_sockaddr
+ **
+ *    Retrieves apr_sockaddr_t request_rec members
+ */
+
+static PyObject *getreq_recmbr_sockaddr(requestobject *self, void *name)
+{
+    PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
+    apr_sockaddr_t *addr = *(apr_sockaddr_t **)((char *)self->request_rec + md->offset);
+    return makesockaddr(addr);
 }
 
 /**
@@ -1898,13 +1915,18 @@ static PyGetSetDef request_getsets[] = {
     {"eos_sent", (getter)getreq_recmbr, NULL, "EOS bucket sent", "eos_sent"},
     {"_bytes_queued", (getter)getreq_recmbr, NULL, "Bytes queued by handler", "_bytes_queued"},
     {"_request_rec", (getter)getreq_recmbr, NULL, "Actual request_rec struct", "_request_rec"},
+#if AP_MODULE_MAGIC_AT_LEAST(20111130,0)
+    /* XXX useragent_* should be writable */
+    {"useragent_addr", (getter)getreq_recmbr_sockaddr, NULL, "User agent address (could be overriden by a module)", "useragent_addr"},
+    {"useragent_ip", (getter)getreq_recmbr, NULL, "User agent ip (could be overriden by a module)", "useragent_ip"},
+#endif
     {NULL}  /* Sentinel */
 };
 
 #undef OFF
 #define OFF(x) offsetof(requestobject, x)
 
-static struct PyMemberDef request_members[] = {
+static PyMemberDef request_members[] = {
     {"_content_type_set",  T_INT,       OFF(content_type_set),  RO},
     {"phase",              T_OBJECT,    OFF(phase),             RO},
     {"extension",          T_STRING,    OFF(extension),         RO},

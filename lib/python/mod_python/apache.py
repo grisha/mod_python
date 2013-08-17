@@ -329,7 +329,7 @@ class CallBack:
                 # and set sys.path to resulting value
                 # if not already done
 
-                if config.has_key("PythonPath"): 
+                if config.has_key("PythonPath"):
                     _path_cache_lock.acquire() 
                     try: 
                         pathstring = config["PythonPath"] 
@@ -341,6 +341,7 @@ class CallBack:
                         _path_cache_lock.release()
                 else:
                     dir = hlist.directory
+
                     if dir and (dir not in sys.path):
                         sys.path[:0] = [dir]
 
@@ -1152,6 +1153,10 @@ APR_PIPE = _apache.APR_PIPE
 APR_LNK = _apache.APR_LNK
 APR_SOCK = _apache.APR_SOCK
 APR_UNKFILE = _apache.APR_UNKFILE
+
+# module magic
+MODULE_MAGIC_NUMBER_MAJOR = _apache.MODULE_MAGIC_NUMBER_MAJOR
+MODULE_MAGIC_NUMBER_MINOR = _apache.MODULE_MAGIC_NUMBER_MINOR
 
 # for apache.stat()
 APR_FINFO_LINK = 0x00000001 # Stat the link not the file itself if it is a link

@@ -36,5 +36,6 @@ char * get_addhandler_extensions(request_rec *req);
 apr_status_t python_decref(void *object);
 PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name);
 PyObject *cfgtree_walk(ap_directive_t *dir);
+PyObject *makesockaddr(struct apr_sockaddr_t *addr);
 
 #endif /* !Mp_UTIL_H */

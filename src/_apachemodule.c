@@ -817,6 +817,14 @@ DL_EXPORT(void) init_apache()
     o = PyInt_FromLong(APR_UNKFILE);
     PyDict_SetItemString(d, "APR_UNKFILE", o);
     Py_DECREF(o);
+
+    o = PyInt_FromLong(MODULE_MAGIC_NUMBER_MAJOR);
+    PyDict_SetItemString(d, "MODULE_MAGIC_NUMBER_MAJOR", o);
+    Py_DECREF(o);
+    o = PyInt_FromLong(MODULE_MAGIC_NUMBER_MINOR);
+    PyDict_SetItemString(d, "MODULE_MAGIC_NUMBER_MINOR", o);
+    Py_DECREF(o);
+
 }
 
 PyObject *get_ServerReturn() 

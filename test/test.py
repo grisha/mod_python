@@ -2779,7 +2779,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
 
         perRequestSuite.addTest(PerRequestTestCase("test_server_side_include"))
 
-        # # this must be last so its error_log is not overwritten
+        # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
 
         self.makeConfig(PerRequestTestCase.appendConfig)

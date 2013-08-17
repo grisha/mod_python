@@ -1,12 +1,11 @@
 
-# ZZZ should be customized
 #
 # Makefile for Python documentation
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 
 # You can set these variables from the command line.
-PYTHON       = python
+PYTHON       = @PYTHON_BIN@
 SVNROOT      = http://svn.python.org/projects
 SPHINXOPTS   =
 PAPER        =

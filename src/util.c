@@ -427,3 +427,45 @@ PyObject *cfgtree_walk(ap_directive_t *dir)
 
     return list;
 }
+
+/**
+ ** makeipaddr
+ **
+ *  utility func to make an ip address
+ */
+
+static PyObject *makeipaddr(struct apr_sockaddr_t *addr)
+{
+    char *str = NULL;
+    apr_status_t rc;
+    PyObject *ret = NULL;
+
+    rc = apr_sockaddr_ip_get( &str, addr );
+    if (rc==APR_SUCCESS) {
+        ret = PyString_FromString( str );
+    }
+    else {
+        PyErr_SetString(PyExc_SystemError,"apr_sockaddr_ip_get failure");
+    }
+    return ret;
+}
+
+/**
+ ** makesockaddr
+ **
+ *  utility func to make a socket address
+ */
+
+PyObject *makesockaddr(struct apr_sockaddr_t *addr)
+{
+    PyObject *addrobj = makeipaddr(addr);
+    PyObject *ret = NULL;
+
+    if (addrobj) {
+        apr_port_t port;
+        port = addr->port;
+        ret = Py_BuildValue("Oi", addrobj, port );
+        Py_DECREF(addrobj);
+    }
+    return ret;
+}

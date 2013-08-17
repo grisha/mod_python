@@ -883,13 +883,35 @@ Attributes
 
 .. attribute:: interpreter
 
-   The name of the subinterpreter under which we're running.
+   String. The name of the subinterpreter under which we're running.
    *(Read-Only)*
 
 .. attribute:: main_server
 
   A ``server`` object for the main server.
   *(Read-Only)*
+
+.. attribute:: MODULE_MAGIC_NUMBER_MAJOR
+
+   Integer. An internal to Apache version number useful to determine whether
+   certain features should be available. See :attr:`MODULE_MAGIC_NUMBER_MINOR`.
+
+   Major API changes that could cause compatibility problems for older
+   modules such as structure size changes.  No binary compatibility is
+   possible across a change in the major version.
+
+   *(Read-Only)*
+
+
+.. attribute:: MODULE_MAGIC_NUMBER_MINOR
+
+   Integer. An internal to Apache version number useful to determine whether
+   certain features should be available. See :attr:`MODULE_MAGIC_NUMBER_MAJOR`.
+
+   Minor API changes that do not cause binary compatibility problems.
+
+   *(Read-Only)*
+
 
 .. _pyapi-mptable:
 
@@ -1767,6 +1789,30 @@ Request Members
    Boolean. EOS bucket sent.  *(Read-Only)*
 
 
+.. attribute:: request.useragent_addr
+
+   *Apache 2.4 only*
+
+   The (address, port) tuple for the user agent.
+
+   This attribute should reflect the address of the user agent and
+   not necessarily the other end of the TCP connection, for which
+   there is :attr:`connection.client_addr`.
+   *(Read-Only)*
+
+
+.. attribute:: request.useragent_ip
+
+   *Apache 2.4 only*
+
+   String with the IP of the user agent. Same as CGI :envvar:`REMOTE_ADDR`.
+
+   This attribute should reflect the address of the user agent and
+   not necessarily the other end of the TCP connection, for which
+   there is :attr:`connection.client_ip`.
+   *(Read-Only)*
+
+
 .. _pyapi-mpconn:
 
 Connection Object (mp_conn)
@@ -1810,7 +1856,7 @@ Connection Methods
    -1, keep reading until the socket is closed from the other end
    (This is known as ``EXHAUSTIVE`` mode in the http server code).
 
-   This method should only be used inside \emph{Connection Handlers}.
+   This method should only be used inside *Connection Handlers*.
 
    .. note::
 
@@ -1851,12 +1897,41 @@ Connection Members
 
 .. attribute:: connection.remote_addr
 
+   *Deprecated in Apache 2.4, use client_addr. (Aliased to client_addr for backward compatibility)*
+
    The (address, port) tuple for the client.  *(Read-Only)*
+
+
+.. attribute:: connection.client_addr
+
+   *Apache 2.4 only*
+
+   The (address, port) tuple for the client.
+
+   This attribute reflects the other end of the TCP connection, which
+   may not always be the address of the user agent. A more accurate
+   source of the user agent address is :attr:`request.useragent_addr`.
+   *(Read-Only)*
 
 
 .. attribute:: connection.remote_ip
 
-   String with the IP of the client. Same as CGI :envvar:`REMOTE_ADDR`.
+   *Deprecated in Apache 2.4, use client_ip. (Aliased to client_ip for backward compatibility)*
+
+   String with the IP of the client. In Apache 2.2 same as CGI :envvar:`REMOTE_ADDR`.
+   *(Read-Only)*
+
+
+.. attribute:: connection.client_ip
+
+   *Apache 2.4 only*
+
+   String with the IP of the client.
+
+   This attribute reflects the other end of the TCP connection, which
+   may not always be the address of the user agent. A more accurate
+   source of the user agent address is :attr:`request.useragent_ip`.
+
    *(Read-Only)*
 
 
@@ -1941,9 +2016,9 @@ Filter Methods
 
 .. method:: filter.read([length])
 
-   Reads at most \var{len} bytes from the next filter, returning a
+   Reads at most *len* bytes from the next filter, returning a
    string with the data read or None if End Of Stream (EOS) has been
-   reached. A filter \emph{must} be closed once the EOS has been
+   reached. A filter *must* be closed once the EOS has been
    encountered.
 
    If the *length* argument is negative or omitted, reads all data
