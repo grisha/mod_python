@@ -1,4 +1,5 @@
- # Copyright 2004 Apache Software Foundation
+ # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
  #
  #  Licensed under the Apache License, Version 2.0 (the "License");
  #  you may not use this file except in compliance with the License.
