@@ -25,12 +25,10 @@ copyright = '1990-%s, Apache Software Foundation, Gregory Trubetskoy' % time.str
 # The full version, including alpha/beta/rc tags.
 # release = '2.6a0'
 
-# We look for the Include/patchlevel.h file in the current Python source tree
-# and replace the values accordingly.
-#import patchlevel
-#version, release = patchlevel.get_version_info()
-#ZZZZ
-version, release = '4.0', '4.0.0'
+# version
+import commands
+v, r = commands.getoutput("../dist/version.sh").rsplit('.', 1)
+version, release = v, v+'.'+r
 
 # Ignore .rst in Sphinx its self.
 exclude_trees = ['tools/sphinx']
