@@ -490,7 +490,7 @@ static PyMethodDef filterobjectmethods[] = {
 
 #define OFF(x) offsetof(filterobject, x)
 
-static struct memberlist filter_memberlist[] = {
+static PyMemberDef filter_memberlist[] = {
     {"softspace",          T_INT,       OFF(softspace),            },
     {"closed",             T_INT,       OFF(closed),             RO},
     {"name",               T_OBJECT,    0,                       RO},
@@ -553,7 +553,8 @@ static PyObject * filter_getattr(filterobject *self, char *name)
         }
     }
     else
-        return PyMember_Get((char *)self, filter_memberlist, name);
+        return PyMember_GetOne((char*)self,
+                               find_memberdef(filter_memberlist, name));
 }
 
 /**

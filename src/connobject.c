@@ -281,7 +281,7 @@ static PyMethodDef connobjectmethods[] = {
 
 #define OFF(x) offsetof(conn_rec, x)
 
-static struct memberlist conn_memberlist[] = {
+static PyMemberDef conn_memberlist[] = {
     {"base_server",        T_OBJECT,    0,                       RO},
     /* XXX vhost_lookup_data? */
     /* XXX client_socket? */
@@ -401,8 +401,8 @@ static PyObject * conn_getattr(connobject *self, char *name)
         return PyCObject_FromVoidPtr(self->conn, 0);
     }
     else
-        return PyMember_Get((char *)self->conn, conn_memberlist, name);
-
+        return PyMember_GetOne((char*)self->conn,
+                               find_memberdef(conn_memberlist, name));
 }
 
 /**
@@ -428,8 +428,9 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
         return 0;
     }
     else
-        return PyMember_Set((char *)self->conn, conn_memberlist, name, value);
-
+        return PyMember_SetOne((char*)self->conn,
+                               find_memberdef(conn_memberlist, (char*)name),
+                               value);
 }
 
 PyTypeObject MpConn_Type = {

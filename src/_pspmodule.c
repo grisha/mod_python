@@ -164,7 +164,7 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     return code; 
 }
 
-struct PyMethodDef _psp_module_methods[] = {
+static PyMethodDef _psp_module_methods[] = {
     {"parse",       (PyCFunction) _psp_module_parse,       METH_VARARGS},
     {"parsestring", (PyCFunction) _psp_module_parsestring, METH_VARARGS},
     {NULL, NULL}

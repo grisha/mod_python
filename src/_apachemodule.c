@@ -740,7 +740,7 @@ static PyObject *mp_stat(PyObject *self, PyObject *args)
 }
 
 /* methods of _apache */
-struct PyMethodDef _apache_module_methods[] = {
+static PyMethodDef _apache_module_methods[] = {
     {"config_tree",           (PyCFunction)config_tree,          METH_NOARGS},
     {"log_error",             (PyCFunction)mp_log_error,         METH_VARARGS},
     {"mpm_query",             (PyCFunction)mpm_query,            METH_O},

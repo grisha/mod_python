@@ -66,7 +66,7 @@ static PyMethodDef hlistmethods[] = {
 
 #define OFF(x) offsetof(hl_entry, x)
 
-static struct memberlist hlist_memberlist[] = {
+static PyMemberDef hlist_memberlist[] = {
     {"handler",            T_STRING,    OFF(handler),              RO},
     {"directory",          T_STRING,    OFF(directory),            RO},
     {"silent",             T_INT,       OFF(silent),               RO},
@@ -105,8 +105,8 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
         return Py_None;
     }
 
-    return PyMember_Get((char *)self->head, hlist_memberlist, name);
-
+    return PyMember_GetOne((char*)self->head,
+                           find_memberdef(hlist_memberlist, name));
 }
 
 /**

@@ -1441,7 +1441,7 @@ static PyMethodDef request_methods[] = {
 
 #define OFF(x) offsetof(request_rec, x)
  
-static struct PyMemberDef request_rec_mbrs[] = {
+static PyMemberDef request_rec_mbrs[] = {
     {"the_request",        T_STRING,  OFF(the_request)},
     {"assbackwards",       T_INT,     OFF(assbackwards)},
     {"proxyreq",           T_INT,     OFF(proxyreq)},

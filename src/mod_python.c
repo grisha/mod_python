@@ -1565,12 +1565,12 @@ static int python_handler(request_rec *req, char *phase)
     Py_XDECREF(request_obj->phase);
     request_obj->phase = NULL;
 
-    /* release the lock and destroy tstate*/
+    /* release the lock and destroy tstate */
     release_interpreter();
 
     if (! resultobject) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req, 
-                      "python_handler: Dispatch() returned nothing.");
+                      "python_handler: HandlerDispatch() returned nothing.");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
     else {
@@ -1578,7 +1578,7 @@ static int python_handler(request_rec *req, char *phase)
            result to return */
         if (! PyInt_Check(resultobject)) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req, 
-                          "python_handler: Dispatch() returned non-integer.");
+                          "python_handler: HandlerDispatch() returned non-integer.");
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         else {
