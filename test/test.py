@@ -1920,11 +1920,8 @@ class PerRequestTestCase(unittest.TestCase):
                 expected_result = expected_result.replace(ss, rs)
             
             if expected_result != test_string:
-                print '       FAIL',  
                 failures.append(test_case)
-            else:
-                print '       PASS', 
-            print 'expect{%s} got{%s}' % (expected_result, test_string)
+            #print 'expect{%s} got{%s}' % (expected_result, test_string)
 
         if failures:
             msg = 'psp_parser parse errors for: %s' % (', '.join(failures))
