@@ -10,7 +10,7 @@ SVNROOT      = http://svn.python.org/projects
 SPHINXOPTS   =
 PAPER        =
 SOURCES      =
-DISTVERSION  = $(shell $(PYTHON) tools/sphinxext/patchlevel.py) #ZZZ
+DISTVERSION  = $(shell ../dist/version.sh)
 
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
