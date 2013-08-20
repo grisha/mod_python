@@ -38,7 +38,7 @@ to last.
 
 If any handler in the sequence returns a value other than
 ``apache.OK`` or ``apache.DECLINED``, then execution of all subsequent
-handlers for that phase are aborted. What happens when either
+handlers for that phase is aborted. What happens when either
 ``apache.OK`` or ``apache.DECLINED`` is returned is dependent on which
 phase is executing.
 
@@ -116,7 +116,7 @@ based upon the input header fields.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
-execution of all subsequent handlers for this phase are aborted.
+execution of all subsequent handlers for this phase is aborted.
 
 .. note::
 
@@ -156,7 +156,7 @@ directives and the like) are followed.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.DECLINED``, then execution of all
-subsequent handlers for this phase are aborted.
+subsequent handlers for this phase is aborted.
 
 .. note::
 
@@ -189,7 +189,7 @@ processing sequence.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
-execution of all subsequent handlers for this phase are aborted.
+execution of all subsequent handlers for this phase is aborted.
 
 
 .. _dir-handlers-pih:
@@ -213,7 +213,7 @@ directory.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
-execution of all subsequent handlers for this phase are aborted.
+execution of all subsequent handlers for this phase is aborted.
 
 This handler is actually an alias to two different handlers. When
 specified in the main config file outside any directory tags, it is an
@@ -244,7 +244,7 @@ placed upon the requested resource.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
-execution of all subsequent handlers for this phase are aborted.
+execution of all subsequent handlers for this phase is aborted.
 
 For example, this can be used to restrict access by IP number. To do
 so, you would return ``HTTP_FORBIDDEN`` or some such to indicate
@@ -272,7 +272,7 @@ database).
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.DECLINED``, then execution of all
-subsequent handlers for this phase are aborted.
+subsequent handlers for this phase is aborted.
 
 To obtain the username, use ``req.user``. To obtain the password
 entered by the user, use the :meth:`request.get_basic_auth_pw` function.
@@ -304,7 +304,7 @@ An example authentication handler might look like this::
 
 .. _dir-handlers-auzh:
 
-PythonAuthenHandler
+PythonAuthzHandler
 -------------------
 
 .. index::
@@ -323,7 +323,7 @@ often than not it is done right in the AuthenHandler.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.DECLINED``, then execution of all
-subsequent handlers for this phase are aborted.
+subsequent handlers for this phase is aborted.
 
 .. _dir-handlers-tph:
 
@@ -346,7 +346,7 @@ language, et cetera.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.DECLINED``, then execution of all
-subsequent handlers for this phase are aborted.
+subsequent handlers for this phase is aborted.
 
 
 .. _dir-handlers-fuh:
@@ -369,7 +369,7 @@ fields, et cetera. It is invoked just before any content-handler.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
-execution of all subsequent handlers for this phase are aborted.
+execution of all subsequent handlers for this phase is aborted.
 
 .. _dir-handlers-ph:
 
@@ -419,7 +419,7 @@ activities.
 
 Where multiple handlers are specified, if any handler in the sequence
 returns a value other than ``apache.OK`` or ``apache.DECLINED``, then
-execution of all subsequent handlers for this phase are aborted.
+execution of all subsequent handlers for this phase is aborted.
 
 .. _dir-handlers-pch:
 
