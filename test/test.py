@@ -676,6 +676,65 @@ class PerRequestTestCase(unittest.TestCase):
 
         self.failUnless(server_hdr.find("PYTHONIZE") > -1, "req.allow_methods() didn't work")
 
+    def test_req_unauthorized_conf(self):
+
+        if APACHE_VERSION == '2.4':
+            c = VirtualHost("*",
+                            ServerName("test_req_unauthorized"),
+                            DocumentRoot(DOCUMENT_ROOT),
+                            Directory(DOCUMENT_ROOT,
+                                      SetHandler("mod_python"),
+                                      AuthName("blah"),
+                                      AuthType("basic"),
+                                      Require("all granted"),
+                                      PythonHandler("tests::req_unauthorized"),
+                                      PythonDebug("On")))
+        else:
+            c = VirtualHost("*",
+                            ServerName("test_req_unauthorized"),
+                            DocumentRoot(DOCUMENT_ROOT),
+                            Directory(DOCUMENT_ROOT,
+                                      SetHandler("mod_python"),
+                                      AuthName("blah"),
+                                      AuthType("basic"),
+                                      PythonHandler("tests::req_unauthorized"),
+                                      PythonDebug("On")))
+
+        return str(c)
+
+    def test_req_unauthorized(self):
+
+        print "\n  * Testing whether returning HTTP_UNAUTHORIZED works"
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
+        auth = base64.encodestring("spam:eggs").strip()
+        conn.putheader("Authorization", "Basic %s" % auth)
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if (rsp != "test ok"):
+            self.fail(`rsp`)
+
+        conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
+        auth = base64.encodestring("spam:BAD PASSWD").strip()
+        conn.putheader("Authorization", "Basic %s" % auth)
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if response.status != httplib.UNAUTHORIZED:
+            self.fail("req.status is not httplib.UNAUTHORIZED, but: %s" % `response.status`)
+
+        if rsp == "test ok":
+            self.fail("We were supposed to get HTTP_UNAUTHORIZED")
+
     def test_req_get_basic_auth_pw_conf(self):
 
         if APACHE_VERSION == '2.4':
@@ -2708,6 +2767,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_add_handler_directory"))
         perRequestSuite.addTest(PerRequestTestCase("test_accesshandler_add_handler_to_empty_hl"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_unauthorized"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_auth_type"))
         if APACHE_VERSION != '2.4': # ZZZ

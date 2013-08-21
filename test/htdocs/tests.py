@@ -701,37 +701,33 @@ def req_get_basic_auth_pw(req):
 
     return apache.OK
 
+def req_unauthorized(req):
+
+    pw = req.get_basic_auth_pw()
+    if req.user == "spam" and pw == "eggs":
+        req.write("test ok")
+        return apache.OK
+
+    return apache.HTTP_UNAUTHORIZED
+
 def req_auth_type(req):
 
+    if req.auth_type() != "dummy":
+        req.log_error("auth_type check failed")
+        req.write("test failed")
+        return apache.DONE
+    if req.auth_name() != "blah":
+        req.log_error("auth_name check failed")
+        req.write("test failed")
+        return apache.DONE
+
     if req.phase == "PythonAuthenHandler":
-        if req.auth_type() != "dummy":
-            req.log_error("auth_type check failed")
-            req.write("test failed")
-            return apache.DONE
-        if req.auth_name() != "blah":
-            req.log_error("auth_name check failed")
-            req.write("test failed")
-            return apache.DONE
+
         req.user = "dummy"
         req.ap_auth_type = req.auth_type()
-    elif req.phase == "PythonAuthzHandler":
-        if req.ap_auth_type != "dummy":
-            req.log_error("ap_auth_type check failed")
-            req.write("test failed")
-            return apache.DONE
-        if req.user != "dummy":
-            req.log_error("user check failed")
-            req.write("test failed")
-            return apache.DONE
-    else:
-        if req.ap_auth_type != "dummy":
-            req.log_error("ap_auth_type check failed")
-            req.write("test failed")
-            return apache.DONE
-        if req.user != "dummy":
-            req.log_error("user check failed")
-            req.write("test failed")
-            return apache.DONE
+
+    elif req.phase != "PythonAuthzHandler":
+
         req.write("test ok")
 
     return apache.OK
