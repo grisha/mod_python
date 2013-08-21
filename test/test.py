@@ -2770,7 +2770,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_unauthorized"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_auth_type"))
-        if APACHE_VERSION != '2.4': # ZZZ
+        if APACHE_VERSION != '2.4':
             perRequestSuite.addTest(PerRequestTestCase("test_req_requires"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_internal_redirect"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_construct_url"))
