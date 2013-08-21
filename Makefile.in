@@ -51,7 +51,6 @@ no_static:
 	@echo "Static compilation not available. (Probably because --with-apache was not specified)."
 	@echo
 
-# ZZZ also should depend on @ALL@
 install: src/.install
 	@if test "`cat src/.install`" = "dso"; then \
 		$(MAKE) install_dso; \

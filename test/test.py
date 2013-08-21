@@ -318,7 +318,6 @@ class HttpdCtrl:
             LogLevel("debug"),
             LogFormat(r'"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined'),
             CustomLog("logs/access_log combined"),
-            #ZZZ LockFile("logs/accept.lock"),
             TypesConfig("conf/mime.types"),
             PidFile("logs/httpd.pid"),
             ServerName("127.0.0.1"),
@@ -329,24 +328,25 @@ class HttpdCtrl:
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
 
-        if APACHE_VERSION == '2.4': #ZZZ what about Win32?
-             s.append(IfModule("!mod_unixd.c",
-                      LoadModule("unixd_module %s" %
-                                 quoteIfSpace(os.path.join(modpath, "mod_unixd.so")))))
+        if APACHE_VERSION == '2.4':
+            LockFile("logs/accept.lock"),
 
-        if APACHE_VERSION == '2.4': #ZZZ what about Win32?
-             s.append(IfModule("!mod_authn_core.c",
-                      LoadModule("authn_core_module %s" %
-                                 quoteIfSpace(os.path.join(modpath, "mod_authn_core.so")))))
-             s.append(IfModule("!mod_authz_core.c",
-                      LoadModule("authz_core_module %s" %
-                                 quoteIfSpace(os.path.join(modpath, "mod_authz_core.so")))))
-             s.append(IfModule("!mod_authn_file.c",
-                      LoadModule("authn_file_module %s" %
-                                 quoteIfSpace(os.path.join(modpath, "mod_authn_file.so")))))
-             s.append(IfModule("!mod_authz_user.c",
-                      LoadModule("authz_user_module %s" %
-                                 quoteIfSpace(os.path.join(modpath, "mod_authz_user.so")))))
+        if APACHE_VERSION == '2.4':
+            s.append(IfModule("!mod_unixd.c",
+                              LoadModule("unixd_module %s" %
+                                         quoteIfSpace(os.path.join(modpath, "mod_unixd.so")))))
+            s.append(IfModule("!mod_authn_core.c",
+                              LoadModule("authn_core_module %s" %
+                                         quoteIfSpace(os.path.join(modpath, "mod_authn_core.so")))))
+            s.append(IfModule("!mod_authz_core.c",
+                              LoadModule("authz_core_module %s" %
+                                         quoteIfSpace(os.path.join(modpath, "mod_authz_core.so")))))
+            s.append(IfModule("!mod_authn_file.c",
+                              LoadModule("authn_file_module %s" %
+                                         quoteIfSpace(os.path.join(modpath, "mod_authn_file.so")))))
+            s.append(IfModule("!mod_authz_user.c",
+                              LoadModule("authz_user_module %s" %
+                                         quoteIfSpace(os.path.join(modpath, "mod_authz_user.so")))))
 
         if APACHE_VERSION in ['2.2', '2.4']:
             # mod_auth has been split into mod_auth_basic and some other modules

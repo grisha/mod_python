@@ -19,8 +19,6 @@
 
 # This file contains a bunch of hacks used to support Python 2.2
 
-# ZZZ kill me?
-
 import sys
 if sys.version < '2.3':
     import __builtin__ as hack
