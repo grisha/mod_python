@@ -289,8 +289,7 @@ static PyMemberDef conn_memberlist[] = {
 #if AP_MODULE_MAGIC_AT_LEAST(20111130,0)
     {"client_addr",        T_OBJECT,    0,                       RO},
     {"client_ip",          T_STRING,    OFF(client_ip),          RO},
-    /* ZZZ bw compat - needs a deprectaion warning */
-    {"remote_ip",          T_STRING,    OFF(client_ip),          RO},
+    {"remote_ip",          T_STRING,    OFF(client_ip),          RO}, /* bw compat */
 #else
     {"remote_addr",        T_OBJECT,    0,                       RO},
     {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
@@ -382,7 +381,9 @@ static PyObject * conn_getattr(connobject *self, char *name)
         return makesockaddr(self->conn->client_addr);
     }
     else if (strcmp(name, "remote_addr") == 0) {
-        /* ZZZ need a deprecation warning here */
+        ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, self->conn, "%s",
+                      "mod_python: conn.remote_addr deprecated in 2.4, "
+                      "use req.useragent_addr or conn.client_addr");
         return makesockaddr(self->conn->client_addr);
 #else
     else if (strcmp(name, "remote_addr") == 0) {
@@ -400,9 +401,18 @@ static PyObject * conn_getattr(connobject *self, char *name)
     else if (strcmp(name, "_conn_rec") == 0) {
         return PyCObject_FromVoidPtr(self->conn, 0);
     }
-    else
+    else {
+
+#if AP_MODULE_MAGIC_AT_LEAST(20111130,0)
+        if (strcmp(name, "remote_ip") == 0) {
+            ap_log_cerror(APLOG_MARK, APLOG_WARNING, 0, self->conn, "%s",
+                          "mod_python: conn.remote_ip deprecated in 2.4, "
+                          "use req.useragent_ip or conn.client_ip");
+        }
+#endif
         return PyMember_GetOne((char*)self->conn,
                                find_memberdef(conn_memberlist, name));
+    }
 }
 
 /**
