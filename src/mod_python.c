@@ -562,17 +562,16 @@ static apr_status_t init_mutexes(server_rec *s, apr_pool_t *p, py_global_config 
         }
         else {
 
-/*             /\*XXX As of httpd 2.0.4, the below should be just */
-/*               a call to unixd_set_global_mutex_perms(mutex[n]); and */
-/*               nothing else... For now, while 2.0.48 isn't commonplace yet, */
-/*               this ugly code should be here *\/ */
-
-/* #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE) */
-/*             if  (!geteuid()) { */
-/*                 chown(fname, ap_unixd_config.user_id, -1); */
-                ap_unixd_set_global_mutex_perms(mutex[n]);
-/*             } */
-/* #endif */
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+#if AP_MODULE_MAGIC_AT_LEAST(20081201,0)
+            ap_unixd_set_global_mutex_perms(mutex[n]);
+#else
+            if (!geteuid()) {
+                chown(fname, unixd_config.user_id, -1);
+                unixd_set_global_mutex_perms(mutex[n]);
+            }
+#endif
+#endif
         }
     }
     return APR_SUCCESS;

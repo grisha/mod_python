@@ -191,7 +191,11 @@ static PyMemberDef server_rec_mbrs[] = {
     {"server_hostname",    T_STRING,  OFF(server_hostname)},
     {"port",               T_SHORT,   OFF(port)},
     {"error_fname",        T_STRING,  OFF(error_fname)},
+#if AP_MODULE_MAGIC_AT_LEAST(20100606,0)
     {"loglevel",           T_INT,     OFF(log.level)},
+#else
+    {"loglevel",           T_INT,     OFF(loglevel)},
+#endif
     {"is_virtual",         T_INT,     OFF(is_virtual)},
     /* XXX implement module_config ? */
     /* XXX implement lookup_defaults ? */
