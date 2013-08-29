@@ -422,8 +422,12 @@ class PerRequestTestCase(unittest.TestCase):
             pass
 
     def vhost_get(self, vhost, path="/tests.py"):
-        # allows to specify a custom host: header
 
+        # this is so that test could easily be staged with curl
+        curl = "curl --verbose --header 'Host: %s' http://127.0.0.1:%s/" % (vhost, PORT)
+        print "    $ %s" % curl
+
+        # allows to specify a custom host: header
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", path, skip_host=1)
         conn.putheader("Host", "%s:%s" % (vhost, PORT))
