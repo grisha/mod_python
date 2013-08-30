@@ -2651,6 +2651,33 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "test ok"):
             self.fail(`rsp`)
 
+    def test_memory_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_memory"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("tests::memory"),
+                                  PythonDebug("On")))
+        return str(c)
+
+
+    def test_memory(self):
+
+        # Note: This test will fail on Apache 2.2 because of a bug,
+        # but will pass on 2.4 where it is fixed (2.4 reuses the
+        # brigade on ap_rflush() rather than creating a new one each
+        # time). http://modpython.org/pipermail/mod_python/2007-July/023974.html
+
+        print "\n  * Testing req.write() and req.flush() memory usage (100,000 iterations)"
+        rsp = self.vhost_get("test_memory")
+
+        before, after = map(int, rsp.split("|")[1:])
+
+        if before != after:
+            self.fail("Memory before: %s, memory after: %s" % (before, after))
+
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
     # restart of httpd (e.g. we're using a fancy config)
@@ -2832,13 +2859,15 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_security"))
         # perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_hierarchy"))
+        perRequestSuite.addTest(PerRequestTestCase("test_server_side_include"))
+        if APACHE_VERSION == '2.4' and sys.platform.startswith("linux"):
+            perRequestSuite.addTest(PerRequestTestCase("test_memory"))
 
         # test_publisher_cache does not work correctly for mpm-prefork/worker
         # and it may not be possible to get a reliable test for all
         # configurations, so disable it.
         # perRequestSuite.addTest(PerRequestTestCase("test_publisher_cache"))
 
-        perRequestSuite.addTest(PerRequestTestCase("test_server_side_include"))
 
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))

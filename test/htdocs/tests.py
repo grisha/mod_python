@@ -1516,3 +1516,25 @@ def _test_table():
 def okay(req):
     req.write("test ok")
     return apache.OK
+
+def memory(req):
+
+    # NB: This only works on Linux.
+
+    ## warm up
+    for x in xrange(10000):
+        req.write("test ok")
+
+    ## check memory usage before
+    before = map(int, open("/proc/self/statm").read().split())
+
+    for x in xrange(100000):
+        req.write("test ok")
+        req.flush()
+
+    ## check memory usage after
+    after = map(int, open("/proc/self/statm").read().split())
+
+    req.write("|%s|%s" % (before[0], after[0]))
+
+    return apache.OK
