@@ -604,7 +604,6 @@ LIBOBJS
 LEX
 MAX_LOCKS
 MUTEX_DIR
-PYTHON_SRC
 MOD_PYTHON_SO
 TEST_SERVER_ROOT
 ARCHFLAGS
@@ -676,7 +675,6 @@ enable_option_checking
 with_apxs
 with_apache
 with_python
-with_python_src
 with_mutex_dir
 with_max_locks
 with_flex
@@ -1310,7 +1308,6 @@ Optional Packages:
   --with-apxs=NAME        name of the apxs executable [apxs]
 --with-apache=DIR 	Path to Apache sources
 --with-python=PATH	Path to specific Python binary
---with-python-src=DIR	Path to python sources - required if you want to generate the documenation
 --with-mutex-dir=DIR	Mutex directory
 --with-max-locks=INTEGER	Maximum number of locks
 --with-flex=PATH	Path to specific flex binary.
@@ -3416,28 +3413,6 @@ fi
 TEST_SERVER_ROOT="`pwd`/test"
 
 MOD_PYTHON_SO="`pwd`/src/mod_python.so"
-
-# get --with-python-src. The python src is required to generate the documentation
-# It is not required to compile or install mod_python itself
-
-{ $as_echo "$as_me:$LINENO: checking for --with-python-src" >&5
-$as_echo_n "checking for --with-python-src... " >&6; }
-
-# Check whether --with-python-src was given.
-if test "${with_python_src+set}" = set; then
-  withval=$with_python_src;
-  PYTHON_SRC="$withval"
-  { $as_echo "$as_me:$LINENO: result: $PYTHON_SRC" >&5
-$as_echo "$PYTHON_SRC" >&6; }
-
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-if test -z "$PYTHON_SRC"; then
-  PYTHON_SRC=""
-fi
 
 # configure the MUTEX_DIR for location of mutex locks
 

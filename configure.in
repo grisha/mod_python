@@ -246,20 +246,6 @@ TEST_SERVER_ROOT="`pwd`/test"
 AC_SUBST(MOD_PYTHON_SO)
 MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 
-# get --with-python-src. The python src is required to generate the documentation
-# It is not required to compile or install mod_python itself
-AC_SUBST(PYTHON_SRC)
-AC_MSG_CHECKING(for --with-python-src)
-AC_ARG_WITH(python-src, [--with-python-src=DIR	Path to python sources - required if you want to generate the documenation],
-[
-  PYTHON_SRC="$withval"
-  AC_MSG_RESULT($PYTHON_SRC)
-],
-AC_MSG_RESULT(no))
-if test -z "$PYTHON_SRC"; then
-  PYTHON_SRC=""
-fi
-
 # configure the MUTEX_DIR for location of mutex locks
 AC_SUBST(MUTEX_DIR)
 AC_MSG_CHECKING(for --with-mutex-dir)
