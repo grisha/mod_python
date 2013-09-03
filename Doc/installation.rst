@@ -6,7 +6,11 @@ Installation
 
 .. note::
 
-  ZZZ: Some support forum information goes here (mailing list?)
+  By far the best place to get help with installation and other issues
+  is the mod_python mailing list. Please take a moment to join the
+  mod_python mailing list by sending an e-mail with the word
+  "subscribe" in the subject to mod_python-request@modpython.org or visit the 
+  `mod_python mailing list page <http://mailman.modpython.org/mailman/listinfo/mod_python>`_
 
 
 .. _inst-prerequisites:
@@ -14,46 +18,27 @@ Installation
 Prerequisites
 =============
 
-* Python 2.3.4 or later. Python versions less than 2.3 will not work.
-* Apache 2.0.54 or later. (ZZZ) (For Apache 1.3.x, use mod_python version 2.7.x).
+In the ideal case your Operating System provides a pre-packaged
+version of mod_python. If not, you will need to compile it
+yourself. This version of mod_python requires:
+
+* Python 2.6 or 2.7. (earlier versions might work too).
+* Apache 2.2 or later. Apache 2.4 is highly recommended over 2.2.
 
 In order to compile mod_python you will need to have the include files
 for both Apache and Python, as well as the Python library installed on
 your system.  If you installed Python and Apache from source, then you
-already have everything needed. However, if you are using prepackaged
-software (e.g. Red Hat Linux RPM, Debian, or Solaris packages from
-sunsite, etc) then chances are, you have just the binaries and not the
-sources on your system. Often, the Apache and Python include files and
-libraries necessary to compile mod_python are part of separate
-"development" package. If you are not sure whether you have all the
-necessary files, either compile and install Python and Apache from
-source, or refer to the documentation for your system on how to get
-the development packages.
-
+already have everything needed. However, if you are using pre-packaged
+software then you may need to install the "development" packages
+which contain the include files and libraries necessary to compile
+mod_python. Please check your OS documentation for specifics. (Hint:
+look for packages named python-devel or python-dev and apache-devel or
+apache-dev or httpd-dev, etc.).
 
 .. _inst-compiling:
 
 Compiling
 =========
-
-There are two ways in which modules can be compiled and linked to
-Apache - statically, or as a DSO (Dynamic Shared Object).
-
-:dfn:`DSO` is a more popular approach nowadays and is the recommended
-one for mod_python. The module gets compiled as a shared library which
-is dynamically loaded by the server at run time.
-
-The advantage of DSO is that a module can be installed without
-recompiling Apache and used as needed.  A more detailed description of
-the Apache DSO mechanism is available at `<http://httpd.apache.org/docs-2.4/dso.html>`_
-
-*At this time only DSO is supported by mod_python.*
-
-:dfn:`Static` linking is an older approach. With dynamic linking
-available on most platforms it is used less and less. The main
-drawback is that it entails recompiling Apache, which in many
-instances is not a favorable option.
-
 
 .. _inst-configure:
 
@@ -69,9 +54,8 @@ standard autoconf stuff, :file:`./configure` does the following:
    pair: ./configure; --with-apxs
 
 * Finds out whether a program called :program:`apxs` is available. This
-  program is part of the standard Apache distribution, and is necessary
-  for DSO compilation. If apxs cannot be found in your :envvar:`PATH` or in
-  :file:`/usr/local/apache/bin`, DSO compilation will not be available.
+  program is part of the standard Apache distribution, and is required
+  for compilation.
 
   You can manually specify the location of apxs by using the
   :option:`with-apxs` option, e.g.::
@@ -91,7 +75,7 @@ standard autoconf stuff, :file:`./configure` does the following:
 
   If the first Python binary in the path is not suitable or not the one
   desired for mod_python, you can specify an alternative location with the
-  :option:`with-python` option, e.g::
+  :option:`with-python` option, e.g.::
 
      $ ./configure --with-python=/usr/local/bin/python2.3
 
@@ -106,11 +90,11 @@ standard autoconf stuff, :file:`./configure` does the following:
 
      $ ./configure --with-mutex-dir=/var/run/mod_python
 
-  The mutex directory can also be specified in using a 
-  :ref:`dir-other-po`
+  The mutex directory can also be specified at run time using 
+  :ref:`dir-other-po` ``mod_python.mutex_directory``.
   See :ref:`inst-apacheconfig`.
 
-  New in version 3.3.0
+  *New in version 3.3.0*
 
 .. index::
    pair: ./configure; --with-max-locks
@@ -125,11 +109,11 @@ standard autoconf stuff, :file:`./configure` does the following:
 
      $ ./configure --with-max-locks=32
 
-  The number of locks can also be specified in using a 
-  :ref:`dir-other-po` directive. 
+  The number of locks can also be specified at run time using
+  :ref:`dir-other-po` ``mod_python.mutex_locks``. 
   See :ref:`inst-apacheconfig`.
 
-  New in version 3.2.0
+  *New in version 3.2.0*
 
 .. index::
    single: flex
@@ -141,12 +125,9 @@ standard autoconf stuff, :file:`./configure` does the following:
   You can generally ignore this warning unless you need to re-create
   :file:`src/psp_parser.c`.
  
-  The parser used by psp (See :ref:`pyapi-psp`) is written in C generated using 
-  :program:`flex`. This requires a reentrant version of :program:`flex` which
-  at this time is 2.5.31. Most platforms however ship with version 2.5.4
-  which is not suitable, so a pre-generated copy of psp_parser.c is included
-  with the source. If you do need to compile :file:`src/psp_parser.c` you 
-  must get the correct :program:`flex` version.
+  The parser used by psp (See :ref:`pyapi-psp`) is written in C
+  generated using :program:`flex`. (This requires a reentrant version
+  of :program:`flex`, 2.5.31 or later).
  
   If the first flex binary in the path is not suitable or not the one desired
   you can specify an alternative location with the option:with-flex:
@@ -154,19 +135,7 @@ standard autoconf stuff, :file:`./configure` does the following:
  
      $ ./configure --with-flex=/usr/local/bin/flex
 
-  New in version 3.2.0
-
-.. index::
-   pair: ./configure; --with-python-src
-
-* The python source is required to build the mod_python documentation.
-  You can safely ignore this option unless you want to build the the
-  documentation. If you want to build the documentation, specify the path
-  to your python source with the :option:`with-python-src` option, eg.
-
-     $ ./configure --with-python-src=/usr/src/python2.3
-
-  New in version 3.2.0
+  *New in version 3.2.0*
 
 .. _inst-make:
 
@@ -192,16 +161,15 @@ Installing
 
 Running :file:`make install`
 
-* This part of the installation needs to be done as root:
+* This part of the installation in most cases needs to be done as root::
 
-      $ su
-      # make install
+      $ sudo make install
 
-  * This will simply copy the library into your Apache
-    :file:`libexec` directory, where all the other modules are.
+  * This will copy the mod_python library (:file:`mod_python.so`) into your Apache
+    :file:`libexec` or :file:`modules` directory, where all the other modules are.
 
   * Lastly, it will install the Python libraries in
-    file:`site-packages` and compile them.
+    :file:`site-packages` and compile them.
 
 .. index::
    pair: make targets; install_py_lib
@@ -210,10 +178,9 @@ Running :file:`make install`
 .. note::
 
   If you wish to selectively install just the Python libraries
-  or the DSO (which may not always require superuser
+  or the DSO (mod_python.so) (which may not always require superuser
   privileges), you can use the following :program:`make` targets:
-  :option:`install_py_lib` and :option:`install_dso`
-  :option:`install_static` and :option:`install_dso`
+  :option:`install_py_lib` and :option:`install_dso`.
 
 .. _inst-apacheconfig:
 
@@ -226,10 +193,9 @@ Configuring Apache
 
 * **LoadModule**
 
-  If you compiled mod_python as a DSO, you will need to tell Apache to
-  load the module by adding the following line in the Apache
-  configuration file, usually called \filenq{httpd.conf} or
-  :file:`apache.conf`::
+  You need to configure Apache to load the module by adding the
+  following line in the Apache configuration file, usually called
+  :file:`httpd.conf` or :file:`apache.conf`::
 
      LoadModule python_module libexec/mod_python.so
 
@@ -263,7 +229,7 @@ Configuring Apache
    pair: apache configuration; mutex locks
 
 * **Mutex Locks**
-  
+
   Mutexes are used in mod_python for session locking. The default
   value is 8.
 
