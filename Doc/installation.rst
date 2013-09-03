@@ -82,9 +82,16 @@ standard autoconf stuff, :file:`./configure` does the following:
 .. index::
    pair: ./configure; --with-mutex-dir
 
-* Sets the directory for the apache mutex locks. The default is
-  :file:`/tmp`. The directory must exist and be writable by the
-  owner of the apache process.
+* Sets the directory for the apache mutex locks (if the mutex
+  mechanism chosen by APR requires one).
+
+  Note: mutex locks are used only by :ref:`mod_python Sessions <pyapi-sess>` and
+  :ref:`PSP <hand-psp>` (which maintains a Session implicitly). If you're
+  not using mod_python Sessions or PSP, then this setting should not
+  matter.
+
+  Default is :file:`/tmp`. The directory must exist and be
+  writable by the owner of the apache process.
 
   Use :option:`with-mutex-dir` option, e.g::
 
@@ -99,7 +106,12 @@ standard autoconf stuff, :file:`./configure` does the following:
 .. index::
    pair: ./configure; --with-max-locks
 
-* Sets the maximum number of locks reserved by mod_python.
+* Sets the maximum number of mutex locks reserved by mod_python.
+
+  Note: mutex locks are used only by :ref:`mod_python Sessions <pyapi-sess>` and
+  :ref:`PSP <hand-psp>` (which maintains a Session implicitly). If you're
+  not using mod_python Sessions or PSP, then this setting should not
+  matter.
 
   The mutexes used for locking are a limited resource on some
   systems. Increasing the maximum number of locks may increase performance
