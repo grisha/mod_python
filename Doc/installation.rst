@@ -203,7 +203,7 @@ Configuring Apache
    pair: LoadModule; apache configuration
    single: mod_python.so
 
-* **LoadModule**
+* *LoadModule*
 
   You need to configure Apache to load the module by adding the
   following line in the Apache configuration file, usually called
@@ -215,88 +215,17 @@ Configuring Apache
   should report at the very end exactly where :program:`mod_python.so`
   was placed and how the ``LoadModule`` directive should appear.
 
-.. index::
-   pair: mutex directory; apache configuration
+* See :ref:`inst-testing` below for more basic configuration parameters.
 
-* **Mutex Directory**
-
-  The default directory for mutex lock files is :file:`/tmp`. The
-  default value can be be specified at compile time using
-  ``./configure --with-mutex-dir``.
-
-  Alternatively this value can be overriden at apache startup using 
-  a :ref:`dir-other-po`::
-
-     PythonOption mod_python.mutex_directory "/tmp"
-
-  This may only be used in the server configuration context.
-  It will be ignored if used in a directory, virtual host,
-  htaccess or location context. The most logical place for this 
-  directive in your apache configuration file is immediately
-  following the **LoadModule** directive.
-
-  *New in version 3.3.0*
-
-.. index::
-   pair: apache configuration; mutex locks
-
-* **Mutex Locks**
-
-  Mutexes are used in mod_python for session locking. The default
-  value is 8.
-
-  On some systems the locking mechanism chosen uses valuable
-  system resources. Notably on RH 8 sysv ipc is used, which 
-  by default provides only 128 semaphores system-wide.
-  On many other systems flock is used which may result in a relatively
-  large number of open files.
-
-  The optimal number of necessary locks is not clear. 
-  Increasing the maximum number of locks may increase performance
-  when using session locking.  A reasonable number for 
-  higher performance might be 32.
-
-  The maximum number of locks can be specified at compile time
-  using ``./configure ----with-max-locks``.
-
-  Alternatively this value can be overriden at apache startup using 
-  a :ref:`dir-other-po`::
-
-     PythonOption mod_python.mutex_locks 8 
-
-  This may only be used in the server configuration context.  It will
-  be ignored if used in a directory, virtual host, htaccess or
-  location context. The most logical place for this directive in your
-  apache configuration file is immediately following the
-  **LoadModule** directive.
-
-  *New in version 3.3.0*
 
 .. _inst-testing:
 
 Testing
 =======
 
-.. note::
+#. Make a directory that would be visible on your web site, e.g. ``htdocs/test``.
 
-   These instructions are meant to be followed if you are using
-   mod_python 3.x or later. If you are using mod_python 2.7.x (namely,
-   if you are using Apache 1.3.x), please refer to the proper
-   documentation.
-
-#. Make some directory that would be visible on your web site, for
-   example, htdocs/test.
-
-#. Add the following Apache directives, which can appear in either the
-   main server configuration file, or :file:`.htaccess`.  If you are
-   going to be using the :file:`.htaccess` file, you will not need
-   the ``<Directory>`` tag below (the directory then becomes the
-   one in which the :file:`.htaccess` file is located), and you will
-   need to make sure the ``AllowOverride`` directive applicable to
-   this directory has at least ``FileInfo`` specified. (The default
-   is ``None``, which will not work.)
-
-   ZZZ: the above has been verified to be still true for Apache 2.0::
+#. Add the following configuration directives to the main server config file::
 
      <Directory /some/directory/htdocs/test> 
          AddHandler mod_python .py
@@ -304,14 +233,20 @@ Testing
          PythonDebug On 
      </Directory>
 
-   (Substitute :file:`/some/directory` above for something applicable to
+   (Substitute ``/some/directory`` above for something applicable to
    your system, usually your Apache ServerRoot)
 
-#. This redirects all requests for URLs ending in :file:`.py`} to the
-   mod_python handler. mod_python receives those requests and looks
-   for an appropriate PythonHandler to handle them. Here, there is a
-   single PythonHandler directive defining mptest as the python
-   handler to use. We'll see next how this python handler is defined.
+   This configuration can also be specified in an :file:`.htaccess`
+   file.  Note that :file:`.htaccess` configuration is typically
+   disabled by default, to enable it in a directory specify
+   ``AllowOverride`` with at least ``FileInfo``.
+
+#. This causes all requests for URLs ending in ``.py`` to be processed
+   by mod_python. Upon being handed a request, mod_python looks for
+   the appropriate *python handler* to handle it. Here, there is a
+   single ``PythonHandler`` directive defining module ``mptest`` as
+   the python handler to use. We'll see next how this python handler
+   is defined.
 
 #. At this time, if you made changes to the main configuration file,
    you will need to restart Apache in order for the changes to take
@@ -334,11 +269,12 @@ Testing
    troubleshooting section next.
 
 #. Note that according to the configuration written above, you can
-   also point your browser to any URL ending in .py in the test
-   directory.  You can for example point your browser to
-   :file:`/test/foobar.py` and it will be handled by
-   :file:`mptest.py`. That's because you explicitely set the handler
-   to always be :file:`mptest`, whatever the requested file was.
+   point your browser to *any* URL ending in .py in the test
+   directory.  Therefore pointing your browser to
+   :file:`/test/foobar.py` will be handled exactly the same way by
+   :file:`mptest.py`. This is because the code in the ``handler``
+   function does not bother examining the URL and always acts the same
+   way no matter what the URL is.
 
 #. If everything worked well, move on to Chapter :ref:`tutorial`.
 
@@ -356,7 +292,7 @@ There are a few things you can try to identify the problem:
 
 * Try running Apache from the command line in single process mode::
 
-     ./httpd -X # ZZZ does this even work?
+     ./httpd -X
 
   This prevents it from backgrounding itself and may provide some useful
   information.
@@ -373,9 +309,10 @@ There are a few things you can try to identify the problem:
   (e.g. :file:`http://localhost/mpinfo`) and note down the information given.
   This will help you reporting your problem to the mod_python list.
 
-* Ask on the mod_python list. Make sure to provide specifics such as: ZZZ what list?
+* Ask on the `mod_python list <http://mailman.modpython.org/mailman/listinfo/mod_python>`_. 
+  Please make sure to provide specifics such as:
 
-  * Mod_python version.
+  * mod_python version.
   * Your operating system type, name and version.
   * Your Python version, and any unusual compilation options.
   * Your Apache version.
