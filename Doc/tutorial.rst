@@ -11,7 +11,7 @@ This is a quick guide to getting started with mod_python programming
 once you have it installed. This is not an installation manual.
 
 It is also highly recommended to read (at least the top part of)
-section :ref:`pythonapi`, after completing this tutorial.
+the section :ref:`pythonapi` after completing this tutorial.
 
 .. _tut-pub:
 
@@ -24,7 +24,7 @@ detail. A more thorough explanation of how mod_python handlers work
 and what a handler actually is follows on in the later sections of the
 tutorial.
 
-The ``publisher`` handler is provided as one of the standard
+The :ref:`hand-pub` is provided as one of the standard
 mod_python handlers. To get the publisher handler working, you will
 need the following lines in your config::
 
@@ -32,12 +32,12 @@ need the following lines in your config::
    PythonHandler mod_python.publisher
    PythonDebug On
 
-The following example will demonstrate a simple feedback form. The
-form will ask for the name, e-mail address and a comment and construct
-an e-mail to the webmaster using the information submitted by the
-user. This simple application consists of two files:
-:file:`form.html` - the form to collect the data, and
-:file:`form.py` - the target of the form's action.
+The following example demonstrates a simple feedback form. The form
+asks for a name, e-mail address and a comment which are then used to
+construct and send a message to the webmaster.  This simple
+application consists of two files: :file:`form.html` - the form to
+collect the data, and :file:`form.py` - the target of the form's
+action.
 
 Here is the html for the form::
 
@@ -54,7 +54,7 @@ Here is the html for the form::
    </form>
    </html>  
 
-Note the ``action`` element of the ``<form>`` tag points to
+The ``action`` element of the ``<form>`` tag points to
 ``form.py/email``. We are going to create a file called
 :file:`form.py`, like this::
 
@@ -108,9 +108,9 @@ load the :func:`email` function in the :mod:`form` module,
 passing it the form fields as keyword arguments. It will also pass the
 request object as ``req``.
 
-Note that you do not have to have ``req`` as one of the arguments
-if you do not need it. The publisher handler is smart enough to pass
-your function only those arguments that it will accept.
+You do not have to have ``req`` as one of the arguments if you do not
+need it. The publisher handler is smart enough to pass your function
+only those arguments that it will accept.
 
 The data is sent back to the browser via the return value of the
 function.
@@ -131,9 +131,6 @@ handler.
 
 Quick Overview of how Apache Handles Requests
 =============================================
-
-If you would like delve in deeper into the functionality of
-mod_python, you need to understand what a handler is.  
 
 Apache processes requests in :dfn:`phases`. For example, the first
 phase may be to authenticate the user, the next phase to verify
@@ -165,7 +162,7 @@ phase of the request during which the actual content is
 provided. Because it has no name, it is sometimes referred to as as
 :dfn:`generic` handler. The default Apache action for this handler is
 to read the file and send it to the client. Most applications you will
-write will override this one handler. To see all the possible
+write will provide this one handler. To see all the possible
 handlers, refer to Section :ref:`directives`.
 
 .. _tut-what-it-do:
@@ -181,7 +178,7 @@ Let's pretend we have the following configuration::
        PythonDebug On
    </Directory>
 
-*:file:`/mywebdir` is an absolute physical path.*
+Note: ``/mywebdir`` is an absolute physical path in this case.
 
 And let's say that we have a python program (Windows users: substitute
 forward slashes for backslashes) :file:`/mywedir/myscript.py` that looks like
@@ -224,18 +221,18 @@ the following:
   way around this is to use package notation, e.g. 
   ``'PythonHandler subdir.myscript'``.)
 
-* Look for a function called \code{handler} in \code{myscript}.
+* Look for a function called ``handler`` in module ``myscript``.
 
 * Call the function, passing it a request object. (More on what a
-  request object is later)
+  request object is later).
 
-* At this point we're inside the script: 
+* At this point we're inside the script, let's examine it line-by-line: 
 
   * ::
 
        from mod_python import apache
 
-    This imports the apache module which provides us the interface to
+    This imports the apache module which provides the interface to
     Apache. With a few rare exceptions, every mod_python program will have
     this line.
 
@@ -266,53 +263,51 @@ the following:
 
        req.content_type = "text/plain"
 
-    This sets the content type to ``'text/plain'``. The default is usually
-    ``'text/html'``, but since our handler doesn't produce any html,
-    ``'text/plain'`` is more appropriate.
-    **Important:** you should **always** make sure this is set
-    **before** any call to ``'req.write'``. When you first call
-    ``'req.write'``, the response HTTP header is sent to the client and all
-    subsequent changes to the content type (or other HTTP headers) are simply
-    lost.
+    This sets the content type to ``'text/plain'``. The default is
+    usually ``'text/html'``, but because our handler does not produce
+    any html, ``'text/plain'`` is more appropriate.  You should always
+    make sure this is set *before* any call to ``'req.write'``. When
+    you first call ``'req.write'``, the response HTTP header is sent
+    to the client and all subsequent changes to the content type (or
+    other HTTP headers) have no effect.
 
   * ::
 
        req.write("Hello World!")
 
-    This writes the ``'Hello World!'`` string to the client. (Did I really
-    have to explain this one?)
+    This writes the ``'Hello World!'`` string to the client.
 
   * ::
 
        return apache.OK
 
     This tells Apache that everything went OK and that the request has
-    been processed. If things did not go OK, that line could be return
-    :const:`apache.HTTP_INTERNAL_SERVER_ERROR` or return
+    been processed. If things did not go OK, this line could return
+    :const:`apache.HTTP_INTERNAL_SERVER_ERROR` or
     :const:`apache.HTTP_FORBIDDEN`. When things do not go OK, Apache
-    will log the error and generate an error message for the client.
+    logs the error and generates an error message for the client.
 
-**Some food for thought:** If you were paying attention, you
-noticed that the text above didn't specify that in order for the
-handler code to be executed, the URL needs to refer to
-:file:`myscript.py`. The only requirement was that it refers to a
-:file:`.py` file. In fact the name of the file doesn't matter, and
-the file referred to in the URL doesn't have to exist. So, given the
-above configuration, ``'http://myserver/mywebdir/myscript.py'`` and
-``'http://myserver/mywebdir/montypython.py'`` would give the exact
-same result. The important thing to understand here is that a handler
-augments the server behaviour when processing a specific type of file,
-not an individual file.
+.. note::
 
-*At this point, if you didn't understand the above paragraph, go
-back and read it again, until you do.*
+  It is important to understand that in order for the handler code to
+  be executed, the URL needs not refer specficially to
+  :file:`myscript.py`. The only requirement is that it refers to a
+  :file:`.py` file. This is because the ``AddHandler mod_python .py``
+  directive assignes mod_python to be a handler for a file *type*
+  (based on extention ``.py``), not a specific file. Therefore the
+  name in the URL does not matter, in fact the file referred to in the
+  URL doesn't event have to exist. Given the above configuration,
+  ``'http://myserver/mywebdir/myscript.py'`` and
+  ``'http://myserver/mywebdir/montypython.py'`` would yield the exact
+  same result.
+
 
 .. _tut-more-complicated:
 
 Now something More Complicated - Authentication
 ===============================================
 
-Now that you know how to write a primitive handler, let's try
+Now that you know how to write a basic handler, let's try
 something more complicated.
 
 Let's say we want to password-protect this directory. We want the
