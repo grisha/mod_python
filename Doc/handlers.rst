@@ -295,7 +295,7 @@ WSGI Handler
 
 WSGI handler can run WSGI applications as described in :pep:`333`.
 
-Assuming there exists the following minial WSGI app residing in a file named
+Assuming there exists the following minimal WSGI app residing in a file named
 ``mysite/wsgi.py`` in directory ``/path/to/mysite`` (so that the full
 path to ``wsgi.py`` is ``/path/to/mysite/mysite/wsgi.py``)::
 

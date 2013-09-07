@@ -1906,6 +1906,26 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp[-7:] != "test ok"):
             self.fail(`rsp`)
         
+    def test_wsgihandler_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_wsgihandler"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Directory(DOCUMENT_ROOT,
+                                  SetHandler("mod_python"),
+                                  PythonHandler("mod_python.wsgi"),
+                                  PythonOption("wsgi.application wsgitest"),
+                                  PythonDebug("On")))
+        return str(c)
+
+    def test_wsgihandler(self):
+
+        print "\n  * Testing mod_python.wsgi"
+
+        rsp = self.vhost_get("test_wsgihandler")
+        if (rsp[-8:] != "test ok\n"):
+            self.fail(`rsp`)
+
     def test_cgihandler_conf(self):
 
         c = VirtualHost("*",
@@ -2862,6 +2882,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_server_side_include"))
         if APACHE_VERSION == '2.4' and sys.platform.startswith("linux"):
             perRequestSuite.addTest(PerRequestTestCase("test_memory"))
+        perRequestSuite.addTest(PerRequestTestCase("test_wsgihandler"))
 
         # test_publisher_cache does not work correctly for mpm-prefork/worker
         # and it may not be possible to get a reliable test for all
