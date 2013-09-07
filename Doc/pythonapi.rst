@@ -12,14 +12,13 @@ Multiple Interpreters
 
 When working with mod_python, it is important to be aware of a feature
 of Python that is normally not used when using the language for
-writing scripts to be run from command line. This feature is not
+writing scripts to be run from command line. (In fact, this feature is not
 available from within Python itself and can only be accessed through
-the `C language API <http://www.python.org/doc/current/api/api.html>`_.
-
+the `C language API <http://www.python.org/doc/current/api/api.html>`_.)
 Python C API provides the ability to create :dfn:`subinterpreters`. A
 more detailed description of a subinterpreter is given in the
 documentation for the
-`Py_NewInterpreter() <http://www.python.org/doc/current/api/initialization.html>_`
+`Py_NewInterpreter() <http://www.python.org/doc/current/api/initialization.html>`_
 function. For this discussion, it will suffice to say that each
 subinterpreter has its own separate namespace, not accessible from
 other subinterpreters. Subinterpreters are very useful to make sure
@@ -30,46 +29,47 @@ interfere with one another.
    single: main_interpreter
 
 At server start-up or mod_python initialization time, mod_python
-initializes an interpreter called :dfn:`main` interpreter.  The main
-interpreter contains a dictionary of subinterpreters. Initially, this
-dictionary is empty. With every request, as needed, subinterpreters
-are created, and references to them are stored in this dictionary. The
-dictionary is keyed on a string, also known as *interpreter name*. 
-This name can be any string.  The main interpreter is named
-``'main_interpreter'``.  The way all other interpreters are named can
-be controlled by ``PythonInterp*`` directives. Default behaviour is
-to name interpreters using the Apache virtual server name
-(``ServerName`` directive). This means that all scripts in the same
-virtual server execute in the same subinterpreter, but scripts in
-different virtual servers execute in different subinterpreters with
-completely separate namespaces.
-:ref:`dir-other-ipd`  and :ref:`dir-other-ipdv`
-directives alter the naming convention to use the absolute path of the
-directory being accessed, or the directory in which the
-``Python*Handler`` was encountered, respectively.
-:ref:`dir-other-pi` can be used to
-force the interpreter name to a specific string overriding any naming
+initializes the *main interpeter*. The main interpreter contains a
+dictionary of subinterpreters. Initially, this dictionary is
+empty. With every request, as needed, subinterpreters are created, and
+references to them are stored in this dictionary. The dictionary is
+keyed on a string, also known as *interpreter name*.  This name can be
+any string.  The main interpreter is named ``'main_interpreter'``.
+The way all other interpreters are named can be controlled by
+``PythonInterp*`` directives. Default behaviour is to name
+interpreters using the Apache virtual server name (``ServerName``
+directive). This means that all scripts in the same virtual server
+execute in the same subinterpreter, but scripts in different virtual
+servers execute in different subinterpreters with completely separate
+namespaces.  :ref:`dir-other-ipd` and :ref:`dir-other-ipdv` directives
+alter the naming convention to use the absolute path of the directory
+being accessed, or the directory in which the ``Python*Handler`` was
+encountered, respectively.  :ref:`dir-other-pi` can be used to force
+the interpreter name to a specific string overriding any naming
 conventions.
 
 Once created, a subinterpreter will be reused for subsequent requests.
-It is never destroyed and exists until the Apache process dies.
+It is never destroyed and exists until the Apache process ends.
 
 You can find out the name of the interpreter under which you're
 running by peeking at :attr:`request.interpreter`.
 
-Note that if any third party module is being used which has a C code
-component that uses the simplified API for access to the Global
-Interpreter Lock (GIL) for Python extension modules, then the interpreter
-name must be forcibly set to be ``'main_interpreter'``. This is necessary
-as such a module will only work correctly if run within the context of
-the first Python interpreter created by the process. If not forced to
-run under the ``'main_interpreter'``, a range of Python errors can arise,
-each typically referring to code being run in *restricted mode*.
+.. note::
+
+  If any module is being used which has a C code component that uses
+  the simplified API for access to the Global Interpreter Lock (GIL)
+  for Python extension modules, then the interpreter name must be
+  forcibly set to be ``'main_interpreter'``. This is necessary as such
+  a module will only work correctly if run within the context of the
+  first Python interpreter created by the process. If not forced to
+  run under the ``'main_interpreter'``, a range of Python errors can
+  arise, each typically referring to code being run in *restricted
+  mode*.
 
 .. seealso::
 
   `<http://www.python.org/doc/current/api/api.html>`_
-     Python C Language API}{Python C Language API
+     Python C Language API
   `<http://www.python.org/peps/pep-0311.html>`_
      PEP 0311 - Simplified Global Interpreter Lock Acquisition for Extensions
 
