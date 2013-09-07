@@ -285,6 +285,46 @@ using the Publisher handler and should use
 :attr:`request.form` instead.
 
 
+.. _hand-wsgi:
+
+WSGI Handler
+============
+
+.. index::
+   pair: WSGI; handler
+
+WSGI handler can run WSGI applications as described in :pep:`333`.
+
+Assuming there exists the following minial WSGI app residing in a file named
+``mysite/wsgi.py`` in directory ``/path/to/mysite`` (so that the full
+path to ``wsgi.py`` is ``/path/to/mysite/mysite/wsgi.py``)::
+
+  def application(environ, start_response):
+     status = '200 OK'
+     output = 'Hello World!'
+
+     response_headers = [('Content-type', 'text/plain'),
+                         ('Content-Length', str(len(output)))]
+     start_response(status, response_headers)
+
+     return [output]
+
+It can be executed using the WSGI handler by adding the following to the
+Apache configuration::
+
+   PythonHandler mod_python.wsgi
+   PythonOption wsgi.application mysite.wsgi
+   PythonPath "sys.path+['/path/to/mysite']"
+
+The above configuration will import a module named ``mysite.wsgi`` and
+will look for an ``application`` callable in the module.
+
+An alternative name for the callable can be specified by appending it
+to the module name separated by ``'::'``, e.g.::
+
+  PythonOption wsgi.application mysite.wsgi::my_application
+
+
 .. _hand-psp:
 
 PSP Handler
@@ -296,7 +336,7 @@ PSP Handler
 PSP handler is a handler that processes documents using the
 ``PSP`` class in ``mod_python.psp`` module.
 
-To use it, simply add this to your httpd configuration:::
+To use it, simply add this to your httpd configuration::
 
    AddHandler mod_python .psp
    PythonHandler mod_python.psp
