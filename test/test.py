@@ -117,21 +117,18 @@
 import sys
 import os
 
-### Testing the testconf module
 try:
-    import testconf
+    import mod_python.version
 except:
     print (
-        "Cannot find the testconf module. Either you didn't "
-        "launch the configure script, or you're running this script "
-        "in a Win32 environment. You have to copy testconf.py.in to "
-        "testconf.py and change the variables HTTPD, TESTHOME, MOD_PYTHON_SO "
-        "and LIBEXECDIR according to their description in the file.\n"
+        "Cannot import mod_python.version. Either you didn't "
+        "run the ./configure script, or you're running this script "
+        "in a Win32 environment, in which case you have to make it by hand."
     )  
     sys.exit()
 else:
     def testpath(variable,isfile):
-        value = getattr(testconf,variable,'<undefined>')
+        value = getattr(mod_python.version,variable,'<undefined>')
 
         if isfile:
             if os.path.isfile(value):
@@ -139,7 +136,7 @@ else:
         else:
             if os.path.isdir(value):
                 return True
-        print 'Bad value for testconf.%s : %s'%(
+        print 'Bad value for mod_python.version.%s : %s'%(
             variable,
             value
         )
@@ -150,14 +147,14 @@ else:
     good = testpath('LIBEXECDIR',False) and good
     good = testpath('MOD_PYTHON_SO',True) and good
     if not good:
-        print "Please check your testconf.py file"
+        print "Please check your mod_python/version.py file"
         sys.exit()
 
     del testpath
     del good
 
 
-from httpdconf import *
+from mod_python.httpdconf import *
 
 import unittest
 import commands
@@ -172,10 +169,10 @@ import random
 import md5
 from cStringIO import StringIO
 
-HTTPD = testconf.HTTPD
-TESTHOME = testconf.TESTHOME
-MOD_PYTHON_SO = testconf.MOD_PYTHON_SO
-LIBEXECDIR = testconf.LIBEXECDIR
+HTTPD = mod_python.version.HTTPD
+TESTHOME = mod_python.version.TESTHOME
+MOD_PYTHON_SO = mod_python.version.MOD_PYTHON_SO
+LIBEXECDIR = mod_python.version.LIBEXECDIR
 SERVER_ROOT = TESTHOME
 CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
 DOCUMENT_ROOT = os.path.join(TESTHOME, "htdocs")
@@ -246,6 +243,10 @@ def get_apache_version():
     return version
 
 APACHE_VERSION = get_apache_version()
+if not mod_python.version.HTTPD_VERSION.startswith(APACHE_VERSION):
+    print "ERROR: Build version %s does not match version reported by %s: %s, re-run ./configure?" % \
+        (mod_python.version.HTTPD_VERSION, HTTPD, APACHE_VERSION)
+    sys.exit()
 
 class HttpdCtrl:
     # a mixin providing ways to control httpd

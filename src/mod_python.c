@@ -137,7 +137,7 @@ static PyObject * make_obcallback(char *name)
         mp = PyImport_ImportModule("mod_python");
         if (mp) {
             d = PyModule_GetDict(mp);
-            o = PyDict_GetItemString(d, "version");
+            o = PyDict_GetItemString(d, "mp_version");
             f = PyDict_GetItemString(d, "__file__");
 
             if (o)

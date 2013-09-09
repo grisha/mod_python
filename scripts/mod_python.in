@@ -1,0 +1,117 @@
+#!@PYTHON_BIN@
+
+ # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License"); you
+ # may not use this file except in compliance with the License.  You
+ # may obtain a copy of the License at
+ #
+ #      http://www.apache.org/licenses/LICENSE-2.0
+ #
+ # Unless required by applicable law or agreed to in writing, software
+ # distributed under the License is distributed on an "AS IS" BASIS,
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ # implied.  See the License for the specific language governing
+ # permissions and limitations under the License.
+ #
+ # Originally developed by Gregory Trubetskoy.
+
+
+ # WARNING:
+ # WARNING: Make sure you're editing mod_python.in, not mod_python!
+ # WARNING:
+
+
+import sys
+import os
+import mod_python
+
+def do_create(dest):
+
+    print "Creating in %s..." % dest
+
+    if os.path.exists(dest):
+        print "Destination %s already exists, aborting." % `dest`
+
+    # create skeleton directories
+    os.mkdir(dest)
+    os.mkdir(os.path.join(dest, "public"))
+    os.mkdir(os.path.join(dest, "conf"))
+    os.mkdir(os.path.join(dest, "logs"))
+    os.mkdir(os.path.join(dest, "app"))
+
+def cmd_create():
+
+    parser = OptionParser(usage="%prog create <directory>\n"
+                          "  Create a mod_python skeleton in <directory>")
+
+    (options, args) = parser.parse_args(sys.argv[2:])
+    if len(args) != 1:
+        parser.error("Must specify <directory>")
+
+    dest = args[0]
+
+    do_create(dest)
+
+
+def cmd_version():
+
+    parser = OptionParser(usage="%prog version\n"
+                          "  Print version")
+
+    print "mod_python: %s" % mod_python.mp_version
+    print "python: %s" % ''.join(sys.version.splitlines())
+    print "httpd: %s" % mod_python.version.HTTPD_VERSION
+
+
+import optparse
+
+class OptionParser (optparse.OptionParser):
+
+    def check_required (self, opt):
+        option = self.get_option(opt)
+
+        # Assumes the option's 'default' is set to None!
+        if getattr(self.values, option.dest) is None:
+            self.error("%s option not supplied" % option)
+
+
+def main():
+
+    module = sys.modules[__name__]
+    commands = [c[4:] for c in dir(module) if c.startswith("cmd_")]
+
+    parser = OptionParser(usage = "%%prog <command> [command options]\n"
+                         "  Where <command> is one of: %s\n"
+                         "  For help on a specific command, use: %%prog <command> --help\n"
+                         % " ".join(commands))
+
+    # anything after a command is not our argument
+    try:
+        cmd_idx = [sys.argv.index(arg) for arg in sys.argv if arg in commands][0]
+    except IndexError:
+        cmd_idx = 1
+
+    (options, args) = parser.parse_args(sys.argv[1:cmd_idx+1])
+
+    if not args:
+        parser.error("Please specify a command")
+
+    command = args[0]
+
+    if command not in commands:
+        parser.error("Invalid command: %s" % command)
+
+    cmd_func = module.__dict__["cmd_"+command]
+    cmd_func()
+
+if __name__ == "__main__":
+    main()
+
+# makes emacs go into python mode
+### Local Variables:
+### mode:python
+### End:
+
+

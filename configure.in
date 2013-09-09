@@ -61,6 +61,7 @@ fi
 AC_SUBST(LIBEXECDIR)
 AC_SUBST(SOLARIS_HACKS)
 AC_SUBST(HTTPD)
+AC_SUBST(HTTPD_VERSION)
 if test -z "$APXS"; then
   AC_MSG_WARN([**** apxs was not found, DSO compilation will not be available.])
   AC_MSG_WARN([**** You can use --with-apxs to specify where your apxs is.])
@@ -73,12 +74,12 @@ else
   # check Apache version
   AC_MSG_CHECKING(Apache version)
   HTTPD="`${APXS} -q SBINDIR`/`${APXS} -q TARGET`"
-  ver=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}'`
-  AC_MSG_RESULT($ver)
+  HTTPD_VERSION=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}' | awk '{print $1}'`
+  AC_MSG_RESULT($HTTPD_VERSION)
 
   # make sure version begins with 2
-  if test -z "`echo $ver | egrep \^2`"; then
-    AC_MSG_ERROR([This version of mod_python only works with Apache 2. The one you have seems to be $ver.])
+  if test -z "`echo $HTTPD_VERSION | egrep \^2`"; then
+    AC_MSG_ERROR([This version of mod_python only works with Apache 2. The one we have ($HTTPD) seems to be $HTTPD_VERSION.])
   fi
 
   # determine LIBEXEC
@@ -326,7 +327,10 @@ else
   See the README for more information.])
 fi
 
-AC_OUTPUT(Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/Makefile test/testconf.py dist/setup.py dist/Makefile)
-
+AC_CONFIG_FILES([Makefile src/Makefile Doc/Makefile \
+                   src/include/mod_python.h test/Makefile \
+                   dist/setup.py dist/Makefile scripts/Makefile \
+                   scripts/mod_python], [chmod +x scripts/mod_python])
+AC_OUTPUT
 
 

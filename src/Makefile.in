@@ -49,11 +49,10 @@ psp_parser.c: psp_parser.l
 	$(LEX) -R -opsp_parser.c --header-file=include/psp_flex.h psp_parser.l
 
 dso:	mod_python.so
-	@echo dso > .install
 
 mod_python.so: $(SRCS) @SOLARIS_HACKS@ 
 	@echo
-	@echo 'Compiling for DSO.'
+	@echo 'Building mod_python.so.'
 	@echo
 	@$(MAKE) version
 	$(APXS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -c $(SRCS) $(LDFLAGS) $(LDLIBS) @SOLARIS_HACKS@
@@ -63,7 +62,7 @@ clean:
 	rm -rf $(OBJS) core libpython.a mod_python.so *~ .libs *.o *.slo *.lo *.la 
 
 distclean: clean
-	rm -f Makefile .depend .install
+	rm -f Makefile .depend
 
 version:
 	@MP_GIT_SHA=$$(git describe --dirty --always); \
