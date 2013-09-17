@@ -96,9 +96,11 @@ def generate_version_py():
         version_py.write('\n# Some build-time constants:\n')
         version_py.write('HTTPD = "@HTTPD@"\n')
         version_py.write('HTTPD_VERSION = "@HTTPD_VERSION@"\n')
-        version_py.write('TESTHOME = "@TEST_SERVER_ROOT@"\n')
+        version_py.write('APR_VERSION = "@APR_VERSION@"\n')
         version_py.write('LIBEXECDIR = "@LIBEXECDIR@"\n')
         version_py.write('MOD_PYTHON_SO = "@MOD_PYTHON_SO@"\n')
+        version_py.write('TESTHOME = "@TEST_SERVER_ROOT@"\n')
+        version_py.write('PYTHON_BIN = "@PYTHON_BIN@"\n')
 
 
 VER = getmp_version()

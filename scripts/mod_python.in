@@ -25,45 +25,24 @@
 
 import sys
 import os
+import platform
 import mod_python
-
-def do_create(dest):
-
-    print "Creating in %s..." % dest
-
-    if os.path.exists(dest):
-        print "Destination %s already exists, aborting." % `dest`
-
-    # create skeleton directories
-    os.mkdir(dest)
-    os.mkdir(os.path.join(dest, "public"))
-    os.mkdir(os.path.join(dest, "conf"))
-    os.mkdir(os.path.join(dest, "logs"))
-    os.mkdir(os.path.join(dest, "app"))
-
-def cmd_create():
-
-    parser = OptionParser(usage="%prog create <directory>\n"
-                          "  Create a mod_python skeleton in <directory>")
-
-    (options, args) = parser.parse_args(sys.argv[2:])
-    if len(args) != 1:
-        parser.error("Must specify <directory>")
-
-    dest = args[0]
-
-    do_create(dest)
-
 
 def cmd_version():
 
     parser = OptionParser(usage="%prog version\n"
                           "  Print version")
 
-    print "mod_python: %s" % mod_python.mp_version
-    print "python: %s" % ''.join(sys.version.splitlines())
-    print "httpd: %s" % mod_python.version.HTTPD_VERSION
+    version =  "mod_python:  %s\n" % mod_python.mp_version
+    version += "python:      %s\n" % ''.join(sys.version.splitlines())
+    version += "httpd:       %s\n" % mod_python.version.HTTPD_VERSION
+    version += "apr:         %s\n" % mod_python.version.APR_VERSION
+    version += "platform:    %s\n" % platform.platform()
+    version += "python path: %s\n" % `mod_python.version.PYTHON_BIN`
+    version += "module path: %s\n" % `mod_python.version.MOD_PYTHON_SO`
+    version += "httpd path:  %s\n" % `mod_python.version.HTTPD`
 
+    print version
 
 import optparse
 

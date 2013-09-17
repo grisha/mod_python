@@ -18,6 +18,9 @@
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
 
+# this is so that it could be referred to in a Container expr
+import mod_python
+
 class Directive:
 
     def __init__(self, name, val, flipslash=1):
@@ -26,8 +29,14 @@ class Directive:
         self.indent = 0
         self.flipslash = flipslash
 
-    def __str__(self):
+    def __repr__(self):
+        i = " " * self.indent
+        s = i + '%s(%s)' % (self.name, `self.val`)
+        if self.flipslash:
+            s = s.replace("\\", "/")
+        return s
 
+    def __str__(self):
         i = " " * self.indent
         s = i + '%s %s\n' % (self.name, self.val)
         if self.flipslash:
@@ -36,19 +45,35 @@ class Directive:
 
 class Container:
     
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.args = list(args)
         self.indent = 0
+        self.expr = kwargs.get('expr')
     
     def append(self, value):
+        if not (isinstance(value, Directive) or
+                isinstance(value, Container) or
+                isinstance(value, ContainerTag) or
+                isinstance(value, Comment)):
+            raise TypeError("appended value must be an instance of Directive, Container, ContainerTag or Comment")
         self.args.append(value)
 
-    def __str__(self):
-
+    def __repr__(self):
         i = " " * self.indent
-        s = "\n"
+        s = i + 'Container('
         for arg in self.args:
-            s += i + "%s" % str(arg)
+            arg.indent = self.indent + 4
+            s += "\n%s," % `arg`
+        s += "\n" + i + (self.expr and (' expr=%s)' % `self.expr`) or ')')
+        return s
+
+    def __str__(self):
+        if self.expr and not eval(self.expr):
+            return ''
+        s = ""
+        for arg in self.args:
+            arg.indent = self.indent
+            s += "%s" % str(arg)
 
         return s
 
@@ -61,18 +86,37 @@ class ContainerTag:
         self.indent = 0
         self.flipslash = flipslash
 
-    def __str__(self):
-
+    def __repr__(self):
         i = " " * self.indent
+        s = i + "%s(%s," % (self.tag, `self.attr`)
+        if self.flipslash:
+            s = s.replace("\\", "/")
+        for arg in self.args:
+            arg.indent = self.indent + 4
+            s += "\n%s," % `arg`
+        s += "\n" + i + ")"
+        return s
 
+    def __str__(self):
+        i = " " * self.indent
         s = i + "<%s %s>\n" % (self.tag, self.attr)
         if self.flipslash:
             s = s.replace("\\", "/")
         for arg in self.args:
             arg.indent = self.indent + 2
-            s += i + "%s" % str(arg)
+            s += "%s" % str(arg)
         s += i + "</%s>\n" % self.tag
+        return s
 
+class Comment:
+
+    def __init__(self, comment):
+        self.comment = comment
+        self.indent = 0
+
+    def __repr__(self):
+        i = " " * self.indent
+        s = i + '# %s\n' % self.comment
         return s
 
 class AddHandler(Directive):
@@ -182,6 +226,10 @@ class MaxThreadsPerChild(Directive):
         Directive.__init__(self, self.__class__.__name__, val)
 
 class MinSpareThreads(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
+class NameVirtualHost(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 

@@ -614,6 +614,7 @@ STATIC
 AP_SRC_GRP
 AP_SRC_OWN
 AP_SRC
+APR_VERSION
 HTTPD_VERSION
 HTTPD
 SOLARIS_HACKS
@@ -3157,6 +3158,7 @@ fi
 
 
 
+
 if test -z "$APXS"; then
   { $as_echo "$as_me:$LINENO: WARNING: **** apxs was not found, DSO compilation will not be available." >&5
 $as_echo "$as_me: WARNING: **** apxs was not found, DSO compilation will not be available." >&2;}
@@ -3173,6 +3175,7 @@ else
 $as_echo_n "checking Apache version... " >&6; }
   HTTPD="`${APXS} -q SBINDIR`/`${APXS} -q TARGET`"
   HTTPD_VERSION=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}' | awk '{print $1}'`
+  APR_VERSION=`${APXS} -q APR_VERSION`
   { $as_echo "$as_me:$LINENO: result: $HTTPD_VERSION" >&5
 $as_echo "$HTTPD_VERSION" >&6; }
 

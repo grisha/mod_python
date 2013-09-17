@@ -268,7 +268,7 @@ class HttpdCtrl:
         os.mkdir(TMP_DIR)
 
 
-    def makeConfig(self, append=""):
+    def makeConfig(self, append=Container()):
 
         # create config files, etc
 
@@ -329,8 +329,8 @@ class HttpdCtrl:
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
 
-        if APACHE_VERSION == '2.4':
-            LockFile("logs/accept.lock"),
+        if APACHE_VERSION == '2.2':
+            s.append(LockFile("logs/accept.lock"))
 
         if APACHE_VERSION == '2.4':
             s.append(IfModule("!mod_unixd.c",
@@ -364,7 +364,8 @@ class HttpdCtrl:
                                 quoteIfSpace(os.path.join(modpath, "mod_auth.so")))))
 
 
-        s.append("\n# --APPENDED-- \n\n"+append)
+        s.append(Comment(" --APPENDED--"))
+        s.append(append)
 
         f = open(CONFIG, "w")
         f.write(str(s))
@@ -410,7 +411,7 @@ class HttpdCtrl:
 
 class PerRequestTestCase(unittest.TestCase):
 
-    appendConfig = APACHE_VERSION < '2.4' and "\nNameVirtualHost *\n\n" or ""
+    appendConfig = APACHE_VERSION < '2.4' and NameVirtualHost('*') or Container()
 
     def __init__(self, methodName="runTest"):
         unittest.TestCase.__init__(self, methodName)
@@ -418,7 +419,7 @@ class PerRequestTestCase(unittest.TestCase):
         # add to config
         try:
             confMeth = getattr(self, methodName+"_conf")
-            self.__class__.appendConfig += confMeth() + "\n"
+            self.__class__.appendConfig.append(confMeth())
         except AttributeError:
             pass
 
@@ -512,7 +513,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_document_root"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
 
     def test_req_document_root(self):
@@ -532,7 +533,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_add_handler"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_add_handler(self):
 
@@ -551,7 +552,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_add_bad_handler"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_add_bad_handler(self):
         # adding a non-existent handler with req.add_handler should raise
@@ -577,7 +578,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_add_empty_handler_string"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_add_empty_handler_string(self):
         # Adding an empty string as the handler in req.add_handler
@@ -599,7 +600,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonInterpPerDirective("On"),
                                   PythonFixupHandler("tests::req_add_handler_empty_phase"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_add_handler_empty_phase(self):
         # Adding handler to content phase when no handler already
@@ -621,7 +622,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonInterpPerDirective("On"),
                                   PythonFixupHandler("tests::test_req_add_handler_directory"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_add_handler_directory(self):
         # Checking that directory is canonicalized and trailing
@@ -646,7 +647,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonAccessHandler("tests::accesshandler_add_handler_to_empty_hl"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_accesshandler_add_handler_to_empty_hl(self):
 
@@ -665,7 +666,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_allow_methods"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_allow_methods(self):
 
@@ -705,7 +706,7 @@ class PerRequestTestCase(unittest.TestCase):
                                       PythonHandler("tests::req_unauthorized"),
                                       PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_req_unauthorized(self):
 
@@ -764,7 +765,7 @@ class PerRequestTestCase(unittest.TestCase):
                                       PythonHandler("tests::req_get_basic_auth_pw"),
                                       PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_req_get_basic_auth_pw(self):
 
@@ -797,7 +798,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonAuthzHandler("tests::req_auth_type"),
                                   PythonHandler("tests::req_auth_type"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_auth_type(self):
 
@@ -827,7 +828,7 @@ class PerRequestTestCase(unittest.TestCase):
                               PythonAuthenHandler("tests::req_requires"),
                               PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_req_requires(self):
 
@@ -858,7 +859,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::req_internal_redirect | .py"),
                                   PythonHandler("tests::req_internal_redirect_int | .int"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_internal_redirect(self):
 
@@ -877,7 +878,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_construct_url"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_construct_url(self):
 
@@ -889,14 +890,14 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_req_read_conf(self):
 
-        c = str(Timeout("5")) + \
-            str(VirtualHost("*",
-                        ServerName("test_req_read"),
-                        DocumentRoot(DOCUMENT_ROOT),
-                        Directory(DOCUMENT_ROOT,
-                                  SetHandler("mod_python"),
-                                  PythonHandler("tests::req_read"),
-                                  PythonDebug("On"))))
+        c = Container(Timeout("5"),
+                      VirtualHost("*",
+                                  ServerName("test_req_read"),
+                                  DocumentRoot(DOCUMENT_ROOT),
+                                  Directory(DOCUMENT_ROOT,
+                                            SetHandler("mod_python"),
+                                            PythonHandler("tests::req_read"),
+                                            PythonDebug("On"))))
         return c
 
     def test_req_read(self):
@@ -943,7 +944,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_readline"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_readline(self):
 
@@ -974,7 +975,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_readlines"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_readlines(self):
 
@@ -1036,14 +1037,14 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_req_discard_request_body_conf(self):
 
-        c = str(Timeout("5")) + \
-            str(VirtualHost("*",
-                        ServerName("test_req_discard_request_body"),
-                        DocumentRoot(DOCUMENT_ROOT),
-                        Directory(DOCUMENT_ROOT,
-                                  SetHandler("mod_python"),
-                                  PythonHandler("tests::req_discard_request_body"),
-                                  PythonDebug("On"))))
+        c = Container(Timeout("5"),
+                      VirtualHost("*",
+                                  ServerName("test_req_discard_request_body"),
+                                  DocumentRoot(DOCUMENT_ROOT),
+                                  Directory(DOCUMENT_ROOT,
+                                            SetHandler("mod_python"),
+                                            PythonHandler("tests::req_discard_request_body"),
+                                            PythonDebug("On"))))
         return c
 
     def test_req_discard_request_body(self):
@@ -1074,7 +1075,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_register_cleanup"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_register_cleanup(self):
 
@@ -1099,7 +1100,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_headers_out"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_headers_out(self):
 
@@ -1130,7 +1131,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::req_sendfile"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_req_sendfile(self):
 
@@ -1151,7 +1152,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::req_sendfile2"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_req_sendfile2(self):
 
@@ -1172,7 +1173,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::req_sendfile3"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_req_sendfile3(self):
 
@@ -1195,7 +1196,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   PythonFixupHandler("tests::req_handler"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_handler(self):
 
@@ -1221,7 +1222,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_no_cache"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_no_cache(self):
 
@@ -1250,7 +1251,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_update_mtime"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_update_mtime(self):
 
@@ -1282,7 +1283,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonFixupHandler("tests::util_redirect"),
                                   PythonHandler("tests::util_redirect"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_util_redirect(self):
 
@@ -1315,7 +1316,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::req_server_get_config"),
                                   PythonDebug("Off")))
-        return str(c)
+        return c
 
     def test_req_server_get_config(self):
 
@@ -1339,7 +1340,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonOption("local 1"),
                                   PythonOption("override 2"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_req_server_get_options(self):
 
@@ -1359,7 +1360,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::fileupload"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_fileupload(self):
     
@@ -1387,7 +1388,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::fileupload"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_fileupload_embedded_cr(self):
         # Strange things can happen if there is a '\r' character at position
@@ -1452,7 +1453,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::fileupload"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_fileupload_split_boundary(self):
         # This test is similar to test_fileupload_embedded_cr, but it is possible to
@@ -1511,7 +1512,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::test_sys_argv"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_sys_argv(self):
 
@@ -1532,7 +1533,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::PythonOption_items"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_PythonOption(self):
 
@@ -1555,7 +1556,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonOption('PythonOptionTest2 "new_value2"'),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_PythonOption_override(self):
 
@@ -1578,7 +1579,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonOption('PythonOptionTest2 "new_value2"'),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_PythonOption_remove(self):
 
@@ -1602,7 +1603,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonOption('PythonOptionTest3 new_value3'),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_PythonOption_remove2(self):
 
@@ -1624,7 +1625,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::interpreter"),
                                   PythonDebug("On")))
 
-        return str(c)
+        return c
 
     def test_interpreter_per_directive(self):
 
@@ -1657,7 +1658,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonDebug("On")),
                         )
 
-        return str(c)
+        return c
 
     def test_interpreter_per_directory(self):
 
@@ -1690,7 +1691,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::util_fieldstorage"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_util_fieldstorage(self):
 
@@ -1719,7 +1720,7 @@ class PerRequestTestCase(unittest.TestCase):
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonPostReadRequestHandler("tests::postreadrequest"),
                         PythonDebug("On"))
-        return str(c)
+        return c
 
     def test_postreadrequest(self):
 
@@ -1738,7 +1739,7 @@ class PerRequestTestCase(unittest.TestCase):
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonTransHandler("tests::trans"),
                         PythonDebug("On"))
-        return str(c)
+        return c
 
     def test_trans(self):
 
@@ -1761,7 +1762,7 @@ class PerRequestTestCase(unittest.TestCase):
                                             SetHandler("mod_python"),
                                             PythonHandler("tests::import_test"),
                                             PythonDebug("On"))))
-        return str(c)
+        return c
 
     def test_import(self):
 
@@ -1782,7 +1783,7 @@ class PerRequestTestCase(unittest.TestCase):
                         PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
                         PythonDebug("On"),
                         AddOutputFilter("MP_TEST_FILTER .py"))
-        return str(c)
+        return c
 
     def test_outputfilter(self):
 
@@ -1802,7 +1803,7 @@ class PerRequestTestCase(unittest.TestCase):
                         PythonHandler("tests::req_add_output_filter"),
                         PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
                         PythonDebug("On"))
-        return str(c)
+        return c
 
     def test_req_add_output_filter(self):
 
@@ -1821,7 +1822,7 @@ class PerRequestTestCase(unittest.TestCase):
                         PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
                         PythonHandler("tests::req_register_output_filter"),
                         PythonDebug("On"))
-        return str(c)
+        return c
 
     def test_req_register_output_filter(self):
 
@@ -1839,11 +1840,11 @@ class PerRequestTestCase(unittest.TestCase):
             localip = "127.0.0.1"
 
         self.conport = findUnusedPort()
-        c = str(Listen("%d" % self.conport)) + \
-            str(VirtualHost("%s:%d" % (localip, self.conport),
-                            SetHandler("mod_python"),
-                            PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
-                            PythonConnectionHandler("tests::connectionhandler")))
+        c = Container(Listen("%d" % self.conport),
+                      VirtualHost("%s:%d" % (localip, self.conport),
+                                  SetHandler("mod_python"),
+                                  PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                                  PythonConnectionHandler("tests::connectionhandler")))
         return c
 
     def test_connectionhandler(self):
@@ -1873,7 +1874,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonOption('mod_python.mutex_directory ""'),
                                   PythonOption("testing 123"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_internal(self):
 
@@ -1893,7 +1894,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.publisher | .py"),
                                   PythonHandler("tests::simplehandler"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_pipe_ext(self):
 
@@ -1917,7 +1918,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.wsgi"),
                                   PythonOption("wsgi.application wsgitest"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_wsgihandler(self):
 
@@ -1936,7 +1937,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.cgihandler"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_cgihandler(self):
 
@@ -1956,7 +1957,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.psp"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_psphandler(self):
 
@@ -1975,7 +1976,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.psp"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_psp_parser(self):
 
@@ -2021,7 +2022,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.psp"),
                                   PythonOption('mod_python.session.database_directory "%s"' % TMP_DIR),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_psp_error(self):
 
@@ -2040,7 +2041,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::Cookie_Cookie"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_Cookie_Cookie(self):
 
@@ -2073,7 +2074,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::Cookie_Cookie"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_Cookie_MarshalCookie(self):
 
@@ -2128,7 +2129,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonOption('mod_python.session.application_path "/path"'),
                                   PythonOption('mod_python.session.application_domain "test_Session_Session"'),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_Session_Session(self):
 
@@ -2179,7 +2180,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::Session_Session"),
                                   PythonOption('mod_python.session.database_directory "%s"' % TMP_DIR),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_Session_illegal_sid(self):
 
@@ -2219,7 +2220,7 @@ class PerRequestTestCase(unittest.TestCase):
                                         SetHandler("mod_python"),
                                         PythonHandler("tests::files_directive"),
                                         PythonDebug("On"))))
-        return str(c)
+        return c
 
     def test_files_directive(self):
 
@@ -2239,7 +2240,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::none_handler"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_none_handler(self):
 
@@ -2266,7 +2267,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("tests::server_return_1"),
                                   PythonHandler("tests::server_return_2"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_server_return(self):
 
@@ -2294,7 +2295,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonFixupHandler("tests::phase_status_7"),
                                   PythonHandler("tests::phase_status_8"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_phase_status(self):
 
@@ -2312,7 +2313,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_publisher(self):
         print "\n  * Testing mod_python.publisher"
@@ -2349,7 +2350,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_publisher_auth_nested(self):
         print "\n  * Testing mod_python.publisher auth nested"
@@ -2375,7 +2376,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_publisher_auth_method_nested(self):
         print "\n  * Testing mod_python.publisher auth method nested"
@@ -2401,7 +2402,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_publisher_auth_digest(self):
         print "\n  * Testing mod_python.publisher auth digest compatability"
@@ -2429,7 +2430,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
     
     def test_publisher_security(self):
         print "\n  * Testing mod_python.publisher security"
@@ -2492,7 +2493,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_publisher_iterator(self):
         print "\n  * Testing mod_python.publisher iterators"
@@ -2513,7 +2514,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_publisher_hierarchy(self):
         print "\n  * Testing mod_python.publisher hierarchy"
@@ -2554,7 +2555,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
     
     def test_publisher_old_style_instance(self):
         print "\n  * Testing mod_python.publisher old-style instance publishing"
@@ -2575,7 +2576,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
     
     def test_publisher_instance(self):
         print "\n  * Testing mod_python.publisher instance publishing"
@@ -2596,7 +2597,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
     
     def test_publisher_cache(self):
         ## It is not possible to get reliable results with this test
@@ -2660,7 +2661,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   AddOutputFilter("INCLUDES .shtml"),
                                   PythonFixupHandler("tests::server_side_include"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
     def test_server_side_include(self):
 
@@ -2681,7 +2682,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::memory"),
                                   PythonDebug("On")))
-        return str(c)
+        return c
 
 
     def test_memory(self):
@@ -2729,7 +2730,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
                       SetHandler("mod_python"),
                       PythonHandler("tests::okay"),
                       PythonDebug("On"))
-        self.makeConfig(str(c))
+        self.makeConfig(c)
 
         self.startHttpd()
         urllib2.urlopen("http://127.0.0.1:%s/tests.py" % PORT)
@@ -2774,7 +2775,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
                       PythonHandler("tests::global_lock"),
                       PythonDebug("On"))
 
-        self.makeConfig(str(c))
+        self.makeConfig(c)
 
         self.startHttpd()
 
@@ -2911,7 +2912,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
                       PythonHandler("tests::srv_register_cleanup"),
                       PythonDebug("On"))
 
-        self.makeConfig(str(c))
+        self.makeConfig(c)
 
         self.startHttpd()
 
@@ -2940,7 +2941,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
                       PythonHandler("tests::apache_register_cleanup"),
                       PythonDebug("On"))
 
-        self.makeConfig(str(c))
+        self.makeConfig(c)
 
         self.startHttpd()
 
@@ -2969,7 +2970,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
                       PythonHandler("tests::apache_exists_config_define"),
                       PythonDebug("On"))
 
-        self.makeConfig(str(c))
+        self.makeConfig(c)
 
         self.startHttpd()
 

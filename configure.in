@@ -62,6 +62,7 @@ AC_SUBST(LIBEXECDIR)
 AC_SUBST(SOLARIS_HACKS)
 AC_SUBST(HTTPD)
 AC_SUBST(HTTPD_VERSION)
+AC_SUBST(APR_VERSION)
 if test -z "$APXS"; then
   AC_MSG_WARN([**** apxs was not found, DSO compilation will not be available.])
   AC_MSG_WARN([**** You can use --with-apxs to specify where your apxs is.])
@@ -75,6 +76,7 @@ else
   AC_MSG_CHECKING(Apache version)
   HTTPD="`${APXS} -q SBINDIR`/`${APXS} -q TARGET`"
   HTTPD_VERSION=`$HTTPD -v | awk '/version/ {print $3}' | awk -F/ '{print $2}' | awk '{print $1}'`
+  APR_VERSION=`${APXS} -q APR_VERSION`
   AC_MSG_RESULT($HTTPD_VERSION)
 
   # make sure version begins with 2
