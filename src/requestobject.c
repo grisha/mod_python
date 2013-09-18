@@ -87,8 +87,8 @@ PyObject * MpRequest_FromRequest(request_rec *req)
 /**
  ** request.add_common_vars(reqeust self)
  **
- *     Interface to ap_add_common_vars. Adds a bunch of CGI
- *     environment variables.
+ *     Interface to ap_add_common_vars. Adds a some more of CGI
+ *     environment variables to subprocess_env.
  *
  */
 
@@ -96,6 +96,25 @@ static PyObject * req_add_common_vars(requestobject *self)
 {
 
     ap_add_common_vars(self->request_rec);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+
+}
+
+/**
+ ** request.add_cgi_vars(reqeust self)
+ **
+ *     Interface to ap_add_cgi_vars. Adds (most of) CGI environment
+ *     variables to subprocess_env. NB: ap_add_cgi_vars() creates
+ *     sub-requests when figuring out PATH_TRANSLATED.
+ *
+ */
+
+static PyObject * req_add_cgi_vars(requestobject *self)
+{
+
+    ap_add_cgi_vars(self->request_rec);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -1395,6 +1414,7 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
 }
 
 static PyMethodDef request_methods[] = {
+    {"add_cgi_vars",          (PyCFunction) req_add_cgi_vars,          METH_NOARGS},
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
     {"add_input_filter",      (PyCFunction) req_add_input_filter,      METH_VARARGS},

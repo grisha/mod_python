@@ -975,12 +975,22 @@ between handlers.
 Request Methods
 ^^^^^^^^^^^^^^^
 
-.. method:: request.add_common_cars()
+.. method:: request.add_common_vars()
 
    Calls the Apache ``ap_add_common_vars()`` function. After a call to
-   this method, :meth:`request.subprocess_env` will contain a lot of
-   CGI information.
+   this method, :attr:`request.subprocess_env` will contain some CGI
+   information. You need to call :meth:`request.add_cgi_vars` to get
+   all of the CGI variables.
 
+.. method:: request.add_cgi_vars()
+
+   Calls the Apache ``ap_add_cgi_vars()`` function. After a call to
+   this method, :attr:`request.subprocess_env` will contain most of
+   CGI information. You need to call :meth:`request.add_common_vars`
+   to get all of the CGI variables. Note that this method is likely to
+   generate sub-requests and filesystem ``stat(2)`` calls as part of
+   determining the ``PATH_TRANSLATED`` value, which is computationally
+   expensive.
 
 .. method:: request.add_handler(htype, handler[, dir])
 
@@ -1162,7 +1172,7 @@ Request Methods
    zero if the mod_ssl Apache module is not loaded.
 
    You can use this method during any request phase, unlike looking
-   for the ``HTTPS`` variable in the :meth:`request.subprocess_env` member
+   for the ``HTTPS`` variable in the :attr:`request.subprocess_env` member
    dictionary.  This makes it possible to write an authentication or
    access handler that makes decisions based upon whether SSL is being
    used.
@@ -1353,7 +1363,7 @@ Request Methods
 
    Looks up the value of the named SSL variable.  This method queries
    the mod_ssl Apache module directly, and may therefore be used in
-   early request phases (unlike using the ``subprocess_env``
+   early request phases (unlike using the :attr:`request.subprocess_env`
    member.
 
    If the mod_ssl Apache module is not loaded or the variable is not
@@ -1617,8 +1627,8 @@ Request Members
 
    A :class:`table` object containing environment information
    typically usable for CGI.  You may have to call
-   :meth:`request.add_common_vars` first to fill in the information you
-   need.
+   :meth:`request.add_common_vars` and :meth:`request.add_cgi_vars`
+   first to fill in the information you need.
 
 
 .. attribute:: request.notes

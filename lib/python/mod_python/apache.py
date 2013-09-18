@@ -706,6 +706,7 @@ def build_cgi_env(req):
     """
 
     req.add_common_vars()
+    req.add_cgi_vars()
     env = req.subprocess_env.copy()
 
     if req.path_info and len(req.path_info) > 0:

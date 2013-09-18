@@ -114,7 +114,17 @@ class SimpleTestCase(unittest.TestCase):
         a = len(self.req.subprocess_env)
         self.req.add_common_vars()
         b = len(self.req.subprocess_env)
-        if a >= b: 
+        if a >= b:
+            self.fail("req.subprocess_env() is same size before and after")
+
+    def test_req_add_cgi_vars(self):
+
+        self.req.log_error("Testing req.add_cgi_vars().")
+
+        a = len(self.req.subprocess_env)
+        self.req.add_cgi_vars()
+        b = len(self.req.subprocess_env)
+        if a >= b:
             self.fail("req.subprocess_env() is same size before and after")
 
     def test_req_members(self):
@@ -563,11 +573,10 @@ class SimpleTestCase(unittest.TestCase):
         if conn.local_host is not None:
             self.fail("conn.local_host should be None")
 
-#ZZZ
-###        log("    connection.id: %s" % `conn.id`)
-###        if conn.id > 100:
-###            self.fail("conn.id should not be this high")
-        
+        log("    connection.id: %s" % `conn.id`)
+        if conn.id > 10000:
+            self.fail("conn.id probably should not be this high?")
+
         log("    connection.notes: %s" % `conn.notes`)
         if `conn.notes` != '{}':
             self.fail("conn.notes should be {}")
@@ -577,6 +586,7 @@ def make_suite(req):
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(SimpleTestCase("test_apache_log_error", req))
     mpTestSuite.addTest(SimpleTestCase("test_apache_table", req))
+    mpTestSuite.addTest(SimpleTestCase("test_req_add_cgi_vars", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_add_common_vars", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_members", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_get_config", req))
