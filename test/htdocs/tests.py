@@ -586,8 +586,9 @@ def make_suite(req):
     mpTestSuite = unittest.TestSuite()
     mpTestSuite.addTest(SimpleTestCase("test_apache_log_error", req))
     mpTestSuite.addTest(SimpleTestCase("test_apache_table", req))
-    mpTestSuite.addTest(SimpleTestCase("test_req_add_cgi_vars", req))
+    # NB: add_common_vars must be before cgi_vars
     mpTestSuite.addTest(SimpleTestCase("test_req_add_common_vars", req))
+    mpTestSuite.addTest(SimpleTestCase("test_req_add_cgi_vars", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_members", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_get_config", req))
     mpTestSuite.addTest(SimpleTestCase("test_req_get_remote_host", req))

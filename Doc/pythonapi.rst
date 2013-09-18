@@ -975,22 +975,22 @@ between handlers.
 Request Methods
 ^^^^^^^^^^^^^^^
 
-.. method:: request.add_common_vars()
-
-   Calls the Apache ``ap_add_common_vars()`` function. After a call to
-   this method, :attr:`request.subprocess_env` will contain some CGI
-   information. You need to call :meth:`request.add_cgi_vars` to get
-   all of the CGI variables.
-
 .. method:: request.add_cgi_vars()
 
-   Calls the Apache ``ap_add_cgi_vars()`` function. After a call to
-   this method, :attr:`request.subprocess_env` will contain most of
-   CGI information. You need to call :meth:`request.add_common_vars`
-   to get all of the CGI variables. Note that this method is likely to
-   generate sub-requests and filesystem ``stat(2)`` calls as part of
-   determining the ``PATH_TRANSLATED`` value, which is computationally
-   expensive.
+   Calls Apache function ``ap_add_common_vars()`` followed some code
+   very similar to Apache ``ap_add_cgi_vars()`` with the exception of
+   calculating ``PATH_TRANSLATED`` value, thereby avoiding
+   sub-requests and filesystem access used in the ``ap_add_cgi_vars()``
+   implementation.
+
+.. method:: request.add_common_vars()
+
+   Use of this method is discouraged, use
+   :meth:`request.add_cgi_vars()` instead.
+
+   Calls the Apache ``ap_add_common_vars()`` function. After a call to
+   this method, :attr:`request.subprocess_env` will contain *some* CGI
+   information.
 
 .. method:: request.add_handler(htype, handler[, dir])
 
@@ -1421,7 +1421,7 @@ Request Methods
 .. _pyapi-mprequest-mem:
 
 Request Members
----------------
+^^^^^^^^^^^^^^^
 
 .. attribute:: request.connection
 
