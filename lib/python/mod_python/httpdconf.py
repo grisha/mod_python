@@ -18,7 +18,7 @@
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
 
-# this is so that it could be referred to in a Container expr
+# this is so that it could be referred to in a Container only_if
 import mod_python
 
 class Directive:
@@ -48,7 +48,7 @@ class Container:
     def __init__(self, *args, **kwargs):
         self.args = list(args)
         self.indent = 0
-        self.expr = kwargs.get('expr')
+        self.only_if = kwargs.get('only_if')
     
     def append(self, value):
         if not (isinstance(value, Directive) or
@@ -64,11 +64,11 @@ class Container:
         for arg in self.args:
             arg.indent = self.indent + 4
             s += "\n%s," % `arg`
-        s += "\n" + i + (self.expr and (' expr=%s)' % `self.expr`) or ')')
+        s += "\n" + i + (self.only_if and ('    only_if=%s)' % `self.only_if`) or ')')
         return s
 
     def __str__(self):
-        if self.expr and not eval(self.expr):
+        if self.only_if and not eval(self.only_if):
             return ''
         s = ""
         for arg in self.args:
