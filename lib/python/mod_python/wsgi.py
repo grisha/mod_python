@@ -18,7 +18,6 @@
  #
 
 import sys
-
 from mod_python import apache
 
 class WSGIContainer(object):
@@ -26,27 +25,6 @@ class WSGIContainer(object):
     def __init__(self, req):
         self.req = req
     
-    def run(self, application):
-
-        env = dict(apache.build_cgi_env(self.req))
-        env['wsgi.input'] = self.req
-        env['wsgi.errors'] = sys.stderr
-        env['wsgi.version'] = (1, 0)
-        env['wsgi.multithread']  = apache.mpm_query(apache.AP_MPMQ_IS_THREADED)
-        env['wsgi.multiprocess'] = apache.mpm_query(apache.AP_MPMQ_IS_FORKED)
-        if env.get('HTTPS', 'off') == 'off': 
-            env['wsgi.url_scheme'] = 'http'
-        else:
-            env['wsgi.url_scheme'] = 'https'
-
-        response = None
-        try:
-            response = application(env, self.start_response)
-            map(self.req.write, response)
-        finally:
-            # call close() if there is one
-            getattr(response, 'close', lambda: None)()
-
     def start_response(self, status, headers, exc_info=None):
 
         if exc_info:
@@ -64,15 +42,73 @@ class WSGIContainer(object):
         
         return self.req.write
     
+    def run(self, application, env):
+        response = None
+        try:
+            response = application(env, self.start_response)
+            map(self.req.write, response)
+        finally:
+            # call close() if there is one
+            getattr(response, 'close', lambda: None)()
+
 def handler(req):
 
+    options = req.get_options()
+
+    ## Process wsgi.base_uri
+
+    base_uri = options.get('wsgi.base_uri', '')
+
+    if base_uri == '/' or base_uri.endswith('/'):
+        req.log_error(
+            "WSGI handler: wsgi.base_uri (%s) must not be '/' or end with '/', declining."
+            % `base_uri`, apache.APLOG_WARNING)
+        return apache.DECLINED
+
+    if req.uri.startswith(base_uri):
+        req.path_info = req.uri[len(base_uri):]
+    else:
+        req.log_error(
+            "WSGI handler: req.uri (%s) does not start with wsgi.base_uri (%s), declining."
+            % (`req.uri`, `base_uri`), apache.APLOG_WARNING)
+        return apache.DECLINED
+
+    ## Find the application callable
+
     app = None
-    app_str = req.get_options().get('wsgi.application')
+    app_str = options.get('wsgi.application')
     if app_str:
         mod_str, callable_str = (app_str.split('::', 1) + [None])[0:2]
         module = apache.import_module(mod_str, log=True)
         app = getattr(module, callable_str or 'application')
 
-    WSGIContainer(req).run(app)
+    if not app:
+        req.log_error(
+            'WSGI handler: wsgi.application (%s) not found, declining.'
+            % `app_str`, apache.APLOG_WARNING)
+        return apache.DECLINED
+
+    ## Build env
+
+    req.add_cgi_vars()
+    env = dict(req.subprocess_env)
+
+    if req.headers_in.has_key("authorization"):
+        env["HTTP_AUTHORIZATION"] = req.headers_in["authorization"]
+
+    env['wsgi.input'] = req
+    env['wsgi.errors'] = sys.stderr
+    env['wsgi.version'] = (1, 0)
+    env['wsgi.multithread']  = apache.mpm_query(apache.AP_MPMQ_IS_THREADED)
+    env['wsgi.multiprocess'] = apache.mpm_query(apache.AP_MPMQ_IS_FORKED)
+    if env.get('HTTPS', 'off') == 'off':
+        env['wsgi.url_scheme'] = 'http'
+    else:
+        env['wsgi.url_scheme'] = 'https'
+
+    ## Run the app
+
+    WSGIContainer(req).run(app, env)
 
     return apache.OK
+

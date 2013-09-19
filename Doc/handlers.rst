@@ -324,6 +324,65 @@ to the module name separated by ``'::'``, e.g.::
 
   PythonOption wsgi.application mysite.wsgi::my_application
 
+If you would like your application to appear under a base URI, is can
+be specified via the ``wsgi.base_url`` option. ``wsgi.base_uri``
+cannot be ``'/'`` or end with a ``'/'``. "Root" (or no base_url) is a
+blank string, which is the default.
+
+For example, if you would like the above application to appear under
+``'/wsgiapps'``, you could specify::
+
+   PythonOption wsgi.base_uri /wsgiapps
+
+With the above configuration, content under
+``http://example.com/hello`` becomes under
+``http://example.com/wsgiapps/hello``.
+
+..  index::
+   pair: WSGI; SCRIPT_NAME
+   pair: WSGI; PATH_INFO
+
+.. note::
+
+   :pep:`333` describes ``SCRIPT_NAME`` and ``PATH_INFO`` environment
+   variables which are core to the specification. Most WSGI-supporting
+   frameworks currently in existence use the value of ``PATH_INFO`` as the
+   request URI.
+
+   The two variable's name and function originate in CGI
+   (:rfc:`3875`), which describes an environment wherein a script (or
+   any executable's) output could be passed on by the web server as
+   content. A typical CGI script resides somewhere on the filesystem
+   to which the request URI maps. As part of serving the request the
+   server traverses the URI mapping each element to an element of the
+   filesystem path to locate the script. Once when the script is
+   found, the portion of the URI used thus far is assigned to the
+   ``SCRIPT_NAME`` variable, while the remainder of the URI gets
+   assigned to ``PATH_INFO``.
+
+   Because the relationship between Python modules and files on disk
+   is largely tangential, it is not very clear what exactly
+   ``PATH_INFO`` and ``SCRIPT_NAME`` ought to be. Even though Python
+   modules are most often files on disk located somewhere in the
+   Python path, they don't have to be (they could be code objects
+   constructed on-the-fly), and their location in the filesystem has
+   no relationship to the URL structure at all.
+
+   The mismatch between CGI and WSGI results in an ambiguity which
+   requires that the split between the two variables be explicitely
+   specified, which is why ``wsgi.base_uri`` exists. Simply put,
+   ``wsgi.base_uri`` is the ``SCRIPT_NAME`` portion of the URI and
+   defaults to ``''``.
+
+   An important detail is that ``SCRIPT_NAME`` + ``PATH_INFO`` should
+   result in the original URI (encoding issues aside). Since
+   ``SCRIPT_NAME`` (in its original CGI definition) referrs to an
+   actual file, its name never ends with a slash. The slash, if any,
+   always ends up in ``PATH_INFO``. E.g. ``/path/to/myscrip/foo/bar``
+   splits into ``/path/to/myscript`` and ``/foo/bar``. If the whole
+   site is served by an app or a script, then ``SCRIPT_NAME`` is a
+   blank string ``''``, not a ``'/'``.
+
 
 .. _hand-psp:
 

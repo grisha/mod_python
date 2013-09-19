@@ -1954,7 +1954,7 @@ Connection Members
 
 .. attribute:: connection.remote_logname
 
-   Remote name if using RFC1413 (ident). Same as CGI
+   Remote name if using :rfc:`1413` (ident). Same as CGI
    :envvar:`REMOTE_IDENT`.  *(Read-Only)*
 
 
@@ -2299,7 +2299,7 @@ The recommended way of using this module is::
 
 .. seealso::
 
-   `Common Gateway Interface RFC Draft <http://ken.coar.org/cgi/draft-coar-cgi-v11-03.txt>`_
+   :rfc:`3875`
       for detailed information on the CGI specification
 
 .. _pyapi-util-fstor:
