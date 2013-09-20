@@ -145,7 +145,7 @@ else:
     good = testpath('HTTPD',True)
     good = testpath('TESTHOME',False) and good
     good = testpath('LIBEXECDIR',False) and good
-    good = testpath('MOD_PYTHON_SO',True) and good
+    good = testpath('TEST_MOD_PYTHON_SO',True) and good
     if not good:
         print "Please check your mod_python/version.py file"
         sys.exit()
@@ -171,7 +171,7 @@ from cStringIO import StringIO
 
 HTTPD = mod_python.version.HTTPD
 TESTHOME = mod_python.version.TESTHOME
-MOD_PYTHON_SO = mod_python.version.MOD_PYTHON_SO
+MOD_PYTHON_SO = mod_python.version.TEST_MOD_PYTHON_SO
 LIBEXECDIR = mod_python.version.LIBEXECDIR
 SERVER_ROOT = TESTHOME
 CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
@@ -206,22 +206,14 @@ def get_ab_path():
     for name in ['ab', 'ab2', 'ab.exe', 'ab2.exe']:
         path = os.path.join(os.path.split(HTTPD)[0], name)
         if os.path.exists(path):
-            return quoteIfSpace(path)
+            return quote_if_space(path)
 
     return None
-
-def quoteIfSpace(s):
-
-    # Windows doesn't like quotes when there are
-    # no spaces, but needs them otherwise
-    if s.find(" ") != -1:
-        s = '"%s"' % s
-    return s
 
 def get_apache_version():
 
     print "Checking Apache version...."
-    httpd = quoteIfSpace(HTTPD)
+    httpd = quote_if_space(HTTPD)
     cmd = '%s -v' % (httpd)
     (stdin,stdout) = os.popen2(cmd)
 
@@ -304,16 +296,16 @@ class HttpdCtrl:
                      MaxRequestsPerChild("0")),
             IfModule("!mod_mime.c",
                      LoadModule("mime_module %s" %
-                                quoteIfSpace(os.path.join(modpath, "mod_mime.so")))),
+                                quote_if_space(os.path.join(modpath, "mod_mime.so")))),
             IfModule("!mod_log_config.c",
                      LoadModule("log_config_module %s" %
-                                quoteIfSpace(os.path.join(modpath, "mod_log_config.so")))),
+                                quote_if_space(os.path.join(modpath, "mod_log_config.so")))),
             IfModule("!mod_dir.c",
                      LoadModule("dir_module %s" %
-                                quoteIfSpace(os.path.join(modpath, "mod_dir.so")))),
+                                quote_if_space(os.path.join(modpath, "mod_dir.so")))),
             IfModule("!mod_include.c",
                      LoadModule("include_module %s" %
-                                quoteIfSpace(os.path.join(modpath, "mod_include.so")))),
+                                quote_if_space(os.path.join(modpath, "mod_include.so")))),
             ServerRoot(SERVER_ROOT),
             ErrorLog("logs/error_log"),
             LogLevel("debug"),
@@ -327,7 +319,7 @@ class HttpdCtrl:
             PythonOption('mod_python.mutex_directory %s' % TMP_DIR),
             PythonOption('PythonOptionTest sample_value'),
             DocumentRoot(DOCUMENT_ROOT),
-            LoadModule("python_module %s" % quoteIfSpace(MOD_PYTHON_SO)))
+            LoadModule("python_module %s" % quote_if_space(MOD_PYTHON_SO)))
 
         if APACHE_VERSION == '2.2':
             s.append(LockFile("logs/accept.lock"))
@@ -335,25 +327,25 @@ class HttpdCtrl:
         if APACHE_VERSION == '2.4':
             s.append(IfModule("!mod_unixd.c",
                               LoadModule("unixd_module %s" %
-                                         quoteIfSpace(os.path.join(modpath, "mod_unixd.so")))))
+                                         quote_if_space(os.path.join(modpath, "mod_unixd.so")))))
             s.append(IfModule("!mod_authn_core.c",
                               LoadModule("authn_core_module %s" %
-                                         quoteIfSpace(os.path.join(modpath, "mod_authn_core.so")))))
+                                         quote_if_space(os.path.join(modpath, "mod_authn_core.so")))))
             s.append(IfModule("!mod_authz_core.c",
                               LoadModule("authz_core_module %s" %
-                                         quoteIfSpace(os.path.join(modpath, "mod_authz_core.so")))))
+                                         quote_if_space(os.path.join(modpath, "mod_authz_core.so")))))
             s.append(IfModule("!mod_authn_file.c",
                               LoadModule("authn_file_module %s" %
-                                         quoteIfSpace(os.path.join(modpath, "mod_authn_file.so")))))
+                                         quote_if_space(os.path.join(modpath, "mod_authn_file.so")))))
             s.append(IfModule("!mod_authz_user.c",
                               LoadModule("authz_user_module %s" %
-                                         quoteIfSpace(os.path.join(modpath, "mod_authz_user.so")))))
+                                         quote_if_space(os.path.join(modpath, "mod_authz_user.so")))))
 
         if APACHE_VERSION in ['2.2', '2.4']:
             # mod_auth has been split into mod_auth_basic and some other modules
             s.append(IfModule("!mod_auth_basic.c",
                      LoadModule("auth_basic_module %s" %
-                                quoteIfSpace(os.path.join(modpath, "mod_auth_basic.so")))))
+                                quote_if_space(os.path.join(modpath, "mod_auth_basic.so")))))
 
             # Default KeepAliveTimeout is 5 for apache 2.2, but 15 in apache 2.0
             # Explicitly set the value so it's the same as 2.0
@@ -361,7 +353,7 @@ class HttpdCtrl:
         else:
             s.append(IfModule("!mod_auth.c",
                      LoadModule("auth_module %s" %
-                                quoteIfSpace(os.path.join(modpath, "mod_auth.so")))))
+                                quote_if_space(os.path.join(modpath, "mod_auth.so")))))
 
 
         s.append(Comment(" --APPENDED--"))
@@ -374,8 +366,8 @@ class HttpdCtrl:
     def startHttpd(self,extra=''):
 
         print "  Starting Apache...."
-        httpd = quoteIfSpace(HTTPD)
-        config = quoteIfSpace(CONFIG)
+        httpd = quote_if_space(HTTPD)
+        config = quote_if_space(CONFIG)
         cmd = '%s %s -k start -f %s' % (httpd, extra, config)
         print "    ", cmd
         os.system(cmd)
@@ -385,8 +377,8 @@ class HttpdCtrl:
     def stopHttpd(self):
 
         print "  Stopping Apache..."
-        httpd = quoteIfSpace(HTTPD)
-        config = quoteIfSpace(CONFIG)
+        httpd = quote_if_space(HTTPD)
+        config = quote_if_space(CONFIG)
         cmd = '%s -k stop -f %s' % (httpd, config)
         print "    ", cmd
         os.system(cmd)

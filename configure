@@ -604,7 +604,7 @@ LIBOBJS
 LEX
 MAX_LOCKS
 MUTEX_DIR
-MOD_PYTHON_SO
+TEST_MOD_PYTHON_SO
 TEST_SERVER_ROOT
 ARCHFLAGS
 INCLUDES
@@ -3417,7 +3417,7 @@ fi
 
 TEST_SERVER_ROOT="`pwd`/test"
 
-MOD_PYTHON_SO="`pwd`/src/mod_python.so"
+TEST_MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 
 # configure the MUTEX_DIR for location of mutex locks
 

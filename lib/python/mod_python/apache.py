@@ -705,7 +705,6 @@ def build_cgi_env(req):
     http://hoohoo.ncsa.uiuc.edu/cgi/env.html
     """
 
-    req.add_common_vars()
     req.add_cgi_vars()
     env = req.subprocess_env.copy()
 

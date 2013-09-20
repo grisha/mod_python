@@ -59,6 +59,7 @@ fi
 
 # if apxs was still not found, then no DSO
 AC_SUBST(LIBEXECDIR)
+AC_SUBST(SYSCONFDIR)
 AC_SUBST(SOLARIS_HACKS)
 AC_SUBST(HTTPD)
 AC_SUBST(HTTPD_VERSION)
@@ -246,8 +247,8 @@ AC_SUBST(ARCHFLAGS)
 # this for the test.py script
 AC_SUBST(TEST_SERVER_ROOT)
 TEST_SERVER_ROOT="`pwd`/test"
-AC_SUBST(MOD_PYTHON_SO)
-MOD_PYTHON_SO="`pwd`/src/mod_python.so"
+AC_SUBST(TEST_MOD_PYTHON_SO)
+TEST_MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 
 # configure the MUTEX_DIR for location of mutex locks
 AC_SUBST(MUTEX_DIR)

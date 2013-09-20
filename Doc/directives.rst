@@ -937,6 +937,9 @@ remembered value. If the value is the same, no action is
 taken. Because of this, you should not rely on the directive as a way
 to restore the pythonpath to some value if your code changes it.
 
+When multiple PythonPath directives are specified, the effect is not
+cumulative, last directive will override all previous ones.
+
 .. note::
 
    This directive should not be used as a security measure since the

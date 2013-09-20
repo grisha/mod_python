@@ -26,21 +26,75 @@
 import sys
 import os
 import platform
+import StringIO
 import mod_python
+from mod_python import httpdconf
+
+def do_create(dest, options):
+
+    pythonpath = options.pythonpath.split(":")
+    if options.pythonhandler == 'mod_python.wsgi':
+        mp_comments = ['PythonOption wsgi.base_url = ""']
+    conf_path = mod_python.httpdconf.write_basic_config(dest, listen=options.listen, pythonhandler=options.pythonhandler,
+                                                        pythonpath=pythonpath, pythonoptions=options.pythonoptions,
+                                                        mp_comments=mp_comments)
+
+    if conf_path:
+        print "\nCreated! Please look over %s." % `conf_path`
+        print "Remember to generate the Apache httpd config by running"
+        print "%s genconfig %s > %s" % (sys.argv[0], conf_path,
+                                        os.path.join(os.path.split(conf_path)[0], 'httpd.conf'))
+        print "From here on you can tweak %s and re-generate Apache config at any time." % `conf_path`
+
+def cmd_genconfig():
+
+    parser = OptionParser(usage="%prog genconfig <src> > <dst>\n"
+                          "  Run the config generation script <src>")
+
+    (options, args) = parser.parse_args(sys.argv[2:])
+    if len(args) != 1:
+        parser.error("Must specify <src>")
+
+    src = args[0]
+
+    execfile(src)
+
+
+def cmd_create():
+
+    parser = OptionParser(usage="%prog create <directory>\n"
+                          "  Create a mod_python skeleton in <directory>")
+    parser.add_option("--listen", action="store", type="string", dest="listen", default="8888")
+    parser.add_option("--pythonpath", action="store", type="string", dest="pythonpath", default="")
+    parser.add_option("--pythonhandler", action="store", type="string", dest="pythonhandler", default=None)
+    parser.add_option("--pythonoption", action="append", type="string", dest="pythonoptions", default=[])
+
+    (options, args) = parser.parse_args(sys.argv[2:])
+
+    if len(args) != 1:
+        parser.error("Must specify <directory>")
+
+    if not options.pythonhandler:
+        parser.error("Must specify a --pythonhandler")
+
+    dest = args[0]
+
+    do_create(dest, options)
 
 def cmd_version():
 
     parser = OptionParser(usage="%prog version\n"
                           "  Print version")
 
-    version =  "mod_python:  %s\n" % mod_python.mp_version
+    version =  "\n"
+    version += "mod_python:  %s\n" % mod_python.mp_version
+    version += "             %s\n\n" % `os.path.join(mod_python.version.LIBEXECDIR, "mod_python.so")`
     version += "python:      %s\n" % ''.join(sys.version.splitlines())
+    version += "             %s\n\n" % `mod_python.version.PYTHON_BIN`
     version += "httpd:       %s\n" % mod_python.version.HTTPD_VERSION
+    version += "             %s\n\n" % `mod_python.version.HTTPD`
     version += "apr:         %s\n" % mod_python.version.APR_VERSION
     version += "platform:    %s\n" % platform.platform()
-    version += "python path: %s\n" % `mod_python.version.PYTHON_BIN`
-    version += "module path: %s\n" % `mod_python.version.MOD_PYTHON_SO`
-    version += "httpd path:  %s\n" % `mod_python.version.HTTPD`
 
     print version
 

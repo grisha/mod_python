@@ -355,10 +355,10 @@ With the above configuration, content under
    content. A typical CGI script resides somewhere on the filesystem
    to which the request URI maps. As part of serving the request the
    server traverses the URI mapping each element to an element of the
-   filesystem path to locate the script. Once when the script is
-   found, the portion of the URI used thus far is assigned to the
-   ``SCRIPT_NAME`` variable, while the remainder of the URI gets
-   assigned to ``PATH_INFO``.
+   filesystem path to locate the script. Once the script is found, the
+   portion of the URI used thus far is assigned to the ``SCRIPT_NAME``
+   variable, while the remainder of the URI gets assigned to
+   ``PATH_INFO``.
 
    Because the relationship between Python modules and files on disk
    is largely tangential, it is not very clear what exactly
