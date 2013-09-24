@@ -26,4 +26,4 @@ distclean: clean
 	rm -f Makefile
 
 install:
-	$(INSTALL) -m 0550 mod_python $(DESTDIR)$(BINDIR)/mod_python
+	$(INSTALL) -m 0755 mod_python $(DESTDIR)$(BINDIR)/mod_python
