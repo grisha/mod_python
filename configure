@@ -618,6 +618,7 @@ APR_VERSION
 HTTPD_VERSION
 HTTPD
 SOLARIS_HACKS
+SYSCONFDIR
 LIBEXECDIR
 ALL
 DSO
@@ -3159,6 +3160,7 @@ fi
 
 
 
+
 if test -z "$APXS"; then
   { $as_echo "$as_me:$LINENO: WARNING: **** apxs was not found, DSO compilation will not be available." >&5
 $as_echo "$as_me: WARNING: **** apxs was not found, DSO compilation will not be available." >&2;}
@@ -3573,7 +3575,10 @@ $as_echo "$as_me: WARNING: flex $LEX not found
   See the README for more information." >&2;}
 fi
 
-ac_config_files="$ac_config_files Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/Makefile dist/setup.py dist/Makefile scripts/Makefile scripts/mod_python"
+ac_config_files="$ac_config_files Makefile src/Makefile Doc/Makefile src/include/mod_python.h test/Makefile dist/setup.py dist/Makefile scripts/Makefile"
+
+ac_config_files="$ac_config_files scripts/mod_python"
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4662,14 +4667,6 @@ $as_echo "$as_me: error: could not create $ac_file" >&2;}
 
 
   case $ac_file$ac_mode in
-    "Makefile":F) chmod +x scripts/mod_python ;;
-    "src/Makefile":F) chmod +x scripts/mod_python ;;
-    "Doc/Makefile":F) chmod +x scripts/mod_python ;;
-    "src/include/mod_python.h":F) chmod +x scripts/mod_python ;;
-    "test/Makefile":F) chmod +x scripts/mod_python ;;
-    "dist/setup.py":F) chmod +x scripts/mod_python ;;
-    "dist/Makefile":F) chmod +x scripts/mod_python ;;
-    "scripts/Makefile":F) chmod +x scripts/mod_python ;;
     "scripts/mod_python":F) chmod +x scripts/mod_python ;;
 
   esac
@@ -4711,6 +4708,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:$LINENO: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
-
-
 

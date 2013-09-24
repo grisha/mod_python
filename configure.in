@@ -332,8 +332,7 @@ fi
 
 AC_CONFIG_FILES([Makefile src/Makefile Doc/Makefile \
                    src/include/mod_python.h test/Makefile \
-                   dist/setup.py dist/Makefile scripts/Makefile \
-                   scripts/mod_python], [chmod +x scripts/mod_python])
+                   dist/setup.py dist/Makefile scripts/Makefile])
+AC_CONFIG_FILES([scripts/mod_python], [chmod +x scripts/mod_python])
+
 AC_OUTPUT
-
-
