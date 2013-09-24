@@ -243,7 +243,6 @@ request object would first have to be accessed via the filter object.::
 
 .. _ssi-output-filter:
 
-\section{
 Enabling INCLUDES Filter
 ========================
 
