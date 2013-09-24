@@ -30,21 +30,30 @@ import StringIO
 import mod_python
 from mod_python import httpdconf
 
-def do_create(dest, options):
 
-    pythonpath = options.pythonpath.split(":")
-    if options.pythonhandler == 'mod_python.wsgi':
-        mp_comments = ['PythonOption wsgi.base_url = ""']
-    conf_path = mod_python.httpdconf.write_basic_config(dest, listen=options.listen, pythonhandler=options.pythonhandler,
-                                                        pythonpath=pythonpath, pythonoptions=options.pythonoptions,
-                                                        mp_comments=mp_comments)
+def cmd_start():
+    parser = OptionParser(usage="%prog start <httpd.conf>\n"
+                          "  Start Apache using config file <httpd.conf>")
+    (options, args) = parser.parse_args(sys.argv[2:])
+    if len(args) != 1:
+        parser.error("Must specify <httpd.conf>")
+    os.execl(mod_python.version.HTTPD, mod_python.version.HTTPD, '-f', args[0], '-k', 'start')
 
-    if conf_path:
-        print "\nCreated! Please look over %s." % `conf_path`
-        print "Remember to generate the Apache httpd config by running"
-        print "%s genconfig %s > %s" % (sys.argv[0], conf_path,
-                                        os.path.join(os.path.split(conf_path)[0], 'httpd.conf'))
-        print "From here on you can tweak %s and re-generate Apache config at any time." % `conf_path`
+def cmd_stop():
+    parser = OptionParser(usage="%prog start <httpd.conf>\n"
+                          "  Stop Apache using config file <httpd.conf>")
+    (options, args) = parser.parse_args(sys.argv[2:])
+    if len(args) != 1:
+        parser.error("Must specify <httpd.conf>")
+    os.execl(mod_python.version.HTTPD, mod_python.version.HTTPD, '-f', args[0], '-k', 'graceful-stop')
+
+def cmd_restart():
+    parser = OptionParser(usage="%prog start <httpd.conf>\n"
+                          "  Restart Apache using config file <httpd.conf>")
+    (options, args) = parser.parse_args(sys.argv[2:])
+    if len(args) != 1:
+        parser.error("Must specify <httpd.conf>")
+    os.execl(mod_python.version.HTTPD, mod_python.version.HTTPD, '-f', args[0], '-k', 'graceful')
 
 def cmd_genconfig():
 
@@ -55,10 +64,7 @@ def cmd_genconfig():
     if len(args) != 1:
         parser.error("Must specify <src>")
 
-    src = args[0]
-
-    execfile(src)
-
+    execfile(args[0])
 
 def cmd_create():
 
@@ -79,7 +85,18 @@ def cmd_create():
 
     dest = args[0]
 
-    do_create(dest, options)
+    pythonpath = options.pythonpath.split(":")
+    if options.pythonhandler == 'mod_python.wsgi':
+        mp_comments = ['PythonOption wsgi.base_url = ""']
+    conf_path = mod_python.httpdconf.write_basic_config(dest, listen=options.listen, pythonhandler=options.pythonhandler,
+                                                        pythonpath=pythonpath, pythonoptions=options.pythonoptions,
+                                                        mp_comments=mp_comments)
+    if conf_path:
+        print "\nCreated! Please look over %s." % `conf_path`
+        print "Remember to generate the Apache httpd config by running"
+        print "%s genconfig %s > %s" % (sys.argv[0], conf_path,
+                                        os.path.join(os.path.split(conf_path)[0], 'httpd.conf'))
+        print "From here on you can tweak %s and re-generate Apache config at any time." % `conf_path`
 
 def cmd_version():
 
