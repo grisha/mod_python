@@ -403,7 +403,7 @@ class HttpdCtrl:
 
 class PerRequestTestCase(unittest.TestCase):
 
-    appendConfig = APACHE_VERSION < '2.4' and NameVirtualHost('*') or Container()
+    appendConfig = APACHE_VERSION < '2.4' and Container(NameVirtualHost('*')) or Container()
 
     def __init__(self, methodName="runTest"):
         unittest.TestCase.__init__(self, methodName)
