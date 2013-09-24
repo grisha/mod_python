@@ -3630,6 +3630,123 @@ functions:
    of resulting Python code.
 
 
+.. _pyapi-httpdconf:
+
+:mod:`httpdconf` -- HTTPd Configuration
+=======================================
+
+.. module:: httpdconf
+   :synopsis: HTTPd Configuration
+.. moduleauthor:: Gregory Trubetskoy grisha@modpython.org
+
+
+The :mod:`httpdconf` module provides a simple framework for generating
+Apache HTTP Server configuration in Python. It was inspired by HTMLgen
+by Robin Friedrich. :mod:`httpdconf` appeared in 2002 as part of the
+mod_python test framework and its use has been primarily limited to
+mod_python tests. This latest version of mod_python includes many
+improvements to :mod:`httpdconf` and makes it part of the Python API.
+
+The basic idea is that an Apache configuration directive can be
+specified as Python code, e.g.::
+
+   >>> from mod_python.httpdconf import *
+   >>> conf = DocumentRoot('/path/to/htdocs')
+
+The resulting object renders itself as a valid Apache directive when
+converted to string::
+
+   >>> print conf
+   DocumentRoot /path/to/htdocs
+
+While the ``__repr__`` method of the object returns the string of
+Python code used to construct it in the first place::
+
+   >>> print `conf`
+   DocumentRoot('/path/to/htdocs')
+
+Classes for Directive types
+---------------------------
+
+:mod:`httpdconf` separates all Apache directives into the following
+classes.
+
+.. class:: Directive(name, value[, flipslash=1])
+
+   This is a simple directive. Its syntax is the directive *name*
+   followed by a string *value*. Even though the Apache directives can
+   be followed by multiple arguments, :mod:`httpdconf` views it as
+   just a single string, e.g. ``CustomLog('logs/access_log combined')``.
+
+.. class:: Container(*args, [only_if=None])
+
+   A Container groups directives specified as *args* into a single
+   object. args can include other containers as well. The optional
+   *only_if* argument is a string of Python that is evaled at
+   directive render time. The riective is rendered only if the eval
+   return a true value.
+
+      >>> c = Container(CustomLog('logs/access_log combined'), ErrorLog('logs/error_log'))
+      >>> print c
+      CustomLog logs/access_log combined
+      ErrorLog logs/error_log
+
+      >>> print `c`
+      Container(
+          CustomLog('logs/access_log combined'),
+          ErrorLog('logs/error_log'),
+          only_if='True')
+      )
+
+   Note how elements within a Container are properly indented when
+   rendered as Python code. A more practical example of only_if may be
+   ``only_if="mod_python.version.HTTPD_VERSION[0:3] == '2.4'"``.
+
+
+   .. method:: append(value)
+
+      Appends an object to a container. There is no difference
+      between specifying contained object at creation time or
+      appending elements to a container later.
+
+.. class:: ContainerTag(tag, attr, args[, flipslash=1)]
+
+    A ContainerTag is a tag that contains other tags,
+    e.g. ``Directory`` or ``Location``.
+
+.. class:: Comment(comment)
+
+   A Comment renders itself as an Apache configuration comment. There
+   is no need to include ``#`` as part of the *comment*
+   string. Multi-line comments can be specified by a newline
+   charater. Example::
+
+      >>> c = Comment("\nThis is\na comment\n")
+      >>> print c
+      #
+      # This is
+      # a comment
+
+      >>> print `c`
+      Comment('\n'
+              'This is\n'
+              'a comment\n')
+
+
+:mod:`httpdconf` includes a basic set of Apache configuration
+directives (see code for which ones), but any Apache configuration
+directive can be trivially created by sub-classing one of the above
+classes::
+
+   >>> from mod_python.httpdconf import *
+   >>> class MyDirective(Directive):
+   ...    def __init__(self, val):
+   ...       Directive.__init__(self, self.__class__.__name__, val)
+   ...
+   >>> c = MyDirective('foo')
+   >>> print c
+   MyDirective foo
+
 
 
 
