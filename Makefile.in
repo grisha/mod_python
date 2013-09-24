@@ -34,7 +34,7 @@ do_dso:
 	@cd src && $(MAKE)
 	@cd dist && $(MAKE) build
 	@echo
-	@echo 'Now su and make install'
+	@echo 'Now run sudo make install'
 	@echo '  (or, if you only want to perform a partial install,'
 	@echo '   you can use make install_dso and make install_py_lib)'
 	@echo
@@ -62,12 +62,6 @@ install_dso:	dso
 	@echo
 	$(INSTALL) -d $(DESTDIR)$(LIBEXECDIR)
 	$(INSTALL) src/mod_python.so $(DESTDIR)$(LIBEXECDIR)
-	@echo
-	@echo "Now don't forget to edit your main config and add"
-	@echo "    LoadModule python_module $(LIBEXECDIR)/mod_python.so"
-	@echo "and if your configuration uses ClearModuleList, then also"
-	@echo "    AddModule mod_python.c"
-	@echo
 
 install_py_lib:
 	cd dist && $(MAKE) install_py_lib
