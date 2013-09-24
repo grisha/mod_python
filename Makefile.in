@@ -51,7 +51,7 @@ no_static:
 	@echo "Static compilation not available. (Probably because --with-apache was not specified)."
 	@echo
 
-install: src/.install
+install:
 	$(MAKE) install_dso
 	$(MAKE) install_py_lib
 	cd scripts && $(MAKE) install
