@@ -31,6 +31,7 @@ mod_python@modpython.org (Note: subscription required).
 
 At least on OS X 10.8.5, the following was required in order for compile to work:
 
+```shell
 sudo ln -s /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain \
     /Applications/Xcode.app/Contents/Developer/Toolchains/OSX10.8.xctoolchain
-
+```
