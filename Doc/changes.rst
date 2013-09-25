@@ -5,6 +5,52 @@
 Changes
 *******
 
+.. _changes_from_3_3_1:
+
+Changes from version 3.3.1
+==========================
+
+New Features
+------------
+
+* Create the mod_python command-line tool to report version, manage Apache configuration and instances.
+* Make httpdconf directives render themselves as Python, add the only_if conditional and comments.
+* Expose and document httpdconf, make mod_python importable outside of Apache.
+* Provide a WSGI handler.
+* Change the Copyright to reflect the new status.
+* Add support for Apache HTTP Server 2.4.
+* Add support for Python 2.7.
+
+Improvements
+------------
+
+* Provide and internal add_cgi_vars() implementation which does not use sub-requests.
+* Many documentation clarifications and improvements.
+* Add a test to ensure that req.write() and req.flush() do not leak memory (2.4 only).
+* Many new tests and test framework improvements.
+* Added a curl hint to the tests for easier stagin/debugging.
+* Get rid of the ancient memberlist and PyMember_Get/Set calls.
+* Add support for the c.remote_ip/addr to c.client_ip/addr change in 2.4. Add req.useragent_addr (also new in 2.4).
+* Always check C version against Py version and warn.
+* Remove APLOG_NOERRNO references.
+* A more unified and cleaned up method of keeping version information.
+* Convert documentation to the new reStructuredText format.
+* Revert to using the old importer from 3.2.
+* Replace README with README.md
+* (`MODPYTHON-238 <http://issues.apache.org/jira/browse/MODPYTHON-238>`_) Make req.chunked and req.connection.keepalive writable. Being able to set these allows chunking to be turned off when HTTP/1.1 is used but no content length supplied in response.
+* (`MODPYTHON-226 <http://issues.apache.org/jira/browse/MODPYTHON-226>`_) Make req.status_line writable.
+
+Bug Fixes
+---------
+
+* Fix SCRIPT_NAME and PATH_INFO inconsistencies so that the WSGI handler behaves correctly.
+* Remove with-python-src configure option as it is no longer used to build the docs.
+* (`MODPYTHON-243 <http://issues.apache.org/jira/browse/MODPYTHON-243>`_) Fixed format string error.
+* (`MODPYTHON-250 <http://issues.apache.org/jira/browse/MODPYTHON-250>`_) Fixed MacOS X (10.5) Leopard 64 bit architecture problems.
+* (`MODPYTHON-249 <http://issues.apache.org/jira/browse/MODPYTHON-249>`_) Fixed incorrect use of APR bucket brigades shown up by APR 1.3.2.
+* (`MODPYTHON-245 <http://issues.apache.org/jira/browse/MODPYTHON-245>`_) Fix prototype of optional exported function mp_release_interpreter().
+* (`MODPYTHON-220 <http://issues.apache.org/jira/browse/MODPYTHON-220>`_) Fix 'import' from same directory as PSP file.
+
 .. _changes_from_3_2_10:
 
 Changes from version 3.2.10
@@ -64,7 +110,7 @@ Bug Fixes
 * (`MODPYTHON-112 <http://issues.apache.org/jira/browse/MODPYTHON-112>`_) The req.phase attribute is no longer overwritten by an input or output filter. The filter.is_input member should be used to determine if a filter is an input or output filter.
 * (`MODPYTHON-113 <http://issues.apache.org/jira/browse/MODPYTHON-113>`_) The PythonImport directive now uses the apache.import_module() function to import modules to avoid reloading problems when same module is imported from a handler.
 * (`MODPYTHON-114 <http://issues.apache.org/jira/browse/MODPYTHON-114>`_) Fixed race conditions on setting sys.path when the PythonPath directive is being used as well as problems with infinite extension of path.
-* (`MODPYTHON-120 <http://issues.apache.org/jira/browse/MODPYTHON-120>`_) (`MODPYTHON-121) Fixes to test suite so it will work on virtual hosting environments where localhost doesn't resolve to 127.0.0.1 but the actual IP address of the host.
+* (`MODPYTHON-120 <http://issues.apache.org/jira/browse/MODPYTHON-120>`_) (`MODPYTHON-121 <http://issues.apache.org/jira/browse/MODPYTHON-121>`_) Fixes to test suite so it will work on virtual hosting environments where localhost doesn't resolve to 127.0.0.1 but the actual IP address of the host.
 * (`MODPYTHON-126 <http://issues.apache.org/jira/browse/MODPYTHON-126>`_) When Python*Handler or Python*Filter directive is used inside of a Files directive container, the handler/filter directory value will now correctly resolve to the directory corresponding to any parent Directory directive or the location of the .htaccess file the Files directive is contained in.
 * (`MODPYTHON-133 <http://issues.apache.org/jira/browse/MODPYTHON-133>`_) The table object returned by req.server.get_config() was not being populated correctly to be the state of directives set at global scope for the server.
 * (`MODPYTHON-134 <http://issues.apache.org/jira/browse/MODPYTHON-134>`_) Setting PythonDebug to Off, wasn't overriding On setting in parent scope.
