@@ -128,7 +128,7 @@ first Apache config for you).
 
 You should be able to run this Apache instance by executing::
 
-   mod_python start /path/to/new/server_root
+   mod_python start /path/to/new/server_root/conf/httpd.conf
 
 
 

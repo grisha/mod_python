@@ -27,3 +27,4 @@ a user guide and a tutorial all-in-one.
    about.rst
    copyright.rst
    license.rst
+   changes.rst
