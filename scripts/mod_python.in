@@ -87,7 +87,7 @@ def cmd_create():
 
     pythonpath = options.pythonpath.split(":")
     if options.pythonhandler == 'mod_python.wsgi':
-        mp_comments = ['PythonOption wsgi.base_url = ""']
+        mp_comments = ['PythonOption mod_python.wsgi.base_url = ""']
     conf_path = mod_python.httpdconf.write_basic_config(dest, listen=options.listen, pythonhandler=options.pythonhandler,
                                                         pythonpath=pythonpath, pythonoptions=options.pythonoptions,
                                                         mp_comments=mp_comments)

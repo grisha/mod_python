@@ -55,13 +55,13 @@ def handler(req):
 
     options = req.get_options()
 
-    ## Process wsgi.base_uri
+    ## Process mod_python.wsgi.base_uri
 
-    base_uri = options.get('wsgi.base_uri', '')
+    base_uri = options.get('mod_python.wsgi.base_uri', '')
 
     if base_uri == '/' or base_uri.endswith('/'):
         req.log_error(
-            "WSGI handler: wsgi.base_uri (%s) must not be '/' or end with '/', declining."
+            "WSGI handler: mod_python.wsgi.base_uri (%s) must not be '/' or end with '/', declining."
             % `base_uri`, apache.APLOG_WARNING)
         return apache.DECLINED
 
@@ -69,14 +69,14 @@ def handler(req):
         req.path_info = req.uri[len(base_uri):]
     else:
         req.log_error(
-            "WSGI handler: req.uri (%s) does not start with wsgi.base_uri (%s), declining."
+            "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."
             % (`req.uri`, `base_uri`), apache.APLOG_WARNING)
         return apache.DECLINED
 
     ## Find the application callable
 
     app = None
-    app_str = options.get('wsgi.application')
+    app_str = options.get('mod_python.wsgi.application')
     if app_str:
         mod_str, callable_str = (app_str.split('::', 1) + [None])[0:2]
         module = apache.import_module(mod_str, log=True)
@@ -84,7 +84,7 @@ def handler(req):
 
     if not app:
         req.log_error(
-            'WSGI handler: wsgi.application (%s) not found, declining.'
+            'WSGI handler: mod_python.wsgi.application (%s) not found, declining.'
             % `app_str`, apache.APLOG_WARNING)
         return apache.DECLINED
 

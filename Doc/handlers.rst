@@ -313,7 +313,7 @@ It can be executed using the WSGI handler by adding the following to the
 Apache configuration::
 
    PythonHandler mod_python.wsgi
-   PythonOption wsgi.application mysite.wsgi
+   PythonOption mod_python.wsgi.application mysite.wsgi
    PythonPath "sys.path+['/path/to/mysite']"
 
 The above configuration will import a module named ``mysite.wsgi`` and
@@ -322,17 +322,17 @@ will look for an ``application`` callable in the module.
 An alternative name for the callable can be specified by appending it
 to the module name separated by ``'::'``, e.g.::
 
-  PythonOption wsgi.application mysite.wsgi::my_application
+  PythonOption mod_python.wsgi.application mysite.wsgi::my_application
 
 If you would like your application to appear under a base URI, is can
-be specified via the ``wsgi.base_url`` option. ``wsgi.base_uri``
+be specified via the ``mod_python.wsgi.base_url`` option. ``mod_python.wsgi.base_uri``
 cannot be ``'/'`` or end with a ``'/'``. "Root" (or no base_url) is a
 blank string, which is the default.
 
 For example, if you would like the above application to appear under
 ``'/wsgiapps'``, you could specify::
 
-   PythonOption wsgi.base_uri /wsgiapps
+   PythonOption mod_python.wsgi.base_uri /wsgiapps
 
 With the above configuration, content under
 ``http://example.com/hello`` becomes under
@@ -370,8 +370,8 @@ With the above configuration, content under
 
    The mismatch between CGI and WSGI results in an ambiguity which
    requires that the split between the two variables be explicitely
-   specified, which is why ``wsgi.base_uri`` exists. Simply put,
-   ``wsgi.base_uri`` is the ``SCRIPT_NAME`` portion of the URI and
+   specified, which is why ``mod_python.wsgi.base_uri`` exists. Simply put,
+   ``mod_python.wsgi.base_uri`` is the ``SCRIPT_NAME`` portion of the URI and
    defaults to ``''``.
 
    An important detail is that ``SCRIPT_NAME`` + ``PATH_INFO`` should

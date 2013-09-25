@@ -1908,7 +1908,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.wsgi"),
-                                  PythonOption("wsgi.application wsgitest"),
+                                  PythonOption("mod_python.wsgi.application wsgitest"),
                                   PythonDebug("On")))
         return c
 

@@ -118,7 +118,7 @@ WSGI application which is located in ``/path/to/myapp`` and defined in
    mod_python create /path/to/new/server_root \
        --pythonpath=/path/to/my/app \
        --pythonhandler=mod_python.wsgi \
-       --pythonoption="wsgi.application myapp.wsgi::application"
+       --pythonoption="mod_python.wsgi.application myapp.wsgi::application"
 
 The above example will create a Python-based configuration in
 ``/path/to/new/server_root/conf/http_conf.py`` which is a simple

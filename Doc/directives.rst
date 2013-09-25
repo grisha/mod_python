@@ -873,7 +873,6 @@ add-on modules, and not pollute the global namespace.
 
 The following PythonOption keys are currently used by mod_python.
 
-| mod_python.legacy.importer
 | mod_python.mutex_directory
 | mod_python.mutex_locks
 | mod_python.psp.cache_database_filename
@@ -889,6 +888,8 @@ The following PythonOption keys are currently used by mod_python.
 | mod_python.file_session.cleanup_grace_period
 | mod_python.file_session.cleanup_time_limit
 | mod_python.file_session.database_directory
+| mod_python.wsgi.application
+| mod_python.wsgi.base_url
 
 | session *Deprecated in 3.3, use mod_python.session.session_type*
 | ApplicationPath *Deprecated in 3.3, use mod_python.session.application_path*
