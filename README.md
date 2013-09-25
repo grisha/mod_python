@@ -1,13 +1,10 @@
 mod_python
 ==========
 
-This is the mod_python README file. It consists of the following parts:
+Documentation for mod_python is on http://www.modpython.org/
 
-Getting Started
-------------------
-
-See the HTML documentation in the `doc-html` directory for installation
-instructions and documentation.
+Quick Start
+-----------
 
 If you can't read instructions:
 
@@ -15,19 +12,20 @@ If you can't read instructions:
 $ ./configure
 $ make
 $ sudo make install
+$ make test
 ```
 
-If the above worked - read the tutorial in the doc directory.
-
+If the above worked - read the tutorial in the documentation.
 
 OS Hints
------------
+--------
 
 ### Windows:
 
-HELP NEEDED! I do not have access to a Windows development environment. If you get
-a Windows compile working, please drop a note on the mod_python
-mailing list.
+HELP NEEDED! I do not have access to a Windows development
+environment. If you get a Windows compile working, please create a
+pull request or drop a note on the mod_python mailing list:
+mod_python@modpython.org (Note: subscription required).
 
 ### Mac OS X/Darwin:
 
