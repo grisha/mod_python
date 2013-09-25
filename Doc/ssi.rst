@@ -124,8 +124,8 @@ multithreaded Apache MPM is used.
 
 .. _ssi-globals:
 
-Pre-propulating Globals
-=======================
+Pre-populating Globals
+======================
 
 Any Python code which appears within the page has to be compiled each time
 the page is accessed before it is executed. In other words, the compiled

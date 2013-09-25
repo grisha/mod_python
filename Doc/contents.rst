@@ -24,7 +24,7 @@ a user guide and a tutorial all-in-one.
    handlers.rst
    commandline.rst
    ssi.rst
+   changes.rst
+   license.rst
    about.rst
    copyright.rst
-   license.rst
-   changes.rst

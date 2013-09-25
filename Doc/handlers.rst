@@ -174,7 +174,7 @@ value of
 returned to the client (which will usually cause a password dialog box
 to appear).
 
-If :meth:__auth__ is a dictionary, then the user name will be
+If :meth:`__auth__` is a dictionary, then the user name will be
 matched against the key and the password against the value associated
 with this key. If the key and password do not match, 
 :const:`HTTP_UNAUTHORIZED` is returned. Note that this requires

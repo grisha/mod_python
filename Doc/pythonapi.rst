@@ -36,7 +36,7 @@ references to them are stored in this dictionary. The dictionary is
 keyed on a string, also known as *interpreter name*.  This name can be
 any string.  The main interpreter is named ``'main_interpreter'``.
 The way all other interpreters are named can be controlled by
-``PythonInterp*`` directives. Default behaviour is to name
+``PythonInterp*`` directives. Default behavior is to name
 interpreters using the Apache virtual server name (``ServerName``
 directive). This means that all scripts in the same virtual server
 execute in the same subinterpreter, but scripts in different virtual
@@ -174,7 +174,7 @@ Client data, such as POST requests, can be read by using the
 .. note::
 
    The directory of the Apache ``Python*Handler``
-   directive in effect is prepended to the \code{sys.path}. If the
+   directive in effect is prepended to the ``sys.path``. If the
    directive was specified in a server config file outside any
    ``<Directory>``, then the directory is unknown and not prepended.
 
@@ -573,7 +573,7 @@ Request Object
 
 The request object is a Python mapping to the Apache `request_rec`
 structure. When a handler is invoked, it is always passed a single
-argument - the request object. For brevity, we oftern refer to it here
+argument - the request object. For brevity, we often refer to it here
 and throughout the code as ``req``.
 
 You can dynamically assign attributes to it as a way to communicate
@@ -947,7 +947,7 @@ Request Methods
 .. method:: request.sendfile(path[, offset, len])
 
    Sends *len* bytes of file *path* directly to the client, starting
-   at offset *offset* using the server's internal API. *offset*}
+   at offset *offset* using the server's internal API. *offset*
    defaults to 0, and *len* defaults to -1 (send the entire file).
 
    Returns the number of bytes sent, or raises an IOError exception on
@@ -964,7 +964,7 @@ Request Methods
 
 .. method:: request.set_last_modified()
 
-   Sets the outgoing \samp{Last-Modified} header based on value of
+   Sets the outgoing ``Last-Modified`` header based on value of
    ``mtime`` attribute.
 
 
@@ -1075,7 +1075,7 @@ Request Members
    Indicates an HTTP/0.9 "simple" request. This means that the
    response will contain no headers, only the body. Although this
    exists for backwards compatibility with obsolescent browsers, some
-   people have figred out that setting assbackwards to 1 can be a
+   people have figured out that setting assbackwards to 1 can be a
    useful technique when including part of the response from an
    internal redirect to avoid headers being sent.
 
@@ -1379,7 +1379,7 @@ Request Members
         req.filename = posixpath.join(req.filename, 'index.html')
         req.finfo = apache.stat(req.filename, apache.APR_FINFO_MIN)
 
-   For backward compatability, the object can also be accessed as if
+   For backward compatibility, the object can also be accessed as if
    it were a tuple. The ``apache`` module defines a set of
    :const:`FINFO_*` constants that should be used to access elements
    of this tuple.::
@@ -1479,8 +1479,8 @@ Connection Methods
 
    .. note::
 
-      The behaviour of this method has changed since version 3.0.3. In
-      3.0.3 and prior, this method would block until \var{length} bytes
+      The behavior of this method has changed since version 3.0.3. In
+      3.0.3 and prior, this method would block until *length* bytes
       was read.
 
 
@@ -1917,9 +1917,9 @@ The recommended way of using this module is::
 FieldStorage class
 ------------------
 
-Access to form data is provided via the \class{FieldStorage}
+Access to form data is provided via the :class:`FieldStorage`
 class. This class is similar to the standard library module
-\module{cgi} \class{FieldStorage}.
+``cgi.FieldStorage``
 
 .. class:: FieldStorage(req[, keep_blank_values[, strict_parsing[, file_callback[, field_callback]]]])
 
@@ -1940,7 +1940,7 @@ class. This class is similar to the standard library module
    additional information. *New in version 3.2*
 
    The optional argument *field_callback* allows the application to
-   override both the creation/deletion semantics and behaviour. *New
+   override both the creation/deletion semantics and behavior. *New
    in version 3.2*
 
    During initialization, :class:`FieldStorage` class reads all of the
@@ -1950,7 +1950,7 @@ class. This class is similar to the standard library module
    should you make any attempts to read client data before or after
    instantiating a :class:`FieldStorage`. A suggested strategy for
    dealing with this is that any handler should first check for the
-   existance of a ``form`` attribute within the request object. If
+   existence of a ``form`` attribute within the request object. If
    this exists, it should be taken to be an existing instance of the
    :class:`FieldStorage` class and that should be used. If the
    attribute does not exist and needs to be created, it should be
@@ -2220,7 +2220,7 @@ Field class
    .. seealso::
 
       :rfc:`1867`
-         Form-based File Upload in HTML}{for a description of form-based file uploads
+         Form-based File Upload in HTML for a description of form-based file uploads
 
 
 .. _pyapi-util-funcs:
@@ -2319,7 +2319,7 @@ specification published by Netscape.
    More specifically, the biggest difference between Netscape and RFC
    cookies is that RFC cookies are sent from the browser to the server
    along with their attributes (like Path or Domain). The
-   \module{Cookie} module ignore those incoming attributes, so all
+   :mod:`Cookie` module ignore those incoming attributes, so all
    incoming cookies end up as Netscape-style cookies, without any of
    their attributes defined.
 
@@ -2330,13 +2330,13 @@ specification published by Netscape.
       for the original Netscape specification.
 
    :rfc:`2109`
-      HTTP State Management Mechanism}{for the first RFC on Cookies.
+      HTTP State Management Mechanism for the first RFC on Cookies.
 
    :rfc:`2694`
-      Use of HTTP State Management}{for guidelines on using Cookies.
+      Use of HTTP State Management for guidelines on using Cookies.
 
    :rfc:`2965`
-      HTTP State Management Mechanism}{for the latest IETF standard.
+      HTTP State Management Mechanism for the latest IETF standard.
 
    `HTTP Cookies: Standards, Privacy, and Politics <http://arxiv.org/abs/cs.SE/0105018>`_
       by David M. Kristol for an excellent overview of the issues surrounding standardization of Cookies.
@@ -2373,7 +2373,7 @@ Classes
    invalid ``expires`` value will raise :exc:`ValueError`.
 
    When converted to a string, a :class:`Cookie` will be in correct
-   format usable as value in a \samp{Cookie} or ``'Set-Cookie'``
+   format usable as value in a ``'Cookie'`` or ``'Set-Cookie'``
    header.
 
    .. note::
@@ -2455,7 +2455,7 @@ Functions
    headers. *req* is a mod_python :class:`Request` object.  If
    *cookie* is an instance of :class:`Cookie` (or subclass thereof),
    then the cookie is set, otherwise, *cookie* must be a string, in
-   which case a :class:`Cookie} is constructed using *cookie* as
+   which case a :class:`Cookie` is constructed using *cookie* as
    name, *value* as the value, along with any valid :class:`Cookie`
    attributes specified as keyword arguments.
 
@@ -2608,7 +2608,7 @@ Classes
 
    Also note that the option name ``mod_python.session.session_type``
    only started to be used from mod_python 3.3 onwards. If you need to
-   retain compatability with older versions of mod_python, you should
+   retain compatibility with older versions of mod_python, you should
    use the now obsolete ``session`` option instead.
 
 
@@ -2665,7 +2665,7 @@ Classes
    generated to be very difficult to guess).
 
    A session will timeout if it has not been accessed and a save
-   performed, within the *timeout* period. Upon a save occuring the
+   performed, within the *timeout* period. Upon a save occurring the
    time of last access is updated and the period until the session
    will timeout be reset.  The default *timeout* period is 30
    minutes. An attempt to load an expired session will result in a
@@ -2800,7 +2800,7 @@ Classes
 
    Note that the above names for the ``PythonOption`` settings were
    changed to these values in mod_python 3.3. If you need to retain
-   compatability with older versions of mod_python, you should
+   compatibility with older versions of mod_python, you should
    continue to use the now obsolete ``session_directory`` and
    ``session_dbm`` options.
 
@@ -2832,7 +2832,7 @@ Classes
 
    Note that the above name for the ``PythonOption`` setting was
    changed to these values in mod_python 3.3. If you need to retain
-   compatability with older versions of mod_python, you should
+   compatibility with older versions of mod_python, you should
    continue to use the now obsolete ``session_directory`` option.
 
    Expired session files are periodically removed by the cleanup mechanism.
@@ -3126,7 +3126,7 @@ absolute::
 
    Note that the above name for the option setting was only changed to
    this value in mod_python 3.3. If you need to retain backward
-   compatability with older versions of mod_python use the
+   compatibility with older versions of mod_python use the
    ``PSPDbmCache`` option instead.
 
    .. method:: PSP.run([vars[, flush]])
@@ -3292,7 +3292,7 @@ classes.
    A Container groups directives specified as *args* into a single
    object. args can include other containers as well. The optional
    *only_if* argument is a string of Python that is evaled at
-   directive render time. The riective is rendered only if the eval
+   directive render time. The directive is rendered only if the eval
    return a true value.
 
       >>> c = Container(CustomLog('logs/access_log combined'), ErrorLog('logs/error_log'))
