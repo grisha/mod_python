@@ -6,8 +6,8 @@
  * auto-generated version.c, which also includes the git sha.
  */
 
-#define MP_VERSION_MAJOR 4
-#define MP_VERSION_MINOR 0
+#define MP_VERSION_MAJOR 3
+#define MP_VERSION_MINOR 4
 #define MP_VERSION_PATCH 0
 
 #define STR(x) #x
