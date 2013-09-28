@@ -70,7 +70,7 @@ class CallBack:
 
         # config
         config = conn.base_server.get_config()
-        debug = int(config.get("PythonDebug", 0))
+        debug = (config.get("PythonDebug", "0") == "1")
 
         try:
 
@@ -101,7 +101,7 @@ class CallBack:
 
             # import module
             module = import_module(module_name,
-                                   autoreload=int(config.get("PythonAutoReload", 1)),
+                                   autoreload=(config.get("PythonAutoReload","1") == "1"),
                                    log=debug)
             # find the object
             object = resolve_object(module, object_str,
@@ -167,7 +167,7 @@ class CallBack:
 
         # config
         config = req.get_config()
-        debug = int(config.get("PythonDebug", 0))
+        debug = (config.get("PythonDebug", "0") == "1")
 
         try:
 
@@ -204,7 +204,7 @@ class CallBack:
 
             # import module
             module = import_module(module_name,
-                                   autoreload=int(config.get("PythonAutoReload", 1)),
+                                   autoreload=(config.get("PythonAutoReload","1") == "1"),
                                    log=debug)
 
             # find the object
@@ -300,7 +300,7 @@ class CallBack:
 
         # config
         config = req.get_config()
-        debug = int(config.get("PythonDebug", 0))
+        debug = (config.get("PythonDebug", "0") == "1")
 
         default_object_str = req.phase[len("python"):].lower()
 
@@ -347,7 +347,7 @@ class CallBack:
 
                 # import module
                 module = import_module(module_name,
-                                       autoreload=int(config.get("PythonAutoReload", 1)),
+                                       autoreload=(config.get("PythonAutoReload","1") == "1"),
                                        log=debug)
 
                 # find the object
@@ -442,7 +442,7 @@ class CallBack:
 
         try:
             config = filter.req.get_config()
-            debug = int(config.get("PythonDebug", 0))
+            debug = (config.get("PythonDebug", "0") == "1")
 
             if not hasattr(filter.req,"ssi_globals"):
                 filter.req.ssi_globals = {}
@@ -596,7 +596,11 @@ def import_module(module_name, autoreload=1, log=0, path=None):
                 mtime, oldmtime = 0, -1
             elif autoreload:
                 oldmtime = module.__dict__.get("__mtime__", 0)
-                mtime = module_mtime(module)
+                last_check = module.__dict__.get("__mtime_check__", 0)
+                if (time.time() - last_check) > 1:
+                    mtime = module_mtime(module)
+                else:
+                    mtime = oldmtime
             else:
                 mtime, oldmtime = 0, 0
 
@@ -655,6 +659,7 @@ def module_mtime(module):
             if os.path.exists(filepath[:-1]) :
                 mtime = max(mtime, os.path.getmtime(filepath[:-1]))
 
+            module.__dict__["__mtime_check__"] = time.time()
         except OSError: pass
 
     return mtime

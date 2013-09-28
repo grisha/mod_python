@@ -103,9 +103,9 @@ static PyObject * req_add_common_vars(requestobject *self)
 }
 
 /**
- ** request.add_cgi_vars_light(reqeust self)
+ ** request.add_cgi_vars(reqeust self)
  **
- *     This is a clone of ap_add_cgi_vars, only it does not bother
+ *     This is a clone of ap_add_cgi_vars which does not bother
  *     calculating PATH_TRANSLATED and thus avoids creating
  *     sub-requests and filesystem calls.
  *
@@ -140,6 +140,75 @@ static PyObject * req_add_cgi_vars(requestobject *self)
     Py_INCREF(Py_None);
     return Py_None;
 
+}
+
+/**
+ ** request.build_wsgi_env(reqeust self)
+ **
+ *     Build a WSGI environment dictionary.
+ *
+ */
+
+static PyObject * req_build_wsgi_env(requestobject *self)
+{
+
+    request_rec *r = self->request_rec;
+    apr_table_t *e = r->subprocess_env;
+    PyObject *env, *v;
+    const char *val;
+    int i, j;
+
+
+    req_add_cgi_vars(self);
+
+    env = PyDict_New();
+    if (!env)
+        return NULL;
+
+    /* copy r->subprocess_env */
+    ((tableobject*)self->subprocess_env)->table = r->subprocess_env;
+    PyDict_Merge(env, (PyObject*)self->subprocess_env, 0);
+
+    /* authorization */
+    if ((val = apr_table_get(r->headers_in, "authorization"))) {
+        v = PyString_FromString(val);
+        PyDict_SetItemString(env, "HTTP_AUTHORIZATION", PyString_FromString(val));
+        Py_DECREF(v);
+    }
+
+    PyDict_SetItemString(env, "wsgi.input", (PyObject *) self);
+
+    v = PyFile_FromFile(stdout, "<stderr>", "w", NULL);
+    PyDict_SetItemString(env, "wsgi.errors", v);
+    Py_DECREF(v);
+
+    v = Py_BuildValue("(ii)", 1, 0);
+    PyDict_SetItemString(env, "wsgi.version", v);
+    Py_DECREF(v);
+
+    int result;
+    ap_mpm_query(AP_MPMQ_IS_THREADED, &result);
+    v = PyBool_FromLong(result);
+    PyDict_SetItemString(env, "wsgi.multithread", v);
+    Py_DECREF(v);
+
+    ap_mpm_query(AP_MPMQ_IS_FORKED, &result);
+    v = PyBool_FromLong(result);
+    PyDict_SetItemString(env, "wsgi.multiprocess", v);
+    Py_DECREF(v);
+
+    val = apr_table_get(r->subprocess_env, "HTTPS");
+    if (!val || !strcasecmp(val, "off")) {
+        v = PyString_FromString("http");
+        PyDict_SetItemString(env, "wsgi.url_scheme", v);
+        Py_DECREF(v);
+    } else {
+        v = PyString_FromString("https");
+        PyDict_SetItemString(env, "wsgi.url_scheme", v);
+        Py_DECREF(v);
+    }
+
+    return env;
 }
 
 /**
@@ -1435,6 +1504,8 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
 }
 
 static PyMethodDef request_methods[] = {
+    {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
+    {"build_wsgi_env",        (PyCFunction) req_add_cgi_vars,          METH_NOARGS},
     {"add_cgi_vars",          (PyCFunction) req_add_cgi_vars,          METH_NOARGS},
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
@@ -1472,7 +1543,6 @@ static PyMethodDef request_methods[] = {
     {"set_last_modified",     (PyCFunction) req_set_last_modified,     METH_NOARGS},
     {"ssl_var_lookup",        (PyCFunction) req_ssl_var_lookup,        METH_VARARGS},
     {"update_mtime",          (PyCFunction) req_update_mtime,          METH_VARARGS},
-    {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     { NULL, NULL } /* sentinel */
 };
 
@@ -1489,6 +1559,8 @@ static PyMethodDef request_methods[] = {
 #define OFF(x) offsetof(request_rec, x)
  
 static PyMemberDef request_rec_mbrs[] = {
+    {"uri",                T_STRING,  OFF(uri)},
+    {"status",             T_INT,     OFF(status)},
     {"the_request",        T_STRING,  OFF(the_request)},
     {"assbackwards",       T_INT,     OFF(assbackwards)},
     {"proxyreq",           T_INT,     OFF(proxyreq)},
@@ -1498,7 +1570,6 @@ static PyMemberDef request_rec_mbrs[] = {
     {"hostname",           T_STRING,  OFF(hostname)},
     {"request_time",       T_LONG,    OFF(request_time)},
     {"status_line",        T_STRING,  OFF(status_line)},
-    {"status",             T_INT,     OFF(status)},
     {"method",             T_STRING,  OFF(method)},
     {"method_number",      T_INT,     OFF(method_number)},
     {"allowed",            T_LONG,    OFF(allowed)},
@@ -1525,7 +1596,6 @@ static PyMemberDef request_rec_mbrs[] = {
     {"no_cache",           T_INT,     OFF(no_cache)},
     {"no_local_copy",      T_INT,     OFF(no_local_copy)},
     {"unparsed_uri",       T_STRING,  OFF(unparsed_uri)},
-    {"uri",                T_STRING,  OFF(uri)},
     {"filename",           T_STRING,  OFF(filename)},
     {"canonical_filename", T_STRING,  OFF(canonical_filename)},
     {"path_info",          T_STRING,  OFF(path_info)},
@@ -1900,6 +1970,8 @@ static PyObject *getmakeobj(requestobject* self, void *objname)
 }
 
 static PyGetSetDef request_getsets[] = {
+    {"handler",       (getter)getreq_recmbr, (setter)setreq_recmbr, "The handler string", "handler"},
+    {"uri",           (getter)getreq_recmbr, (setter)setreq_recmbr, "The path portion of URI", "uri"},
     {"interpreter", (getter)getreq_recmbr, NULL, "Python interpreter name", "interpreter"},
     {"connection", (getter)getmakeobj, NULL, "Connection object", "connection"},
     {"server",     (getter)getmakeobj, NULL, "Server object", "server"},
@@ -1933,7 +2005,6 @@ static PyGetSetDef request_getsets[] = {
     {"read_chunked", (getter)getreq_recmbr, NULL, "Reading chunked transfer-coding", "read_chunked"},
     {"expecting_100", (getter)getreq_recmbr, NULL, "Is client waitin for a 100 response?", "expecting_100"},
     {"content_type",  (getter)getreq_recmbr, (setter)setreq_recmbr, "Content type", "content_type"},
-    {"handler",       (getter)getreq_recmbr, (setter)setreq_recmbr, "The handler string", "handler"},
     {"content_encoding", (getter)getreq_recmbr, NULL, "How to encode the data", "content_encoding"},
     {"content_languages", (getter)getreq_rec_ah, NULL, "Content languages", "content_languages"},
     {"vlist_validator", (getter)getreq_recmbr, NULL, "Variant list validator (if negotiated)", "vlist_validator"},
@@ -1942,7 +2013,6 @@ static PyGetSetDef request_getsets[] = {
     {"no_cache",      (getter)getreq_recmbr, (setter)setreq_recmbr, "This response in non-cacheable", "no_cache"},
     {"no_local_copy", (getter)getreq_recmbr, (setter)setreq_recmbr, "There is no local copy of the response", "no_local_copy"},
     {"unparsed_uri",  (getter)getreq_recmbr, NULL, "The URI without any parsing performed", "unparsed_uri"},
-    {"uri",           (getter)getreq_recmbr, (setter)setreq_recmbr, "The path portion of URI", "uri"},
     {"filename",      (getter)getreq_recmbr, (setter)setreq_recmbr, "The file name on disk that this request corresponds to", "filename"},
     {"canonical_filename", (getter)getreq_recmbr, (setter)setreq_recmbr, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
     {"path_info",     (getter)getreq_recmbr, (setter)setreq_recmbr, "Path_info, if any", "path_info"},

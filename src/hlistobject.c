@@ -68,8 +68,8 @@ static PyMethodDef hlistmethods[] = {
 
 static PyMemberDef hlist_memberlist[] = {
     {"handler",            T_STRING,    OFF(handler),              RO},
-    {"directory",          T_STRING,    OFF(directory),            RO},
     {"silent",             T_INT,       OFF(silent),               RO},
+    {"directory",          T_STRING,    OFF(directory),            RO},
     {NULL}  /* Sentinel */
 };
 

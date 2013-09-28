@@ -79,7 +79,10 @@ def handler(req):
     app_str = options.get('mod_python.wsgi.application')
     if app_str:
         mod_str, callable_str = (app_str.split('::', 1) + [None])[0:2]
-        module = apache.import_module(mod_str, log=True)
+        config = req.get_config()
+        module = apache.import_module(mod_str,
+                                      autoreload=(config.get("PythonAutoReload","1") == "1"),
+                                      log=(config.get("PythonDebug", "0") == "1"))
         app = getattr(module, callable_str or 'application')
 
     if not app:
@@ -90,21 +93,7 @@ def handler(req):
 
     ## Build env
 
-    req.add_cgi_vars()
-    env = dict(req.subprocess_env)
-
-    if req.headers_in.has_key("authorization"):
-        env["HTTP_AUTHORIZATION"] = req.headers_in["authorization"]
-
-    env['wsgi.input'] = req
-    env['wsgi.errors'] = sys.stderr
-    env['wsgi.version'] = (1, 0)
-    env['wsgi.multithread']  = apache.mpm_query(apache.AP_MPMQ_IS_THREADED)
-    env['wsgi.multiprocess'] = apache.mpm_query(apache.AP_MPMQ_IS_FORKED)
-    if env.get('HTTPS', 'off') == 'off':
-        env['wsgi.url_scheme'] = 'http'
-    else:
-        env['wsgi.url_scheme'] = 'https'
+    env = req.build_wsgi_env()
 
     ## Run the app
 
