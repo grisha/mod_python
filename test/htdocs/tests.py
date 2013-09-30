@@ -1248,6 +1248,10 @@ def phase_status_8(req):
         req.write("test ok")
     return apache.OK
 
+def phase_status_cleanup(req):
+    apache.log_error("phase_status_cleanup_log_entry")
+    return apache.OK
+
 def test_sys_argv(req):
     import sys
     req.write(repr(sys.argv))

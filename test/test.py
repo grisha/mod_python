@@ -2286,6 +2286,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonFixupHandler("tests::phase_status_6"),
                                   PythonFixupHandler("tests::phase_status_7"),
                                   PythonHandler("tests::phase_status_8"),
+                                  PythonCleanupHandler("tests::phase_status_cleanup"),
                                   PythonDebug("On")))
         return c
 
@@ -2296,6 +2297,12 @@ class PerRequestTestCase(unittest.TestCase):
 
         if (rsp != "test ok"):
             self.fail(`rsp`)
+
+        # see what's in the log now
+        time.sleep(0.1)
+        log = open(os.path.join(SERVER_ROOT, "logs/error_log")).read()
+        if "phase_status_cleanup_log_entry" not in log:
+            self.fail("phase_status_cleanup_log_entry not found in logs, cleanup handler never ran?")
 
     def test_publisher_conf(self):
         c = VirtualHost("*",

@@ -307,7 +307,7 @@ class CallBack:
         # Lookup expected status values that allow us to
         # continue when multiple handlers exist.
 
-        expected = _status_values[default_object_str]
+        expected = _status_values.get(default_object_str, [OK])
 
         try:
             hlist = req.hlist
@@ -1014,6 +1014,7 @@ OK = REQ_PROCEED = 0
 DONE = -2
 DECLINED = REQ_NOACTION = -1
 
+# NB: [OK] is default, so no need to list it here
 _status_values = {
     "postreadrequesthandler":   [ DECLINED, OK ],
     "transhandler":             [ DECLINED ],
@@ -1026,7 +1027,6 @@ _status_values = {
     "typehandler":              [ DECLINED ],
     "fixuphandler":             [ DECLINED, OK ],
     "loghandler":               [ DECLINED, OK ],
-    "handler":                  [ OK ],
 }
 
 # constants for get_remote_host

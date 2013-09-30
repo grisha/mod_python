@@ -1549,15 +1549,15 @@ static int python_handler(request_rec *req, char *phase)
 
     if (! resultobject) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req, 
-                      "python_handler: HandlerDispatch() returned nothing.");
+                      "python_handler: (%s) HandlerDispatch() returned nothing.", phase);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
     else {
         /* Attempt to analyze the result as a string indicating which
            result to return */
         if (! PyInt_Check(resultobject)) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req, 
-                          "python_handler: HandlerDispatch() returned non-integer.");
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                          "python_handler: (%s) HandlerDispatch() returned non-integer.", phase);
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         else {
