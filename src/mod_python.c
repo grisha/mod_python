@@ -190,7 +190,11 @@ static interpreterdata *save_interpreter(const char *name, PyInterpreterState *i
     idata->istate = istate;
     /* obcallback will be created on first use */
     idata->obcallback = NULL; 
+#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
+    p = PyCapsule_New((void *) idata, NULL, NULL);
+#else
     p = PyCObject_FromVoidPtr((void *) idata, NULL);
+#endif
     PyDict_SetItemString(interpreters, (char *)name, p);
     Py_DECREF(p);
 
@@ -269,7 +273,11 @@ static interpreterdata *get_interpreter(const char *name)
             idata = save_interpreter(name, istate);
     }
     else {
+#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
+        idata = (interpreterdata *)PyCapsule_GetPointer(p, NULL);
+#else
         idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
+#endif
     }
 
 #ifdef WITH_THREAD

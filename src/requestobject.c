@@ -1671,7 +1671,11 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
         }
     }
     else if (strcmp(name, "_request_rec") == 0) {
+#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
+        return PyCapsule_New((void *)self->request_rec, NULL, NULL);
+#else
         return PyCObject_FromVoidPtr(self->request_rec, 0);
+#endif
     }
     else
         return PyMember_GetOne((char*)self->request_rec,

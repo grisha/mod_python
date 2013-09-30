@@ -229,7 +229,12 @@ static PyMemberDef server_rec_mbrs[] = {
 static PyObject *getsrv_recmbr(serverobject *self, void *name) 
 {
     if (strcmp(name, "_server_rec") == 0) {
+#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
+        return PyCapsule_New((void *)self->server, NULL, NULL);
+#else
         return PyCObject_FromVoidPtr(self->server, 0);
+#endif
+
     }
     return PyMember_GetOne((char*)self->server,
                            find_memberdef(server_rec_mbrs, name));

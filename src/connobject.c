@@ -399,7 +399,11 @@ static PyObject * conn_getattr(connobject *self, char *name)
         return (PyObject *)self->hlo;
     }
     else if (strcmp(name, "_conn_rec") == 0) {
+#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
+        return PyCapsule_New((void *)self->conn, NULL, NULL);
+#else
         return PyCObject_FromVoidPtr(self->conn, 0);
+#endif
     }
     else {
 
