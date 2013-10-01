@@ -158,7 +158,6 @@ static PyObject * req_build_wsgi_env(requestobject *self)
     const char *val;
     int i, j;
 
-
     req_add_cgi_vars(self);
 
     env = PyDict_New();
@@ -178,7 +177,7 @@ static PyObject * req_build_wsgi_env(requestobject *self)
 
     PyDict_SetItemString(env, "wsgi.input", (PyObject *) self);
 
-    v = PyFile_FromFile(stdout, "<stderr>", "w", NULL);
+    v = PyFile_FromFile(stderr, "<stderr>", "w", NULL);
     PyDict_SetItemString(env, "wsgi.errors", v);
     Py_DECREF(v);
 
@@ -1505,7 +1504,7 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
 
 static PyMethodDef request_methods[] = {
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
-    {"build_wsgi_env",        (PyCFunction) req_add_cgi_vars,          METH_NOARGS},
+    {"build_wsgi_env",        (PyCFunction) req_build_wsgi_env,        METH_NOARGS},
     {"add_cgi_vars",          (PyCFunction) req_add_cgi_vars,          METH_NOARGS},
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},

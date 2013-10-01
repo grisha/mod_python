@@ -1922,6 +1922,12 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp[-8:] != "test ok\n"):
             self.fail(`rsp`)
 
+        # see what's in the log now
+        time.sleep(0.1)
+        log = open(os.path.join(SERVER_ROOT, "logs/error_log")).read()
+        if "written_from_wsgi_test" not in log:
+            self.fail("string 'written_from_wsgi_test' not found in error log.")
+
     def test_cgihandler_conf(self):
 
         c = VirtualHost("*",
