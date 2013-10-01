@@ -250,6 +250,10 @@ class MinSpareThreads(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
 
+class Mutex(Directive):
+    def __init__(self, val):
+        Directive.__init__(self, self.__class__.__name__, val)
+
 class NameVirtualHost(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)

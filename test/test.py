@@ -321,7 +321,9 @@ class HttpdCtrl:
             DocumentRoot(DOCUMENT_ROOT),
             LoadModule("python_module %s" % quote_if_space(MOD_PYTHON_SO)))
 
-        if APACHE_VERSION == '2.2':
+        if APACHE_VERSION == '2.4':
+            s.append(Mutex("file:logs"))
+        else:
             s.append(LockFile("logs/accept.lock"))
 
         if APACHE_VERSION == '2.4':
