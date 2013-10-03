@@ -7,7 +7,7 @@ def application(env, start_response):
 
    try:
       assert(env['wsgi.input'].__class__.__name__ == 'mp_request')
-      assert(env['wsgi.errors'].name == '<stderr>')
+      assert(env['wsgi.errors'] == sys.stderr)
       assert(env['wsgi.version'] == (1,0))
       assert(env['wsgi.multithread'] in (True, False))
       assert(env['wsgi.multiprocess'] in (True, False))

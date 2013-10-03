@@ -40,6 +40,8 @@ extern "C" {
         PyObject       * subprocess_env;
         PyObject       * notes;
         PyObject       * phase;
+        PyObject       * config;
+        PyObject       * options;
         char           * extension;   /* for | .ext syntax */
         int              content_type_set;
         apr_off_t        bytes_queued;

@@ -50,27 +50,6 @@ def handler(req):
 
     options = req.get_options()
 
-    ## Process mod_python.wsgi.base_uri
-
-    if 'mod_python.wsgi.base_uri' in options:
-        base_uri = options['mod_python.wsgi.base_uri']
-
-        if base_uri == '/' or base_uri.endswith('/'):
-            req.log_error(
-                "WSGI handler: mod_python.wsgi.base_uri (%s) must not be '/' or end with '/', declining."
-                % `base_uri`, apache.APLOG_WARNING)
-            return apache.DECLINED
-
-        if req.uri.startswith(base_uri):
-            req.path_info = req.uri[len(base_uri):]
-        else:
-            req.log_error(
-                "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."
-                % (`req.uri`, `base_uri`), apache.APLOG_WARNING)
-            return apache.DECLINED
-    else:
-        req.path_info = req.uri
-
     ## Find the application callable
 
     app = None
@@ -101,6 +80,12 @@ def handler(req):
     ## Build env
 
     env = req.build_wsgi_env()
+    if env is None:
+        base_uri = options.get('mod_python.wsgi.base_uri')
+        req.log_error(
+            "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."
+            % (`req.uri`, `base_uri`), apache.APLOG_WARNING)
+        return apache.DECLINED
 
     ## Run the app
 

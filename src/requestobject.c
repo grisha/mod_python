@@ -36,7 +36,6 @@ APR_DECLARE_OPTIONAL_FN(int, ssl_is_https, (conn_rec *));
 static APR_OPTIONAL_FN_TYPE(ssl_var_lookup) *optfn_ssl_var_lookup = NULL;
 static APR_OPTIONAL_FN_TYPE(ssl_is_https) *optfn_is_https = NULL;
 
-
 /**
  **     MpRequest_FromRequest
  **
@@ -65,6 +64,8 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->subprocess_env = MpTable_FromTable(req->subprocess_env);
     result->notes = MpTable_FromTable(req->notes);
     result->phase = NULL;
+    result->config = NULL;
+    result->options = NULL;
     result->extension = NULL;
     result->content_type_set = 0;
     result->bytes_queued = 0;
@@ -148,6 +149,10 @@ static PyObject * req_add_cgi_vars(requestobject *self)
  *     Build a WSGI environment dictionary.
  *
  */
+/* these things never change and we never decref them  */
+static PyObject *wsgi_version = NULL;
+static PyObject *wsgi_multithread = NULL;
+static PyObject *wsgi_multiprocess = NULL;
 
 static PyObject * req_build_wsgi_env(requestobject *self)
 {
@@ -158,11 +163,49 @@ static PyObject * req_build_wsgi_env(requestobject *self)
     const char *val;
     int i, j;
 
-    req_add_cgi_vars(self);
-
     env = PyDict_New();
     if (!env)
         return NULL;
+
+    do {
+        py_config *conf =
+            (py_config *) ap_get_module_config(self->request_rec->per_dir_config,
+                                               &python_module);
+        const char *path_info = self->request_rec->uri;
+        const char *base_uri = apr_table_get(conf->options, "mod_python.wsgi.base_uri");
+
+        if (base_uri && *base_uri) {
+
+            if (base_uri[strlen(base_uri)-1] == '/') {
+                PyErr_SetString(PyExc_ValueError,
+                                apr_psprintf(self->request_rec->pool,
+                                             "PythonOption 'mod_python.wsgi.base_uri' ('%s') must not end with '/'",
+                                             base_uri));
+                Py_DECREF(env);
+                return NULL;
+            }
+
+            /* find end of base_uri match in r->uri, this will be our path_info */
+            while (*path_info && *base_uri && (*path_info == *base_uri)) {
+                path_info++;
+                base_uri++;
+            }
+
+            if (*base_uri) {
+                /* we have not reached end of base_uri, therefore
+                   r->uri does not start with base_uri */
+                Py_DECREF(env);
+                Py_INCREF(Py_None);
+                return Py_None;
+            }
+        }
+        /* set path_info - seems like apr_pstrdup is unnecessary here */
+        self->request_rec->path_info = path_info;
+
+    } while(0);
+
+    /* this will create the correct SCRIPT_NAME based on our path_info now */
+    req_add_cgi_vars(self);
 
     /* copy r->subprocess_env */
     ((tableobject*)self->subprocess_env)->table = r->subprocess_env;
@@ -176,25 +219,23 @@ static PyObject * req_build_wsgi_env(requestobject *self)
     }
 
     PyDict_SetItemString(env, "wsgi.input", (PyObject *) self);
+    PyDict_SetItemString(env, "wsgi.errors", PySys_GetObject("stderr"));
 
-    v = PyFile_FromFile(stderr, "<stderr>", "w", NULL);
-    PyDict_SetItemString(env, "wsgi.errors", v);
-    Py_DECREF(v);
+    if (!wsgi_version) {
+        int result;
+        wsgi_version = Py_BuildValue("(ii)", 1, 0);
 
-    v = Py_BuildValue("(ii)", 1, 0);
-    PyDict_SetItemString(env, "wsgi.version", v);
-    Py_DECREF(v);
+        ap_mpm_query(AP_MPMQ_IS_THREADED, &result);
+        wsgi_multithread = PyBool_FromLong(result);
 
-    int result;
-    ap_mpm_query(AP_MPMQ_IS_THREADED, &result);
-    v = PyBool_FromLong(result);
-    PyDict_SetItemString(env, "wsgi.multithread", v);
-    Py_DECREF(v);
+        ap_mpm_query(AP_MPMQ_IS_FORKED, &result);
+        wsgi_multiprocess = PyBool_FromLong(result);
+    }
 
-    ap_mpm_query(AP_MPMQ_IS_FORKED, &result);
-    v = PyBool_FromLong(result);
-    PyDict_SetItemString(env, "wsgi.multiprocess", v);
-    Py_DECREF(v);
+    /* these are global vars which we never decref */
+    PyDict_SetItemString(env, "wsgi.version", wsgi_version);
+    PyDict_SetItemString(env, "wsgi.multithread", wsgi_multithread);
+    PyDict_SetItemString(env, "wsgi.multiprocess", wsgi_multiprocess);
 
     val = apr_table_get(r->subprocess_env, "HTTPS");
     if (!val || !strcasecmp(val, "off")) {
@@ -750,9 +791,16 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
 static PyObject * req_get_config(requestobject *self)
 {
     py_config *conf =
-        (py_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+        (py_config *) ap_get_module_config(self->request_rec->per_dir_config,
                                            &python_module);
-    return MpTable_FromTable(conf->directives);
+    if (!self->config)
+        self->config = MpTable_FromTable(conf->directives);
+
+    if (((tableobject*)self->config)->table != conf->directives)
+        ((tableobject*)self->config)->table = conf->directives;
+
+    Py_INCREF(self->config);
+    return self->config;
 }
 
 /**
@@ -803,27 +851,28 @@ static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
 static PyObject * req_get_options(requestobject *self, PyObject *args)
 {
     py_config *conf =
-        (py_config *) ap_get_module_config(self->request_rec->per_dir_config, 
+        (py_config *) ap_get_module_config(self->request_rec->per_dir_config,
                                            &python_module);
-    apr_table_t* table = conf->options;
+    if (!self->options)
+        self->options = MpTable_FromTable(conf->options);
 
-    int i;
-    const apr_array_header_t* ah = apr_table_elts(table);
+    if (((tableobject*)self->options)->table != conf->options)
+        ((tableobject*)self->options)->table = conf->options;
+
+    const apr_array_header_t* ah = apr_table_elts(conf->options);
     apr_table_entry_t* elts = (apr_table_entry_t *) ah->elts;
+    int i;
 
-    /*
-     * We remove the empty values, since they cannot have been defined
-     * by the directive.
-     */
+    /* Remove the empty values as a way to unset values.
+     * See https://issues.apache.org/jira/browse/MODPYTHON-6 */
     for(i=0;i<ah->nelts;i++,elts++) {
         if(strlen(elts->val)==0) {
-            apr_table_unset(table,elts->key);
+            apr_table_unset(conf->options,elts->key);
         }
     }
 
-    /* XXX shouldn't we free the apr_array_header_t* ah ? */
-
-    return MpTable_FromTable(table);
+    Py_INCREF(self->options);
+    return self->options;
 }
 
 
@@ -2080,6 +2129,8 @@ static int request_tp_clear(requestobject *self)
     CLEAR_REQUEST_MEMBER(self->subprocess_env);
     CLEAR_REQUEST_MEMBER(self->notes);
     CLEAR_REQUEST_MEMBER(self->phase);
+    CLEAR_REQUEST_MEMBER(self->config);
+    CLEAR_REQUEST_MEMBER(self->options);
     CLEAR_REQUEST_MEMBER(self->hlo);
     
     return 0;

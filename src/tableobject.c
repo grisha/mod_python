@@ -693,6 +693,7 @@ static PyObject * table_has_key(tableobject *self, PyObject *key)
  ** table_get
  **
  *    implements get([failobj]) method
+ *    (only returns the first match)
  */
 
 static PyObject *table_get(register tableobject *self, PyObject *args)
