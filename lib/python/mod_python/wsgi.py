@@ -20,70 +20,77 @@
 import sys
 from mod_python import apache
 
-class WSGIContainer(object):
-    
-    def __init__(self, req):
-        self.req = req
-    
-    def start_response(self, status, headers, exc_info=None):
+def handler(req):
+
+    # using a closure is faster than an object-based implementation
+    def start_response(status, headers, exc_info=None):
 
         if exc_info:
             try:
                 raise exc_info[0], exc_info[1], exc_info[2]
             finally:
                 exc_info = None
-        
-        self.req.status = int(status[:3])
+
+        # avoid str2int conversion for frequently used ones
+        if status == '200':
+            req.status = 200
+        elif status == '301':
+            req.status = 301
+        elif status == '302':
+            req.status = 302
+        else:
+            req.status = int(status[:3])
 
         # There is no need to req.set_content_length() or set
         # req.content_type because it will be in the headers anyhow.
         for k,v in headers: 
-            self.req.headers_out.add(k,v)
+            req.headers_out.add(k,v)
         
-        return self.req.write
-    
-    def run(self, application, env):
-        response = None
-        try:
-            response = application(env, self.start_response)
-            map(self.req.write, response)
-        finally:
-            # call close() if there is one
-            getattr(response, 'close', lambda: None)()
-
-def handler(req):
+        return req.write
 
     options = req.get_options()
 
     ## Process mod_python.wsgi.base_uri
 
-    base_uri = options.get('mod_python.wsgi.base_uri', '')
+    if 'mod_python.wsgi.base_uri' in options:
+        base_uri = options['mod_python.wsgi.base_uri']
 
-    if base_uri == '/' or base_uri.endswith('/'):
-        req.log_error(
-            "WSGI handler: mod_python.wsgi.base_uri (%s) must not be '/' or end with '/', declining."
-            % `base_uri`, apache.APLOG_WARNING)
-        return apache.DECLINED
+        if base_uri == '/' or base_uri.endswith('/'):
+            req.log_error(
+                "WSGI handler: mod_python.wsgi.base_uri (%s) must not be '/' or end with '/', declining."
+                % `base_uri`, apache.APLOG_WARNING)
+            return apache.DECLINED
 
-    if req.uri.startswith(base_uri):
-        req.path_info = req.uri[len(base_uri):]
+        if req.uri.startswith(base_uri):
+            req.path_info = req.uri[len(base_uri):]
+        else:
+            req.log_error(
+                "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."
+                % (`req.uri`, `base_uri`), apache.APLOG_WARNING)
+            return apache.DECLINED
     else:
-        req.log_error(
-            "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."
-            % (`req.uri`, `base_uri`), apache.APLOG_WARNING)
-        return apache.DECLINED
+        req.path_info = req.uri
 
     ## Find the application callable
 
     app = None
-    app_str = options.get('mod_python.wsgi.application')
+    app_str = options['mod_python.wsgi.application']
     if app_str:
-        mod_str, callable_str = (app_str.split('::', 1) + [None])[0:2]
+        if '::' in app_str:
+            mod_str, callable_str = app_str.split('::', 1)
+        else:
+            mod_str, callable_str = app_str, 'application'
         config = req.get_config()
-        module = apache.import_module(mod_str,
-                                      autoreload=(config.get("PythonAutoReload","1") == "1"),
-                                      log=(config.get("PythonDebug", "0") == "1"))
-        app = getattr(module, callable_str or 'application')
+        autoreload, log = True, False
+        if "PythonAutoReload" in config:
+            autoreload = config["PythonAutoReload"] == "1"
+        if "PythonDebug" in config:
+            log = config["PythonDebug"] == "1"
+        module = apache.import_module(mod_str, autoreload=autoreload, log=log)
+
+        try:
+            app = module.__dict__[callable_str]
+        except KeyError: pass
 
     if not app:
         req.log_error(
@@ -97,7 +104,15 @@ def handler(req):
 
     ## Run the app
 
-    WSGIContainer(req).run(app, env)
+    response = None
+    try:
+        response = app(env, start_response)
+        [req.write(token) for token in response]
+    finally:
+        # call close() if there is one
+        if type(response) not in (list, tuple):
+            getattr(response, 'close', lambda: None)()
 
     return apache.OK
+
 

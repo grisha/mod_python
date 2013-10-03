@@ -69,8 +69,9 @@ class CallBack:
     def ConnectionDispatch(self, conn):
 
         # config
-        config = conn.base_server.get_config()
-        debug = (config.get("PythonDebug", "0") == "1")
+        config, debug  = conn.base_server.get_config(), False
+        if "PythonDebug" in config:
+            debug = config["PythonDebug"] == "1"
 
         try:
 
@@ -81,18 +82,18 @@ class CallBack:
             module_name = l[0]
             if len(l) == 1:
                 # no oject, provide default
-                object_str = "connectionhandler"
+                obj_str = "connectionhandler"
             else:
-                object_str = l[1]
+                obj_str = l[1]
 
             # evaluate pythonpath and set sys.path to
             # resulting value if not already done
 
-            if config.has_key("PythonPath"): 
+            if "PythonPath" in config:
                 _path_cache_lock.acquire() 
                 try: 
                     pathstring = config["PythonPath"] 
-                    if not _path_cache.has_key(pathstring): 
+                    if pathstring not in _path_cache:
                         newpath = eval(pathstring) 
                         _path_cache[pathstring] = None 
                         sys.path[:] = newpath 
@@ -100,20 +101,24 @@ class CallBack:
                     _path_cache_lock.release()
 
             # import module
+            autoreload = True
+            if "PythonAutoReload" in config:
+                autoreload = config["PythonAutoReload"] == "1"
             module = import_module(module_name,
-                                   autoreload=(config.get("PythonAutoReload","1") == "1"),
+                                   autoreload=autoreload,
                                    log=debug)
             # find the object
-            object = resolve_object(module, object_str,
+            obj = resolve_object(module, obj_str,
                                     arg=conn, silent=0)
 
             # Only permit debugging using pdb if Apache has
             # actually been started in single process mode.
 
-            pdb_debug = int(config.get("PythonEnablePdb", "0"))
-            one_process = exists_config_define("ONE_PROCESS")
+            pdb_debug = False
+            if "PythonEnablePdb" in config:
+                pdb_debug = config["PythonEnablePdb"] == "1"
 
-            if pdb_debug and one_process:
+            if pdb_debug and exists_config_define("ONE_PROCESS"):
 
                 # Don't use pdb.runcall() as it results in
                 # a bogus 'None' response when pdb session
@@ -127,14 +132,14 @@ class CallBack:
                 sys.settrace(debugger.trace_dispatch)
 
                 try:
-                    result = object(conn)
+                    result = obj(conn)
 
                 finally:
                     debugger.quitting = 1
                     sys.settrace(None)
 
             else:
-                result = object(conn)
+                result = obj(conn)
 
             assert (type(result) == type(int())), \
                    "ConnectionHandler '%s' returned invalid return code." % handler
@@ -166,8 +171,9 @@ class CallBack:
         req = filter.req
 
         # config
-        config = req.get_config()
-        debug = (config.get("PythonDebug", "0") == "1")
+        config, debug  = req.get_config(), False
+        if "PythonDebug" in config:
+            debug = config["PythonDebug"] == "1"
 
         try:
 
@@ -177,22 +183,22 @@ class CallBack:
             if len(l) == 1:
                 # no oject, provide default
                 if filter.is_input:
-                    object_str = "inputfilter"
+                    obj_str = "inputfilter"
                 else:
-                    object_str = "outputfilter"
+                    obj_str = "outputfilter"
             else:
-                object_str = l[1]
+                obj_str = l[1]
 
             # add the directory to pythonpath if
             # not there yet, or evaluate pythonpath
             # and set sys.path to resulting value
             # if not already done
 
-            if config.has_key("PythonPath"): 
+            if "PythonPath" in config:
                 _path_cache_lock.acquire() 
                 try: 
                     pathstring = config["PythonPath"] 
-                    if not _path_cache.has_key(pathstring): 
+                    if pathstring not in _path_cache:
                         newpath = eval(pathstring) 
                         _path_cache[pathstring] = None 
                         sys.path[:] = newpath 
@@ -203,20 +209,25 @@ class CallBack:
                     sys.path[:0] = [filter.dir]
 
             # import module
+            autoreload = True
+            if "PythonAutoReload" in config:
+                autoreload = config["PythonAutoReload"] == "1"
             module = import_module(module_name,
-                                   autoreload=(config.get("PythonAutoReload","1") == "1"),
+                                   autoreload=autoreload,
                                    log=debug)
 
             # find the object
-            object = resolve_object(module, object_str, arg=filter, silent=0)
+            obj = resolve_object(module, obj_str,
+                                    arg=filter, silent=0)
 
             # Only permit debugging using pdb if Apache has
             # actually been started in single process mode.
 
-            pdb_debug = int(config.get("PythonEnablePdb", "0"))
-            one_process = exists_config_define("ONE_PROCESS")
+            pdb_debug = False
+            if "PythonEnablePdb" in config:
+                pdb_debug = config["PythonEnablePdb"] == "1"
 
-            if pdb_debug and one_process:
+            if pdb_debug and exists_config_define("ONE_PROCESS"):
 
                 # Don't use pdb.runcall() as it results in
                 # a bogus 'None' response when pdb session
@@ -230,14 +241,14 @@ class CallBack:
                 sys.settrace(debugger.trace_dispatch)
 
                 try:
-                    result = object(filter)
+                    result = obj(filter)
 
                 finally:
                     debugger.quitting = 1
                     sys.settrace(None)
 
             else:
-                result = object(filter)
+                result = obj(filter)
 
             # always flush the filter. without a FLUSH or EOS bucket,
             # the content is never written to the network.
@@ -299,15 +310,16 @@ class CallBack:
         result = HTTP_INTERNAL_SERVER_ERROR
 
         # config
-        config = req.get_config()
-        debug = (config.get("PythonDebug", "0") == "1")
+        config, debug = req.get_config(), False
+        if "PythonDebug" in config:
+            debug = config["PythonDebug"] == "1"
 
-        default_object_str = req.phase[len("python"):].lower()
+        default_obj_str = _phase_handler_names[req.phase]
 
         # Lookup expected status values that allow us to
         # continue when multiple handlers exist.
 
-        expected = _status_values.get(default_object_str, [OK])
+        expected = _status_values[default_obj_str]
 
         try:
             hlist = req.hlist
@@ -320,21 +332,21 @@ class CallBack:
                 module_name = l[0]
                 if len(l) == 1:
                     # no object, provide default
-                    object_str = default_object_str
+                    obj_str = default_obj_str
                 else:
-                    object_str = l[1]
+                    obj_str = l[1]
 
                 # add the directory to pythonpath if
                 # not there yet, or evaluate pythonpath
                 # and set sys.path to resulting value
                 # if not already done
 
-                if config.has_key("PythonPath"):
+                if "PythonPath" in config:
                     _path_cache_lock.acquire() 
                     try: 
                         pathstring = config["PythonPath"] 
-                        if not _path_cache.has_key(pathstring): 
-                            newpath = eval(pathstring) 
+                        if pathstring not in _path_cache:
+                            newpath = eval(pathstring)
                             _path_cache[pathstring] = None 
                             sys.path[:] = newpath 
                     finally: 
@@ -346,24 +358,36 @@ class CallBack:
                         sys.path[:0] = [dir]
 
                 # import module
+                autoreload = True
+                if "PythonAutoReload" in config:
+                    autoreload = config["PythonAutoReload"] == "1"
                 module = import_module(module_name,
-                                       autoreload=(config.get("PythonAutoReload","1") == "1"),
+                                       autoreload=autoreload,
                                        log=debug)
 
                 # find the object
-                object = resolve_object(module, object_str,
-                                        arg=req, silent=hlist.silent)
+                if '.' not in obj_str: # this is an optimization
+                    try:
+                        obj = module.__dict__[obj_str]
+                    except:
+                        if not hlist.silent:
+                            s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
+                            raise AttributeError, s
+                else:
+                    obj = resolve_object(module, obj_str,
+                                         arg=req, silent=hlist.silent)
 
-                if not hlist.silent or object is not None:
+                if not hlist.silent or obj is not None:
 
                     try:
                         # Only permit debugging using pdb if Apache has
                         # actually been started in single process mode.
 
-                        pdb_debug = int(config.get("PythonEnablePdb", "0"))
-                        one_process = exists_config_define("ONE_PROCESS")
+                        pdb_debug = False
+                        if "PythonEnablePdb" in config:
+                            pdb_debug = config["PythonEnablePdb"] == "1"
 
-                        if pdb_debug and one_process:
+                        if pdb_debug and exists_config_define("ONE_PROCESS"):
 
                             # Don't use pdb.runcall() as it results in
                             # a bogus 'None' response when pdb session
@@ -377,14 +401,14 @@ class CallBack:
                             sys.settrace(debugger.trace_dispatch)
 
                             try:
-                                result = object(req)
+                                result = obj(req)
 
                             finally:
                                 debugger.quitting = 1
                                 sys.settrace(None)
 
                         else:
-                            result = object(req)
+                            result = obj(req)
 
                     except SERVER_RETURN, value:
 
@@ -441,8 +465,10 @@ class CallBack:
     def IncludeDispatch(self, filter, tag, code):
 
         try:
-            config = filter.req.get_config()
-            debug = (config.get("PythonDebug", "0") == "1")
+            # config
+            config, debug = filter.req.get_config(), False
+            if "PythonDebug" in config:
+                debug = config["PythonDebug"] == "1"
 
             if not hasattr(filter.req,"ssi_globals"):
                 filter.req.ssi_globals = {}
@@ -481,18 +507,19 @@ class CallBack:
 
     def ImportDispatch(self, name):
 
-        config = main_server.get_config()
-
-        debug = int(config.get("PythonDebug", "0"))
+        # config
+        config, debug = main_server.get_config(), False
+        if "PythonDebug" in config:
+            debug = config["PythonDebug"] == "1"
 
         # evaluate pythonpath and set sys.path to
         # resulting value if not already done
 
-        if config.has_key("PythonPath"): 
+        if "PythonPath" in config:
             _path_cache_lock.acquire() 
             try: 
                 pathstring = config["PythonPath"] 
-                if not _path_cache.has_key(pathstring): 
+                if pathstring not in _path_cache:
                     newpath = eval(pathstring) 
                     _path_cache[pathstring] = None 
                     sys.path[:] = newpath 
@@ -577,33 +604,40 @@ def import_module(module_name, autoreload=1, log=0, path=None):
     imp.acquire_lock()
     try:
         # (Re)import
-        if sys.modules.has_key(module_name):
+        if module_name in sys.modules:
 
             # The module has been imported already
             module = sys.modules[module_name]
+            oldmtime, mtime  = 0, 0
 
-            # but is it in the path?
-            file = module.__dict__.get("__file__")
+            if autoreload:
 
-            # the "and not" part of this condition is to prevent execution
-            # of arbitrary already imported modules, such as os. The
-            # reason we use startswith as opposed to exact match is that
-            # modules inside packages are actually in subdirectories.
+                # but is it in the path?
+                try:
+                    file = module.__dict__["__file__"]
+                except KeyError:
+                    file = None
 
-            if not file or (path and not filter(file.startswith, path)):
-                # there is a script by this name already imported, but it's in
-                # a different directory, therefore it's a different script
-                mtime, oldmtime = 0, -1
-            elif autoreload:
-                oldmtime = module.__dict__.get("__mtime__", 0)
-                last_check = module.__dict__.get("__mtime_check__", 0)
-                if (time.time() - last_check) > 1:
-                    mtime = module_mtime(module)
+                # the "and not" part of this condition is to prevent execution
+                # of arbitrary already imported modules, such as os. The
+                # reason we use startswith as opposed to exact match is that
+                # modules inside packages are actually in subdirectories.
+
+                if not file or (path and not filter(file.startswith, path)):
+                    # there is a script by this name already imported, but it's in
+                    # a different directory, therefore it's a different script
+                    mtime, oldmtime = 0, -1 # trigger import
                 else:
-                    mtime = oldmtime
-            else:
-                mtime, oldmtime = 0, 0
+                    try:
+                        last_check = module.__dict__["__mtime_check__"]
+                    except KeyError:
+                        last_check = 0
 
+                    if (time.time() - last_check) > 1:
+                        oldmtime = module.__dict__.get("__mtime__", 0)
+                        mtime = module_mtime(module)
+            else:
+                pass
         else:
             mtime, oldmtime = 0, -1
 
@@ -644,7 +678,7 @@ def import_module(module_name, autoreload=1, log=0, path=None):
 def module_mtime(module):
     """Get modification time of module"""
     mtime = 0
-    if module.__dict__.has_key("__file__"):
+    if "__file__" in module.__dict__:
 
         filepath = module.__file__
 
@@ -664,7 +698,7 @@ def module_mtime(module):
 
     return mtime
 
-def resolve_object(module, object_str, arg=None, silent=0):
+def resolve_object(module, obj_str, arg=None, silent=0):
     """
     This function traverses the objects separated by .
     (period) to find the last one we're looking for:
@@ -679,7 +713,7 @@ def resolve_object(module, object_str, arg=None, silent=0):
 
     obj = module
 
-    for obj_str in  object_str.split('.'):
+    for obj_str in obj_str.split('.'):
 
         parent = obj
 
@@ -721,7 +755,7 @@ def build_cgi_env(req):
     env["GATEWAY_INTERFACE"] = "Python-CGI/1.1"
 
     # you may want to comment this out for better security
-    if req.headers_in.has_key("authorization"):
+    if "authorization" in req.headers_in:
         env["HTTP_AUTHORIZATION"] = req.headers_in["authorization"]
 
     return env
@@ -1014,19 +1048,34 @@ OK = REQ_PROCEED = 0
 DONE = -2
 DECLINED = REQ_NOACTION = -1
 
-# NB: [OK] is default, so no need to list it here
+_phase_handler_names = {}
+for _phase in ["PythonPostReadRequestHandler",
+              "PythonTransHandler",
+              "PythonHeaderParserHandler",
+              "PythonInitHandler",
+              "PythonAccessHandler",
+              "PythonAuthenHandler",
+              "PythonAuthzHandler",
+              "PythonTypeHandler",
+              "PythonFixupHandler",
+              "PythonHandler",
+              "PythonLogHandler",
+              "PythonCleanupHandler"]:
+    _phase_handler_names[_phase] = _phase[len("python"):].lower()
+
 _status_values = {
     "postreadrequesthandler":   [ DECLINED, OK ],
     "transhandler":             [ DECLINED ],
-    "maptostoragehandler":      [ DECLINED ],
-    "inithandler":              [ DECLINED, OK ],
     "headerparserhandler":      [ DECLINED, OK ],
+    "inithandler":              [ DECLINED, OK ],
     "accesshandler":            [ DECLINED, OK ],
     "authenhandler":            [ DECLINED ],
     "authzhandler":             [ DECLINED ],
     "typehandler":              [ DECLINED ],
     "fixuphandler":             [ DECLINED, OK ],
+    "handler":                  [ OK ],
     "loghandler":               [ DECLINED, OK ],
+    "cleanuphandler":           [ OK ],
 }
 
 # constants for get_remote_host

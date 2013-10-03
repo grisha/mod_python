@@ -1504,6 +1504,7 @@ static PyObject * req_sendfile(requestobject *self, PyObject *args)
 
 static PyMethodDef request_methods[] = {
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
+    {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"build_wsgi_env",        (PyCFunction) req_build_wsgi_env,        METH_NOARGS},
     {"add_cgi_vars",          (PyCFunction) req_add_cgi_vars,          METH_NOARGS},
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
@@ -1515,7 +1516,6 @@ static PyMethodDef request_methods[] = {
     {"auth_type",             (PyCFunction) req_auth_type,             METH_NOARGS},
     {"construct_url",         (PyCFunction) req_construct_url,         METH_VARARGS},
     {"discard_request_body",  (PyCFunction) req_discard_request_body,  METH_NOARGS},
-    {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"document_root",         (PyCFunction) req_document_root,         METH_NOARGS},
     {"flush",                 (PyCFunction) req_flush,                 METH_NOARGS},
     {"get_basic_auth_pw",     (PyCFunction) req_get_basic_auth_pw,     METH_NOARGS},
