@@ -69,6 +69,7 @@ static PyMethodDef hlistmethods[] = {
 static PyMemberDef hlist_memberlist[] = {
     {"handler",            T_STRING,    OFF(handler),              RO},
     {"silent",             T_INT,       OFF(silent),               RO},
+    {"is_location",        T_INT,       OFF(d_is_location),        RO},
     {"directory",          T_STRING,    OFF(directory),            RO},
     {NULL}  /* Sentinel */
 };
@@ -131,6 +132,11 @@ static PyObject *hlist_repr(hlistobject *self)
         PyString_ConcatAndDel(&s, PyObject_Repr(t));
         Py_XDECREF(t);
     }
+    PyString_ConcatAndDel(&s, PyString_FromString(",'is_location':"));
+    if (self->head->d_is_location)
+        PyString_ConcatAndDel(&s, PyString_FromString("True"));
+    else
+        PyString_ConcatAndDel(&s, PyString_FromString("False"));
     PyString_ConcatAndDel(&s, PyString_FromString(",'silent':"));
     if (self->head->silent)
         PyString_ConcatAndDel(&s, PyString_FromString("1}"));

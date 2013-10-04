@@ -90,14 +90,14 @@ class CallBack:
             # resulting value if not already done
 
             if "PythonPath" in config:
-                _path_cache_lock.acquire() 
-                try: 
-                    pathstring = config["PythonPath"] 
+                _path_cache_lock.acquire()
+                try:
+                    pathstring = config["PythonPath"]
                     if pathstring not in _path_cache:
-                        newpath = eval(pathstring) 
-                        _path_cache[pathstring] = None 
-                        sys.path[:] = newpath 
-                finally: 
+                        newpath = eval(pathstring)
+                        _path_cache[pathstring] = None
+                        sys.path[:] = newpath
+                finally:
                     _path_cache_lock.release()
 
             # import module
@@ -141,7 +141,7 @@ class CallBack:
             else:
                 result = obj(conn)
 
-            assert (type(result) == type(int())), \
+            assert (result.__class__ is types.IntType), \
                    "ConnectionHandler '%s' returned invalid return code." % handler
 
         except PROG_TRACEBACK, traceblock:
@@ -195,14 +195,14 @@ class CallBack:
             # if not already done
 
             if "PythonPath" in config:
-                _path_cache_lock.acquire() 
-                try: 
-                    pathstring = config["PythonPath"] 
+                _path_cache_lock.acquire()
+                try:
+                    pathstring = config["PythonPath"]
                     if pathstring not in _path_cache:
-                        newpath = eval(pathstring) 
-                        _path_cache[pathstring] = None 
-                        sys.path[:] = newpath 
-                finally: 
+                        newpath = eval(pathstring)
+                        _path_cache[pathstring] = None
+                        sys.path[:] = newpath
+                finally:
                     _path_cache_lock.release()
             else:
                 if filter.dir and (filter.dir not in sys.path):
@@ -253,7 +253,7 @@ class CallBack:
             # always flush the filter. without a FLUSH or EOS bucket,
             # the content is never written to the network.
             # XXX an alternative is to tell the user to flush() always
-            if not filter.closed: 
+            if not filter.closed:
                 filter.flush()
 
         except SERVER_RETURN, value:
@@ -267,9 +267,9 @@ class CallBack:
                 else:
                     result = value.args[0]
 
-                if type(result) != type(7):
+                if result.__class__ is not types.IntType:
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
-                    s = s + "%s, but it must be a tuple or an int." % type(result)
+                    s = s + "%s, but it must be a tuple or an int." % result.__class__
                     _apache.log_error(s, APLOG_ERR, req.server)
 
                     return
@@ -342,14 +342,14 @@ class CallBack:
                 # if not already done
 
                 if "PythonPath" in config:
-                    _path_cache_lock.acquire() 
-                    try: 
-                        pathstring = config["PythonPath"] 
+                    _path_cache_lock.acquire()
+                    try:
+                        pathstring = config["PythonPath"]
                         if pathstring not in _path_cache:
                             newpath = eval(pathstring)
-                            _path_cache[pathstring] = None 
-                            sys.path[:] = newpath 
-                    finally: 
+                            _path_cache[pathstring] = None
+                            sys.path[:] = newpath
+                    finally:
                         _path_cache_lock.release()
                 else:
                     dir = hlist.directory
@@ -424,8 +424,8 @@ class CallBack:
                         else:
                             result = value.args[0]
 
-                    assert (type(result) == types.IntType), \
-                            _result_warning % type(result)
+                    assert (result.__class__ is types.IntType), \
+                            _result_warning % result.__class__
 
                     # stop cycling through handlers
                     if result not in expected:
@@ -516,14 +516,14 @@ class CallBack:
         # resulting value if not already done
 
         if "PythonPath" in config:
-            _path_cache_lock.acquire() 
-            try: 
-                pathstring = config["PythonPath"] 
+            _path_cache_lock.acquire()
+            try:
+                pathstring = config["PythonPath"]
                 if pathstring not in _path_cache:
-                    newpath = eval(pathstring) 
-                    _path_cache[pathstring] = None 
-                    sys.path[:] = newpath 
-            finally: 
+                    newpath = eval(pathstring)
+                    _path_cache[pathstring] = None
+                    sys.path[:] = newpath
+            finally:
                 _path_cache_lock.release()
 
         # split module::function
@@ -1182,15 +1182,15 @@ AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon
 AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config
 
 # magic mime types
-CGI_MAGIC_TYPE = "application/x-httpd-cgi" 
-INCLUDES_MAGIC_TYPE = "text/x-server-parsed-html" 
-INCLUDES_MAGIC_TYPE3 = "text/x-server-parsed-html3" 
-DIR_MAGIC_TYPE = "httpd/unix-directory" 
+CGI_MAGIC_TYPE = "application/x-httpd-cgi"
+INCLUDES_MAGIC_TYPE = "text/x-server-parsed-html"
+INCLUDES_MAGIC_TYPE3 = "text/x-server-parsed-html3"
+DIR_MAGIC_TYPE = "httpd/unix-directory"
 
 # for req.read_body
-REQUEST_NO_BODY = 0 
-REQUEST_CHUNKED_ERROR = 1 
-REQUEST_CHUNKED_DECHUNK = 2 
+REQUEST_NO_BODY = 0
+REQUEST_CHUNKED_ERROR = 1
+REQUEST_CHUNKED_DECHUNK = 2
 
 # for req.connection.keepalive
 AP_CONN_UNKNOWN = _apache.AP_CONN_UNKNOWN

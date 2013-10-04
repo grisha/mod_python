@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,10 +17,10 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * hlist.c 
+ * hlist.c
  *
  *
- * See accompanying documentation and source code comments 
+ * See accompanying documentation and source code comments
  * for details.
  *
  */
@@ -33,8 +33,10 @@
  *  Start a new list.
  */
 
-hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
-                    int d_is_fnmatch, ap_regex_t *regex, const int s)
+hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d,
+                    char d_is_fnmatch, char d_is_location,
+                    ap_regex_t *regex, const char silent)
+
 {
     hl_entry *hle;
 
@@ -43,8 +45,9 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d,
     hle->handler = h;
     hle->directory = d;
     hle->d_is_fnmatch = d_is_fnmatch;
+    hle->d_is_location = d_is_location;
     hle->regex = regex;
-    hle->silent = s;
+    hle->silent = silent;
 
     return hle;
 }
@@ -52,15 +55,16 @@ hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d,
 /**
  ** hlist_append
  **
- *  Appends an hl_entry to a list identified by hle, 
+ *  Appends an hl_entry to a list identified by hle,
  *  and returns the new tail. This func will skip
  *  to the tail of the list.
  *  If hle is NULL, a new list is created.
  */
 
 hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                       const char *d, int d_is_fnmatch, ap_regex_t *regex,
-                       const int s)
+                       const char *d, char d_is_fnmatch, char d_is_location,
+                       ap_regex_t *regex, const char silent)
+
 {
     hl_entry *nhle;
 
@@ -73,8 +77,9 @@ hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
     nhle->handler = h;
     nhle->directory = d;
     nhle->d_is_fnmatch = d_is_fnmatch;
+    nhle->d_is_location = d_is_location;
     nhle->regex = regex;
-    nhle->silent = s;
+    nhle->silent = silent;
 
     if (hle)
         hle->next = nhle;
@@ -96,6 +101,7 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
     head->handler = hle->handler;
     head->directory = hle->directory;
     head->d_is_fnmatch = hle->d_is_fnmatch;
+    head->d_is_location = hle->d_is_location;
     head->regex = hle->regex;
     head->silent = hle->silent;
 
@@ -107,6 +113,7 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
         nhle->handler = hle->handler;
         nhle->directory = hle->directory;
         nhle->d_is_fnmatch = hle->d_is_fnmatch;
+        nhle->d_is_location = hle->d_is_location;
         nhle->regex = hle->regex;
         hle = hle->next;
     }
@@ -120,7 +127,7 @@ hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle)
  */
 
 void hlist_extend(apr_pool_t *p, hl_entry *hle1,
-                       const hl_entry *hle2)
+                  const hl_entry *hle2)
 {
     if (!hle2)
         return;
@@ -135,6 +142,7 @@ void hlist_extend(apr_pool_t *p, hl_entry *hle1,
         hle1->handler = hle2->handler;
         hle1->directory = hle2->directory;
         hle1->d_is_fnmatch = hle2->d_is_fnmatch;
+        hle1->d_is_location = hle2->d_is_location;
         hle1->regex = hle2->regex;
         hle1->silent = hle2->silent;
         hle2 = hle2->next;

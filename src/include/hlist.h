@@ -34,20 +34,22 @@ extern "C" {
     /* handler list entry */
     typedef struct hl_entry {
         const char *handler;
-        const char *directory;
-        int d_is_fnmatch;
+        const char *directory; /* directory or location */
         ap_regex_t *regex;
-        int silent;  /* 1 for PythonHandlerModule, where
-                        if a handler is not found in a module,
-                        no error should be reported */
+        char d_is_fnmatch;
+        char d_is_location;
+        char silent;  /* 1 for PythonHandlerModule, where
+                         if a handler is not found in a module,
+                         no error should be reported */
         struct hl_entry *next;
     } hl_entry;
     
     hl_entry *hlist_new(apr_pool_t *p, const char *h, const char *d, 
-                        int d_is_fnmatch, ap_regex_t *regex, const int s);
+                        char d_is_fnmatch, char d_is_location, 
+                        ap_regex_t *regex, const char silent);
     hl_entry *hlist_append(apr_pool_t *p, hl_entry *hle, const char * h,
-                           const char *d, int d_is_fnmatch, ap_regex_t *regex,
-                           const int s);
+                           const char *d, char d_is_fnmatch, char d_is_location,
+                           ap_regex_t *regex, const char silent);
 
     hl_entry *hlist_copy(apr_pool_t *p, const hl_entry *hle);
     void hlist_extend(apr_pool_t *p, hl_entry *hle1, const hl_entry *hle2);

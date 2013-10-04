@@ -159,6 +159,7 @@ typedef struct
 typedef struct {
     int           authoritative;
     char         *config_dir;
+    char         d_is_location;
     apr_table_t  *directives;
     apr_table_t  *options;
     apr_hash_t   *hlists; /* hlists for every phase */
@@ -203,7 +204,8 @@ typedef struct
 {
     char *handler;
     char *directory;
-    int d_is_fnmatch;
+    unsigned d_is_fnmatch : 1;
+    unsigned d_is_location : 1;
     ap_regex_t *regex;
 } py_handler;
 
