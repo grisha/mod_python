@@ -43,9 +43,9 @@ def handler(req):
 
         # There is no need to req.set_content_length() or set
         # req.content_type because it will be in the headers anyhow.
-        for k,v in headers: 
+        for k,v in headers:
             req.headers_out.add(k,v)
-        
+
         return req.write
 
     options = req.get_options()
@@ -81,6 +81,9 @@ def handler(req):
 
     env = req.build_wsgi_env()
     if env is None:
+        # None means base_uri mismatch. The problem can be either
+        # base_uri or Location, but because we couldn't be here if it
+        # was Location, then it must be mod_python.wsgi.base_uri.
         base_uri = options.get('mod_python.wsgi.base_uri')
         req.log_error(
             "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."

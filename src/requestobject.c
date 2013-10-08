@@ -143,6 +143,64 @@ static PyObject * req_add_cgi_vars(requestobject *self)
 
 }
 
+
+/**
+ ** set_wsgi_path_info(self)
+ **
+ *     Set path_info the way wsgi likes it.
+ *     Return: 0 == OK, 1 == bad base_uri, 2 == base_uri mismatch
+ */
+
+static int set_wsgi_path_info(requestobject *self)
+{
+
+    py_config *conf =
+        (py_config *) ap_get_module_config(self->request_rec->per_dir_config,
+                                           &python_module);
+    const char *path_info = self->request_rec->uri;
+    char *base_uri = apr_table_get(conf->options, "mod_python.wsgi.base_uri");
+
+    if (!base_uri && conf->d_is_location) {
+
+        /* Use Location as the base_uri, automatically adjust trailing slash */
+
+        base_uri = apr_pstrdup(self->request_rec->pool, conf->config_dir);
+        int last = strlen(base_uri) - 1;
+        if (*base_uri && base_uri[last] == '/')
+            base_uri[last] = '\0';
+
+    } else if (base_uri && *base_uri) {
+
+        /* This base_uri was set by hand, enforce correctness */
+
+        if (base_uri[strlen(base_uri)-1] == '/') {
+            PyErr_SetString(PyExc_ValueError,
+                            apr_psprintf(self->request_rec->pool,
+                                         "PythonOption 'mod_python.wsgi.base_uri' ('%s') must not end with '/'",
+                                         base_uri));
+            return 1;
+        }
+    }
+
+    if (base_uri && *base_uri) {
+
+        /* find end of base_uri match in r->uri, this will be our path_info */
+        while (*path_info && *base_uri && (*path_info == *base_uri)) {
+            path_info++;
+            base_uri++;
+        }
+
+        if (*base_uri) {
+            /* we have not reached end of base_uri, therefore
+               r->uri does not start with base_uri */
+            return 2;
+        }
+    }
+
+    self->request_rec->path_info = apr_pstrdup(self->request_rec->pool, path_info);
+    return 0;
+}
+
 /**
  ** request.build_wsgi_env(reqeust self)
  **
@@ -154,7 +212,7 @@ static PyObject *wsgi_version = NULL;
 static PyObject *wsgi_multithread = NULL;
 static PyObject *wsgi_multiprocess = NULL;
 
-static PyObject * req_build_wsgi_env(requestobject *self)
+static PyObject *req_build_wsgi_env(requestobject *self)
 {
 
     request_rec *r = self->request_rec;
@@ -167,42 +225,17 @@ static PyObject * req_build_wsgi_env(requestobject *self)
     if (!env)
         return NULL;
 
-    do {
-        py_config *conf =
-            (py_config *) ap_get_module_config(self->request_rec->per_dir_config,
-                                               &python_module);
-        const char *path_info = self->request_rec->uri;
-        const char *base_uri = apr_table_get(conf->options, "mod_python.wsgi.base_uri");
-
-        if (base_uri && *base_uri) {
-
-            if (base_uri[strlen(base_uri)-1] == '/') {
-                PyErr_SetString(PyExc_ValueError,
-                                apr_psprintf(self->request_rec->pool,
-                                             "PythonOption 'mod_python.wsgi.base_uri' ('%s') must not end with '/'",
-                                             base_uri));
-                Py_DECREF(env);
-                return NULL;
-            }
-
-            /* find end of base_uri match in r->uri, this will be our path_info */
-            while (*path_info && *base_uri && (*path_info == *base_uri)) {
-                path_info++;
-                base_uri++;
-            }
-
-            if (*base_uri) {
-                /* we have not reached end of base_uri, therefore
-                   r->uri does not start with base_uri */
-                Py_DECREF(env);
-                Py_INCREF(Py_None);
-                return Py_None;
-            }
-        }
-
-        self->request_rec->path_info = apr_pstrdup(self->request_rec->pool, path_info);
-
-    } while(0);
+    int rc = set_wsgi_path_info(self);
+    if (rc == 1) {
+        /* bad base_uri, the error is already set */
+        Py_DECREF(env);
+        return NULL;
+    } else if (rc == 2) {
+        /* base_uri does not match uri, wsgi.py will decline */
+        Py_DECREF(env);
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
 
     /* this will create the correct SCRIPT_NAME based on our path_info now */
     req_add_cgi_vars(self);
