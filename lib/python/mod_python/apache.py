@@ -205,8 +205,13 @@ class CallBack:
                 finally:
                     _path_cache_lock.release()
             else:
-                if filter.dir and (filter.dir not in sys.path):
-                    sys.path[:0] = [filter.dir]
+                if filter.dir:
+                    _path_cache_lock.acquire()
+                    try:
+                        if filter.dir not in sys.path:
+                            sys.path[:0] = [filter.dir]
+                    finally:
+                        _path_cache_lock.release()
 
             # import module
             autoreload = True
@@ -352,10 +357,15 @@ class CallBack:
                     finally:
                         _path_cache_lock.release()
                 else:
-                    dir = hlist.directory
-
-                    if dir and (dir not in sys.path):
-                        sys.path[:0] = [dir]
+                    if not hlist.is_location:
+                        directory = hlist.directory
+                        if directory:
+                            _path_cache_lock.acquire()
+                            try:
+                                if directory not in sys.path:
+                                    sys.path[:0] = [directory]
+                            finally:
+                                _path_cache_lock.release()
 
                 # import module
                 autoreload = True

@@ -880,14 +880,8 @@ static py_config *python_create_config(apr_pool_t *p)
 
 static void *python_create_dir_config(apr_pool_t *p, char *dir)
 {
-
     py_config *conf = python_create_config(p);
-
-    /* make sure directory ends with a slash (TODO: Why?) */
-    if (dir && (dir[strlen(dir) - 1] != '/'))
-        conf->config_dir = apr_pstrcat(p, dir, "/", NULL);
-    else
-        conf->config_dir = apr_pstrdup(p, dir);
+    conf->config_dir = dir;
 
     return conf;
 }
@@ -1125,19 +1119,26 @@ static void determine_context(apr_pool_t *p, const cmd_parms* cmd,
      * this point if no pattern matching to be done at
      * a later time. */
 
-    if (!d_is_fnmatch && !regex) {
+    if (directory && !d_is_fnmatch && !regex && !d_is_location) {
 
-        char *newpath = 0;
+        char *newpath = NULL;
         apr_status_t rv;
 
+        /* NB: if directory is not absolute, CWD will be prepended to
+         * it. If directory is NULL (we make sure it is not NULL
+         * above), then newpath will become CWD */
         rv = apr_filepath_merge(&newpath, NULL, directory,
                                 APR_FILEPATH_TRUENAME, p);
 
-        /* Should be able to ignore a failure as any
-         * problem with path should have been flagged
-         * when configuration was read in. */
-
         if (rv == APR_SUCCESS || rv == APR_EPATHWILD) {
+            /*
+             * We are appending a trailing slash here to be consistent
+             * with what httpd's core.c does in dirsection(). I [GT]
+             * am not very clear why core.c does it, especially given
+             * that it appends the trailing slash even to things that
+             * aren't really directories, e.g. when directory is an
+             * fnmatch pattern such as "/foo/bar*"
+             */
             directory = newpath;
             if (directory[strlen(directory) - 1] != '/') {
                 directory = apr_pstrcat(p, directory, "/", NULL);
@@ -1196,10 +1197,10 @@ static const char *python_directive_handler(cmd_parms *cmd, py_config* conf,
     char d_is_location = 0;
     ap_regex_t *regex = NULL;
 
-    /* d_is_location is used by the map_to_storage handler - there is no need for it to
-       run, if we are inside a Location */
-
     determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &d_is_location, &regex);
+
+    /* d_is_location is used by the map_to_storage handler - there is no need for it to
+       run, if we are inside a Location. We also do not prepend a Location to sys.path. */
     conf->d_is_location = d_is_location;
 
     /* a handler may be restricted to certain file type by
@@ -1394,22 +1395,19 @@ static const char *select_interp_name(request_rec *req, conn_rec *con,
 
             /* base interpreter on directory where the file is found */
             if (req && ap_is_directory(req->pool, req->filename)) {
-                /* Where req->filename is a directory, it is not guaranteed
-                 * that it will have a trailing slash in req->filename as
-                 * trailing slash redirection only happens in mod_dir at
-                 * the very end of the fixup phase. Thus need to ensure
-                 * that this is taken into consideration.
+                /*
+                 * We are appending a trailing slash here to be
+                 * consistent with what httpd's core.c does in
+                 * dirsection(), or else we will end up with a
+                 * different interpreter named without the slash.
                  */
-                if (req->filename[strlen(req->filename)-1]=='/') {
+                if (req->filename[strlen(req->filename)-1]=='/')
                     return ap_make_dirstr_parent(req->pool, req->filename);
-                }
-                else {
+                else
                     return ap_make_dirstr_parent(req->pool,
-                                                apr_pstrcat(req->pool, req->filename,
-                                                            "/", NULL ));
-                }
-            }
-            else {
+                                                 apr_pstrcat(req->pool, req->filename,
+                                                             "/", NULL ));
+            } else {
                 if (req && req->filename)
                     return ap_make_dirstr_parent(req->pool, req->filename);
                 else
@@ -1532,10 +1530,11 @@ static int python_handler(request_rec *req, char *phase)
             hlist_extend(req->pool, hlohle, dynhle);
     }
 
-    /* resolve wildcard or regex directory patterns */
+    /* resolve wildcard or regex directory patterns. we do not resolve
+     * Location patterns because there is no use case for it so far */
     hle = hlohle;
     while (hle) {
-        if (hle->d_is_fnmatch || hle->regex) {
+        if (!hle->d_is_location && (hle->d_is_fnmatch || hle->regex)) {
             hle->directory = resolve_directory(req, hle->directory,
                                                hle->d_is_fnmatch, hle->regex);
             hle->d_is_fnmatch = 0;

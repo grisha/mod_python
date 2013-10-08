@@ -1270,14 +1270,8 @@ def PythonOption_items(req):
     return apache.OK
 
 def interpreter(req):
-    if req.phase == "PythonFixupHandler":
-        if req.filename[-1] != '/' and os.path.isdir(req.filename):
-            req.write(req.interpreter)
-            return apache.DONE
-        return apache.OK
-    else:
-        req.write(req.interpreter)
-        return apache.DONE
+    req.write(req.interpreter)
+    return apache.DONE
 
 def index(req):
     return "test ok, interpreter=%s" % req.interpreter

@@ -91,7 +91,7 @@ static void hlist_dealloc(hlistobject *self)
 
 static PyObject *hlist_getattr(hlistobject *self, char *name)
 {
-    PyObject *res;
+    PyObject *res, *md;
 
     res = Py_FindMethod(hlistmethods, (PyObject *)self, name);
     if (res != NULL)
@@ -106,8 +106,13 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
         return Py_None;
     }
 
-    return PyMember_GetOne((char*)self->head,
-                           find_memberdef(hlist_memberlist, name));
+    md = find_memberdef(hlist_memberlist, name);
+    if (!md) {
+        PyErr_SetString(PyExc_AttributeError, name);
+        return NULL;
+    }
+
+    return PyMember_GetOne((char*)self->head, md);
 }
 
 /**

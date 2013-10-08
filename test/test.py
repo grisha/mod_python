@@ -1648,7 +1648,6 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonInterpPerDirectory('On'),
                                   SetHandler("mod_python"),
                                   PythonFixupHandler("tests::interpreter"),
-                                  PythonHandler("tests::interpreter"),
                                   PythonDebug("On")),
                         )
 
