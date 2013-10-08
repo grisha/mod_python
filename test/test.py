@@ -1,7 +1,7 @@
  #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -52,7 +52,7 @@
 
      o Look at tests.SimpleTestCase class and the test methods in it,
        then write your own following the example.
-       
+
      o Look at the tests.make_suite function, and make sure your test
        is added to the suite in there.
 
@@ -124,7 +124,7 @@ except:
         "Cannot import mod_python.version. Either you didn't "
         "run the ./configure script, or you're running this script "
         "in a Win32 environment, in which case you have to make it by hand."
-    )  
+    )
     sys.exit()
 else:
     def testpath(variable,isfile):
@@ -141,7 +141,7 @@ else:
             value
         )
         return False
-            
+
     good = testpath('HTTPD',True)
     good = testpath('TESTHOME',False) and good
     good = testpath('LIBEXECDIR',False) and good
@@ -178,15 +178,15 @@ CONFIG = os.path.join(TESTHOME, "conf", "test.conf")
 DOCUMENT_ROOT = os.path.join(TESTHOME, "htdocs")
 TMP_DIR = os.path.join(TESTHOME, "tmp")
 PORT = 0 # this is set in fundUnusedPort()
- 
-    
+
+
 # readBlockSize is required for the test_fileupload_* tests.
 # We can't import mod_python.util.readBlockSize from a cmd line
 # interpreter, so we'll hard code it here.
 # If util.readBlockSize changes, it MUST be changed here as well.
-# Maybe we should set up a separate test to query the server to 
+# Maybe we should set up a separate test to query the server to
 # get the correct readBlockSize?
-# 
+#
 readBlockSize = 65368
 
 def findUnusedPort():
@@ -228,7 +228,7 @@ def get_apache_version():
         major,minor,patch = version_str.split('.',3)
         version = '%s.%s' % (major,minor)
     else:
-        
+
         print "Can't determine Apache version. Assuming 2.0"
         version = '2.0'
     print version
@@ -386,7 +386,7 @@ class HttpdCtrl:
         os.system(cmd)
         time.sleep(1)
 
-        # Wait for apache to stop by checking for the existence of pid the 
+        # Wait for apache to stop by checking for the existence of pid the
         # file. If pid file still exists after 20 seconds raise an error.
         # This check is here to facilitate testing on the qemu emulator.
         # Qemu will run about 1/10 the native speed, so 1 second may
@@ -476,7 +476,7 @@ class PerRequestTestCase(unittest.TestCase):
         entity.write('--')
         entity.write(boundary)
         entity.write('--\r\n')
-        
+
         entity = entity.getvalue()
 
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
@@ -555,7 +555,7 @@ class PerRequestTestCase(unittest.TestCase):
         print """\n  * Testing req.add_handler("PythonHandler", "bad_handler")"""
         rsp = self.vhost_get("test_req_add_bad_handler")
 
-        # look for evidence of the exception in the error log 
+        # look for evidence of the exception in the error log
         time.sleep(1)
         f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
         log = f.read()
@@ -630,7 +630,7 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_accesshandler_add_handler_to_empty_hl_conf(self):
         # Note that there is no PythonHandler specified in the the VirtualHost
-        # config. We want to see if req.add_handler will work when the 
+        # config. We want to see if req.add_handler will work when the
         # handler list is empty.
 
         #PythonHandler("tests::req_add_empty_handler_string"),
@@ -764,7 +764,7 @@ class PerRequestTestCase(unittest.TestCase):
     def test_req_get_basic_auth_pw(self):
 
         print "\n  * Testing req.get_basic_auth_pw()"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
@@ -797,7 +797,7 @@ class PerRequestTestCase(unittest.TestCase):
     def test_req_auth_type(self):
 
         print "\n  * Testing req.auth_type()"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_auth_type", PORT))
@@ -903,7 +903,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
         conn.putheader("Host", "test_req_read:%s" % PORT)
-        conn.putheader("Content-Length", str(len(params))) 
+        conn.putheader("Content-Length", str(len(params)))
         conn.endheaders()
         conn.send(params)
         response = conn.getresponse()
@@ -1076,7 +1076,7 @@ class PerRequestTestCase(unittest.TestCase):
         print "\n  * Testing req.register_cleanup()"
 
         rsp = self.vhost_get("test_req_register_cleanup")
-        
+
         # see what's in the log now
         time.sleep(1)
         f = open(os.path.join(SERVER_ROOT, "logs/error_log"))
@@ -1195,7 +1195,7 @@ class PerRequestTestCase(unittest.TestCase):
     def test_req_handler(self):
 
         print "\n  * Testing req.handler"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_handler", PORT))
@@ -1221,7 +1221,7 @@ class PerRequestTestCase(unittest.TestCase):
     def test_req_no_cache(self):
 
         print "\n  * Testing req.no_cache"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_no_cache", PORT))
@@ -1250,7 +1250,7 @@ class PerRequestTestCase(unittest.TestCase):
     def test_req_update_mtime(self):
 
         print "\n  * Testing req.update_mtime"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_update_mtime", PORT))
@@ -1282,7 +1282,7 @@ class PerRequestTestCase(unittest.TestCase):
     def test_util_redirect(self):
 
         print "\n  * Testing util.redirect()"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_util_redirect", PORT))
@@ -1296,7 +1296,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         if response.getheader("location", None) != "/dummy":
             self.fail('did not receive correct location for redirection')
-        
+
         if rsp != "test ok":
             self.fail(`rsp`)
 
@@ -1357,7 +1357,7 @@ class PerRequestTestCase(unittest.TestCase):
         return c
 
     def test_fileupload(self):
-    
+
         print "\n  * Testing 1 MB file upload support"
 
         content = ''.join( [ chr(random.randrange(256)) for x in xrange(1024*1024) ] )
@@ -1371,7 +1371,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         if (rsp != digest):
             self.fail('1 MB file upload failed, its contents were corrupted (%s)'%rsp)
-   
+
     def test_fileupload_embedded_cr_conf(self):
 
         c = VirtualHost("*",
@@ -1386,19 +1386,19 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_fileupload_embedded_cr(self):
         # Strange things can happen if there is a '\r' character at position
-        # readBlockSize of a line being read by FieldStorage.read_to_boundary 
+        # readBlockSize of a line being read by FieldStorage.read_to_boundary
         # where the line length is > readBlockSize.
         # This test will expose this problem.
-        
+
         print "\n  * Testing file upload with \\r char in a line at position == readBlockSize"
-        
+
         content = (
             'a'*100 + '\r\n'
             + 'b'*(readBlockSize-1) + '\r' # trick !
             + 'ccc' + 'd'*100 + '\r\n'
         )
         digest = md5.new(content).hexdigest()
-        
+
         rsp = self.vhost_post_multipart_form_data(
             "test_fileupload",
             variables={'test':'abcd'},
@@ -1424,16 +1424,16 @@ class PerRequestTestCase(unittest.TestCase):
             print "    into this script's directory."
         else:
             print "  * Testing The UNIX-HATERS handbook file upload support"
-    
+
             digest = md5.new(content).hexdigest()
-    
+
             rsp = self.vhost_post_multipart_form_data(
                 "test_fileupload",
                 variables={'test':'abcd'},
                 files={'testfile':('ugh.pdf',content)},
             )
-    
-            
+
+
             if (rsp != digest):
                 self.fail('The UNIX-HATERS handbook file upload failed, its contents was corrupted (%s)'%rsp)
 
@@ -1453,8 +1453,8 @@ class PerRequestTestCase(unittest.TestCase):
         # This test is similar to test_fileupload_embedded_cr, but it is possible to
         # write an implementation of FieldStorage.read_to_boundary that will pass
         # that test but fail this one.
-        # 
-        # Strange things can happen if the last line in the file being uploaded 
+        #
+        # Strange things can happen if the last line in the file being uploaded
         # has length == readBlockSize -1. The boundary string marking the end of the
         # file (eg. '\r\n--myboundary') will be split between the leading '\r' and the
         # '\n'. Some implementations of read_to_boundary we've tried assume that this
@@ -1468,7 +1468,7 @@ class PerRequestTestCase(unittest.TestCase):
             + 'b'*(readBlockSize-1)  # trick !
         )
         digest = md5.new(content).hexdigest()
-        
+
         rsp = self.vhost_post_multipart_form_data(
             "test_fileupload",
             variables={'test':'abcd'},
@@ -1486,7 +1486,7 @@ class PerRequestTestCase(unittest.TestCase):
             + '\r'  # second trick !
         )
         digest = md5.new(content).hexdigest()
-        
+
         rsp = self.vhost_post_multipart_form_data(
             "test_fileupload",
             variables={'test':'abcd'},
@@ -1722,7 +1722,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         if (rsp != "test ok"):
             self.fail(`rsp`)
-            
+
     def test_trans_conf(self):
 
         c = VirtualHost("*",
@@ -1741,7 +1741,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         if (rsp[0:2] != " #"): # first line in tests.py
             self.fail(`rsp`)
-            
+
     def test_import_conf(self):
 
         # configure apache to import it at startup
@@ -1827,9 +1827,9 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_connectionhandler_conf(self):
 
-        try: 
-            localip = socket.gethostbyname("localhost") 
-        except: 
+        try:
+            localip = socket.gethostbyname("localhost")
+        except:
             localip = "127.0.0.1"
 
         self.conport = findUnusedPort()
@@ -1900,7 +1900,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = self.vhost_get("test_pipe_ext", path="/tests/anything")
         if (rsp[-7:] != "test ok"):
             self.fail(`rsp`)
-        
+
     def test_wsgihandler_conf(self):
 
         c = VirtualHost("*",
@@ -1926,6 +1926,27 @@ class PerRequestTestCase(unittest.TestCase):
         log = open(os.path.join(SERVER_ROOT, "logs/error_log")).read()
         if "written_from_wsgi_test" not in log:
             self.fail("string 'written_from_wsgi_test' not found in error log.")
+
+    def test_wsgihandler_location_conf(self):
+
+        c = VirtualHost("*",
+                        ServerName("test_wsgihandler_location"),
+                        DocumentRoot(DOCUMENT_ROOT),
+                        Location("/foo",
+                                 SetHandler("mod_python"),
+                                 PythonHandler("mod_python.wsgi"),
+                                 PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                                 PythonOption("mod_python.wsgi.application wsgitest::base_uri"),
+                                 PythonDebug("On")))
+        return c
+
+    def test_wsgihandler_location(self):
+
+        print "\n  * Testing mod_python.wsgi"
+
+        rsp = self.vhost_get("test_wsgihandler_location", "/foo/bar")
+        if (rsp[-8:] != "test ok\n"):
+            self.fail(`rsp`)
 
     def test_cgihandler_conf(self):
 
@@ -1986,7 +2007,7 @@ class PerRequestTestCase(unittest.TestCase):
         # For example:
         #   test:n:\n$
         #   test:t:\t$
-        
+
         rsp = self.vhost_get("test_psp_parser", path="/psp_parser.psp")
         lines = [ line.strip() for line in rsp.split('$') if line ]
         failures = []
@@ -2002,7 +2023,7 @@ class PerRequestTestCase(unittest.TestCase):
             # do the substitutions in expected_result
             for ss, rs in [('-', '\\'),('CR', '\r'), ('LF', '\n'), ('TB', '\t')]:
                 expected_result = expected_result.replace(ss, rs)
-            
+
             if expected_result != test_string:
                 failures.append(test_case)
             #print 'expect{%s} got{%s}' % (expected_result, test_string)
@@ -2360,7 +2381,7 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_publisher_auth_nested(self):
         print "\n  * Testing mod_python.publisher auth nested"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_nested", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_nested", PORT))
@@ -2386,7 +2407,7 @@ class PerRequestTestCase(unittest.TestCase):
 
     def test_publisher_auth_method_nested(self):
         print "\n  * Testing mod_python.publisher auth method nested"
-        
+
         conn = httplib.HTTPConnection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_method_nested/method", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_method_nested", PORT))
@@ -2437,7 +2458,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
         return c
-    
+
     def test_publisher_security(self):
         print "\n  * Testing mod_python.publisher security"
 
@@ -2562,7 +2583,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
         return c
-    
+
     def test_publisher_old_style_instance(self):
         print "\n  * Testing mod_python.publisher old-style instance publishing"
 
@@ -2583,7 +2604,7 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
         return c
-    
+
     def test_publisher_instance(self):
         print "\n  * Testing mod_python.publisher instance publishing"
 
@@ -2604,16 +2625,16 @@ class PerRequestTestCase(unittest.TestCase):
                                   PythonHandler("mod_python.publisher"),
                                   PythonDebug("On")))
         return c
-    
+
     def test_publisher_cache(self):
         ## It is not possible to get reliable results with this test
         #  for mpm-prefork and worker, and in fact it may not be possible
         #  to get consistent results.
-        #  Therefore this test is currently disabled in the 
+        #  Therefore this test is currently disabled in the
         #  testPerRequestTests setup.
-        
+
         print "\n  * Testing mod_python.publisher cache"
-        
+
         def write_published():
             published = file('htdocs/temp.py','wb')
             published.write('import time\n')
@@ -2621,40 +2642,40 @@ class PerRequestTestCase(unittest.TestCase):
             published.write('def index(req):\n')
             published.write('    return "OK %f"%LOAD_TIME\n')
             published.close()
-        
+
         write_published()
         try:
             rsp = self.vhost_get("test_publisher", path="/temp.py")
-            
+
             if not rsp.startswith('OK '):
                 self.fail(`rsp`)
-            
+
             rsp2 = self.vhost_get("test_publisher", path="/temp.py")
             if rsp != rsp2:
                 self.fail(
                     "The publisher cache has reloaded a published module"
                     " even though it wasn't modified !"
                 )
-            
+
             # We wait three seconds to be sure we won't be annoyed
             # by any lack of resolution of the stat().st_mtime member.
             time.sleep(3)
             write_published()
-    
+
             rsp2 = self.vhost_get("test_publisher", path="/temp.py")
             if rsp == rsp2:
                 self.fail(
                     "The publisher cache has not reloaded a published module"
                     " even though it was modified !"
                 )
-    
+
             rsp = self.vhost_get("test_publisher", path="/temp.py")
             if rsp != rsp2:
                 self.fail(
                     "The publisher cache has reloaded a published module"
                     " even though it wasn't modified !"
                 )
-        finally:        
+        finally:
             os.remove('htdocs/temp.py')
 
     def test_server_side_include_conf(self):
@@ -2793,7 +2814,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
             self.fail(`rsp`)
 
         # if the mutex works, this test will take at least 5 secs
-        ab = get_ab_path() 
+        ab = get_ab_path()
         if not ab:
             print "    Can't find ab. Skipping _global_lock test"
             return
@@ -2891,12 +2912,12 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         if APACHE_VERSION == '2.4' and sys.platform.startswith("linux"):
             perRequestSuite.addTest(PerRequestTestCase("test_memory"))
         perRequestSuite.addTest(PerRequestTestCase("test_wsgihandler"))
+        perRequestSuite.addTest(PerRequestTestCase("test_wsgihandler_location"))
 
         # test_publisher_cache does not work correctly for mpm-prefork/worker
         # and it may not be possible to get a reliable test for all
         # configurations, so disable it.
         # perRequestSuite.addTest(PerRequestTestCase("test_publisher_cache"))
-
 
         # this must be last so its error_log is not overwritten
         perRequestSuite.addTest(PerRequestTestCase("test_internal"))
@@ -2985,7 +3006,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         f.close()
 
         self.stopHttpd()
-        
+
         if rsp != 'NO_FOOBAR':
             self.fail('Failure on apache.exists_config_define() : %s'%rsp)
 
@@ -2996,7 +3017,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         f.close()
 
         self.stopHttpd()
-        
+
         if rsp != 'FOOBAR':
             self.fail('Failure on apache.exists_config_define() : %s'%rsp)
 

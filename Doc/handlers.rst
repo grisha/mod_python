@@ -25,13 +25,13 @@ Introduction
 To use the handler, you need the following lines in your configuration:::
 
    <Directory /some/path>
-     SetHandler mod_python 
+     SetHandler mod_python
      PythonHandler mod_python.publisher
    </Directory>
 
 
 This handler allows access to functions and variables within a module
-via URL's. For example, if you have the following module, called 
+via URL's. For example, if you have the following module, called
 :file:`hello.py`:::
 
    """ Publisher example """
@@ -40,8 +40,8 @@ via URL's. For example, if you have the following module, called
       return "I am saying %s" % what
 
 
-A URL ``http://www.mysite.com/hello.py/say`` would return 
-``'I am saying NOTHING``. A URL 
+A URL ``http://www.mysite.com/hello.py/say`` would return
+``'I am saying NOTHING``. A URL
 ``http://www.mysite.com/hello.py/say?what=hello`` would
 return ``'I am saying hello``.
 
@@ -67,14 +67,14 @@ Traversal
 The Publisher handler locates and imports the module specified in the
 URI. The module location is determined from the :attr:`request.filename`
 attribute. Before importing, the file extension, if any, is
-discarded. 
+discarded.
 
 If :attr:`request.filename` is empty, the module name defaults to
 ``'index'``.
 
 Once module is imported, the remaining part of the URI up to the
 beginning of any query data (a.k.a. :const:`PATH_INFO`) is used to find an
-object within the module. The Publisher handler *traverses* the 
+object within the module. The Publisher handler *traverses* the
 path, one element at a time from left to right, mapping the elements
 to Python object within the module.
 
@@ -163,8 +163,8 @@ The publisher handler provides simple ways to control access to
 modules and functions.
 
 At every traversal step, the Publisher handler checks for presence of
-``__auth__`` and ``__access__`` attributes (in this order), as 
-well as ``__auth_realm__`` attribute. 
+``__auth__`` and ``__access__`` attributes (in this order), as
+well as ``__auth_realm__`` attribute.
 
 If ``__auth__`` is found and it is callable, it will be called
 with three arguments: the ``request`` object, a string containing
@@ -176,12 +176,12 @@ to appear).
 
 If :meth:`__auth__` is a dictionary, then the user name will be
 matched against the key and the password against the value associated
-with this key. If the key and password do not match, 
+with this key. If the key and password do not match,
 :const:`HTTP_UNAUTHORIZED` is returned. Note that this requires
 storing passwords as clear text in source code, which is not very secure.
 
 ``__auth__`` can also be a constant. In this case, if it is false
-(i.e. ``None``, ``0``, ``""``, etc.), then 
+(i.e. ``None``, ``0``, ``""``, etc.), then
 :const:`HTTP_UNAUTHORIZED` is returned.
 
 If there exists an ``__auth_realm__`` string, it will be sent
@@ -194,7 +194,7 @@ the user name. If the return value of ``__access__`` is false, then
 :const:`HTTP_FORBIDDEN` is returned to the client.
 
 If ``__access__`` is a list, then the user name will be matched
-against the list elements. If the user name is not in the list, 
+against the list elements. If the user name is not in the list,
 :const:`HTTP_FORBIDDEN` is returned.
 
 Similarly to ``__auth__``, ``__access__`` can be a constant.
@@ -250,14 +250,14 @@ the function, e.g.:::
 
 Note that this technique will also work if ``__auth__`` or
 ``__access__`` is a constant, but will not work is they are
-a dictionary or a list. 
+a dictionary or a list.
 
 The ``__auth__`` and ``__access__`` mechanisms exist
-independently of the standard 
+independently of the standard
 :ref:`dir-handlers-auh`. It
 is possible to use, for example, the handler to authenticate, then the
 ``__access__`` list to verify that the authenticated user is
-allowed to a particular function. 
+allowed to a particular function.
 
 .. note::
 
@@ -324,19 +324,34 @@ to the module name separated by ``'::'``, e.g.::
 
   PythonOption mod_python.wsgi.application mysite.wsgi::my_application
 
-If you would like your application to appear under a base URI, is can
-be specified via the ``mod_python.wsgi.base_url`` option. ``mod_python.wsgi.base_uri``
-cannot be ``'/'`` or end with a ``'/'``. "Root" (or no base_url) is a
-blank string, which is the default.
+If you would like your application to appear under a base URI, it can
+be specified by wrapping your configuration in a ``<Location>``
+block. It can also be specified via the ``mod_python.wsgi.base_uri``
+option, but the ``<Location>`` method is recommended, also because it
+has a side-benefit of informing mod_python to skip the map-to-storage
+processing phase and thereby improving performance.
 
 For example, if you would like the above application to appear under
 ``'/wsgiapps'``, you could specify::
 
-   PythonOption mod_python.wsgi.base_uri /wsgiapps
+   <Location /wsgiapps>
+      PythonHandler mod_python.wsgi
+      PythonOption mod_python.wsgi.application mysite.wsgi
+      PythonPath "sys.path+['/path/to/mysite']"
+   </Location>
 
-With the above configuration, content under
-``http://example.com/hello`` becomes under
+With the above configuration, content formerly under
+``http://example.com/hello`` becomes available under
 ``http://example.com/wsgiapps/hello``.
+
+If both ``<Location>`` and ``mod_python.wsgi.base_uri`` exist, then
+``mod_python.wsgi.base_uri`` takes precedence.
+``mod_python.wsgi.base_uri`` cannot be ``'/'`` or end with a
+``'/'``. "Root" (or no base_uri) is a blank string, which is the
+default. (Note that it is allowed for ``<Location>`` path to be
+``"/"`` or have a trailing slash, it will automatically be removed by
+mod_python before computing ``PATH_INFO``).
+
 
 ..  index::
    pair: WSGI; SCRIPT_NAME
@@ -370,8 +385,9 @@ With the above configuration, content under
 
    The mismatch between CGI and WSGI results in an ambiguity which
    requires that the split between the two variables be explicitely
-   specified, which is why ``mod_python.wsgi.base_uri`` exists. Simply put,
-   ``mod_python.wsgi.base_uri`` is the ``SCRIPT_NAME`` portion of the URI and
+   specified, which is why ``mod_python.wsgi.base_uri`` exists. In essence
+   ``mod_python.wsgi.base_uri`` (or the path in surrounding
+   ``<Location>``) is the ``SCRIPT_NAME`` portion of the URI and
    defaults to ``''``.
 
    An important detail is that ``SCRIPT_NAME`` + ``PATH_INFO`` should
@@ -426,7 +442,7 @@ CGI Handler
    pair: CGI; handler
 
 
-CGI handler is a handler that emulates the CGI environment under mod_python. 
+CGI handler is a handler that emulates the CGI environment under mod_python.
 
 Note that this is not a ``'true'`` CGI environment in that it is
 emulated at the Python level. ``stdin`` and ``stdout`` are

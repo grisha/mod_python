@@ -1,7 +1,7 @@
  #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -48,12 +48,12 @@ class Directive:
         return s
 
 class Container:
-    
+
     def __init__(self, *args, **kwargs):
         self.args = list(args)
         self.indent = 0
         self.only_if = kwargs.get('only_if')
-    
+
     def append(self, value):
         if not (isinstance(value, Directive) or
                 isinstance(value, Container) or
@@ -205,6 +205,10 @@ class Listen(Directive):
 class LoadModule(Directive):
     def __init__(self, val):
         Directive.__init__(self, self.__class__.__name__, val)
+
+class Location(ContainerTag):
+    def __init__(self, dir, *args):
+        ContainerTag.__init__(self, self.__class__.__name__, dir, args)
 
 class LogLevel(Directive):
     def __init__(self, val):
