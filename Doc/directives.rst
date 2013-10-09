@@ -920,7 +920,7 @@ The following PythonOption keys are currently used by mod_python.
 | mod_python.file_session.cleanup_time_limit
 | mod_python.file_session.database_directory
 | mod_python.wsgi.application
-| mod_python.wsgi.base_url
+| mod_python.wsgi.base_uri
 
 | session *Deprecated in 3.3, use mod_python.session.session_type*
 | ApplicationPath *Deprecated in 3.3, use mod_python.session.application_path*

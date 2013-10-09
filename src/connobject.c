@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,7 +17,7 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * connobject.c 
+ * connobject.c
  *
  *
  */
@@ -109,19 +109,19 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         Py_END_ALLOW_THREADS;
 
         if (rc != APR_SUCCESS) {
-            PyErr_SetObject(PyExc_IOError, 
+            PyErr_SetObject(PyExc_IOError,
                             PyString_FromString("Connection read error"));
             return NULL;
         }
     }
 
-    /* 
-     * loop through the brigade reading buckets into the string 
+    /*
+     * loop through the brigade reading buckets into the string
      */
 
     b = APR_BRIGADE_FIRST(bb);
 
-    if (APR_BUCKET_IS_EOS(b)) { 
+    if (APR_BUCKET_IS_EOS(b)) {
         apr_bucket_delete(b);
         Py_INCREF(Py_None);
         return Py_None;
@@ -131,9 +131,9 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
     result = PyString_FromStringAndSize(NULL, bufsize);
 
     /* possibly no more memory */
-    if (result == NULL) 
+    if (result == NULL)
         return PyErr_NoMemory();
-    
+
     buffer = PyString_AS_STRING((PyStringObject *) result);
 
     bytes_read = 0;
@@ -147,7 +147,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         apr_bucket *old;
 
         if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
-            PyErr_SetObject(PyExc_IOError, 
+            PyErr_SetObject(PyExc_IOError,
                             PyString_FromString("Connection read error"));
             return NULL;
         }
@@ -165,7 +165,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         /* time to grow destination string? */
         if (len == 0 && bytes_read == bufsize) {
 
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
+            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
             _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
             buffer = PyString_AS_STRING((PyStringObject *) result);
             buffer += bufsize;
@@ -184,8 +184,8 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
     }
 
     /* resize if necessary */
-    if (bytes_read < len || len == 0) 
-        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
+    if (bytes_read < len || len == 0)
+        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
         if(_PyString_Resize(&result, bytes_read))
             return NULL;
 
@@ -202,7 +202,7 @@ static PyObject * conn_read(connobject *self, PyObject *args)
 
     long len = 0;
 
-    if (! PyArg_ParseTuple(args, "|l", &len)) 
+    if (! PyArg_ParseTuple(args, "|l", &len))
         return NULL;
 
     if (len == -1)
@@ -221,7 +221,7 @@ static PyObject * conn_readline(connobject *self, PyObject *args)
 
     long len = 0;
 
-    if (! PyArg_ParseTuple(args, "|l", &len)) 
+    if (! PyArg_ParseTuple(args, "|l", &len))
         return NULL;
 
     return _conn_read(self->conn, AP_MODE_GETLINE, len);
@@ -241,7 +241,7 @@ static PyObject * conn_write(connobject *self, PyObject *args)
     PyObject *s;
     conn_rec *c = self->conn;
 
-    if (! PyArg_ParseTuple(args, "O", &s)) 
+    if (! PyArg_ParseTuple(args, "O", &s))
         return NULL;
 
     if (! PyString_Check(s)) {
@@ -319,7 +319,7 @@ static PyMemberDef conn_memberlist[] = {
  */
 
 static void conn_dealloc(connobject *self)
-{  
+{
     Py_XDECREF(self->base_server);
     Py_XDECREF(self->notes);
     Py_XDECREF(self->hlo);
@@ -342,7 +342,7 @@ static PyObject * conn_getattr(connobject *self, char *name)
     res = Py_FindMethod(connobjectmethods, (PyObject *)self, name);
     if (res != NULL)
         return res;
-    
+
     PyErr_Clear();
 
    if (strcmp(name, "base_server") == 0) {
@@ -414,8 +414,12 @@ static PyObject * conn_getattr(connobject *self, char *name)
                           "use req.useragent_ip or conn.client_ip");
         }
 #endif
-        return PyMember_GetOne((char*)self->conn,
-                               find_memberdef(conn_memberlist, name));
+        PyMemberDef *md = find_memberdef(conn_memberlist, name);
+        if (!md) {
+            PyErr_SetString(PyExc_AttributeError, name);
+            return NULL;
+        }
+        return PyMember_GetOne((char*)self->conn, md);
     }
 }
 
@@ -441,10 +445,14 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
         self->conn->keepalive = PyInt_AsLong(value);
         return 0;
     }
-    else
-        return PyMember_SetOne((char*)self->conn,
-                               find_memberdef(conn_memberlist, (char*)name),
-                               value);
+    else {
+        PyMemberDef *md = find_memberdef(conn_memberlist, name);
+        if (!md) {
+            PyErr_SetString(PyExc_AttributeError, name);
+            return -1;
+        }
+        return PyMember_SetOne((char*)self->conn, md, value);
+    }
 }
 
 PyTypeObject MpConn_Type = {

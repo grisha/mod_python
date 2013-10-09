@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,14 +17,14 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * tableobject.c 
+ * tableobject.c
  *
  *
  */
 
 #include "mod_python.h"
 
-/** XXX this is a hack. because apr_table_t 
+/** XXX this is a hack. because apr_table_t
     is not available in a header file */
 #define TABLE_HASH_SIZE 32
 struct apr_table_t {
@@ -59,7 +59,7 @@ PyObject * MpTable_FromTable(apr_table_t *t)
     return (PyObject *)result;
 }
 
-/** 
+/**
  ** MpTable_New
  **
  *  This returns a new object of built-in type table.
@@ -80,7 +80,7 @@ PyObject * MpTable_New()
 
     /* XXX need second arg abort function to report mem error */
     apr_pool_create_ex(&p, NULL, NULL, NULL);
-    
+
     /* two is a wild guess */
     t = (tableobject *)MpTable_FromTable(apr_table_make(p, 2));
 
@@ -97,11 +97,12 @@ PyObject * MpTable_New()
  *      Frees table's memory
  */
 
-static void table_dealloc(register tableobject *self)
-{  
+static void table_dealloc(register void *o)
+{
+    tableobject *self = (tableobject *)o;
 
     if (MpTable_Check(self)) {
-        if (self->pool) 
+        if (self->pool)
             apr_pool_destroy(self->pool);
         PyObject_Del(self);
     }
@@ -205,9 +206,9 @@ static PyObject * table_repr(tableobject *self)
  *      when you do len(table) in Python.
  */
 
-static int tablelength(tableobject *self) 
-{ 
-    return apr_table_elts(self->table)->nelts;
+static Py_ssize_t tablelength(PyObject *self)
+{
+    return apr_table_elts(((tableobject *)self)->table)->nelts;
 }
 
 /**
@@ -216,7 +217,7 @@ static int tablelength(tableobject *self)
  *      Gets a dictionary item
  */
 
-static PyObject * table_subscript(tableobject *self, register PyObject *key)
+static PyObject * table_subscript(PyObject *self, register PyObject *key)
 {
     char *k;
     const apr_array_header_t *ah;
@@ -238,10 +239,10 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
 
     /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     list = PyList_New(0);
-    if (!list) 
+    if (!list)
         return NULL;
 
-    ah = apr_table_elts (self->table);
+    ah = apr_table_elts (((tableobject *)self)->table);
     elts = (apr_table_entry_t *) ah->elts;
 
     i = ah->nelts;
@@ -252,7 +253,7 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
                 PyObject *v = NULL;
                 if (elts[i].val != NULL) {
                     v = PyString_FromString(elts[i].val);
-                } else { 
+                } else {
                     v = Py_None;
                     Py_INCREF(v);
                 }
@@ -294,9 +295,9 @@ static PyObject * table_subscript(tableobject *self, register PyObject *key)
  *      string passed in.
  */
 
-static int table_ass_subscript(tableobject *self, PyObject *key, 
+static int table_ass_subscript(PyObject *self, PyObject *key,
                                PyObject *val)
-{ 
+{
 
     char *k;
 
@@ -309,7 +310,7 @@ static int table_ass_subscript(tableobject *self, PyObject *key,
     k = PyString_AsString(key);
 
     if (val == NULL) {
-        apr_table_unset(self->table, k);
+        apr_table_unset(((tableobject *)self)->table, k);
     }
     else {
         if (val && !PyString_CheckExact(val)) {
@@ -317,7 +318,7 @@ static int table_ass_subscript(tableobject *self, PyObject *key,
                             "table values must be strings");
             return -1;
         }
-        apr_table_set(self->table, k, PyString_AsString(val));
+        apr_table_set(((tableobject *)self)->table, k, PyString_AsString(val));
     }
     return 0;
 }
@@ -326,9 +327,9 @@ static int table_ass_subscript(tableobject *self, PyObject *key,
 
 static PyMappingMethods table_as_mapping = {
     /* PYTHON 2.5: 'inquiry' should be perhaps replaced with 'lenfunc' */
-    (inquiry)       tablelength,           /*mp_length*/
-    (binaryfunc)    table_subscript,       /*mp_subscript*/
-    (objobjargproc) table_ass_subscript,   /*mp_ass_subscript*/
+    tablelength,           /*mp_length*/
+    table_subscript,       /*mp_subscript*/
+    table_ass_subscript,   /*mp_ass_subscript*/
 };
 
 /**
@@ -393,7 +394,7 @@ static PyObject * table_values(register tableobject *self)
             PyObject *val = NULL;
             if (elts[i].val != NULL) {
                 val = PyString_FromString(elts[i].val);
-            } else { 
+            } else {
                 val = Py_None;
                 Py_INCREF(val);
             }
@@ -461,7 +462,7 @@ static int table_merge(tableobject *a, PyObject *b, int override)
     Py_DECREF(keys);
     if (iter == NULL)
         return -1;
-    
+
     for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
 
         skey = PyObject_Str(key);
@@ -491,7 +492,7 @@ static int table_merge(tableobject *a, PyObject *b, int override)
             Py_DECREF(value);
             return -1;
         }
-        status = table_ass_subscript(a, skey, svalue);
+        status = table_ass_subscript((PyObject *)a, skey, svalue);
         Py_DECREF(key);
         Py_DECREF(value);
         Py_DECREF(skey);
@@ -505,7 +506,7 @@ static int table_merge(tableobject *a, PyObject *b, int override)
     if (PyErr_Occurred())
         /* Iterator completed, via error */
         return -1;
-    
+
     return 0;
 }
 
@@ -583,9 +584,9 @@ static int table_mergefromseq2(tableobject *self, PyObject *seq2, int override)
             goto Fail;
         }
 
-        if (override || apr_table_get(self->table, 
+        if (override || apr_table_get(self->table,
                                       PyString_AsString(skey)) == NULL) {
-            int status = table_ass_subscript(self, skey, svalue);
+            int status = table_ass_subscript((PyObject *)self, skey, svalue);
             if (status < 0) {
                 Py_DECREF(skey);
                 Py_DECREF(svalue);
@@ -631,7 +632,7 @@ static PyObject *table_copy(register tableobject *from)
 
 static int table_compare(tableobject *a, tableobject *b)
 {
-    /* 
+    /*
        we're so lazy that we just copy tables to dicts
        and rely on dict's compare ability. this is not
        the best way to do this to say the least
@@ -707,7 +708,7 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
         return NULL;
 
     sval = apr_table_get(self->table, PyString_AsString(key));
-    
+
     if (sval == NULL) {
         val = failobj;
         Py_INCREF(val);
@@ -830,7 +831,7 @@ static int table_traverse(tableobject *self, visitproc visit, void *arg)
             PyObject *v = NULL;
             if (elts[i].val != NULL) {
                 v = PyString_FromString(elts[i].val);
-            } else { 
+            } else {
                 v = Py_None;
                 Py_INCREF(v);
             }
@@ -858,8 +859,8 @@ static int table_tp_clear(tableobject *self)
 /**
  ** mp_table_add
  **
- *     this function is equivalent of ap_table_add - 
- *     it can create duplicate entries. 
+ *     this function is equivalent of ap_table_add -
+ *     it can create duplicate entries.
  */
 
 static PyObject * mp_table_add(tableobject *self, PyObject *args)
@@ -890,7 +891,7 @@ static PyObject *select_value(apr_table_entry_t *elts)
     PyObject *val = NULL;
     if (elts->val != NULL) {
         val = PyString_FromString(elts->val);
-    } else { 
+    } else {
         val = Py_None;
         Py_INCREF(val);
     }
@@ -1090,7 +1091,7 @@ PyTypeObject MpTable_Type = {
     (initproc)table_init,               /* tp_init */
     0,                                  /* tp_alloc */
     table_new,                          /* tp_new */
-    (destructor)table_dealloc,          /* tp_free */
+    table_dealloc,                      /* tp_free */
 };
 
 /* Table iterator type */
@@ -1135,7 +1136,7 @@ static PyObject *tableiter_next(tableiterobject *ti, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError,
                         "table changed size during iteration");
         return NULL;
-    } 
+    }
 
     /* return the next key/val */
 
@@ -1171,7 +1172,7 @@ static PyObject *tableiter_iternext(tableiterobject *ti)
         PyErr_SetString(PyExc_RuntimeError,
                         "table changed size during iteration");
         return NULL;
-    } 
+    }
 
     /* return the next key/val */
 

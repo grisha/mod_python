@@ -1,5 +1,5 @@
  #
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -80,7 +80,7 @@ class SimpleTestCase(unittest.TestCase):
 
         if not re.search("xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx.*xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx.*xEMERGx.*xALERTx.*xCRITx.*xERRx.*xWARNINGx.*xNOTICEx.*xINFOx.*xDEBUGx", log):
             self.fail("Could not find test messages in error_log")
-            
+
 
     def test_apache_table(self):
 
@@ -154,7 +154,7 @@ class SimpleTestCase(unittest.TestCase):
             log("    req.%s: '%s'" % (name, `val`))
             if val:
                 self.fail("strange, req.%s should be None, not %s" % (name, `val`))
-        
+
         log("    req.the_request: '%s'" % req.the_request)
         if not re.match(r"GET /.* HTTP/1\.", req.the_request):
             self.fail("strange req.the_request %s" % `req.the_request`)
@@ -196,26 +196,26 @@ class SimpleTestCase(unittest.TestCase):
         if req.method != "GET":
             self.fail("req.method should be 'GET'")
 
-        log("    req.method_number: %s" % `req.method_number`)        
+        log("    req.method_number: %s" % `req.method_number`)
         if req.method_number != 0:
             self.fail("req.method_number should be 0")
 
         log("    req.allowed: %s" % `req.allowed`)
         if req.allowed != 0:
             self.fail("req.allowed should be 0")
-            
+
         log("    req.allowed_xmethods: %s" % `req.allowed_xmethods`)
         if req.allowed_xmethods != ():
             self.fail("req.allowed_xmethods should be an empty tuple")
-            
+
         log("    req.allowed_methods: %s" % `req.allowed_methods`)
         if req.allowed_methods != ():
             self.fail("req.allowed_methods should be an empty tuple")
-            
+
         log("    req.sent_bodyct: %s" % `req.sent_bodyct`)
         if req.sent_bodyct != 0:
             self.fail("req.sent_bodyct should be 0")
-            
+
         log("    req.bytes_sent: %s" % `req.bytes_sent`)
         save = req.bytes_sent
         log("       writing 4 bytes...")
@@ -227,43 +227,43 @@ class SimpleTestCase(unittest.TestCase):
         log("    req.mtime: %s" % `req.mtime`)
         if req.mtime != 0:
             self.fail("req.mtime should be 0")
-        
+
         log("    req.chunked: %s" % `req.chunked`)
         if req.chunked != 1:
             self.fail("req.chunked should be 1")
-            
+
         log("    req.range: %s" % `req.range`)
         if req.range:
             self.fail("req.range should be None")
-            
+
         log("    req.clength: %s" % `req.clength`)
         log("        calling req.set_content_length(15)...")
         req.set_content_length(15)
         log("        req.clength: %s" % `req.clength`)
         if req.clength != 15:
             self.fail("req.clength should be 15")
-        
+
         log("    req.remaining: %s" % `req.remaining`)
         if req.remaining != 0:
             self.fail("req.remaining should be 0")
-            
+
         log("    req.read_length: %s" % `req.read_length`)
         if req.read_length != 0:
             self.fail("req.read_length should be 0")
-        
+
         log("    req.read_body: %s" % `req.read_body`)
         if req.read_body != 0:
             self.fail("req.read_body should be 0")
-            
+
         log("    req.read_chunked: %s" % `req.read_chunked`)
         if req.read_chunked != 0:
             self.fail("req.read_chunked should be 0")
-            
+
         log("    req.expecting_100: %s" % `req.expecting_100`)
         if req.expecting_100 != 0:
             self.fail("req.expecting_100 should be 0")
 
-        log("    req.headers_in: %s" % `req.headers_in`) 
+        log("    req.headers_in: %s" % `req.headers_in`)
         if req.headers_in["Host"][:13].lower() != "test_internal":
             self.fail("The 'Host' header should begin with 'test_internal'")
 
@@ -271,103 +271,103 @@ class SimpleTestCase(unittest.TestCase):
         if ((not req.headers_out.has_key("content-length")) or
             req.headers_out["content-length"] != "15"):
             self.fail("req.headers_out['content-length'] should be 15")
-            
+
         log("    req.subprocess_env: %s" % `req.subprocess_env`)
         if req.subprocess_env["SERVER_SOFTWARE"].find("Python") == -1:
             self.fail("req.subprocess_env['SERVER_SOFTWARE'] should contain 'Python'")
-            
+
         log("    req.notes: %s" % `req.notes`)
         log("        doing req.notes['testing'] = '123' ...")
         req.notes['testing'] = '123'
         log("    req.notes: %s" % `req.notes`)
         if req.notes["testing"] != '123':
             self.fail("req.notes['testing'] should be '123'")
-        
+
         log("    req.phase: %s" % `req.phase`)
         if req.phase != "PythonHandler":
             self.fail("req.phase should be 'PythonHandler'")
-            
+
         log("    req.interpreter: %s" % `req.interpreter`)
         if req.interpreter != apache.interpreter:
             self.fail("req.interpreter should be same as apache.interpreter" % `apache.interpreter`)
         if req.interpreter != req.server.server_hostname:
             self.fail("req.interpreter should be same as req.server.server_hostname: %s" % `req.server.server_hostname`)
-            
+
         log("    req.content_type: %s" % `req.content_type`)
         log("        doing req.content_type = 'test/123' ...")
         req.content_type = 'test/123'
         log("        req.content_type: %s" % `req.content_type`)
         if req.content_type != 'test/123' or not req._content_type_set:
             self.fail("req.content_type should be 'test/123' and req._content_type_set 1")
-        
+
         log("    req.handler: %s" % `req.handler`)
         if req.handler != "mod_python":
             self.fail("req.handler should be 'mod_python'")
-            
+
         log("    req.content_encoding: %s" % `req.content_encoding`)
         if req.content_encoding:
             self.fail("req.content_encoding should be None")
-             
+
         log("    req.content_languages: %s" % `req.content_languages`)
         if req.content_languages != ():
             self.fail("req.content_languages should be an empty tuple")
-            
+
         log("    req.vlist_validator: %s" % `req.vlist_validator`)
         if req.vlist_validator:
             self.fail("req.vlist_validator should be None")
-            
+
         log("    req.user: %s" % `req.user`)
         if req.user:
             self.fail("req.user should be None")
-            
+
         log("    req.ap_auth_type: %s" % `req.ap_auth_type`)
         if req.ap_auth_type:
             self.fail("req.ap_auth_type should be None")
-            
+
         log("    req.no_cache: %s" % `req.no_cache`)
         if req.no_cache != 0:
             self.fail("req.no_cache should be 0")
-            
+
         log("    req.no_local_copy: %s" % `req.no_local_copy`)
         if req.no_local_copy != 0:
             self.fail("req.no_local_copy should be 0")
-            
+
         log("    req.unparsed_uri: %s" % `req.unparsed_uri`)
         if req.unparsed_uri != "/tests.py":
             self.fail("req.unparsed_uri should be '/tests.py'")
-            
+
         log("    req.uri: %s" % `req.uri`)
         if req.uri != "/tests.py":
             self.fail("req.uri should be '/tests.py'")
-            
+
         log("    req.filename: %s" % `req.filename`)
         if req.filename != req.document_root() + req.uri:
             self.fail("req.filename should be req.document_root() + req.uri, but it isn't")
-            
+
         log("    req.canonical_filename: %s" % `req.canonical_filename`)
         if not req.canonical_filename:
             self.fail("req.canonical_filename should not be blank")
-        
+
         log("    req.path_info: %s" % `req.path_info`)
         if req.path_info != '':
             self.fail("req.path_info should be ''")
-        
+
         log("    req.args: %s" % `req.args`)
         if req.args:
             self.fail("req.args should be None")
-            
+
         log("    req.finfo: %s" % `req.finfo`)
         if req.finfo[apache.FINFO_FNAME] and (req.finfo[apache.FINFO_FNAME] != req.canonical_filename):
             self.fail("req.finfo[apache.FINFO_FNAME] should be the (canonical) filename")
-        
+
         log("    req.parsed_uri: %s" % `req.parsed_uri`)
         if req.parsed_uri[apache.URI_PATH] != '/tests.py':
             self.fail("req.parsed_uri[apache.URI_PATH] should be '/tests.py'")
-            
+
         log("    req.used_path_info: %s" % `req.used_path_info`)
         if req.used_path_info != 2:
             self.fail("req.used_path_info should be 2") # XXX really? :-)
-            
+
         log("    req.eos_sent: %s" % `req.eos_sent`)
         if req.eos_sent:
             self.fail("req.eos_sent says we sent EOS, but we didn't")
@@ -424,80 +424,80 @@ class SimpleTestCase(unittest.TestCase):
         log("    server.defn_name: %s" % `server.defn_name`)
         if server.defn_name[-9:] != "test.conf":
             self.fail("server.defn_name does not end in 'test.conf'")
-        
+
         log("    server.defn_line_number: %s" % `server.defn_line_number`)
         if server.defn_line_number == 0:
             self.fail("server.defn_line_number should not be 0")
-        
+
         log("    server.server_admin: %s" % `server.server_admin`)
         if server.server_admin != "serveradmin@somewhere.com":
             self.fail("server.server_admin must be 'serveradmin@somewhere.com'")
-        
+
         log("    server.server_hostname: %s" % `server.server_hostname`)
         if server.server_hostname != "test_internal":
             self.fail("server.server_hostname must be 'test_internal'")
-        
+
         log("    server.port: %s" % `server.port`)
         # hmm it really is 0...
         #if server.port == 0:
         #    self.fail("server.port should not be 0")
-            
+
         log("    server.error_fname: %s" % `server.error_fname`)
         if server.error_fname != "logs/error_log":
             self.fail("server.error_fname should be 'logs/error_log'")
-        
+
         log("    server.loglevel: %s" % `server.loglevel`)
         if server.loglevel != 7:
             self.fail("server.loglevel should be 7")
-        
+
         log("    server.is_virtual: %s" % `server.is_virtual`)
         if server.is_virtual != 1:
             self.fail("server.is_virtual should be 1")
-        
+
         log("    server.timeout: %s" % `server.timeout`)
         if not server.timeout in (5.0, 60.0):
             self.fail("server.timeout should be 5.0 or 60.0")
-        
+
         log("    server.keep_alive_timeout: %s" % `server.keep_alive_timeout`)
         if server.keep_alive_timeout != 15.0:
             self.fail("server.keep_alive_timeout should be 15.0")
-            
+
         log("    server.keep_alive_max: %s" % `server.keep_alive_max`)
         if server.keep_alive_max != 100:
             self.fail("server.keep_alive_max should be 100")
-            
+
         log("    server.keep_alive: %s" % `server.keep_alive`)
         if server.keep_alive != 1:
             self.fail("server.keep_alive should be 1")
-        
+
         log("    server.path: %s" % `server.path`)
         if server.path != "some/path":
             self.fail("server.path should be 'some/path'")
-        
+
         log("    server.pathlen: %s" % `server.pathlen`)
         if server.pathlen != len('some/path'):
             self.fail("server.pathlen should be %d" % len('some/path'))
-        
+
         log("    server.limit_req_line: %s" % `server.limit_req_line`)
         if server.limit_req_line != 8190:
             self.fail("server.limit_req_line should be 8190")
-            
+
         log("    server.limit_req_fieldsize: %s" % `server.limit_req_fieldsize`)
         if server.limit_req_fieldsize != 8190:
             self.fail("server.limit_req_fieldsize should be 8190")
-            
+
         log("    server.limit_req_fields: %s" % `server.limit_req_fields`)
         if server.limit_req_fields != 100:
             self.fail("server.limit_req_fields should be 100")
-  
+
         log("    server.names: %s" % `server.names`)
         if server.names != ():
-            self.fail("server.names should be an empty tuple")           
- 
+            self.fail("server.names should be an empty tuple")
+
         log("    server.wild_names: %s" % `server.wild_names`)
         if server.wild_names != ():
             self.fail("server.wild_names should be an empty tuple")
-            
+
 
     def test_connection_members(self):
 
@@ -505,10 +505,10 @@ class SimpleTestCase(unittest.TestCase):
         log = req.log_error
         conn = req.connection
 
-        try: 
+        try:
             import socket
-            localip = socket.gethostbyname("localhost") 
-        except: 
+            localip = socket.gethostbyname("localhost")
+        except:
             localip = "127.0.0.1"
 
         log("Examining connection memebers:")
@@ -516,11 +516,11 @@ class SimpleTestCase(unittest.TestCase):
         log("    connection.base_server: %s" % `conn.base_server`)
         if type(conn.base_server) is not type(req.server):
             self.fail("conn.base_server should be same type as req.server")
-        
+
         log("    connection.local_addr: %s" % `conn.local_addr`)
         if not conn.local_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
             self.fail("conn.local_addr[0] should be '127.0.0.1' or '0.0.0.0'")
-        
+
         if apache.MODULE_MAGIC_NUMBER_MAJOR > 20111130:
 
             log("    connection.client_addr: %s" % `conn.client_addr`)
@@ -548,7 +548,7 @@ class SimpleTestCase(unittest.TestCase):
         log("    connection.remote_logname: %s" % `conn.remote_logname`)
         if conn.remote_logname is not None:
             self.fail("conn.remote_logname should be None")
-        
+
         log("    connection.aborted: %s" % `conn.aborted`)
         if conn.aborted != 0:
             self.fail("conn.aborted should be 0")
@@ -556,11 +556,11 @@ class SimpleTestCase(unittest.TestCase):
         log("    connection.keepalive: %s" % `conn.keepalive`)
         if conn.keepalive != 2:
             self.fail("conn.keepalive should be 2")
-        
+
         log("    connection.double_reverse: %s" % `conn.double_reverse`)
         if conn.double_reverse != 0:
             self.fail("conn.double_reverse should be 0")
-        
+
         log("    connection.keepalives: %s" % `conn.keepalives`)
         if conn.keepalives != 1:
             self.fail("conn.keepalives should be 1")
@@ -624,11 +624,11 @@ def simple_handler(req):
     # for req_add_handler()
     if (req.secret_message == "foo"):
         req.write("test ok")
-        
+
     return apache.OK
 
 def req_add_bad_handler(req):
-    # bad_handler does not exist so adding it should 
+    # bad_handler does not exist so adding it should
     # should raise an AttributeError exception
 
     req.log_error("req_add_bad_handler " + req.hlist.handler)
@@ -639,9 +639,9 @@ def req_add_bad_handler(req):
     return apache.OK
 
 def req_add_empty_handler_string(req):
-    # Adding an empty string as a handler should should 
+    # Adding an empty string as a handler should should
     # should raise an exception
-    
+
     req.log_error("req_add_empty_handler_string")
     req.add_handler("PythonHandler", "")
     req.write("no exception")
@@ -662,9 +662,9 @@ def req_add_handler_empty_phase(req):
     return apache.OK
 
 def accesshandler_add_handler_to_empty_hl(req):
-    # Prior to version 3.2.6, adding a python handler 
+    # Prior to version 3.2.6, adding a python handler
     # to and empty handler list would cause a segfault
- 
+
     req.secret_message = "foo"
     req.log_error("accesshandler_add_handler_to_empty_hl")
     req.add_handler("PythonHandler", "tests::simple_handler")
@@ -693,7 +693,7 @@ def test_req_add_handler_directory(req):
                 req.write('test failed')
             else:
                 req.write('test ok')
-        
+
     return apache.OK
 
 
@@ -800,7 +800,7 @@ def req_readline(req):
 
 def req_readlines(req):
 
-    
+
     if 'SizeHint' in req.headers_in:
         lines = req.readlines(int(req.headers_in['SizeHint']))
     else:
@@ -887,7 +887,7 @@ def req_sendfile2(req):
 
     # os.remove(fname)
     return apache.OK
- 
+
 def req_sendfile3(req):
     """Check if sendfile handles symlinks properly.
        This is only valid on posix systems.
@@ -988,7 +988,7 @@ def fileupload(req):
     import md5
     fields = util.FieldStorage(req)
     f = fields.getfirst('testfile')
-    
+
     req.write(md5.new(f.file.read()).hexdigest())
     return apache.OK
 
@@ -1068,15 +1068,17 @@ def import_test(req):
 
     return apache.OK
 
-def outputfilter(filter):
+def outputfilter(fltr):
 
-    s = filter.read()
+    assert(not hasattr(fltr, "non_existent"))
+
+    s = fltr.read()
     while s:
-        filter.write(s.upper())
-        s = filter.read()
+        fltr.write(s.upper())
+        s = fltr.read()
 
     if s is None:
-        filter.close()
+        fltr.close()
 
     return apache.OK
 
@@ -1143,7 +1145,7 @@ def Cookie_Cookie(req):
         Cookie.add_cookie(req, cookies[k])
 
     req.write("test ok")
-    
+
     return apache.OK
 
 def Cookie_MarshalCookie(req):
@@ -1157,9 +1159,9 @@ def Cookie_MarshalCookie(req):
         Cookie.add_cookie(req, cookies[k])
 
     req.write("test ok")
-    
+
     return apache.OK
-    
+
 
 def global_lock(req):
 
@@ -1170,7 +1172,7 @@ def global_lock(req):
     _apache._global_unlock(req.server, 1)
 
     req.write("test ok")
-    
+
     return apache.OK
 
 def Session_Session(req):
@@ -1179,7 +1181,7 @@ def Session_Session(req):
     s = Session.Session(req)
     if s.is_new():
         s.save()
-        
+
     cookies = Cookie.get_cookies(req)
     if cookies.has_key(Session.COOKIE_NAME) and s.is_new():
         req.write(str(cookies[Session.COOKIE_NAME]))
@@ -1256,15 +1258,15 @@ def test_sys_argv(req):
     import sys
     req.write(repr(sys.argv))
     return apache.OK
-        
+
 def PythonOption_items(req):
     options = req.get_options().items()
-    
+
     # The tests may using PythonOption mod_python.* in the test configuration
     # We need to remove those particular options so they don't interfer
     # with this test result.
     options = [ o for o in options if not o[0].startswith('mod_python') ]
-    
+
     options.sort()
     req.write(str(options))
     return apache.OK
@@ -1320,7 +1322,7 @@ test_dict_keys = test_dict.keys
 
 def test_dict_iteration(req):
     return test_dict_keys()
-    
+
 def test_generator(req):
     c = 0
     while c < 10:
@@ -1383,7 +1385,7 @@ def _test_table():
     if d['c'] != 3 or d['a'] != 4: raise TestFailed, 'dict item assignment'
     del d['b']
     if d != {'a': 4, 'c': 3}: raise TestFailed, 'dict item deletion'
-    
+
     # dict.clear()
     log("    table.clear()")
     d = apache.table()
@@ -1392,7 +1394,7 @@ def _test_table():
     d['3'] = '3'
     d.clear()
     if d != apache.table(): raise TestFailed, 'dict clear'
-    
+
     # dict.update()
     log("    table.update()")
     d.update({'1':'100'})

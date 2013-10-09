@@ -4,7 +4,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -20,24 +20,31 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * mod_python.h 
+ * mod_python.h
  *
  * $Id: mod_python.h 231054 2005-08-09 15:37:04Z jgallacher $
  *
- * See accompanying documentation and source code comments 
+ * See accompanying documentation and source code comments
  * for details.
  *
  */
 
 /*
- * NOTE - NOTE - NOTE - NOTE
+ *
+ *
+ * DO NOT EDIT  -  DO NOT EDIT -  DO NOT EDIT - DO NOT EDIT
+ *
+ *
  *
  * If you are looking at mod_python.h, it is an auto-generated file on
  * UNIX.  This file is kept around for the Win32 platform which
- * doesnot use autoconf. Any changes to mod_python.h must also be
+ * does not use autoconf. Any changes to mod_python.h must also be
  * reflected in mod_python.h.in.
  */
 
+/* Python headers */
+#include "Python.h"
+#include "structmember.h"
 
 /* Apache headers */
 #include "httpd.h"
@@ -73,14 +80,6 @@ typedef regex_t ap_regex_t;
 #endif
 #endif
 
-/* Python headers */
-/* this gets rid of some compile warnings */
-#if defined(_POSIX_THREADS)
-#undef _POSIX_THREADS
-#endif
-#include "Python.h"
-#include "structmember.h"
-
 #if defined(WIN32) && !defined(WITH_THREAD)
 #error Python threading must be enabled on Windows
 #endif
@@ -89,7 +88,7 @@ typedef regex_t ap_regex_t;
 #include <sys/socket.h>
 #endif
 
-/* pool given to us in ChildInit. We use it for 
+/* pool given to us in ChildInit. We use it for
    server.register_cleanup() */
 extern apr_pool_t *child_init_pool;
 
@@ -121,12 +120,12 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 /* MAX_LOCKS can now be set as a configure option
  * ./configure --with-max-locks=INTEGER
  */
-#define MAX_LOCKS @MAX_LOCKS@ 
+#define MAX_LOCKS @MAX_LOCKS@
 
 /* MUTEX_DIR can be set as a configure option
  * ./configure --with-mutex-dir=/path/to/dir
  */
-#define MUTEX_DIR "@MUTEX_DIR@" 
+#define MUTEX_DIR "@MUTEX_DIR@"
 
 /* python 2.3 no longer defines LONG_LONG, it defines PY_LONG_LONG */
 #ifndef LONG_LONG
@@ -198,7 +197,7 @@ typedef struct
     int transparent;
 } python_filter_ctx;
 
-/* a structure to hold a handler, 
+/* a structure to hold a handler,
    used in configuration for filters */
 typedef struct
 {

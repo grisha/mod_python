@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,7 +17,7 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * finfoobject.c 
+ * finfoobject.c
  *
  *
  */
@@ -46,7 +46,7 @@ PyObject * MpFinfo_FromFinfo(apr_finfo_t *f)
     return (PyObject *)result;
 }
 
-/** 
+/**
  ** MpFinfo_New
  **
  *  This returns a new object of built-in type finfo.
@@ -79,9 +79,9 @@ PyObject * MpFinfo_New()
  */
 
 static void finfo_dealloc(register finfoobject *self)
-{  
+{
     if (MpFinfo_Check(self)) {
-        if (self->pool) 
+        if (self->pool)
             apr_pool_destroy(self->pool);
         PyObject_Del(self);
     }
@@ -217,8 +217,9 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
 }
 
 static PyObject*
-finfoseq_item(finfoobject *self, int i)
+finfoseq_item(PyObject *o, Py_ssize_t i)
 {
+    finfoobject *self = (finfoobject *)o;
     if (i < 0 || i >= 12) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
@@ -274,8 +275,7 @@ static PySequenceMethods finfoseq_as_sequence = {
         0,
         0,                                      /* sq_concat */
         0,                                      /* sq_repeat */
-        /* PYTHON 2.5: WARNING: 'intargfunc' must be replaced with 'ssizeargfunc' */
-        (intargfunc)finfoseq_item,              /* sq_item */
+        finfoseq_item,                          /* sq_item */
         0,                                      /* sq_slice */
         0,                                      /* sq_ass_item */
         0,                                      /* sq_ass_slice */

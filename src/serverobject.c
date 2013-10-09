@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,7 +17,7 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * serverobject.c 
+ * serverobject.c
  *
  *
  */
@@ -61,7 +61,7 @@ PyObject * MpServer_FromServer(server_rec *s)
 static PyObject * server_get_config(serverobject *self)
 {
     py_config *conf =
-        (py_config *) ap_get_module_config(self->server->module_config, 
+        (py_config *) ap_get_module_config(self->server->module_config,
                                            &python_module);
     return MpTable_FromTable(conf->directives);
 }
@@ -126,19 +126,19 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     char *name = NULL;
 
     if (! PyArg_ParseTuple(args, "OO|O", &req, &handler, &data))
-        return NULL; 
+        return NULL;
 
     if (! MpRequest_Check(req)) {
-        PyErr_SetString(PyExc_ValueError, 
+        PyErr_SetString(PyExc_ValueError,
                         "first argument must be a request object");
         return NULL;
     }
     else if(!PyCallable_Check(handler)) {
-        PyErr_SetString(PyExc_ValueError, 
+        PyErr_SetString(PyExc_ValueError,
                         "second argument must be a callable object");
         return NULL;
     }
-    
+
     ci = (cleanup_info *)malloc(sizeof(cleanup_info));
     ci->request_rec = NULL;
     ci->server_rec = self->server;
@@ -156,10 +156,10 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
         Py_INCREF(Py_None);
         ci->data = Py_None;
     }
-    
-    apr_pool_cleanup_register(child_init_pool, ci, python_cleanup, 
+
+    apr_pool_cleanup_register(child_init_pool, ci, python_cleanup,
                               apr_pool_cleanup_null);
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -173,7 +173,7 @@ static PyMethodDef server_methods[] = {
 };
 
 
-/* 
+/*
    These are offsets into the Apache server_rec structure.
    They are accessed via getset functions. Note that the types
    specified here are irrelevant if a function other than
@@ -226,7 +226,7 @@ static PyMemberDef server_rec_mbrs[] = {
  *    Retrieves server_rec structure members
  */
 
-static PyObject *getsrv_recmbr(serverobject *self, void *name) 
+static PyObject *getsrv_recmbr(serverobject *self, void *name)
 {
     if (strcmp(name, "_server_rec") == 0) {
 #if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
@@ -236,8 +236,13 @@ static PyObject *getsrv_recmbr(serverobject *self, void *name)
 #endif
 
     }
-    return PyMember_GetOne((char*)self->server,
-                           find_memberdef(server_rec_mbrs, name));
+
+    PyMemberDef *md = find_memberdef(server_rec_mbrs, name);
+    if (!md) {
+        PyErr_SetString(PyExc_AttributeError, name);
+        return NULL;
+    }
+    return PyMember_GetOne((char*)self->server, md);
 }
 
 /* we don't need setsrv_recmbr for now */
@@ -248,7 +253,7 @@ static PyObject *getsrv_recmbr(serverobject *self, void *name)
  *    Retrieves apr_time_t server_rec members
  */
 
-static PyObject *getsrv_recmbr_time(serverobject *self, void *name) 
+static PyObject *getsrv_recmbr_time(serverobject *self, void *name)
 {
     PyMemberDef *md = find_memberdef(server_rec_mbrs, name);
     char *addr = (char *)self->server + md->offset;
@@ -262,10 +267,10 @@ static PyObject *getsrv_recmbr_time(serverobject *self, void *name)
  *    For array headers that will get converted to tuple
  */
 
-static PyObject *getsrv_recmbr_ah(serverobject *self, void *name) 
+static PyObject *getsrv_recmbr_ah(serverobject *self, void *name)
 {
     const PyMemberDef *md = find_memberdef(server_rec_mbrs, name);
-    apr_array_header_t *ah = 
+    apr_array_header_t *ah =
         *(apr_array_header_t **)((char *)self->server + md->offset);
 
     return tuple_from_array_header(ah);
@@ -277,7 +282,7 @@ static PyObject *getsrv_recmbr_ah(serverobject *self, void *name)
  *    A getter func that creates an object as needed.
  */
 
-static PyObject *getmakeobj(serverobject* self, void *objname) 
+static PyObject *getmakeobj(serverobject* self, void *objname)
 {
     char *name = (char *)objname;
     PyObject *result = NULL;
@@ -315,7 +320,7 @@ static PyGetSetDef server_getsets[] = {
     /* XXX process */
     {"next",         (getter)getmakeobj,    NULL, "The next server in the list", "next"},
     {"defn_name",    (getter)getsrv_recmbr, NULL, "The name of the server", "defn_name"},
-    {"defn_line_number",    (getter)getsrv_recmbr, NULL, 
+    {"defn_line_number",    (getter)getsrv_recmbr, NULL,
           "The line of the config file that the server was defined on", "defn_line_number"},
     {"server_admin", (getter)getsrv_recmbr, NULL, "The admin's contact information", "server_admin"},
     {"server_hostname",    (getter)getsrv_recmbr, NULL, "The server hostname", "server_hostname"},
@@ -348,8 +353,9 @@ static PyGetSetDef server_getsets[] = {
  *
  */
 
-static void server_dealloc(serverobject *self)
-{  
+static void server_dealloc(void *o)
+{
+    serverobject *self = (serverobject *)o;
     Py_XDECREF(self->dict);
     Py_XDECREF(self->next);
     PyObject_Del(self);
@@ -399,7 +405,7 @@ PyTypeObject MpServer_Type = {
     0,                               /* tp_init */
     0,                               /* tp_alloc */
     0,                               /* tp_new */
-    (destructor)server_dealloc,      /* tp_free */
+    server_dealloc,                  /* tp_free */
 };
 
 

@@ -17,10 +17,10 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * filterobject.c 
+ * filterobject.c
  *
  *
- * See accompanying documentation and source code comments 
+ * See accompanying documentation and source code comments
  * for details.
  *
  */
@@ -43,7 +43,7 @@
  * may in turn require the filter to invoke the next filter in the
  * same fashion (via ap_get_brigade()).
  *
- * In mod_python Output filters: 
+ * In mod_python Output filters:
  *
  * filter.read() - copies data from *given* bucket brigade (saved in
  * self->bb_in) into a Python string.
@@ -65,7 +65,7 @@
  * filter.close() - appends an EOS to *given* brigade.
  *
  */
- 
+
 /**
  **     MpFilter_FromFilter
  **
@@ -107,9 +107,9 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
     result->handler = handler;
     result->dir = dir;
 
-    result->request_obj = NULL; 
+    result->request_obj = NULL;
 
-    apr_pool_cleanup_register(f->r->pool, (PyObject *)result, python_decref, 
+    apr_pool_cleanup_register(f->r->pool, (PyObject *)result, python_decref,
                               apr_pool_cleanup_null);
 
     return (PyObject *)result;
@@ -126,9 +126,9 @@ static PyObject *filter_pass_on(filterobject *self)
 
     Py_BEGIN_ALLOW_THREADS;
 
-    if (self->is_input) 
-        self->rc = ap_get_brigade(self->f->next, self->bb_out, 
-                                  self->mode, APR_BLOCK_READ, 
+    if (self->is_input)
+        self->rc = ap_get_brigade(self->f->next, self->bb_out,
+                                  self->mode, APR_BLOCK_READ,
                                   self->readbytes);
     else
         self->rc = ap_pass_brigade(self->f->next, self->bb_in);
@@ -157,7 +157,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     long len = -1;
     conn_rec *c = self->request_obj->request_rec->connection;
 
-    if (! PyArg_ParseTuple(args, "|l", &len)) 
+    if (! PyArg_ParseTuple(args, "|l", &len))
         return NULL;
 
     if (self->closed) {
@@ -169,24 +169,24 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
         /* does the output brigade exist? */
         if (!self->bb_in) {
-            self->bb_in = apr_brigade_create(self->f->r->pool, 
+            self->bb_in = apr_brigade_create(self->f->r->pool,
                                              c->bucket_alloc);
         }
 
         Py_BEGIN_ALLOW_THREADS;
-        self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode, 
+        self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode,
                                   APR_BLOCK_READ, self->readbytes);
         Py_END_ALLOW_THREADS;
 
         if (!APR_STATUS_IS_EAGAIN(self->rc) && !(self->rc == APR_SUCCESS)) {
-            PyErr_SetObject(PyExc_IOError, 
+            PyErr_SetObject(PyExc_IOError,
                             PyString_FromString("Input filter read error"));
             return NULL;
         }
     }
 
-    /* 
-     * loop through the brigade reading buckets into the string 
+    /*
+     * loop through the brigade reading buckets into the string
      */
 
     b = APR_BRIGADE_FIRST(self->bb_in);
@@ -202,18 +202,18 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     }
 
     bufsize = len < 0 ? HUGE_STRING_LEN : len;
-    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
+    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
     result = PyString_FromStringAndSize(NULL, bufsize);
 
     /* possibly no more memory */
-    if (result == NULL) 
+    if (result == NULL)
         return PyErr_NoMemory();
-    
+
     buffer = PyString_AS_STRING((PyStringObject *) result);
 
     bytes_read = 0;
 
-    while ((bytes_read < len || len == -1) && 
+    while ((bytes_read < len || len == -1) &&
            !(APR_BUCKET_IS_EOS(b) || APR_BUCKET_IS_FLUSH(b) ||
              b == APR_BRIGADE_SENTINEL(self->bb_in))) {
 
@@ -223,7 +223,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
         int i;
 
         if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
-            PyErr_SetObject(PyExc_IOError, 
+            PyErr_SetObject(PyExc_IOError,
                             PyString_FromString("Filter read error"));
             return NULL;
         }
@@ -240,9 +240,9 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
             for (i=0; i<size; i++) {
                 if (data[i] == '\n') {
                     if (i+1 != size) {   /* (no need to split if we're at end of bucket) */
-                        
+
                         /* split after newline */
-                        apr_bucket_split(b, i+1);   
+                        apr_bucket_split(b, i+1);
                         size = i + 1;
                     }
                     newline = 1;
@@ -274,7 +274,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
         old = b;
         b = APR_BUCKET_NEXT(b);
         apr_bucket_delete(old);
-        
+
 /*         if (self->is_input) { */
 
 /*             if (b == APR_BRIGADE_SENTINEL(self->bb_in)) { */
@@ -297,7 +297,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     }
 
     /* resize if necessary */
-    if (bytes_read < len || len < 0) 
+    if (bytes_read < len || len < 0)
         /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
         if(_PyString_Resize(&result, bytes_read))
             return NULL;
@@ -343,7 +343,7 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
     PyObject *s;
     conn_rec *c = self->request_obj->request_rec->connection;
 
-    if (! PyArg_ParseTuple(args, "O", &s)) 
+    if (! PyArg_ParseTuple(args, "O", &s))
         return NULL;
 
     if (! PyString_Check(s)) {
@@ -355,7 +355,7 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "I/O operation on closed filter");
         return NULL;
     }
-    
+
     /* PYTHON 2.5:  'PyString_Size' uses Py_ssize_t for return values (may need overflow check) */
     len = PyString_Size(s);
 
@@ -363,10 +363,10 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
 
         /* does the output brigade exist? */
         if (!self->bb_out) {
-            self->bb_out = apr_brigade_create(self->f->r->pool, 
+            self->bb_out = apr_brigade_create(self->f->r->pool,
                                               c->bucket_alloc);
         }
-        
+
         buff = apr_bucket_alloc(len, c->bucket_alloc);
         memcpy(buff, PyString_AS_STRING(s), len);
 
@@ -397,7 +397,7 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
                                           c->bucket_alloc);
     }
 
-    APR_BRIGADE_INSERT_TAIL(self->bb_out, 
+    APR_BRIGADE_INSERT_TAIL(self->bb_out,
                             apr_bucket_flush_create(c->bucket_alloc));
 
     if (!self->is_input) {
@@ -407,7 +407,7 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
         apr_brigade_destroy(self->bb_out);
         Py_END_ALLOW_THREADS;
 
-        if(self->rc != APR_SUCCESS) { 
+        if(self->rc != APR_SUCCESS) {
             PyErr_SetString(PyExc_IOError, "Flush failed.");
             return NULL;
         }
@@ -421,7 +421,7 @@ static PyObject *filter_flush(filterobject *self, PyObject *args)
 /**
  ** filter.close(filter self)
  **
- *     passes EOS 
+ *     passes EOS
  */
 
 static PyObject *filter_close(filterobject *self, PyObject *args)
@@ -437,7 +437,7 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
                                               c->bucket_alloc);
         }
 
-        APR_BRIGADE_INSERT_TAIL(self->bb_out, 
+        APR_BRIGADE_INSERT_TAIL(self->bb_out,
                                 apr_bucket_eos_create(c->bucket_alloc));
 
         if (! self->is_input) {
@@ -453,7 +453,7 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
 
     Py_INCREF(Py_None);
     return Py_None;
-    
+
 }
 
 /**
@@ -461,7 +461,7 @@ static PyObject *filter_close(filterobject *self, PyObject *args)
  **
  *     Sets the transparent flag on causeing the filter_handler to
  *     just pass the data through without envoking Python at all.
- *     This is used during filter error output. 
+ *     This is used during filter error output.
  */
 
 static PyObject *filter_disable(filterobject *self, PyObject *args)
@@ -508,7 +508,7 @@ static PyMemberDef filter_memberlist[] = {
  */
 
 static void filter_dealloc(filterobject *self)
-{  
+{
     Py_XDECREF(self->request_obj);
     PyObject_Del(self);
 }
@@ -530,7 +530,7 @@ static PyObject * filter_getattr(filterobject *self, char *name)
     res = Py_FindMethod(filterobjectmethods, (PyObject *)self, name);
     if (res != NULL)
         return res;
-    
+
     PyErr_Clear();
 
     if (strcmp(name, "name") == 0) {
@@ -541,7 +541,7 @@ static PyObject * filter_getattr(filterobject *self, char *name)
         else {
             return PyString_FromString(self->f->frec->name);
         }
-    } 
+    }
     else if (strcmp(name, "req") == 0) {
         if (! self->request_obj) {
             Py_INCREF(Py_None);
@@ -552,9 +552,14 @@ static PyObject * filter_getattr(filterobject *self, char *name)
             return (PyObject *)self->request_obj;
         }
     }
-    else
-        return PyMember_GetOne((char*)self,
-                               find_memberdef(filter_memberlist, name));
+    else {
+        PyMemberDef *md = find_memberdef(filter_memberlist, name);
+        if (!md) {
+            PyErr_SetString(PyExc_AttributeError, name);
+            return NULL;
+        }
+        return PyMember_GetOne((char*)self, md);
+    }
 }
 
 /**
@@ -571,7 +576,12 @@ static int filter_setattr(filterobject *self, char *name, PyObject *v)
                         "can't delete filter attributes");
         return -1;
     }
-    return PyMember_Set((char *)self, filter_memberlist, name, v);
+    PyMemberDef *md = find_memberdef(filter_memberlist, name);
+    if (!md) {
+        PyErr_SetString(PyExc_AttributeError, name);
+        return -1;
+    }
+    return PyMember_SetOne((char*)self, md, v);
 }
 
 PyTypeObject MpFilter_Type = {

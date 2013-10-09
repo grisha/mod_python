@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,10 +17,10 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * hlist.c 
+ * hlist.c
  *
  *
- * See accompanying documentation and source code comments 
+ * See accompanying documentation and source code comments
  * for details.
  *
  */
@@ -38,7 +38,7 @@ PyObject *MpHList_FromHLEntry(hl_entry *hle)
     hlistobject *result;
 
     result = PyObject_New(hlistobject, &MpHList_Type);
-    if (! result) 
+    if (! result)
         PyErr_NoMemory();
 
     result->head = hle;
@@ -80,7 +80,7 @@ static PyMemberDef hlist_memberlist[] = {
  */
 
 static void hlist_dealloc(hlistobject *self)
-{  
+{
     PyObject_Del(self);
 }
 
@@ -91,7 +91,7 @@ static void hlist_dealloc(hlistobject *self)
 
 static PyObject *hlist_getattr(hlistobject *self, char *name)
 {
-    PyObject *res, *md;
+    PyObject *res;
 
     res = Py_FindMethod(hlistmethods, (PyObject *)self, name);
     if (res != NULL)
@@ -106,7 +106,7 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
         return Py_None;
     }
 
-    md = find_memberdef(hlist_memberlist, name);
+    PyMemberDef *md = find_memberdef(hlist_memberlist, name);
     if (!md) {
         PyErr_SetString(PyExc_AttributeError, name);
         return NULL;

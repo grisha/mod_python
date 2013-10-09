@@ -158,16 +158,18 @@ static int set_wsgi_path_info(requestobject *self)
         (py_config *) ap_get_module_config(self->request_rec->per_dir_config,
                                            &python_module);
     const char *path_info = self->request_rec->uri;
-    char *base_uri = apr_table_get(conf->options, "mod_python.wsgi.base_uri");
+    const char *base_uri = apr_table_get(conf->options, "mod_python.wsgi.base_uri");
 
     if (!base_uri && conf->d_is_location) {
 
         /* Use Location as the base_uri, automatically adjust trailing slash */
 
-        base_uri = apr_pstrdup(self->request_rec->pool, conf->config_dir);
-        int last = strlen(base_uri) - 1;
-        if (*base_uri && base_uri[last] == '/')
-            base_uri[last] = '\0';
+        char *bu = apr_pstrdup(self->request_rec->pool, conf->config_dir);
+        int last = strlen(bu) - 1;
+        if (*bu && bu[last] == '/')
+            bu[last] = '\0';
+
+        base_uri = bu;
 
     } else if (base_uri && *base_uri) {
 
@@ -1758,9 +1760,14 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
         return PyCObject_FromVoidPtr(self->request_rec, 0);
 #endif
     }
-    else
-        return PyMember_GetOne((char*)self->request_rec,
-                               find_memberdef(request_rec_mbrs, name));
+    else {
+        PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
+        if (!md) {
+            PyErr_SetString(PyExc_AttributeError, name);
+            return NULL;
+        }
+        return PyMember_GetOne((char*)self->request_rec, md);
+    }
 }
 
 /**
@@ -1892,9 +1899,12 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
 
-    return PyMember_SetOne((char*)self->request_rec,
-                           find_memberdef(request_rec_mbrs, (char*)name),
-                           val);
+    PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
+    if (!md) {
+        PyErr_SetString(PyExc_AttributeError, name);
+        return -1;
+    }
+    return PyMember_SetOne((char*)self->request_rec, md, val);
 }
 
 /**
