@@ -8,7 +8,7 @@
 
 #define MP_VERSION_MAJOR 3
 #define MP_VERSION_MINOR 4
-#define MP_VERSION_PATCH 0
+#define MP_VERSION_PATCH 1
 
 #define STR(x) #x
 #define MP_VERSION_STRING(maj, min, p) STR(maj) "." STR(min) "." STR(p)
