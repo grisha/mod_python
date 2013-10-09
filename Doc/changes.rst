@@ -24,6 +24,11 @@ New Features
 Improvements
 ------------
 
+* Improve WSGI and Python path documentation.
+* Change WSGI handler to use Location path as SCRIPT_NAME.
+* Add is_location to hlist object, skip the map_to_storage for Location-wrapped Python*Handlers.
+* Some optimizations to Python code to make it run faster.
+* Add Mutex to Apache 2.4 tests.
 * Provide and internal add_cgi_vars() implementation which does not use sub-requests.
 * Many documentation clarifications and improvements.
 * Add a test to ensure that req.write() and req.flush() do not leak memory (2.4 only).
@@ -43,6 +48,8 @@ Improvements
 Bug Fixes
 ---------
 
+* Make PythonCleanupHandler run again.
+* Use PCapsule API instead of PyCObject for Python 2.7+.
 * Fix SCRIPT_NAME and PATH_INFO inconsistencies so that the WSGI handler behaves correctly.
 * Remove with-python-src configure option as it is no longer used to build the docs.
 * (`MODPYTHON-243 <http://issues.apache.org/jira/browse/MODPYTHON-243>`_) Fixed format string error.
