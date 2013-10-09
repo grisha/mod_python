@@ -23,7 +23,7 @@ Python*Handler Directive Syntax
    single: Python*Handler Syntax
 
 
-All request handler directives have the following syntax: 
+All request handler directives have the following syntax:
 
 ``Python*Handler handler [handler ...] [ | .ext [.ext ...] ]``
 
@@ -52,7 +52,7 @@ by one or more file extensions. This would restrict the execution of
 the handler to those file extensions only. This feature only works for
 handlers executed after the trans phase.
 
-A *handler* has the following syntax: 
+A *handler* has the following syntax:
 
 ``module[::object]``
 
@@ -78,23 +78,54 @@ Example::
 
    PythonAuthzHandler mypackage.mymodule::checkallowed
 
-For more information on handlers, see Overview of a Handler.
+For more information on handlers, see :ref:`pyapi-handler`.
 
-Side note: The ``'::'`` was chosen for performance reasons. In order for
-Python to use objects inside modules, the modules first need to be
-imported. Having the separator as simply a ``'.'``, would considerably
-complicate process of sequentially evaluating every word to determine
-whether it is a package, module, class etc. Using the (admittedly
-un-Python-like) ``'::'`` takes the time consuming work of figuring out
-where the module part ends and the object inside of it begins away
-from mod_python resulting in a modest performance gain.
+.. note:: The ``'::'`` was chosen for performance reasons. In order
+   for Python to use objects inside modules, the modules first need to
+   be imported. Having the separator as simply a ``'.'``, would
+   considerably complicate process of sequentially evaluating every
+   word to determine whether it is a package, module, class etc. Using
+   the (admittedly un-Python-like) ``'::'`` removes the time-consuming
+   work of figuring out where the module part ends and the object
+   inside of it begins, resulting in a modest performance gain.
 
 .. index::
    pair: phase; order
 
-The handlers below are documented in order in which phases are
+The handlers in this document are listed in order in which phases are
 processed by Apache.
 
+.. _dir-handlers-pp:
+
+Python*Handlers and Python path
+-------------------------------
+
+.. index::
+   pair: pythonpath, Python*Handler
+
+If a ``Python*Handler`` directive is specified in a *directory section*
+(i.e. inside a ``<Directory></Directory>`` or
+``<DirectoryMatch></DirectoryMatch>`` or in an ``.htaccess`` file),
+then this directory is automatically prepended to the Python path
+(``sys.path``) *unless* Python path is specified explicitely with the
+``PythonPath`` directive.
+
+If a ``Python*Handler`` directive is specified in a *location section*
+(i.e. inside ``<Location></Location>`` or
+``<LocationMatch></LocationMatch>``), then no path modification is done
+automatically and in most cases a ``PythonPath`` directive is required
+to augment the path so that the handler module can be imported.
+
+Also for ``Python*Handlers`` inside a location section mod_python
+disables the phase of the request that maps the URI to a file on the
+filesystem (``ap_hook_map_to_storage``). This is because there is
+usually no link between path specified in ``<Location>`` and the
+filesystem, while attempting to map to a filesystem location results
+in unnecessary and expensive filesystem calls. Note that an important
+side-effect of this is that once a request URI has been matched to a
+``<Location>`` containing a mod_python handler, all ``<Directory>``
+and ``<DirectoryMatch>`` directives and their contents are ignored for
+this request.
 
 .. _dir-handlers-prrh:
 
@@ -289,7 +320,7 @@ An example authentication handler might look like this::
    def authenhandler(req):
 
        pw = req.get_basic_auth_pw()
-       user = req.user     
+       user = req.user
        if user == "spam" and pw == "eggs":
            return apache.OK
        else:
@@ -654,7 +685,7 @@ successfully. The function will be called with no arguments.
    is running, examine the :attr:`request.interpreter` member of the request
    object.
 
-See also Multiple Interpreters. 
+See also Multiple Interpreters.
 
 .. _dir-other-ipd:
 
@@ -699,7 +730,7 @@ different interpreters, one for each directory.
 
 
 .. seealso::
-   
+
    :ref:`pyapi-interps`
        for more information
 
@@ -813,7 +844,7 @@ PythonAutoReload
 
 
 If set to Off, instructs mod_python not to check the modification date
-of the module file. 
+of the module file.
 
 By default, mod_python checks the time-stamp of the file and reloads
 the module if the module's file modification date is later than the

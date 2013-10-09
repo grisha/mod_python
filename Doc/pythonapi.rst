@@ -99,14 +99,14 @@ to by the ``req`` variable.)
 
 Every handler can return:
 
-* :const:`apache.OK`, meaning this phase of the request was handled by this 
-  handler and no errors occurred. 
+* :const:`apache.OK`, meaning this phase of the request was handled by this
+  handler and no errors occurred.
 
 * :const:`apache.DECLINED`, meaning this handler has not handled this
   phase of the request to completion and Apache needs to look for
   another handler in subsequent modules.
-  
-* :const:`apache.HTTP_ERROR`, meaning an HTTP error occurred. 
+
+* :const:`apache.HTTP_ERROR`, meaning an HTTP error occurred.
   *HTTP_ERROR* can be any of the following::
 
     HTTP_CONTINUE                     = 100
@@ -166,17 +166,10 @@ e.g.::
    raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
 
 Handlers can send content to the client using the :meth:`request.write()`
-method. 
+method.
 
 Client data, such as POST requests, can be read by using the
 :meth:`request.read()` function.
-
-.. note::
-
-   The directory of the Apache ``Python*Handler``
-   directive in effect is prepended to the ``sys.path``. If the
-   directive was specified in a server config file outside any
-   ``<Directory>``, then the directory is unknown and not prepended.
 
 An example of a minimalistic handler might be::
 
@@ -210,7 +203,7 @@ request object is available as well via ``filter.req``, but all
 writing and reading should be done via the filter's object read and
 write methods.
 
-Filters need to be closed when a read operation returns None 
+Filters need to be closed when a read operation returns None
 (indicating End-Of-Stream).
 
 The return value of a filter is ignored. Filters cannot decline
@@ -219,7 +212,7 @@ by using the :meth:`filter.pass_on()` method.
 
 Filters must first be registered using ``PythonInputFilter`` or
 ``PythonOutputFilter``, then added using the Apache
-``Add/SetInputFilter`` or ``Add/SetOutputFilter`` directives. 
+``Add/SetInputFilter`` or ``Add/SetOutputFilter`` directives.
 
 Here is an example of how to specify an output filter, it tells the
 server that all .py files should processed by CAPITALIZE filter::
@@ -231,7 +224,7 @@ And here is what the code for the :file:`capitalize.py` might look
 like::
 
    from mod_python import apache
-  
+
    def outputfilter(filter):
 
        s = filter.read()
@@ -269,7 +262,7 @@ Overview of a Connection Handler
 
 A :dfn:`connection handler` handles the connection, starting almost
 immediately from the point the TCP connection to the server was
-made. 
+made.
 
 Unlike HTTP handlers, connection handlers receive a *connection*
 object as an argument.
@@ -342,7 +335,7 @@ Functions
       APLOG_INFO
       APLOG_DEBUG
       APLOG_NOERRNO // DEPRECATED
-  
+
   *server* is a reference to a :meth:`request.server` object. If
   *server* is not specified, then the error will be logged to the
   default error log, otherwise it will be written to the error log for
@@ -453,30 +446,30 @@ Functions
    Allows querying of the MPM for various parameters such as numbers of
    processes and threads. The return value is one of three constants::
 
-      AP_MPMQ_NOT_SUPPORTED      = 0  # This value specifies whether 
-                                      # an MPM is capable of         
-                                      # threading or forking.        
-      AP_MPMQ_STATIC             = 1  # This value specifies whether 
+      AP_MPMQ_NOT_SUPPORTED      = 0  # This value specifies whether
+                                      # an MPM is capable of
+                                      # threading or forking.
+      AP_MPMQ_STATIC             = 1  # This value specifies whether
                                       # an MPM is using a static # of
-                                      # threads or daemons.          
-      AP_MPMQ_DYNAMIC            = 2  # This value specifies whether 
+                                      # threads or daemons.
+      AP_MPMQ_DYNAMIC            = 2  # This value specifies whether
                                       # an MPM is using a dynamic # of
-                                      # threads or daemons.          
+                                      # threads or daemons.
 
    The *code* argument must be one of the following::
 
-      AP_MPMQ_MAX_DAEMON_USED    = 1  # Max # of daemons used so far 
-      AP_MPMQ_IS_THREADED        = 2  # MPM can do threading         
-      AP_MPMQ_IS_FORKED          = 3  # MPM can do forking           
-      AP_MPMQ_HARD_LIMIT_DAEMONS = 4  # The compiled max # daemons   
-      AP_MPMQ_HARD_LIMIT_THREADS = 5  # The compiled max # threads   
-      AP_MPMQ_MAX_THREADS        = 6  # # of threads/child by config 
-      AP_MPMQ_MIN_SPARE_DAEMONS  = 7  # Min # of spare daemons       
-      AP_MPMQ_MIN_SPARE_THREADS  = 8  # Min # of spare threads       
-      AP_MPMQ_MAX_SPARE_DAEMONS  = 9  # Max # of spare daemons       
-      AP_MPMQ_MAX_SPARE_THREADS  = 10 # Max # of spare threads       
-      AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon 
-      AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config   
+      AP_MPMQ_MAX_DAEMON_USED    = 1  # Max # of daemons used so far
+      AP_MPMQ_IS_THREADED        = 2  # MPM can do threading
+      AP_MPMQ_IS_FORKED          = 3  # MPM can do forking
+      AP_MPMQ_HARD_LIMIT_DAEMONS = 4  # The compiled max # daemons
+      AP_MPMQ_HARD_LIMIT_THREADS = 5  # The compiled max # threads
+      AP_MPMQ_MAX_THREADS        = 6  # # of threads/child by config
+      AP_MPMQ_MIN_SPARE_DAEMONS  = 7  # Min # of spare daemons
+      AP_MPMQ_MIN_SPARE_THREADS  = 8  # Min # of spare threads
+      AP_MPMQ_MAX_SPARE_DAEMONS  = 9  # Max # of spare daemons
+      AP_MPMQ_MAX_SPARE_THREADS  = 10 # Max # of spare threads
+      AP_MPMQ_MAX_REQUESTS_DAEMON= 11 # Max # of requests per daemon
+      AP_MPMQ_MAX_DAEMONS        = 12 # Max # of daemons by config
 
    Example::
 
@@ -558,7 +551,7 @@ Table Object (mp_table)
 
    .. method:: add(key, val)
 
-      Allows for creating duplicate keys, which is useful 
+      Allows for creating duplicate keys, which is useful
       when multiple headers, such as `Set-Cookie:` are required.
 
 .. _pyapi-mprequest:
@@ -577,7 +570,7 @@ argument - the request object. For brevity, we often refer to it here
 and throughout the code as ``req``.
 
 You can dynamically assign attributes to it as a way to communicate
-between handlers. 
+between handlers.
 
 .. _pyapi-mprequest-meth:
 
@@ -615,7 +608,7 @@ Request Methods
    used. If there is a ``'PythonPath'`` directive in effect, then
    ``sys.path`` will be set exactly according to it (no directories
    added, the *dir* argument is ignored).
-  
+
    A handler added this way only persists throughout the life of the
    request. It is possible to register more handlers while inside the
    handler of the same type. One has to be careful as to not to create
@@ -635,7 +628,7 @@ Request Methods
    .. note::
 
       If you pass this function an invalid handler, an exception will be
-      generated at the time an attempt is made to find the handler. 
+      generated at the time an attempt is made to find the handler.
 
 
 .. method:: request.add_input_filter(filter_name)
@@ -645,7 +638,7 @@ Request Methods
    read any data from the request.
 
 
-.. method:: reques.add_output_filter(filter_name)
+.. method:: request.add_output_filter(filter_name)
 
    Adds the named filter into the output filter chain for the current
    request.  The filter should be added before the first attempt to
@@ -730,7 +723,7 @@ Request Methods
    but subsequent calls will use the cached result from the first
    call.
 
-   The optional *type* argument can specify the following: 
+   The optional *type* argument can specify the following:
 
    * :const:`apache.REMOTE_HOST` Look up the DNS name. Return None if Apache
      directive ``HostNameLookups`` is ``Off`` or the hostname cannot
@@ -744,7 +737,7 @@ Request Methods
      IP. Note: if a lookup was performed prior to this call, then the
      cached host name is returned.
 
-   * :const:`apache.REMOTE_DOUBLE_REV` Force a double-reverse lookup. On 
+   * :const:`apache.REMOTE_DOUBLE_REV` Force a double-reverse lookup. On
      failure, return None.
 
    If *str_is_ip* is ``None`` or unspecified, then the return
@@ -833,13 +826,13 @@ Request Methods
       if status != apache.OK:
          return status
 
-      # ... do expensive generation of the response content ... 
+      # ... do expensive generation of the response content ...
 
 
 .. method:: request.requires()
 
    Returns a tuple of strings of arguments to ``require`` directive.
-  
+
    For example, with the following apache configuration::
 
       AuthType Basic
@@ -871,10 +864,10 @@ Request Methods
 
 .. method:: request.readline([len])
 
-   Like :meth:`request.read()` but reads until end of line. 
+   Like :meth:`request.read()` but reads until end of line.
 
    .. note::
-  
+
       In accordance with the HTTP specification, most clients will be
       terminating lines with ``'\r\n'`` rather than simply
       ``'\n'``.
@@ -1041,14 +1034,14 @@ Request Members
 
 .. attribute:: request.server
 
-   A server object associated with this request. See 
+   A server object associated with this request. See
    :ref:`pyapi-mpserver` for more details.
    *(Read-Only)*
 
 
 .. attribute:: request.next
 
-   If this is an internal redirect, the request object we redirect to. 
+   If this is an internal redirect, the request object we redirect to.
    *(Read-Only)*
 
 
@@ -1060,7 +1053,7 @@ Request Members
 
 .. attribute:: request.main
 
-   If this is a sub-request, pointer to the main request. 
+   If this is a sub-request, pointer to the main request.
    *(Read-Only)*
 
 
@@ -1087,7 +1080,7 @@ Request Members
 
 .. attribute:: request.header_only
 
-   A boolean value indicating HEAD request, as opposed to GET. 
+   A boolean value indicating HEAD request, as opposed to GET.
    *(Read-Only)*
 
 
@@ -1274,7 +1267,7 @@ Request Members
 
 .. attribute:: request.content_languages
 
-   Tuple. List of strings representing the content languages. 
+   Tuple. List of strings representing the content languages.
 
 
 .. attribute:: request.handler
@@ -2315,7 +2308,7 @@ specification published by Netscape.
    incompatible with many popular browsers, even those that claim to
    be RFC-compliant. Therefore, this module supports the current
    common practice, and is not fully RFC compliant.
-  
+
    More specifically, the biggest difference between Netscape and RFC
    cookies is that RFC cookies are sent from the browser to the server
    along with their attributes (like Path or Domain). The
@@ -2522,7 +2515,7 @@ This example uses ``'secret007'`` as the secret for HMAC signature::
    from mod_python import apache, Cookie
 
    def handler(req):
-    
+
        cookies = Cookie.get_cookies(req, Cookie.MarshalCookie,
                                        secret='secret007')
        if cookies.has_key('spam'):
@@ -2583,7 +2576,7 @@ Classes
    :func:`Session()` takes the same arguments as :class:`BaseSession`.
 
    This function returns a instance of the default session class. The
-   session class to be used can be specified using ``PythonOption mod_python.session.session_type value``, 
+   session class to be used can be specified using ``PythonOption mod_python.session.session_type value``,
    where *value* is one of
    :class:`DbmSession`, :class:`MemorySession` or
    :class:`FileSession`.  Specifying custom session classes using
@@ -2635,13 +2628,13 @@ Classes
    effect was specified. E.g. if document root is :file:`/a/b/c` and
    the directory ``PythonHandler`` was specified was :file:`/a/b/c/d/e`,
    the path will be set to :file:`/d/e`.
-  
+
    The deduction of the path in this way will only work though where
    the ``Directory`` directive is used and the directory is actually
    within the document root. If the ``Location`` directive is used or
    the directory is outside of the document root, the path will be set
    to :file:`/`. You can force a specific path by setting the
-   ``mod_python.session.application_path`` option 
+   ``mod_python.session.application_path`` option
    (``'PythonOption mod_python.session.application_path /my/path'`` in server
    configuration).
 
@@ -2654,7 +2647,7 @@ Classes
    such the session is only valid for the host which generated it. In
    order to have a session which spans across common sub domains, you
    can specify the parent domain using the
-   ``mod_python.session.application_domain`` option 
+   ``mod_python.session.application_domain`` option
    (``'PythonOption mod_python.session.application_domain mod_python.org'`` in server
    configuration).
 
@@ -2794,7 +2787,7 @@ Classes
    dbmfile named :file:`mp_sess.dbm` and stored in a temporary
    directory returned by ``tempfile.gettempdir()`` standard library
    function. An alternative directory can be specified using
-   ``PythonOption mod_python.dbm_session.database_directory /path/to/directory``. 
+   ``PythonOption mod_python.dbm_session.database_directory /path/to/directory``.
    The path and filename can can be overridden by
    setting ``PythonOption mod_python.dbm_session.database_filename filename``.
 
@@ -2826,7 +2819,7 @@ Classes
    sessions are persistent across server restarts.  The session files
    are saved in a directory named mp_sess in the temporary directory
    returned by the ``tempfile.gettempdir()`` standard library
-   function. An alternate path can be set using 
+   function. An alternate path can be set using
    ``PythonOption mod_python.file_session.database_directory /path/to/directory``.
    This directory must exist and be readable and writeable by the apache process.
 
@@ -2847,14 +2840,14 @@ Classes
       A boolean value used to turn on FileSession cleanup
       optimization.  Default is *True* and will result in reduced
       cleanup time when there are a large number of session files.
-  
+
       When *fast_cleanup* is True, the modification time for the
       session file is used to determine if it is a candidate for
-      deletion.  If ``(current_time - file_modification_time) > (timeout + grace_period)``, 
+      deletion.  If ``(current_time - file_modification_time) > (timeout + grace_period)``,
       the file will be a candidate for
       deletion. If *verify_cleanup* is False, no futher checks will be
       made and the file will be deleted.
-    
+
      If *fast_cleanup* is False, the session file will unpickled and
      it's timeout value used to determine if the session is a
      candidate for deletion. *fast_cleanup* = ``False`` implies
@@ -2869,16 +2862,16 @@ Classes
 
      The value of *fast_cleanup* can also be set using
      ``PythonOption mod_python.file_session.enable_fast_cleanup``.
-    
+
    * *verify_cleanup*
 
       Boolean value used to optimize the FileSession cleanup process.
       Default is ``True``.
-    
-      If *verify_cleanup* is True, the session file which is being 
+
+      If *verify_cleanup* is True, the session file which is being
       considered for deletion will be unpickled and its timeout value
-      will be used to decide if the file should be deleted. 
-    
+      will be used to decide if the file should be deleted.
+
       When *verify_cleanup* is False, the timeout value for the
       current session will be used in to determine if the session has
       expired. In this case, the session data will not be read from
@@ -2887,10 +2880,10 @@ Classes
       session is saving a large amount of data. However this may
       result in valid sessions being deleted if all the sessions are
       not using a the same timeout value.
-    
+
       The value of *verify_cleanup* can also be set using
       ``PythonOption mod_python.file_session.verify_session_timeout``.
-    
+
    * ``PythonOption mod_python.file_session.cleanup_time_limit [value]``
       Integer value in seconds. Default is 2 seconds.
 
@@ -2908,9 +2901,9 @@ Classes
 
    * ``PythonOption mod_python.file_session.cleanup_grace_period [value]``
      Integer value in seconds. Default is 240 seconds. This value is added
-     to the session timeout in determining if a session file should be 
+     to the session timeout in determining if a session file should be
      deleted.
- 
+
      There is a small chance that a the cleanup for a given session
      file may occur at the exact time that the session is being
      accessed by another request. It is possible under certain
@@ -2962,7 +2955,7 @@ The following example demonstrates a simple hit counter.::
 
        req.content_type = 'text/plain'
        req.write('Hits: %d\n' % session['hits'])
-       return apache.OK 
+       return apache.OK
 
 
 .. _pyapi-psp:
@@ -3031,7 +3024,7 @@ Here is an example::
    for n in range(3):
        # This indent will persist
    %>
-   <p>This paragraph will be 
+   <p>This paragraph will be
    repeated 3 times.</p>
    <%
    # This line will cause the block to end
@@ -3064,7 +3057,7 @@ above page can be written as::
    <%
    for n in range(3):
    %>
-   <p>This paragraph will be 
+   <p>This paragraph will be
    repeated 3 times.</p>
    <%
    %>
@@ -3156,11 +3149,11 @@ absolute::
 
       Returns an HTML-formatted string representing a side-by-side
       listing of the original PSP code and resulting Python code
-      produced by the PSP parser. 
+      produced by the PSP parser.
 
       Here is an example of how :class:`PSP` can be used as a templating
       mechanism:
-  
+
       The template file::
 
          <html>
