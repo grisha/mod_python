@@ -85,7 +85,7 @@ static PyInterpreterState *make_interpreter(const char *name)
  *      the reference to obCallBack.
  */
 
-static PyObject * make_obcallback(char *name)
+static PyObject * make_obcallback(const char *name)
 {
 
     PyObject *m = NULL;
@@ -303,7 +303,7 @@ static interpreterdata *get_interpreter(const char *name)
 
     if (!idata->obcallback) {
 
-        idata->obcallback = make_obcallback((char*)name);
+        idata->obcallback = make_obcallback(name);
 
         if (!idata->obcallback)
         {
