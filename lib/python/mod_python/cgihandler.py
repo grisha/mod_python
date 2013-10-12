@@ -17,7 +17,7 @@
  # Originally developed by Gregory Trubetskoy.
  #
 
-import apache
+from . import apache
 import imp
 import os
 import sys
@@ -43,7 +43,7 @@ except (ImportError, AttributeError):
 # is a more sensible remedy, but this seems to work OK.
 os.environ = {}
 
-original = sys.modules.keys()
+original = list(sys.modules.keys())
 
 # find out the standard library location
 stdlib, x = os.path.split(os.__file__)
@@ -55,7 +55,7 @@ def handler(req):
 
     # if there are any new modules since the import of this module,
     # delete them.
-    for m in sys.modules.keys():
+    for m in list(sys.modules.keys()):
         if m not in original:
             # unless they are part of standard library
             mod = sys.modules[m]
@@ -66,7 +66,7 @@ def handler(req):
     ### end
 
     # get the filename of the script
-    if req.subprocess_env.has_key("script_filename"):
+    if "script_filename" in req.subprocess_env:
         dir, file = os.path.split(req.subprocess_env["script_filename"])
     else:
         dir, file = os.path.split(req.filename)
@@ -90,7 +90,7 @@ def handler(req):
                 # we do not search the pythonpath (security reasons)
                 fd, path, desc = imp.find_module(module_name, [dir])
             except ImportError:
-                raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+                raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
             # this executes the module
             imp.load_module(module_name, fd, path, desc)

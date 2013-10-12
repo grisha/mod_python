@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -15,7 +15,7 @@
  * permissions and limitations under the License.
  *
  * This file originally written by Stering Hughes
- * 
+ *
  *
  * See accompanying documentation and source code comments for
  * details.
@@ -52,7 +52,7 @@ static void psp_parser_cleanup(psp_parser_t *parser)
     if (parser->pycode.allocated) {
         free(parser->pycode.blob);
     }
-    
+
     if (parser->whitespace.allocated) {
         free(parser->whitespace.blob);
     }
@@ -69,14 +69,14 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     psp_parser_t  *parser;
     yyscan_t scanner;
     FILE *f;
-    
+
     if (!PyArg_ParseTuple(argv, "s|s", &filename, &dir)) {
         return NULL;
     }
 
     if (dir) {
         path = malloc(strlen(filename)+strlen(dir)+1);
-        if (!path) 
+        if (!path)
             return PyErr_NoMemory();
         strcpy(path, dir);
         strcat(path, filename);
@@ -84,7 +84,7 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     else {
         path = filename;
     }
-    
+
     Py_BEGIN_ALLOW_THREADS
     f = fopen(path, "rb");
     Py_END_ALLOW_THREADS
@@ -115,15 +115,15 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     }
 
     if (parser->pycode.blob) {
-        code = PyString_FromString(parser->pycode.blob);
+        code = PyBytes_FromString(parser->pycode.blob);
     }
     else {
-        code = PyString_FromString("");
+        code = PyBytes_FromString("");
     }
 
     psp_parser_cleanup(parser);
-    
-    return code; 
+
+    return code;
 }
 
 static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
@@ -143,25 +143,25 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     yylex_init(&scanner);
     yyset_extra(parser, scanner);
 
-    bs = yy_scan_string(PyString_AsString(str), scanner);
+    bs = yy_scan_string(PyBytes_AsString(str), scanner);
     yylex(scanner);
 
     /* yy_delete_buffer(bs, scanner); */
     yylex_destroy(scanner);
-    
+
     psp_string_0(&parser->pycode);
     Py_END_ALLOW_THREADS
 
     if (parser->pycode.blob) {
-        code = PyString_FromString(parser->pycode.blob);
+        code = PyBytes_FromString(parser->pycode.blob);
     }
     else {
-        code = PyString_FromString("");
+        code = PyBytes_FromString("");
     }
 
     psp_parser_cleanup(parser);
 
-    return code; 
+    return code;
 }
 
 static PyMethodDef _psp_module_methods[] = {

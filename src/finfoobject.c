@@ -86,7 +86,7 @@ static void finfo_dealloc(register finfoobject *self)
         PyObject_Del(self);
     }
     else
-        self->ob_type->tp_free((PyObject *)self);
+        Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 /**
@@ -100,17 +100,17 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
 {
     if (strcmp(name, "fname") == 0) {
         if (self->finfo->fname)
-            return PyString_FromString(self->finfo->fname);
+            return PyBytes_FromString(self->finfo->fname);
     }
     else if (strcmp(name, "filetype") == 0) {
-        return PyInt_FromLong(self->finfo->filetype);
+        return PyLong_FromLong(self->finfo->filetype);
     }
     else if (strcmp(name, "valid") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
             Py_INCREF(Py_None);
             return Py_None;
         }
-        return PyInt_FromLong(self->finfo->valid);
+        return PyLong_FromLong(self->finfo->valid);
     }
     else if (strcmp(name, "protection") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -118,7 +118,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_PROT)
-            return PyInt_FromLong(self->finfo->protection);
+            return PyLong_FromLong(self->finfo->protection);
     }
     else if (strcmp(name, "user") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -126,7 +126,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_USER)
-            return PyInt_FromLong(self->finfo->user);
+            return PyLong_FromLong(self->finfo->user);
     }
     else if (strcmp(name, "group") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -134,7 +134,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_GROUP)
-            return PyInt_FromLong(self->finfo->group);
+            return PyLong_FromLong(self->finfo->group);
     }
     else if (strcmp(name, "inode") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -142,7 +142,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_INODE)
-            return PyInt_FromLong(self->finfo->inode);
+            return PyLong_FromLong(self->finfo->inode);
     }
     else if (strcmp(name, "device") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -150,7 +150,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_DEV)
-            return PyInt_FromLong(self->finfo->device);
+            return PyLong_FromLong(self->finfo->device);
     }
     else if (strcmp(name, "nlink") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -158,7 +158,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_NLINK)
-            return PyInt_FromLong(self->finfo->nlink);
+            return PyLong_FromLong(self->finfo->nlink);
     }
     else if (strcmp(name, "size") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -166,7 +166,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_SIZE) {
-            if (sizeof(apr_off_t) == sizeof(LONG_LONG)) {
+            if (sizeof(apr_off_t) == sizeof(PY_LONG_LONG)) {
                 return PyLong_FromLongLong(self->finfo->size);
             }
             else {
@@ -180,7 +180,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_ATIME)
-            return PyInt_FromLong(self->finfo->atime*0.000001);
+            return PyLong_FromLong(self->finfo->atime*0.000001);
     }
     else if (strcmp(name, "mtime") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -188,7 +188,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_MTIME)
-            return PyInt_FromLong(self->finfo->mtime*0.000001);
+            return PyLong_FromLong(self->finfo->mtime*0.000001);
     }
     else if (strcmp(name, "ctime") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -196,7 +196,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_CTIME)
-            return PyInt_FromLong(self->finfo->ctime*0.000001);
+            return PyLong_FromLong(self->finfo->ctime*0.000001);
     }
     else if (strcmp(name, "name") == 0) {
         if (self->finfo->filetype == APR_NOFILE) {
@@ -204,7 +204,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_NAME)
-            return PyString_FromString(self->finfo->name);
+            return PyBytes_FromString(self->finfo->name);
     }
     else {
         PyErr_Format(PyExc_AttributeError,
@@ -290,96 +290,95 @@ static PySequenceMethods finfoseq_as_sequence = {
 
 static PyObject *finfo_repr(finfoobject *self)
 {
-    PyObject *s = PyString_FromString("{");
+    PyObject *s = PyBytes_FromString("{");
     PyObject *t = NULL;
 
-    PyString_ConcatAndDel(&s, PyString_FromString("'fname': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString("'fname': "));
     t = finfo_getattr(self, "fname");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'filetype': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'filetype': "));
     t = finfo_getattr(self, "filetype");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'valid': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'valid': "));
     t = finfo_getattr(self, "valid");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'protection': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'protection': "));
     t = finfo_getattr(self, "protection");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'user': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'user': "));
     t = finfo_getattr(self, "user");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'group': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'group': "));
     t = finfo_getattr(self, "group");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'size': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'size': "));
     t = finfo_getattr(self, "size");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'inode': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'inode': "));
     t = finfo_getattr(self, "inode");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'device': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'device': "));
     t = finfo_getattr(self, "device");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'nlink': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'nlink': "));
     t = finfo_getattr(self, "nlink");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'atime': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'atime': "));
     t = finfo_getattr(self, "atime");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'mtime': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'mtime': "));
     t = finfo_getattr(self, "mtime");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'ctime': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'ctime': "));
     t = finfo_getattr(self, "ctime");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString(", 'name': "));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'name': "));
     t = finfo_getattr(self, "name");
-    PyString_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
     Py_XDECREF(t);
 
-    PyString_ConcatAndDel(&s, PyString_FromString("}"));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString("}"));
 
     return s;
 }
 
 PyTypeObject MpFinfo_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_finfo",
-    sizeof(finfoobject),
-    0,
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "mp_finfo",                         /* tp_name */
+    sizeof(finfoobject),                /* tp_basicsize */
+    0,                                  /* tp_itemsize */
     (destructor)finfo_dealloc,          /* tp_dealloc */
     0,                                  /* tp_print */
-    (getattrfunc)finfo_getattr,         /*tp_getattr*/
-    0,                                  /*tp_setattr*/
+    (getattrfunc)finfo_getattr,         /* tp_getattr*/
+    0,                                  /* tp_setattr*/
     0,                                  /* tp_compare */
-    (reprfunc)finfo_repr,               /*tp_repr*/
+    (reprfunc)finfo_repr,               /* tp_repr*/
     0,                                  /* tp_as_number */
     &finfoseq_as_sequence,              /* tp_as_sequence */
     0,                                  /* tp_as_mapping */

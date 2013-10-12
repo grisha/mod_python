@@ -248,8 +248,8 @@ static PyObject *req_build_wsgi_env(requestobject *self)
 
     /* authorization */
     if ((val = apr_table_get(r->headers_in, "authorization"))) {
-        v = PyString_FromString(val);
-        PyDict_SetItemString(env, "HTTP_AUTHORIZATION", PyString_FromString(val));
+        v = PyBytes_FromString(val);
+        PyDict_SetItemString(env, "HTTP_AUTHORIZATION", PyBytes_FromString(val));
         Py_DECREF(v);
     }
 
@@ -274,11 +274,11 @@ static PyObject *req_build_wsgi_env(requestobject *self)
 
     val = apr_table_get(r->subprocess_env, "HTTPS");
     if (!val || !strcasecmp(val, "off")) {
-        v = PyString_FromString("http");
+        v = PyBytes_FromString("http");
         PyDict_SetItemString(env, "wsgi.url_scheme", v);
         Py_DECREF(v);
     } else {
-        v = PyString_FromString("https");
+        v = PyBytes_FromString("https");
         PyDict_SetItemString(env, "wsgi.url_scheme", v);
         Py_DECREF(v);
     }
@@ -366,7 +366,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     handler = apr_pstrdup(self->request_rec->pool, handler);
 
     /* which phase are we processing? */
-    currphase = PyString_AsString(self->phase);
+    currphase = PyBytes_AsString(self->phase);
 
     /* are we in same phase as what's being added? */
     if (strcmp(currphase, phase) == 0) {
@@ -608,35 +608,32 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
         return NULL;
     }
 
-    /* PYTHON 2.5: 'PySequence_Length' uses Py_ssize_t for input parameters */
     len = PySequence_Length(methods);
 
     if (len) {
 
         PyObject *method;
 
-        /* PYTHON 2.5: 'PySequence_GetItem' uses Py_ssize_t for input parameters */
         method = PySequence_GetItem(methods, 0);
-        if (! PyString_Check(method)) {
+        if (! PyBytes_Check(method)) {
             PyErr_SetString(PyExc_TypeError,
                             "Methods must be strings");
             return NULL;
         }
 
         ap_allow_methods(self->request_rec, (reset == REPLACE_ALLOW),
-                         PyString_AS_STRING(method), NULL);
+                         PyBytes_AS_STRING(method), NULL);
 
         for (i = 1; i < len; i++) {
-            /* PYTHON 2.5: 'PySequence_GetItem' uses Py_ssize_t for input parameters */
             method = PySequence_GetItem(methods, i);
-            if (! PyString_Check(method)) {
+            if (! PyBytes_Check(method)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "Methods must be strings");
                 return NULL;
             }
 
             ap_allow_methods(self->request_rec, MERGE_ALLOW,
-                             PyString_AS_STRING(method), NULL);
+                             PyBytes_AS_STRING(method), NULL);
         }
     }
 
@@ -660,7 +657,7 @@ static PyObject * req_is_https(requestobject *self)
 
     is_https = optfn_is_https && optfn_is_https(self->request_rec->connection);
 
-    return PyInt_FromLong(is_https);
+    return PyLong_FromLong(is_https);
 }
 
 
@@ -688,7 +685,7 @@ static PyObject * req_ssl_var_lookup(requestobject *self, PyObject *args)
                                self->request_rec,
                                var_name);
         if (val)
-            return PyString_FromString(val);
+            return PyBytes_FromString(val);
     }
 
     /* variable not found, or mod_ssl is not loaded */
@@ -706,7 +703,7 @@ static PyObject * req_ssl_var_lookup(requestobject *self, PyObject *args)
 static PyObject *req_document_root(requestobject *self)
 {
 
-    return PyString_FromString(ap_document_root(self->request_rec));
+    return PyBytes_FromString(ap_document_root(self->request_rec));
 
 }
 
@@ -725,7 +722,7 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
     req = self->request_rec;
 
     if (! ap_get_basic_auth_pw(req, &pw))
-        return PyString_FromString(pw);
+        return PyBytes_FromString(pw);
     else {
         Py_INCREF(Py_None);
         return Py_None;
@@ -746,7 +743,7 @@ static PyObject *req_auth_name(requestobject *self)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    return PyString_FromString(auth_name);
+    return PyBytes_FromString(auth_name);
 }
 
 /**
@@ -764,7 +761,7 @@ static PyObject *req_auth_type(requestobject *self)
         return Py_None;
     }
 
-    return PyString_FromString(auth_type);
+    return PyBytes_FromString(auth_type);
 }
 
 /**
@@ -780,7 +777,7 @@ static PyObject *req_construct_url(requestobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "s", &uri))
         return NULL;
 
-    return PyString_FromString(ap_construct_url(self->request_rec->pool,
+    return PyBytes_FromString(ap_construct_url(self->request_rec->pool,
                                uri, self->request_rec));
 }
 
@@ -792,7 +789,7 @@ static PyObject *req_construct_url(requestobject *self, PyObject *args)
 
 static PyObject * req_discard_request_body(requestobject *self)
 {
-    return PyInt_FromLong(ap_discard_request_body(self->request_rec));
+    return PyLong_FromLong(ap_discard_request_body(self->request_rec));
 }
 
 /**
@@ -811,9 +808,9 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
     char *exts = get_addhandler_extensions(self->request_rec);
 
     if (exts)
-        return PyString_FromString(exts);
+        return PyBytes_FromString(exts);
     else
-        return PyString_FromString("");
+        return PyBytes_FromString("");
 }
 
 /**
@@ -873,7 +870,7 @@ static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
             return Py_BuildValue("(s,i)", host, _str_is_ip);
         }
         else {
-            return PyString_FromString(host);
+            return PyBytes_FromString(host);
         }
     }
 }
@@ -950,7 +947,9 @@ static PyObject * req_log_error(requestobject *self, PyObject *args)
         if (! level)
             level = APLOG_ERR;
 
+        Py_BEGIN_ALLOW_THREADS
         ap_log_rerror(APLOG_MARK, level, 0, self->request_rec, "%s", message);
+        Py_END_ALLOW_THREADS
     }
 
     Py_INCREF(Py_None);
@@ -964,7 +963,7 @@ static PyObject * req_log_error(requestobject *self, PyObject *args)
  */
 
 static PyObject * req_meets_conditions(requestobject *self) {
-    return PyInt_FromLong(ap_meets_conditions(self->request_rec));
+    return PyLong_FromLong(ap_meets_conditions(self->request_rec));
 }
 
 
@@ -987,7 +986,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
         return NULL;
 
     if (len == 0) {
-        return PyString_FromString("");
+        return PyBytes_FromString("");
     }
 
     /* is this the first read? */
@@ -996,7 +995,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
         /* then do some initial setting up */
         rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
         if(rc != OK) {
-            PyObject *val = PyInt_FromLong(rc);
+            PyObject *val = PyLong_FromLong(rc);
             if (val == NULL)
                 return NULL;
             PyErr_SetObject(get_ServerReturn(), val);
@@ -1006,7 +1005,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
 
         if (! ap_should_client_block(self->request_rec)) {
             /* client has nothing to send */
-            return PyString_FromString("");
+            return PyBytes_FromString("");
         }
     }
 
@@ -1015,14 +1014,13 @@ static PyObject * req_read(requestobject *self, PyObject *args)
         len = self->request_rec->remaining +
             (self->rbuff_len - self->rbuff_pos);
 
-    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
-    result = PyString_FromStringAndSize(NULL, len);
+    result = PyBytes_FromStringAndSize(NULL, len);
 
     /* possibly no more memory */
     if (result == NULL)
         return NULL;
 
-    buffer = PyString_AS_STRING((PyStringObject *) result);
+    buffer = PyBytes_AS_STRING((PyBytesObject *) result);
 
     /* if anything left in the readline buffer */
     while ((self->rbuff_pos < self->rbuff_len) && (copied < len))
@@ -1051,7 +1049,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
         Py_END_ALLOW_THREADS
         if (chunk_len == -1) {
             PyErr_SetObject(PyExc_IOError,
-                            PyString_FromString("Client read error (Timeout?)"));
+                            PyBytes_FromString("Client read error (Timeout?)"));
             return NULL;
         }
         else
@@ -1060,8 +1058,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
 
     /* resize if necessary */
     if (bytes_read < len)
-        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-        if(_PyString_Resize(&result, bytes_read))
+        if(_PyBytes_Resize(&result, bytes_read))
             return NULL;
 
     return result;
@@ -1087,7 +1084,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         return NULL;
 
     if (len == 0) {
-        return PyString_FromString("");
+        return PyBytes_FromString("");
     }
 
     /* is this the first read? */
@@ -1097,7 +1094,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         rc = ap_setup_client_block(self->request_rec, REQUEST_CHUNKED_ERROR);
 
         if (rc != OK) {
-            PyObject *val = PyInt_FromLong(rc);
+            PyObject *val = PyLong_FromLong(rc);
             if (val == NULL)
                 return NULL;
             PyErr_SetObject(get_ServerReturn(), val);
@@ -1107,7 +1104,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 
         if (! ap_should_client_block(self->request_rec)) {
             /* client has nothing to send */
-            return PyString_FromString("");
+            return PyBytes_FromString("");
         }
     }
 
@@ -1116,14 +1113,13 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
             (self->rbuff_len - self->rbuff_pos);
 
     /* create the result buffer */
-    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
-    result = PyString_FromStringAndSize(NULL, len);
+    result = PyBytes_FromStringAndSize(NULL, len);
 
     /* possibly no more memory */
     if (result == NULL)
         return NULL;
 
-    buffer = PyString_AS_STRING((PyStringObject *) result);
+    buffer = PyBytes_AS_STRING((PyBytesObject *) result);
 
     /* is there anything left in the rbuff from previous reads? */
     if (self->rbuff_pos < self->rbuff_len) {
@@ -1139,8 +1135,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 
                 /* resize if necessary */
                 if (copied < len)
-                    /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-                    if(_PyString_Resize(&result, copied))
+                    if(_PyBytes_Resize(&result, copied))
                         return NULL;
 
                 /* fix for MODPYTHON-181 leak */
@@ -1190,7 +1185,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         self->rbuff = NULL;
 
         PyErr_SetObject(PyExc_IOError,
-                        PyString_FromString("Client read error (Timeout?)"));
+                        PyBytes_FromString("Client read error (Timeout?)"));
         return NULL;
     }
 
@@ -1212,7 +1207,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
             self->rbuff = NULL;
 
             PyErr_SetObject(PyExc_IOError,
-                            PyString_FromString("Client read error (Timeout?)"));
+                            PyBytes_FromString("Client read error (Timeout?)"));
             return NULL;
         }
         else
@@ -1240,8 +1235,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 
     /* resize if necessary */
     if (copied < len)
-        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-        if(_PyString_Resize(&result, copied))
+        if(_PyBytes_Resize(&result, copied))
             return NULL;
 
     return result;
@@ -1256,7 +1250,6 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
 static PyObject *req_readlines(requestobject *self, PyObject *args)
 {
 
-    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */
     PyObject *result = PyList_New(0);
     PyObject *line, *rlargs;
     long sizehint = -1;
@@ -1269,14 +1262,12 @@ static PyObject *req_readlines(requestobject *self, PyObject *args)
     if (result == NULL)
         return PyErr_NoMemory();
 
-    /* PYTHON 2.5: 'PyTuple_New' uses Py_ssize_t for input parameters */
     rlargs = PyTuple_New(0);
     if (result == NULL)
         return PyErr_NoMemory();
 
     line = req_readline(self, rlargs);
-    /* PYTHON 2.5: 'PyString_Size' uses Py_ssize_t for input parameters */
-    while (line && ((linesize=PyString_Size(line))>0)) {
+    while (line && ((linesize=PyBytes_Size(line))>0)) {
         PyList_Append(result, line);
         size += linesize;
         if ((sizehint != -1) && (size >= sizehint))
@@ -1317,8 +1308,8 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
         Py_INCREF(handler);
         ci->handler = handler;
         name_obj = python_interpreter_name();
-        name = (char *)malloc(strlen(PyString_AsString(name_obj))+1);
-        strcpy(name, PyString_AsString(name_obj));
+        name = (char *)malloc(strlen(PyBytes_AsString(name_obj))+1);
+        strcpy(name, PyBytes_AsString(name_obj));
         ci->interpreter = name;
         if (data) {
             Py_INCREF(data);
@@ -1373,20 +1364,17 @@ static PyObject * req_requires(requestobject *self)
         return Py_BuildValue("()");
     }
 
-    /* PYTHON 2.5: 'PyTuple_New' uses Py_ssize_t for input parameters */
     result = PyTuple_New(reqs_arr->nelts);
 
     reqs = (require_line *) reqs_arr->elts;
 
     for (i = 0; i < reqs_arr->nelts; ++i) {
         if (reqs[i].method_mask & (AP_METHOD_BIT << self->request_rec->method_number)) {
-        /* PYTHON 2.5: 'PyTuple_SetItem' uses Py_ssize_t for input parameters */
             PyTuple_SetItem(result, ti++,
-                            PyString_FromString(reqs[i].requirement));
+                            PyBytes_FromString(reqs[i].requirement));
         }
     }
 
-    /* PYTHON 2.5: '_PyTuple_Resize' uses Py_ssize_t for input parameters */
     _PyTuple_Resize(&result, ti);
 
     return result;
@@ -1743,8 +1731,8 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
         return self->notes;
     }
     else if (strcmp(name, "_bytes_queued") == 0) {
-        if (sizeof(apr_off_t) == sizeof(LONG_LONG)) {
-            LONG_LONG l = self->bytes_queued;
+        if (sizeof(apr_off_t) == sizeof(PY_LONG_LONG)) {
+            PY_LONG_LONG l = self->bytes_queued;
             return PyLong_FromLongLong(l);
         }
         else {
@@ -1754,10 +1742,10 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
         }
     }
     else if (strcmp(name, "_request_rec") == 0) {
-#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
-        return PyCapsule_New((void *)self->request_rec, NULL, NULL);
-#else
+#if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 7
         return PyCObject_FromVoidPtr(self->request_rec, 0);
+#else
+        return PyCapsule_New((void *)self->request_rec, NULL, NULL);
 #endif
     }
     else {
@@ -1780,68 +1768,68 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
 {
 
     if (strcmp(name, "content_type") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "content_type must be a string");
             return -1;
         }
         ap_set_content_type(self->request_rec,
                             apr_pstrdup(self->request_rec->pool,
-                                        PyString_AsString(val)));
+                                        PyBytes_AsString(val)));
         self->content_type_set = 1;
         return 0;
     }
     else if (strcmp(name, "user") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "user must be a string");
             return -1;
         }
         self->request_rec->user =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "ap_auth_type") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "ap_auth_type must be a string");
             return -1;
         }
         self->request_rec->ap_auth_type =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "filename") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "filename must be a string");
             return -1;
         }
         self->request_rec->filename =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "canonical_filename") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "canonical_filename must be a string");
             return -1;
         }
         self->request_rec->canonical_filename =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "path_info") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "path_info must be a string");
             return -1;
         }
         self->request_rec->path_info =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "args") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "args must be a string");
             return -1;
         }
         self->request_rec->args =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "handler") == 0) {
@@ -1849,21 +1837,21 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             self->request_rec->handler = 0;
             return 0;
         }
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "handler must be a string");
             return -1;
         }
         self->request_rec->handler =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "uri") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "uri must be a string");
             return -1;
         }
         self->request_rec->uri =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
     else if (strcmp(name, "finfo") == 0) {
@@ -1882,20 +1870,20 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
     else if (strcmp(name, "chunked") == 0) {
-        if (! PyInt_Check(val)) {
+        if (! PyLong_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "chunked must be a integer");
             return -1;
         }
-        self->request_rec->chunked = PyInt_AsLong(val);
+        self->request_rec->chunked = PyLong_AsLong(val);
         return 0;
     }
     else if (strcmp(name, "status_line") == 0) {
-        if (! PyString_Check(val)) {
+        if (! PyBytes_Check(val)) {
             PyErr_SetString(PyExc_TypeError, "status line must be a string");
             return -1;
         }
         self->request_rec->status_line =
-            apr_pstrdup(self->request_rec->pool, PyString_AsString(val));
+            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
         return 0;
     }
 
@@ -1944,8 +1932,8 @@ static PyObject *getreq_recmbr_off(requestobject *self, void *name)
 {
     PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
     char *addr = (char *)self->request_rec + md->offset;
-    if (sizeof(apr_off_t) == sizeof(LONG_LONG)) {
-        LONG_LONG l = *(LONG_LONG*)addr;
+    if (sizeof(apr_off_t) == sizeof(PY_LONG_LONG)) {
+        PY_LONG_LONG l = *(PY_LONG_LONG*)addr;
         return PyLong_FromLongLong(l);
     }
     else {
@@ -2139,10 +2127,10 @@ static PyGetSetDef request_getsets[] = {
 #define OFF(x) offsetof(requestobject, x)
 
 static PyMemberDef request_members[] = {
-    {"_content_type_set",  T_INT,       OFF(content_type_set),  RO},
-    {"phase",              T_OBJECT,    OFF(phase),             RO},
-    {"extension",          T_STRING,    OFF(extension),         RO},
-    {"hlist",              T_OBJECT,    OFF(hlo),               RO},
+    {"_content_type_set",  T_INT,       OFF(content_type_set),  READONLY},
+    {"phase",              T_OBJECT,    OFF(phase),             READONLY},
+    {"extension",          T_STRING,    OFF(extension),         READONLY},
+    {"hlist",              T_OBJECT,    OFF(hlo),               READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -2239,21 +2227,20 @@ static char request_doc[] =
 "Apache request_rec structure\n";
 
 PyTypeObject MpRequest_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_request",
-    sizeof(requestobject),
-    0,
-    (destructor)request_tp_dealloc,       /*tp_dealloc*/
-    0,                                 /*tp_print*/
-    0,                                 /*tp_getattr*/
-    0,                                 /*tp_setattr*/
-    0,                                 /*tp_compare*/
-    0,                                 /*tp_repr*/
-    0,                                 /*tp_as_number*/
-    0,                                 /*tp_as_sequence*/
-    0,                                 /*tp_as_mapping*/
-    0,                                 /*tp_hash*/
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "mp_request",                      /* tp_name */
+    sizeof(requestobject),             /* tp_basicsize */
+    0,                                 /* tp_itemsize */
+    (destructor)request_tp_dealloc,    /* tp_dealloc*/
+    0,                                 /* tp_print*/
+    0,                                 /* tp_getattr*/
+    0,                                 /* tp_setattr*/
+    0,                                 /* tp_compare*/
+    0,                                 /* tp_repr*/
+    0,                                 /* tp_as_number*/
+    0,                                 /* tp_as_sequence*/
+    0,                                 /* tp_as_mapping*/
+    0,                                 /* tp_hash*/
     0,                                 /* tp_call */
     0,                                 /* tp_str */
     PyObject_GenericGetAttr,           /* tp_getattro */

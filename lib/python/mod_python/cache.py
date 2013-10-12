@@ -1,7 +1,7 @@
 #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -15,16 +15,23 @@
  # permissions and limitations under the License.
  #
  # Originally developed by Gregory Trubetskoy.
- # 
+ #
  # This was donated by Nicolas Lehuen, and also posted to the Python Cookbook
  # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/302997
- # 
+ #
+
+import sys
+if sys.version[0] == '2':
+    from urllib2 import Request
+    from urllib2 import HTTPError
+else:
+    from urllib.request import Request
+    from urllib.error import HTTPError
 
 from os import stat
 from time import time, mktime
 from rfc822 import parsedate
 from calendar import timegm
-import urllib2
 import re
 import weakref
 import new
@@ -46,7 +53,7 @@ class Entry(object):
 
 class Cache(object):
     """ An abstract, multi-threaded cache object. """
-    
+
     def __init__(self, max_size=0):
         """ Builds a cache with a limit of max_size entries.
             If this limit is exceeded, the Least Recently Used entry is discarded.
@@ -56,7 +63,7 @@ class Cache(object):
         self._maxsize=max_size
         self._dict={}
         self._lock=Lock()
-        
+
         # Header of the access list
         if self._maxsize:
             self._head=Entry(None)
@@ -66,9 +73,9 @@ class Cache(object):
     def __setitem__(self, name, value):
         """ Populates the cache with a given name and value. """
         key = self.key(name)
-        
+
         entry = self._get_entry(key)
-        
+
         entry._lock.acquire()
         try:
             self._pack(entry,value)
@@ -112,7 +119,7 @@ class Cache(object):
             If is_new is True, the result had to be rebuilt.
         """
         key = self.key(name)
-        
+
         entry = self._get_entry(key)
 
         entry._lock.acquire()
@@ -190,7 +197,7 @@ class Cache(object):
              Don't worry about multiple threads accessing the same name, as this method is properly isolated.
         """
         raise NotImplementedError()
-           
+
     def _access(self, entry):
         " Internal use only, must be invoked within a cache lock. Updates the access list. """
         if entry._next is not self._head:
@@ -227,14 +234,14 @@ class WeakCache(Cache):
         normally referenced, it is removed from the cache. Useful for sharing the result of long
         computations but letting them go as soon as they are not needed by anybody.
     """
-        
+
     def _pack(self, entry, value):
         entry._value=weakref.ref(value, lambda ref: self.__delitem__(entry._key))
-        
+
     def _unpack(self, entry):
         if entry._value is NOT_INITIALIZED:
             return NOT_INITIALIZED
-            
+
         value = entry._value()
         if value is None:
             return NOT_INITIALIZED
@@ -249,9 +256,9 @@ class FileCache(Cache):
     def __init__(self, max_size=0, mode='rb'):
         Cache.__init__(self, max_size)
         self.mode=mode
-    
+
     def check(self, key, name, entry):
-        timestamp = stat(key).st_mtime 
+        timestamp = stat(key).st_mtime
 
         if entry._value is NOT_INITIALIZED:
             entry._timestamp = timestamp
@@ -279,10 +286,10 @@ class HTTPEntity(object):
     def __init__(self, entity, metadata):
         self.entity=entity
         self.metadata=metadata
-    
+
     def __repr__(self):
         return 'HTTPEntity(%s, %s)'%(repr(self.entity), self.metadata)
-        
+
     def __str__(self):
         return self.entity
 
@@ -292,13 +299,13 @@ class HTTPCache(Cache):
         Partial Cache-Control support (only max-age is supported).
     """
     def check(self, key, name, entry):
-        request = urllib2.Request(key)
-        
+        request = urllib.request.Request(key)
+
         try:
             if time()<entry._expires:
                 return None
         except AttributeError:
-            pass            
+            pass
         try:
             header, value = entry._validator
             request.headers[header]=value
@@ -306,10 +313,10 @@ class HTTPCache(Cache):
             pass
         opened = None
         try:
-            opened = urllib2.urlopen(request)
+            opened = urllib.request.urlopen(request)
             headers = opened.info()
 
-            # expiration handling            
+            # expiration handling
             expiration = False
             try:
                 match = re_max_age.match(headers['cache-control'])
@@ -326,7 +333,7 @@ class HTTPCache(Cache):
                     expiration = True
                 except KeyError:
                     pass
-            
+
             # validator handling
             validation = False
             try:
@@ -341,7 +348,7 @@ class HTTPCache(Cache):
                     pass
 
             return opened
-        except urllib2.HTTPError, error:
+        except urllib.error.HTTPError as error:
             if opened: opened.close()
             if error.code==304:
                 return None
@@ -363,12 +370,12 @@ class ModuleCache(FileCache):
     """
     def __init__(self, max_size=0):
         FileCache.__init__(self, max_size, 'r')
-    
+
     def build(self, key, name, opened, entry):
         try:
             module = new.module(re_not_word.sub('_',key))
             module.__file__ = key
-            exec opened in module.__dict__
+            exec(opened, module.__dict__)
             return module
         finally:
             opened.close()
@@ -380,14 +387,14 @@ class HttpModuleCache(HTTPCache):
     """
     def __init__(self, max_size=0):
         HTTPCache.__init__(self, max_size)
-    
+
     def build(self, key, name, opened, entry):
         try:
             module = new.module(re_not_word.sub('_',key))
             module.__file__ = key
             text = opened.read().replace('\r\n', '\n')
             code = compile(text, name, 'exec')
-            exec code in module.__dict__
+            exec(code, module.__dict__)
             return module
         finally:
             opened.close()
@@ -396,15 +403,15 @@ class FunctionCache(Cache):
     def __init__(self, function, max_size=0):
         Cache.__init__(self, max_size)
         self.function=function
-    
+
     def __call__(self, *args, **kw):
         if kw:
             # a dict is not hashable so we build a tuple of (key, value) pairs
-            kw = tuple(kw.iteritems())
+            kw = tuple(kw.items())
             return self[args, kw]
         else:
             return self[args, ()]
-    
+
     def build(self, key, name, opened, entry):
         args, kw = key
         return self.function(*args, **dict(kw))

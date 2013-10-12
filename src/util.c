@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,10 +17,10 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * util.c 
+ * util.c
  *
  *
- * See accompanying documentation and source code comments 
+ * See accompanying documentation and source code comments
  * for details.
  *
  */
@@ -42,20 +42,13 @@ PyObject * tuple_from_array_header(const apr_array_header_t *ah)
     char **s;
 
     if (ah == NULL)
-    {
-        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
         t = PyTuple_New(0);
-    }
-    else
-    {
-        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
+    else {
         t = PyTuple_New(ah->nelts);
 
         s = (char **) ah->elts;
-        for (i = 0; i < ah->nelts; i++) {
-            /* PYTHON 2.5: PyTuple_SetItem uses Py_ssize_t for input parameters */
-            PyTuple_SetItem(t, i, PyString_FromString(s[i]));
-        }
+        for (i = 0; i < ah->nelts; i++)
+            PyTuple_SetItem(t, i, PyBytes_FromString(s[i]));
     }
     return t;
 }
@@ -63,7 +56,7 @@ PyObject * tuple_from_array_header(const apr_array_header_t *ah)
 /**
  ** tuple_from_method_list
  **
- *   Given an apr_method_list_t return a tuple. 
+ *   Given an apr_method_list_t return a tuple.
  */
 
 PyObject * tuple_from_method_list(const ap_method_list_t *l)
@@ -73,19 +66,14 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
     int i;
     char **methods;
 
-    if ((l->method_list == NULL) || (l->method_list->nelts == 0)) {
-        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
+    if ((l->method_list == NULL) || (l->method_list->nelts == 0))
         t = PyTuple_New(0);
-    }
     else {
-        /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
         t = PyTuple_New(l->method_list->nelts);
-        
+
         methods = (char **)l->method_list->elts;
-        for (i = 0; i < l->method_list->nelts; ++i) {
-            /* PYTHON 2.5: PyTuple_SetItem uses Py_ssize_t for input parameters */
-            PyTuple_SetItem(t, i, PyString_FromString(methods[i]));
-        }
+        for (i = 0; i < l->method_list->nelts; ++i)
+            PyTuple_SetItem(t, i, PyBytes_FromString(methods[i]));
     }
     return t;
 }
@@ -105,87 +93,86 @@ PyObject *tuple_from_finfo(apr_finfo_t *f)
         Py_INCREF(Py_None);
         return Py_None;
     }
-      
-    /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
+
     t = PyTuple_New(13);
 
     /* this should have been first, but was added later */
-    PyTuple_SET_ITEM(t, 12, PyInt_FromLong(f->filetype));
+    PyTuple_SET_ITEM(t, 12, PyLong_FromLong(f->filetype));
 
     if (f->valid & APR_FINFO_PROT) {
-        PyTuple_SET_ITEM(t, 0, PyInt_FromLong(f->protection));
+        PyTuple_SET_ITEM(t, 0, PyLong_FromLong(f->protection));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 0, Py_None);
     }
     if (f->valid & APR_FINFO_INODE) {
-        PyTuple_SET_ITEM(t, 1, PyInt_FromLong(f->inode));
+        PyTuple_SET_ITEM(t, 1, PyLong_FromLong(f->inode));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 1, Py_None);
     }
     if (f->valid & APR_FINFO_DEV) {
-        PyTuple_SET_ITEM(t, 2, PyInt_FromLong(f->device));
+        PyTuple_SET_ITEM(t, 2, PyLong_FromLong(f->device));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 2, Py_None);
     }
     if (f->valid & APR_FINFO_NLINK) {
-        PyTuple_SET_ITEM(t, 3, PyInt_FromLong(f->nlink));
+        PyTuple_SET_ITEM(t, 3, PyLong_FromLong(f->nlink));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 3, Py_None);
     }
     if (f->valid & APR_FINFO_USER) {
-        PyTuple_SET_ITEM(t, 4, PyInt_FromLong(f->user));
+        PyTuple_SET_ITEM(t, 4, PyLong_FromLong(f->user));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 4, Py_None);
     }
     if (f->valid & APR_FINFO_GROUP) {
-        PyTuple_SET_ITEM(t, 5, PyInt_FromLong(f->group));
+        PyTuple_SET_ITEM(t, 5, PyLong_FromLong(f->group));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 5, Py_None);
     }
     if (f->valid & APR_FINFO_SIZE) {
-        PyTuple_SET_ITEM(t, 6, PyInt_FromLong(f->size));
+        PyTuple_SET_ITEM(t, 6, PyLong_FromLong(f->size));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 6, Py_None);
     }
     if (f->valid & APR_FINFO_ATIME) {
-        PyTuple_SET_ITEM(t, 7, PyInt_FromLong(f->atime*0.000001));
+        PyTuple_SET_ITEM(t, 7, PyLong_FromLong(f->atime*0.000001));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 7, Py_None);
     }
     if (f->valid & APR_FINFO_MTIME) {
-        PyTuple_SET_ITEM(t, 8, PyInt_FromLong(f->mtime*0.000001));
+        PyTuple_SET_ITEM(t, 8, PyLong_FromLong(f->mtime*0.000001));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 8, Py_None);
     }
     if (f->valid & APR_FINFO_CTIME) {
-        PyTuple_SET_ITEM(t, 9, PyInt_FromLong(f->ctime*0.000001));
+        PyTuple_SET_ITEM(t, 9, PyLong_FromLong(f->ctime*0.000001));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 9, Py_None);
     }
     if (f->fname) {
-        PyTuple_SET_ITEM(t, 10, PyString_FromString(f->fname));
+        PyTuple_SET_ITEM(t, 10, PyBytes_FromString(f->fname));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 10, Py_None);
     }
     if (f->valid & APR_FINFO_NAME) {
-        PyTuple_SET_ITEM(t, 11, PyString_FromString(f->name));
+        PyTuple_SET_ITEM(t, 11, PyBytes_FromString(f->name));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 11, Py_None);
     }
-    /* it'd be nice to also return the file dscriptor, 
+    /* it'd be nice to also return the file dscriptor,
        f->filehand->filedes, but it's platform dependent,
        so may be later... */
 
@@ -203,67 +190,66 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u)
 {
     PyObject *t;
 
-    /* PYTHON 2.5: PyTuple_New uses Py_ssize_t for input parameters */
     t = PyTuple_New(9);
 
     if (u->scheme) {
-        PyTuple_SET_ITEM(t, 0, PyString_FromString(u->scheme));
+        PyTuple_SET_ITEM(t, 0, PyBytes_FromString(u->scheme));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 0, Py_None);
     }
     if (u->hostinfo) {
-        PyTuple_SET_ITEM(t, 1, PyString_FromString(u->hostinfo));
+        PyTuple_SET_ITEM(t, 1, PyBytes_FromString(u->hostinfo));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 1, Py_None);
     }
     if (u->user) {
-        PyTuple_SET_ITEM(t, 2, PyString_FromString(u->user));
+        PyTuple_SET_ITEM(t, 2, PyBytes_FromString(u->user));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 2, Py_None);
     }
     if (u->password) {
-        PyTuple_SET_ITEM(t, 3, PyString_FromString(u->password));
+        PyTuple_SET_ITEM(t, 3, PyBytes_FromString(u->password));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 3, Py_None);
     }
     if (u->hostname) {
-        PyTuple_SET_ITEM(t, 4, PyString_FromString(u->hostname));
+        PyTuple_SET_ITEM(t, 4, PyBytes_FromString(u->hostname));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 4, Py_None);
     }
     if (u->port_str) {
-        PyTuple_SET_ITEM(t, 5, PyInt_FromLong(u->port));
+        PyTuple_SET_ITEM(t, 5, PyLong_FromLong(u->port));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 5, Py_None);
     }
     if (u->path) {
-        PyTuple_SET_ITEM(t, 6, PyString_FromString(u->path));
+        PyTuple_SET_ITEM(t, 6, PyBytes_FromString(u->path));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 6, Py_None);
     }
     if (u->query) {
-        PyTuple_SET_ITEM(t, 7, PyString_FromString(u->query));
+        PyTuple_SET_ITEM(t, 7, PyBytes_FromString(u->query));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 7, Py_None);
     }
     if (u->fragment) {
-        PyTuple_SET_ITEM(t, 8, PyString_FromString(u->fragment));
+        PyTuple_SET_ITEM(t, 8, PyBytes_FromString(u->fragment));
     }
     else {
         Py_INCREF(Py_None);
@@ -277,7 +263,7 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u)
 
 /**
  ** python_decref
- ** 
+ **
  *   This helper function is used with apr_pool_cleanup_register to destroy
  *   python objects when a certain pool is destroyed.
  */
@@ -290,13 +276,13 @@ apr_status_t python_decref(void *object)
 
 /**
  ** find_module
- ** 
+ **
  *   Find an Apache module by name, used by get_addhandler_extensions
  */
 
 static module *find_module(char *name)
 {
-    int n; 
+    int n;
     for (n = 0; ap_loaded_modules[n]; ++n) {
 
         if (strcmp(name, ap_loaded_modules[n]->name) == 0)
@@ -305,10 +291,10 @@ static module *find_module(char *name)
     }
     return NULL;
 }
- 
+
 /**
  ** get_addhandler_extensions
- ** 
+ **
  *   Get extensions specified for AddHandler, if any. To do this we
  *   retrieve mod_mime's config. This is used by the publisher to strip
  *   file extentions from modules in the most meaningful way.
@@ -325,8 +311,8 @@ char * get_addhandler_extensions(request_rec *req)
     /* these typedefs are copied from mod_mime.c */
 
     typedef struct {
-        apr_hash_t  *extension_mappings;  
-        apr_array_header_t *remove_mappings; 
+        apr_hash_t  *extension_mappings;
+        apr_array_header_t *remove_mappings;
         char *default_language;
         int multimatch;
     } mime_dir_config;
@@ -357,9 +343,9 @@ char * get_addhandler_extensions(request_rec *req)
         for (hi = apr_hash_first(req->pool, mconf->extension_mappings); hi; hi = apr_hash_next(hi)) {
             apr_hash_this(hi, (const void **)&key, NULL, &val);
             ei = (extension_info *)val;
-            if (ei->handler) 
-                if (strcmp("mod_python", ei->handler) == 0 || 
-                    strcmp("python-program", ei->handler) == 0) 
+            if (ei->handler)
+                if (strcmp("mod_python", ei->handler) == 0 ||
+                    strcmp("python-program", ei->handler) == 0)
                     result = apr_pstrcat(req->pool, (char *)key, " ", result, NULL);
         }
     }
@@ -369,7 +355,7 @@ char * get_addhandler_extensions(request_rec *req)
 
 /**
  ** find_memberdef
- ** 
+ **
  *   Find a memberdef in a PyMemberDef array
  */
 
@@ -378,7 +364,8 @@ PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
     const PyMemberDef *md;
 
     for (md = mlist; md->name != NULL; md++)
-        if (strcmp(md->name, name) == 0)
+        if (name[0] == md->name[0] &&
+            strcmp(md->name+1, name+1) == 0)
             return (PyMemberDef *)md;
 
     /* this should never happen or the mlist is screwed up */
@@ -395,7 +382,6 @@ PyMemberDef *find_memberdef(const PyMemberDef *mlist, const char *name)
 PyObject *cfgtree_walk(ap_directive_t *dir)
 {
 
-    /* PYTHON 2.5: PyList_New uses Py_ssize_t for input parameters */
     PyObject *list = PyList_New(0);
     if (!list)
         return PyErr_NoMemory();
@@ -417,13 +403,13 @@ PyObject *cfgtree_walk(ap_directive_t *dir)
                 return PyErr_NoMemory();
 
             PyList_Append(list, child);
-            
+
             Py_DECREF(child);
 
         }
 
         dir = dir->next;
-    } 
+    }
 
     return list;
 }
@@ -442,7 +428,7 @@ static PyObject *makeipaddr(struct apr_sockaddr_t *addr)
 
     rc = apr_sockaddr_ip_get( &str, addr );
     if (rc==APR_SUCCESS) {
-        ret = PyString_FromString( str );
+        ret = PyBytes_FromString( str );
     }
     else {
         PyErr_SetString(PyExc_SystemError,"apr_sockaddr_ip_get failure");

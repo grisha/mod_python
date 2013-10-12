@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,10 +17,10 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * hlistobject.h 
+ * hlistobject.h
  *
  *
- * See accompanying documentation and source code comments 
+ * See accompanying documentation and source code comments
  * for details.
  *
  */
@@ -36,12 +36,12 @@ extern "C" {
         struct hl_entry *head;
     } hlistobject;
 
-    extern DL_IMPORT(PyTypeObject) MpHList_Type;
-    
-#define MpHList_Check(op) ((op)->ob_type == &MpHList_Type)
+    PyAPI_DATA(PyTypeObject) MpHList_Type;
 
-    extern DL_IMPORT(PyObject *)MpHList_FromHLEntry Py_PROTO((hl_entry *hle));
-    
+#define MpHList_Check(op) (Py_TYPE(op) == &MpHList_Type)
+
+    PyAPI_FUNC(PyObject *)MpHList_FromHLEntry (hl_entry *hle);
+
 #ifdef __cplusplus
 }
 #endif

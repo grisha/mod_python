@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,7 +17,7 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * filterobject.h 
+ * filterobject.h
  *
  *
  */
@@ -34,7 +34,7 @@ extern "C" {
 
         /* in out refers to the dircetion of data with respect to
            filter, not the filter type */
-        apr_bucket_brigade *bb_in; 
+        apr_bucket_brigade *bb_in;
         apr_bucket_brigade *bb_out;
 
         apr_status_t rc;
@@ -54,14 +54,14 @@ extern "C" {
 
     } filterobject;
 
-    extern DL_IMPORT(PyTypeObject) MpFilter_Type;
-    
-#define MpFilter_Check(op) ((op)->ob_type == &MpFilter_Type)
-    
-    extern DL_IMPORT(PyObject *) 
-        MpFilter_FromFilter Py_PROTO((ap_filter_t *f, apr_bucket_brigade *bb_in, 
-                                      int is_input, ap_input_mode_t mode, 
-                                      apr_size_t readbytes, char *hadler, char *dir));
+    PyAPI_DATA(PyTypeObject) MpFilter_Type;
+
+#define MpFilter_Check(op) (Py_TYPE(op) == &MpFilter_Type)
+
+    PyAPI_FUNC(PyObject *)
+        MpFilter_FromFilter (ap_filter_t *f, apr_bucket_brigade *bb_in,
+                             int is_input, ap_input_mode_t mode,
+                             apr_size_t readbytes, char *hadler, char *dir);
 
 #ifdef __cplusplus
 }

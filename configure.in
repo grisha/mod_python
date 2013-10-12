@@ -167,46 +167,50 @@ fi
 
 # find out python version
 AC_MSG_CHECKING(Python version)
-PyVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:3]'`]
-PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print sys.version[:1]'`]
+PyVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version[:3])'`]
+PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version[:1])'`]
 AC_MSG_RESULT($PyVERSION)
 
-# make sure Python is version 2
-if test "$PyMAJVERSION" != "2"; then
-  AC_MSG_ERROR([This version of mod_python only works with Python major version 2. The one you have seems to be $PyVERSION.])
+# make sure Python is version >= 2
+if test "$PyMAJVERSION" -lt "2"; then
+  AC_MSG_ERROR([This version of mod_python only works with Python major version 2 or higher. The one you have seems to be $PyVERSION.])
 fi
 
 # calculate compiler options
 CPPFLAGS1=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print "-I" + sysconfig.get_config_var("INCLUDEPY")'`
+    print("-I" + sysconfig.get_config_var("INCLUDEPY"))'`
 
 CPPFLAGS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print " ".join(filter(lambda x: x.startswith("-D"), \
-    sysconfig.get_config_var("CFLAGS").split()))'`
+    print(" ".join(filter(lambda x: x.startswith("-D"), \
+    sysconfig.get_config_var("CFLAGS").split())))'`
 
 CPPFLAGS="${CPPFLAGS1} ${CPPFLAGS2}"
 
 AC_SUBST(CPPFLAGS)
 
 PYTHONFRAMEWORKDIR=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print sysconfig.get_config_var("PYTHONFRAMEWORKDIR")'`
+    print(sysconfig.get_config_var("PYTHONFRAMEWORKDIR"))'`
 PYTHONFRAMEWORKPREFIX=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX")'`
+    print(sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"))'`
 PYTHONFRAMEWORK=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print sysconfig.get_config_var("PYTHONFRAMEWORK")'`
+    print(sysconfig.get_config_var("PYTHONFRAMEWORK"))'`
 
 if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
     # this directory may contain the .so library, our preference, list 1st
     LDFLAGS1=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
-        print "-L" + distutils.sysconfig.get_config_var("LIBDIR")'`
+        print("-L" + distutils.sysconfig.get_config_var("LIBDIR"))'`
     LDFLAGS2=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
-        print "-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
-        standard_lib=1) +"/config"'`
+        print("-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
+        standard_lib=1) +"/config")'`
     LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
-    LDLIBS1="-lpython${PyVERSION}"
+    if test "$PyMAJVERSION" -eq "3"; then
+        LDLIBS1="-lpython${PyMAJVERSION}"
+    else
+        LDLIBS1="-lpython${PyVERSION}"
+    fi
     LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-        print sysconfig.get_config_var("LIBS")'`
+        print(sysconfig.get_config_var("LIBS"))'`
 
     LDLIBS="${LDLIBS1} ${LDLIBS2}"
 else
@@ -214,13 +218,13 @@ else
 
     STRING="${PYTHONFRAMEWORKDIR}/Versions/${PyVERSION}/${PYTHONFRAMEWORK}"
     LDFLAGS2=`${PYTHON_BIN} -c "from distutils import sysconfig; \
-        print sysconfig.get_config_var(\"LINKFORSHARED\").replace( \
-        \"${STRING}\", '')"`
+        print(sysconfig.get_config_var(\"LINKFORSHARED\").replace( \
+        \"${STRING}\", ''))"`
 
     LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
     LDLIBS=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-        print sysconfig.get_config_var("LIBS")'`
+        print(sysconfig.get_config_var("LIBS"))'`
 fi
 
 CFLAGS=""
@@ -229,9 +233,9 @@ if test -x /usr/bin/lipo; then
     LDFLAGS3=""
     ARCHITECTURES=`/usr/bin/lipo -info $HTTPD | sed -e 's/.*://'`
     for ARCH in $ARCHITECTURES; do
-        CFLAGS="${CFLAGS} -Wc,'-arch ${ARCH}'" 
-        LDFLAGS3="${LDFLAGS3} -arch ${ARCH}" 
-        ARCHFLAGS="${ARCHFLAGS} -arch ${ARCH}" 
+        CFLAGS="${CFLAGS} -Wc,'-arch ${ARCH}'"
+        LDFLAGS3="${LDFLAGS3} -arch ${ARCH}"
+        ARCHFLAGS="${ARCHFLAGS} -arch ${ARCH}"
     done
     LDFLAGS="${LDFLAGS3} ${LDFLAGS}"
 fi
@@ -263,7 +267,7 @@ AC_MSG_RESULT(no))
 if test -z "$MUTEX_DIR"; then
   MUTEX_DIR="/tmp"
 fi
-# TODO - check if MUTEX_DIR is an absolute path 
+# TODO - check if MUTEX_DIR is an absolute path
 AC_MSG_RESULT([Using MUTEX_DIR $MUTEX_DIR])
 
 # configure the MAX_LOCKS for number of mutex locks
@@ -311,7 +315,7 @@ if test "$LEX" && test -x "$LEX"; then
   Flex_MAJOR=`echo $FlexVERSION| awk -F .  '{print $1}'`
   Flex_MINOR=`echo $FlexVERSION| awk -F .  '{print $2}'`
   Flex_PATCH=`echo $FlexVERSION| awk -F .  '{print $3}'`
-  
+
   if test "$Flex_MAJOR" -eq "2" && test "$Flex_MINOR" -eq "5" && test "$Flex_PATCH" -ge "31"; then
     AC_MSG_RESULT([$FlexVERSION. Good])
   else

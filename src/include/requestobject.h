@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -50,14 +50,14 @@ extern "C" {
         int              rbuff_len;   /* read buffer size */
         int              rbuff_pos;   /* position into the buffer */
         PyObject       * session;
-	
+
     } requestobject;
 
-    extern DL_IMPORT(PyTypeObject) MpRequest_Type;
-    
-#define MpRequest_Check(op) ((op)->ob_type == &MpRequest_Type)
-    
-    extern DL_IMPORT(PyObject *) MpRequest_FromRequest Py_PROTO((request_rec *r));
+    PyAPI_DATA(PyTypeObject) MpRequest_Type;
+
+#define MpRequest_Check(op) (Py_TYPE(op) == &MpRequest_Type)
+
+    PyAPI_FUNC(PyObject *) MpRequest_FromRequest (request_rec *r);
 
 #ifdef __cplusplus
 }

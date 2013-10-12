@@ -22,13 +22,13 @@ __all__ = ["apache", "cgihandler", "psp",
 
 # This is used by mod_python.c to make sure the version of C
 # code matches the Python code.
-import version
+from . import version
 mp_version = version.version
 
 try:
     # it's possible for mod_python to be imported outside httpd, e.g. to use
     # httpdconf, so we fail silently
-    import apache
+    from . import apache
 except: pass
 
 

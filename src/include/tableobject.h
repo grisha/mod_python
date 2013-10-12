@@ -7,7 +7,7 @@ extern "C" {
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -38,14 +38,14 @@ extern "C" {
         apr_table_t     *table;
         apr_pool_t      *pool;
     } tableobject;
-    
-    extern DL_IMPORT(PyTypeObject) MpTable_Type;
-    extern DL_IMPORT(PyTypeObject) MpTableIter_Type;
-    
-#define MpTable_Check(op) ((op)->ob_type == &MpTable_Type)
-    
-    extern DL_IMPORT(PyObject *) MpTable_FromTable Py_PROTO((apr_table_t *t));
-    extern DL_IMPORT(PyObject *) MpTable_New Py_PROTO((void));
+
+    PyAPI_DATA(PyTypeObject) MpTable_Type;
+    PyAPI_DATA(PyTypeObject) MpTableIter_Type;
+
+#define MpTable_Check(op) (Py_TYPE(op) == &MpTable_Type)
+
+    PyAPI_FUNC(PyObject *) MpTable_FromTable (apr_table_t *t);
+    PyAPI_FUNC(PyObject *) MpTable_New (void);
 
 #ifdef __cplusplus
 }

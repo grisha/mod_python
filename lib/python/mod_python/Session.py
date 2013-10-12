@@ -2,7 +2,7 @@
  #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -18,16 +18,27 @@
  # Originally developed by Gregory Trubetskoy.
  #
 
-import apache, Cookie
+import sys
+if sys.version[0] == '2':
+    import apache, Cookie
+    import anydbm
+    from whichdb import whichdb
+    from cPickle import load, loads, dump, dumps
+    from cStringIO import StringIO
+else:
+    from . import apache, Cookie
+    import dbm
+    from dmp import whichdb
+    from io import StringIO
+    from pickle import load, loads, dump, dumps
+
 import _apache
 
 import os
 import stat
 import time
-import anydbm, whichdb
 import random
 import md5
-import cPickle, cStringIO
 import tempfile
 import traceback
 import re
@@ -46,7 +57,7 @@ def _init_rnd():
 
     # query max number of threads
 
-    
+
     if _apache.mpm_query(apache.AP_MPMQ_IS_THREADED):
         gennum = _apache.mpm_query(apache.AP_MPMQ_MAX_SPARE_THREADS)
     else:
@@ -73,12 +84,12 @@ def _get_generator():
     # if we reached the end of it
     global rnd_iter
     try:
-        return rnd_iter.next()
+        return next(rnd_iter)
     except StopIteration:
         # the small potential for two threads doing this
         # seems does not warrant use of a lock
         rnd_iter = iter(rnd_gens)
-        return rnd_iter.next()
+        return next(rnd_iter)
 
 def _new_sid(req):
     # Make a number based on current time, pid, remote ip
@@ -91,14 +102,14 @@ def _new_sid(req):
     # attack in FileSession the sid is validated using
     # the _check_sid() method and the compiled regex
     # validate_sid_re. The sid will be accepted only if len(sid) == 32
-    # and it only contains the characters 0-9 and a-f. 
+    # and it only contains the characters 0-9 and a-f.
     #
     # If you change this implementation of _new_sid, make sure to also
     # change the validation scheme, as well as the test_Session_illegal_sid()
     # unit test in test/test.py.
     # /WARNING
 
-    t = long(time.time()*10000)
+    t = int(time.time()*10000)
     pid = os.getpid()
     g = _get_generator()
     rnd1 = g.randint(0, 999999999)
@@ -106,20 +117,20 @@ def _new_sid(req):
     ip = req.connection.remote_ip
 
     return md5.new("%d%d%d%d%s" % (t, pid, rnd1, rnd2, ip)).hexdigest()
-    
+
 validate_sid_re = re.compile('[0-9a-f]{32}$')
 
 def _check_sid(sid):
     ## Check the validity of the session id
     # # The sid must be 32 characters long, and consisting of the characters
     # 0-9 and a-f.
-    # 
+    #
     # The sid may be passed in a cookie from the client and as such
     # should not be trusted. This is particularly important in
     # FileSession, where the session filename is derived from the sid.
     # A sid containing '/' or '.' characters could result in a directory
     # traversal attack
-    
+
     return not not validate_sid_re.match(sid)
 
 class BaseSession(dict):
@@ -135,11 +146,11 @@ class BaseSession(dict):
         self._timeout = 0
         self._locked = 0
         self._invalid = 0
-        
+
         dict.__init__(self)
 
         config = req.get_options()
-        if config.has_key("mod_python.session.cookie_name"):
+        if "mod_python.session.cookie_name" in config:
             session_cookie_name = config.get("mod_python.session.cookie_name", COOKIE_NAME)
         else:
             # For backwards compatability with versions
@@ -148,7 +159,7 @@ class BaseSession(dict):
 
         if not self._sid:
             # check to see if cookie exists
-            if secret:  
+            if secret:
                 cookie = Cookie.get_cookie(req, session_cookie_name,
                                            Class=Cookie.SignedCookie,
                                            secret=self._secret,
@@ -200,7 +211,7 @@ class BaseSession(dict):
 
     def make_cookie(self):
         config = self._req.get_options()
-        if config.has_key("mod_python.session.cookie_name"):
+        if "mod_python.session.cookie_name" in config:
             session_cookie_name = config.get("mod_python.session.cookie_name", COOKIE_NAME)
         else:
             # For backwards compatability with versions
@@ -213,17 +224,17 @@ class BaseSession(dict):
         else:
             c = Cookie.Cookie(session_cookie_name, self._sid)
 
-        if config.has_key("mod_python.session.application_domain"): 
-            c.domain = config["mod_python.session.application_domain"] 
-        if config.has_key("mod_python.session.application_path"):
+        if "mod_python.session.application_domain" in config:
+            c.domain = config["mod_python.session.application_domain"]
+        if "mod_python.session.application_path" in config:
             c.path = config["mod_python.session.application_path"]
-        elif config.has_key("ApplicationPath"):
+        elif "ApplicationPath" in config:
             # For backwards compatability with versions
             # of mod_python prior to 3.3.
             c.path = config["ApplicationPath"]
         else:
             # the path where *Handler directive was specified
-            dirpath = self._req.hlist.directory 
+            dirpath = self._req.hlist.directory
             if dirpath:
                 docroot = self._req.document_root()
                 c.path = dirpath[len(docroot):]
@@ -262,9 +273,9 @@ class BaseSession(dict):
 
     def save(self):
         if not self._invalid:
-            dict = {"_data"    : self.copy(), 
-                    "_created" : self._created, 
-                    "_accessed": self._accessed, 
+            dict = {"_data"    : self.copy(),
+                    "_created" : self._created,
+                    "_accessed": self._accessed,
                     "_timeout" : self._timeout}
             self.do_save(dict)
 
@@ -274,7 +285,7 @@ class BaseSession(dict):
 
     def init_lock(self):
         pass
-            
+
     def lock(self):
         if self._lock:
             _apache._global_lock(self._req.server, self._sid)
@@ -285,7 +296,7 @@ class BaseSession(dict):
         if self._lock and self._locked:
             _apache._global_unlock(self._req.server, self._sid)
             self._locked = 0
-            
+
     def is_new(self):
         return not not self._new
 
@@ -319,20 +330,20 @@ def unlock_session_cleanup(sess):
 def dbm_cleanup(data):
     dbm, server = data
     _apache._global_lock(server, None, 0)
-    db = anydbm.open(dbm, 'c')
+    db = dbm.open(dbm, 'c')
     try:
         old = []
         s = db.first()
         while 1:
             key, val = s
-            dict = cPickle.loads(val)
+            dict = loads(val)
             try:
                 if (time.time() - dict["_accessed"]) > dict["_timeout"]:
                     old.append(key)
             except KeyError:
                 old.append(key)
             try:
-                s = db.next()
+                s = next(db)
             except KeyError: break
 
         for key in old:
@@ -350,15 +361,15 @@ class DbmSession(BaseSession):
 
         if not dbm:
             opts = req.get_options()
-            if opts.has_key("mod_python.dbm_session.database_filename"):
+            if "mod_python.dbm_session.database_filename" in opts:
                 dbm = opts["mod_python.dbm_session.database_filename"]
-            elif opts.has_key("session_dbm"):
+            elif "session_dbm" in opts:
                 # For backwards compatability with versions
                 # of mod_python prior to 3.3.
                 dbm = opts["session_dbm"]
-            elif opts.has_key("mod_python.dbm_session.database_directory"):
+            elif "mod_python.dbm_session.database_directory" in opts:
                 dbm = os.path.join(opts.get('mod_python.dbm_session.database_directory', tempdir), 'mp_sess.dbm')
-            elif opts.has_key("mod_python.session.database_directory"):
+            elif "mod_python.session.database_directory" in opts:
                 dbm = os.path.join(opts.get('mod_python.session.database_directory', tempdir), 'mp_sess.dbm')
             else:
                 # For backwards compatability with versions
@@ -372,10 +383,10 @@ class DbmSession(BaseSession):
                              timeout=timeout, lock=lock)
 
     def _set_dbm_type(self):
-        module = whichdb.whichdb(self._dbmfile)
+        module = whichdb(self._dbmfile)
         if module:
             self._dbmtype = __import__(module)
-        
+
     def _get_dbm(self):
         result = self._dbmtype.open(self._dbmfile, 'c', stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
         if self._dbmtype is anydbm:
@@ -392,8 +403,8 @@ class DbmSession(BaseSession):
         _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
-            if dbm.has_key(self._sid):
-                return cPickle.loads(dbm[self._sid])
+            if self._sid in dbm:
+                return loads(dbm[self._sid])
             else:
                 return None
         finally:
@@ -404,7 +415,7 @@ class DbmSession(BaseSession):
         _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
-            dbm[self._sid] = cPickle.dumps(dict)
+            dbm[self._sid] = dumps(dict)
         finally:
             dbm.close()
             _apache._global_unlock(self._req.server, None, 0)
@@ -423,8 +434,8 @@ class DbmSession(BaseSession):
 ###########################################################################
 ## FileSession
 
-DFT_FAST_CLEANUP = True 
-DFT_VERIFY_CLEANUP = True 
+DFT_FAST_CLEANUP = True
+DFT_VERIFY_CLEANUP = True
 DFT_GRACE_PERIOD = 240
 DFT_CLEANUP_TIME_LIMIT = 2
 
@@ -433,11 +444,11 @@ class FileSession(BaseSession):
 
     def __init__(self, req, sid=0, secret=None, timeout=0, lock=1,
                 fast_cleanup=-1, verify_cleanup=-1):
-        
+
         opts = req.get_options()
 
         if fast_cleanup == -1:
-            if opts.has_key('mod_python.file_session.enable_fast_cleanup'):
+            if 'mod_python.file_session.enable_fast_cleanup' in opts:
                 self._fast_cleanup = true_or_false(opts.get('mod_python.file_session.enable_fast_cleanup', DFT_FAST_CLEANUP))
             else:
                 # For backwards compatability with versions
@@ -447,7 +458,7 @@ class FileSession(BaseSession):
             self._fast_cleanup = fast_cleanup
 
         if verify_cleanup == -1:
-            if opts.has_key('mod_python.file_session.verify_session_timeout'):
+            if 'mod_python.file_session.verify_session_timeout' in opts:
                 self._verify_cleanup = true_or_false(opts.get('mod_python.file_session.verify_session_timeout', DFT_VERIFY_CLEANUP))
             else:
                 # For backwards compatability with versions
@@ -456,23 +467,23 @@ class FileSession(BaseSession):
         else:
             self._verify_cleanup = verify_cleanup
 
-        if opts.has_key('mod_python.file_session.cleanup_grace_period'):
+        if 'mod_python.file_session.cleanup_grace_period' in opts:
             self._grace_period = int(opts.get('mod_python.file_session.cleanup_grace_period', DFT_GRACE_PERIOD))
         else:
             # For backwards compatability with versions
             # of mod_python prior to 3.3.
             self._grace_period = int(opts.get('session_grace_period', DFT_GRACE_PERIOD))
 
-        if opts.has_key('mod_python.file_session.cleanup_time_limit'):
+        if 'mod_python.file_session.cleanup_time_limit' in opts:
             self._cleanup_time_limit = int(opts.get('mod_python.file_session.cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
         else:
             # For backwards compatability with versions
             # of mod_python prior to 3.3.
             self._cleanup_time_limit = int(opts.get('session_cleanup_time_limit',DFT_CLEANUP_TIME_LIMIT))
 
-        if opts.has_key('mod_python.file_session.database_directory'):
+        if 'mod_python.file_session.database_directory' in opts:
             self._sessdir = os.path.join(opts.get('mod_python.file_session.database_directory', tempdir), 'mp_sess')
-        elif opts.has_key('mod_python.session.database_directory'):
+        elif 'mod_python.session.database_directory' in opts:
             self._sessdir = os.path.join(opts.get('mod_python.session.database_directory', tempdir), 'mp_sess')
         else:
             # For backwards compatability with versions
@@ -484,15 +495,15 @@ class FileSession(BaseSession):
             self._cleanup_timeout = timeout
         else:
             self._cleanup_timeout = DFT_TIMEOUT
-        
+
         BaseSession.__init__(self, req, sid=sid, secret=secret,
             timeout=timeout, lock=lock)
 
     def do_cleanup(self):
         data = {'req':self._req,
                 'sessdir':self._sessdir,
-                'fast_cleanup':self._fast_cleanup, 
-                'verify_cleanup':self._verify_cleanup, 
+                'fast_cleanup':self._fast_cleanup,
+                'verify_cleanup':self._verify_cleanup,
                 'timeout':self._cleanup_timeout,
                 'grace_period':self._grace_period,
                 'cleanup_time_limit': self._cleanup_time_limit,
@@ -510,9 +521,9 @@ class FileSession(BaseSession):
                 filename = os.path.join(path, self._sid)
                 fp = file(filename,'rb')
                 try:
-                    data = cPickle.load(fp)
+                    data = load(fp)
                     if (time.time() - data["_accessed"]) <= data["_timeout"]:
-                        # Change the file access time to the current time so the 
+                        # Change the file access time to the current time so the
                         # cleanup does not delete this file before the request
                         # can save it's session data
                         os.utime(filename,None)
@@ -520,7 +531,7 @@ class FileSession(BaseSession):
                 finally:
                     fp.close()
             except:
-                s = cStringIO.StringIO()
+                s = StringIO()
                 traceback.print_exc(file=s)
                 s = s.getvalue()
                 self._req.log_error('Error while loading a session : %s'%s)
@@ -538,11 +549,11 @@ class FileSession(BaseSession):
                 filename = os.path.join(path, self._sid)
                 fp = file(filename, 'wb')
                 try:
-                    cPickle.dump(dict, fp, 2)
+                    dump(dict, fp, 2)
                 finally:
                     fp.close()
             except:
-                s = cStringIO.StringIO()
+                s = StringIO()
                 traceback.print_exc(file=s)
                 s = s.getvalue()
                 self._req.log_error('Error while saving a session : %s'%s)
@@ -580,14 +591,14 @@ def filesession_cleanup(data):
     # may occur at the exact time that the session is being accessed by
     # another request. It is possible under certain circumstances for that
     # session file to be saved in another request only to immediately deleted
-    # by the cleanup. To avoid this race condition, a session is allowed a 
-    # grace_period before it is considered for deletion by the cleanup. 
+    # by the cleanup. To avoid this race condition, a session is allowed a
+    # grace_period before it is considered for deletion by the cleanup.
     # As long as the grace_period is longer that the time it takes to complete
     # the request (which should normally be less than 1 second), the session will
     # not be mistakenly deleted by the cleanup. By doing this we also avoid the
     # need to lock individual sessions and bypass any potential deadlock
     # situations.
-   
+
     req = data['req']
     sessdir = data['sessdir']
     fast_cleanup = data['fast_cleanup']
@@ -602,7 +613,7 @@ def filesession_cleanup(data):
 
     lockfile = os.path.join(sessdir,'.mp_sess.lck')
     try:
-        lockfp = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0660) 
+        lockfp = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o660)
     except:
         # check if it's a stale lockfile
         mtime = os.stat(lockfile).st_mtime
@@ -627,10 +638,10 @@ def filesession_cleanup(data):
         status_file.close()
 
         if not d.startswith(FS_STAT_VERSION):
-            raise Exception, 'wrong status file version'
+            raise Exception('wrong status file version')
 
         parts = d.split()
-        
+
         stat_version = parts[0]
         next_i = int(parts[1])
         expired_file_count = int(parts[2])
@@ -638,21 +649,21 @@ def filesession_cleanup(data):
         total_time = float(parts[4])
 
     except:
-        stat_version = FS_STAT_VERSION 
+        stat_version = FS_STAT_VERSION
         next_i = 0
-        expired_file_count = 0 
+        expired_file_count = 0
         total_file_count =  0
-        total_time = 0.0 
+        total_time = 0.0
 
     try:
         start_time = time.time()
         filelist =  os.listdir(sessdir)
-        dir_index = range(0,256)[next_i:]
+        dir_index = list(range(0,256))[next_i:]
         for i in dir_index:
             path = '%s/%s' % (sessdir,'%02x' % i)
             if not os.path.exists(path):
                 continue
-        
+
             filelist = os.listdir(path)
             total_file_count += len(filelist)
 
@@ -664,12 +675,12 @@ def filesession_cleanup(data):
                         if time.time() - accessed < (timeout + grace_period):
                             continue
 
-                    if fast_cleanup and not verify_cleanup:        
+                    if fast_cleanup and not verify_cleanup:
                         delete_session = True
                     else:
                         try:
                             fp = file(filename)
-                            dict = cPickle.load(fp)
+                            dict = load(fp)
                             if (time.time() - dict['_accessed']) > (dict['_timeout'] + grace_period):
                                 delete_session = True
                             else:
@@ -680,7 +691,7 @@ def filesession_cleanup(data):
                         os.unlink(filename)
                         expired_file_count += 1
                 except:
-                    s = cStringIO.StringIO()
+                    s = StringIO()
                     traceback.print_exc(file=s)
                     s = s.getvalue()
                     req.log_error('FileSession cleanup error: %s'
@@ -688,7 +699,7 @@ def filesession_cleanup(data):
                                     apache.APLOG_NOTICE)
 
             next_i = (i + 1) % 256
-            time_used = time.time() - start_time 
+            time_used = time.time() - start_time
             if (cleanup_time_limit > 0) and (time_used > cleanup_time_limit):
                 break
 
@@ -709,7 +720,7 @@ def filesession_cleanup(data):
         status_file = file(os.path.join(sessdir, 'fs_status.txt'), 'w')
         status_file.write('%s %d %d %d %f\n' % (stat_version, next_i, expired_file_count, total_file_count, total_time))
         status_file.close()
-   
+
         try:
             os.unlink(lockfile)
         except:
@@ -729,7 +740,7 @@ def make_filesession_dirs(sess_dir):
 ## MemorySession
 
 def mem_cleanup(sdict):
-    for sid in sdict.keys():
+    for sid in list(sdict.keys()):
         try:
             session = sdict[sid]
             if (time.time() - session["_accessed"]) > session["_timeout"]:
@@ -752,7 +763,7 @@ class MemorySession(BaseSession):
                             apache.APLOG_NOTICE)
 
     def do_load(self):
-        if MemorySession.sdict.has_key(self._sid):
+        if self._sid in MemorySession.sdict:
             return MemorySession.sdict[self._sid]
         return None
 
@@ -771,9 +782,9 @@ def Session(req, sid=0, secret=None, timeout=0, lock=1):
 
     opts = req.get_options()
     # Check the apache config for the type of session
-    if opts.has_key('mod_python.session.session_type'):
+    if 'mod_python.session.session_type' in opts:
         sess_type = opts['mod_python.session.session_type']
-    elif opts.has_key('session'):
+    elif 'session' in opts:
         # For backwards compatability with versions
         # of mod_python prior to 3.3.
         sess_type = opts['session']
@@ -797,7 +808,7 @@ def Session(req, sid=0, secret=None, timeout=0, lock=1):
     else:
         # TODO Add capability to load a user defined class
         # For now, just raise an exception.
-        raise Exception, 'Unknown session type %s' % sess_type
+        raise Exception('Unknown session type %s' % sess_type)
 
     return sess(req, sid=sid, secret=secret,
                          timeout=timeout, lock=lock)

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,7 +17,7 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * _apachemodule.c 
+ * _apachemodule.c
  *
  *
  */
@@ -28,11 +28,11 @@
 
 PyObject *Mp_ServerReturn;
 
-/** 
+/**
  ** mp_log_error
  **
  *  A wrapper to ap_log_error
- * 
+ *
  *  mp_log_error(string message, int level, server server)
  *
  */
@@ -45,14 +45,14 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
     serverobject *server = NULL;
     server_rec *serv_rec;
 
-    if (! PyArg_ParseTuple(args, "z|iO", &message, &level, &server)) 
+    if (! PyArg_ParseTuple(args, "z|iO", &message, &level, &server))
         return NULL; /* error */
 
     if (message) {
 
-        if (! level) 
+        if (! level)
             level = APLOG_ERR;
-      
+
         if (!server || (PyObject *)server == Py_None)
             serv_rec = NULL;
         else {
@@ -62,7 +62,9 @@ static PyObject * mp_log_error(PyObject *self, PyObject *args)
             }
             serv_rec = server->server;
         }
+        Py_BEGIN_ALLOW_THREADS
         ap_log_error(APLOG_MARK, level, 0, serv_rec, "%s", message);
+        Py_END_ALLOW_THREADS
     }
 
     Py_INCREF(Py_None);
@@ -84,12 +86,11 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     int keep_blank_values = 0;
     int strict_parsing = 0; /* XXX not implemented */
 
-    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values, 
-                           &strict_parsing)) 
+    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values,
+                           &strict_parsing))
         return NULL; /* error */
 
     /* split query string by '&' and ';' into a list of pairs */
-    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */ 
     pairs = PyList_New(0);
     if (pairs == NULL)
         return NULL;
@@ -103,13 +104,12 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         char *cpair;
         int j = 0;
 
-        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
-        pair = PyString_FromStringAndSize(NULL, len);
+        pair = PyBytes_FromStringAndSize(NULL, len);
         if (pair == NULL)
             return NULL;
 
         /* split by '&' or ';' */
-        cpair = PyString_AS_STRING(pair);
+        cpair = PyBytes_AS_STRING(pair);
         while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
             /* replace '+' with ' ' */
             cpair[j] = (qs[i] == '+') ? ' ' : qs[i];
@@ -118,8 +118,7 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         }
 
         if (j) {
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
-            _PyString_Resize(&pair, j);
+            _PyBytes_Resize(&pair, j);
             if (pair)
                 PyList_Append(pairs, pair);
         }
@@ -129,15 +128,14 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     }
 
     /*
-     * now we have a list of "abc=def" string (pairs), let's split 
+     * now we have a list of "abc=def" string (pairs), let's split
      * them all by '=' and put them in a dictionary.
      */
-    
+
     dict = PyDict_New();
     if (dict == NULL)
         return NULL;
 
-    /* PYTHON 2.5: 'PyList_Size' uses Py_ssize_t for input parameters */ 
     lsize = PyList_Size(pairs);
     n = 0;
 
@@ -148,20 +146,18 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         int k, v;
 
         pair = PyList_GET_ITEM(pairs, n);
-        cpair = PyString_AS_STRING(pair);
+        cpair = PyBytes_AS_STRING(pair);
 
         len = strlen(cpair);
-        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
-        key = PyString_FromStringAndSize(NULL, len);
-        if (key == NULL) 
+        key = PyBytes_FromStringAndSize(NULL, len);
+        if (key == NULL)
             return NULL;
-        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
-        val = PyString_FromStringAndSize(NULL, len);
-        if (val == NULL) 
+        val = PyBytes_FromStringAndSize(NULL, len);
+        if (val == NULL)
             return NULL;
 
-        ckey = PyString_AS_STRING(key);
-        cval = PyString_AS_STRING(val);
+        ckey = PyBytes_AS_STRING(key);
+        cval = PyBytes_AS_STRING(val);
 
         i = 0;
         k = 0;
@@ -190,16 +186,14 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
             ap_unescape_url(ckey);
             ap_unescape_url(cval);
 
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
-            _PyString_Resize(&key, strlen(ckey));
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
-            _PyString_Resize(&val, strlen(cval));
+            _PyBytes_Resize(&key, strlen(ckey));
+            _PyBytes_Resize(&val, strlen(cval));
 
             if (key && val) {
 
-                ckey = PyString_AS_STRING(key);
-                cval = PyString_AS_STRING(val);
-        
+                ckey = PyBytes_AS_STRING(key);
+                cval = PyBytes_AS_STRING(val);
+
                 if (PyMapping_HasKeyString(dict, ckey)) {
                     PyObject *list;
                     list = PyDict_GetItem(dict, key);
@@ -240,12 +234,11 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
     int keep_blank_values = 0;
     int strict_parsing = 0; /* XXX not implemented */
 
-    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values, 
-                           &strict_parsing)) 
+    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values,
+                           &strict_parsing))
         return NULL; /* error */
 
     /* split query string by '&' and ';' into a list of pairs */
-    /* PYTHON 2.5: 'PyList_New' uses Py_ssize_t for input parameters */ 
     pairs = PyList_New(0);
     if (pairs == NULL)
         return NULL;
@@ -259,13 +252,12 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
         char *cpair, *ckey, *cval;
         int plen, j, p, k, v;
 
-        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
-        pair = PyString_FromStringAndSize(NULL, len);
+        pair = PyBytes_FromStringAndSize(NULL, len);
         if (pair == NULL)
             return NULL;
 
         /* split by '&' or ';' */
-        cpair = PyString_AS_STRING(pair);
+        cpair = PyBytes_AS_STRING(pair);
         j = 0;
         while ((qs[i] != '&') && (qs[i] != ';') && (i < len)) {
             /* replace '+' with ' ' */
@@ -281,23 +273,22 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
         }
 
         cpair[j] = '\0';
-        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */ 
-        _PyString_Resize(&pair, j);
-        cpair = PyString_AS_STRING(pair);
+        _PyBytes_Resize(&pair, j);
+        cpair = PyBytes_AS_STRING(pair);
 
         /* split the "abc=def" pair */
         plen = strlen(cpair);
-        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
-        key = PyString_FromStringAndSize(NULL, plen);
-        if (key == NULL) 
-            return NULL;
-        /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */ 
-        val = PyString_FromStringAndSize(NULL, plen);
-        if (val == NULL) 
+
+        key = PyBytes_FromStringAndSize(NULL, plen);
+        if (key == NULL)
             return NULL;
 
-        ckey = PyString_AS_STRING(key);
-        cval = PyString_AS_STRING(val);
+        val = PyBytes_FromStringAndSize(NULL, plen);
+        if (val == NULL)
+            return NULL;
+
+        ckey = PyBytes_AS_STRING(key);
+        cval = PyBytes_AS_STRING(val);
 
         p = 0;
         k = 0;
@@ -325,10 +316,8 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
             ap_unescape_url(ckey);
             ap_unescape_url(cval);
 
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-            _PyString_Resize(&key, strlen(ckey));
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-            _PyString_Resize(&val, strlen(cval));
+            _PyBytes_Resize(&key, strlen(ckey));
+            _PyBytes_Resize(&val, strlen(cval));
 
             if (key && val) {
                 PyObject* listitem = Py_BuildValue("(O,O)", key, val);
@@ -367,7 +356,7 @@ static PyObject *config_tree(void)
 
 static PyObject *server_root(void)
 {
-    return PyString_FromString(ap_server_root);
+    return PyBytes_FromString(ap_server_root);
 }
 
 /**
@@ -386,7 +375,7 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
     int index = -1;
     apr_status_t rv;
 
-    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index)) 
+    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index))
         return NULL;
 
     if (!  MpServer_Check(server)) {
@@ -399,7 +388,7 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
 
     apr_pool_userdata_get((void **)&glb, MP_CONFIG_KEY,
                           s->process->pool);
-    
+
     if ((index >= (glb->nlocks)) || (index < -1)) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
                      "Index %d is out of range for number of global mutex locks", index);
@@ -407,7 +396,7 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
                         "Lock index is out of range for number of global mutex locks");
         return NULL;
     }
-    
+
     if (index == -1) {
 
         int hash = PyObject_Hash(key);
@@ -422,15 +411,15 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
          * which is reserved for things like dbm
          * locking (see Session.py)
          */
-        
+
         index = (hash % (glb->nlocks-1)+1);
     }
 
-/*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
-/*               "_global_lock at index %d from pid %d", index, getpid()); */
+    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+              "_global_lock at index %d from pid %d", index, getpid());
     Py_BEGIN_ALLOW_THREADS
-    rv = apr_global_mutex_lock(glb->g_locks[index]);        
-    Py_END_ALLOW_THREADS                               
+    rv = apr_global_mutex_lock(glb->g_locks[index]);
+    Py_END_ALLOW_THREADS
     if (rv != APR_SUCCESS) {
         ap_log_error(APLOG_MARK, APLOG_WARNING, rv, s,
                      "Failed to acquire global mutex lock at index %d", index);
@@ -438,9 +427,9 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
                         "Failed to acquire global mutex lock");
         return NULL;
     }
-/*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
-/*               "_global_lock DONE at index %d from pid %d", index, getpid()); */
-        
+    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+              "_global_lock DONE at index %d from pid %d", index, getpid());
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -461,7 +450,7 @@ static PyObject *_global_trylock(PyObject *self, PyObject *args)
     int index = -1;
     apr_status_t rv;
 
-    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index)) 
+    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index))
         return NULL;
 
     if (!  MpServer_Check(server)) {
@@ -482,7 +471,7 @@ static PyObject *_global_trylock(PyObject *self, PyObject *args)
                         "Lock index is out of range for number of global mutex locks");
         return NULL;
     }
-   
+
     if (index == -1) {
 
         int hash = PyObject_Hash(key);
@@ -497,18 +486,18 @@ static PyObject *_global_trylock(PyObject *self, PyObject *args)
          * which is reserved for things like dbm
          * locking (see Session.py)
          */
-        
+
         index = (hash % (glb->nlocks-1)+1);
     }
 
-    /*  
+    /*
      * ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
      *           "_global_trylock at index %d from pid %d", index, getpid());
      */
     Py_BEGIN_ALLOW_THREADS
-    rv = apr_global_mutex_trylock(glb->g_locks[index]);        
+    rv = apr_global_mutex_trylock(glb->g_locks[index]);
     Py_END_ALLOW_THREADS
-    
+
     if (rv == APR_SUCCESS) {
         /*
          * ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
@@ -550,7 +539,7 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
     int index = -1;
     apr_status_t rv;
 
-    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index)) 
+    if (! PyArg_ParseTuple(args, "OO|i", &server, &key, &index))
         return NULL;
 
     if (!  MpServer_Check(server)) {
@@ -571,7 +560,7 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
                         "Lock index is out of range for number of global mutex locks");
         return NULL;
     }
-   
+
     if (index == -1) {
 
         int hash = PyObject_Hash(key);
@@ -586,10 +575,10 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
          * which is reserved for things like dbm
          * locking (see Session.py)
          */
-        
+
         index = (hash % (glb->nlocks-1)+1);
     }
-    
+
 /*     ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
 /*                      "_global_unlock at index %d from pid %d", index, getpid()); */
     if ((rv = apr_global_mutex_unlock(glb->g_locks[index])) != APR_SUCCESS) {
@@ -599,7 +588,7 @@ static PyObject *_global_unlock(PyObject *self, PyObject *args)
                         "Failed to release global mutex lock");
         return NULL;
     }
-        
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -614,15 +603,23 @@ static PyObject *mpm_query(PyObject *self, PyObject *code)
 {
     int result;
 
-    if (!PyInt_Check(code)) {
+#if PY_MAJOR_VERSION < 3
+    if (! PyInt_Check(code)) {
         PyErr_SetString(PyExc_TypeError,
                         "The argument must be an integer");
         return NULL;
     }
-
-    ap_mpm_query(PyInt_AS_LONG(code), &result);
-    
+    ap_mpm_query(PyInt_AsLong(code), &result);
     return PyInt_FromLong(result);
+#else
+    if (! PyLong_Check(code)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "The argument must be an integer");
+        return NULL;
+    }
+    ap_mpm_query(PyLong_AsLong(code), &result);
+    return PyLong_FromLong(result);
+#endif
 }
 
 /**
@@ -644,19 +641,19 @@ static PyObject *register_cleanup(PyObject *self, PyObject *args)
     PyObject *data = NULL;
 
     if (! PyArg_ParseTuple(args, "sOO|O", &interpreter, &server, &handler, &data))
-        return NULL; 
+        return NULL;
 
     if (! MpServer_Check(server)) {
-        PyErr_SetString(PyExc_ValueError, 
+        PyErr_SetString(PyExc_ValueError,
                         "second argument must be a server object");
         return NULL;
     }
     else if(!PyCallable_Check(handler)) {
-        PyErr_SetString(PyExc_ValueError, 
+        PyErr_SetString(PyExc_ValueError,
                         "third argument must be a callable object");
         return NULL;
     }
-    
+
     ci = (cleanup_info *)malloc(sizeof(cleanup_info));
     ci->request_rec = NULL;
     ci->server_rec = server->server;
@@ -671,10 +668,10 @@ static PyObject *register_cleanup(PyObject *self, PyObject *args)
         Py_INCREF(Py_None);
         ci->data = Py_None;
     }
-    
-    apr_pool_cleanup_register(child_init_pool, ci, python_cleanup, 
+
+    apr_pool_cleanup_register(child_init_pool, ci, python_cleanup,
                               apr_pool_cleanup_null);
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -691,7 +688,7 @@ static PyObject *exists_config_define(PyObject *self, PyObject *args)
     char *name = NULL;
 
     if (! PyArg_ParseTuple(args, "s", &name))
-        return NULL; 
+        return NULL;
 
     if(ap_exists_config_define(name)) {
         Py_INCREF(Py_True);
@@ -717,7 +714,7 @@ static PyObject *mp_stat(PyObject *self, PyObject *args)
     apr_status_t result;
 
     if (! PyArg_ParseTuple(args, "si", &fname, &wanted))
-        return NULL; 
+        return NULL;
 
     finfo = (finfoobject *)MpFinfo_New();
 
@@ -739,6 +736,11 @@ static PyObject *mp_stat(PyObject *self, PyObject *args)
     return NULL;
 }
 
+PyObject *get_ServerReturn()
+{
+    return Mp_ServerReturn;
+}
+
 /* methods of _apache */
 static PyMethodDef _apache_module_methods[] = {
     {"config_tree",           (PyCFunction)config_tree,          METH_NOARGS},
@@ -758,76 +760,105 @@ static PyMethodDef _apache_module_methods[] = {
 
 /* Module initialization */
 
-DL_EXPORT(void) init_apache()
+
+#if PY_MAJOR_VERSION >= 3
+
+static struct PyModuleDef _apache_moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_apache",              /* m_name */
+    NULL,                   /* m_doc */
+    -1,                     /* m_size */
+    _apache_module_methods, /* m_methods */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+#endif
+
+PyObject *_apache_module_init()
 {
     PyObject *m, *d, *o;
 
-    /* initialize types XXX break windows? */
-    MpTable_Type.ob_type = &PyType_Type; 
-    MpTableIter_Type.ob_type = &PyType_Type;
-    MpServer_Type.ob_type = &PyType_Type;
-    MpConn_Type.ob_type = &PyType_Type;  
-    MpRequest_Type.ob_type = &PyType_Type; 
-    MpFilter_Type.ob_type = &PyType_Type;
-    MpHList_Type.ob_type = &PyType_Type;
+    PyType_Ready(&MpTable_Type);
+    PyType_Ready(&MpTableIter_Type);
+    PyType_Ready(&MpServer_Type);
+    PyType_Ready(&MpConn_Type);
+    PyType_Ready(&MpRequest_Type);
+    PyType_Ready(&MpFilter_Type);
+    PyType_Ready(&MpHList_Type);
 
+#if PY_MAJOR_VERSION < 3
     m = Py_InitModule("_apache", _apache_module_methods);
+#else
+    m = PyModule_Create(&_apache_moduledef);
+#endif
     d = PyModule_GetDict(m);
     Mp_ServerReturn = PyErr_NewException("_apache.SERVER_RETURN", NULL, NULL);
     if (Mp_ServerReturn == NULL)
-        return;
+        return NULL;
     PyDict_SetItemString(d, "SERVER_RETURN", Mp_ServerReturn);
 
     PyDict_SetItemString(d, "table", (PyObject *)&MpTable_Type);
 
-    o = PyInt_FromLong(AP_CONN_UNKNOWN);
+    o = PyLong_FromLong(AP_CONN_UNKNOWN);
     PyDict_SetItemString(d, "AP_CONN_UNKNOWN", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(AP_CONN_CLOSE);
+    o = PyLong_FromLong(AP_CONN_CLOSE);
     PyDict_SetItemString(d, "AP_CONN_CLOSE", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(AP_CONN_KEEPALIVE);
+    o = PyLong_FromLong(AP_CONN_KEEPALIVE);
     PyDict_SetItemString(d, "AP_CONN_KEEPALIVE", o);
     Py_DECREF(o);
 
-    o = PyInt_FromLong(APR_NOFILE);
+    o = PyLong_FromLong(APR_NOFILE);
     PyDict_SetItemString(d, "APR_NOFILE", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_REG);
+    o = PyLong_FromLong(APR_REG);
     PyDict_SetItemString(d, "APR_REG", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_DIR);
+    o = PyLong_FromLong(APR_DIR);
     PyDict_SetItemString(d, "APR_DIR", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_CHR);
+    o = PyLong_FromLong(APR_CHR);
     PyDict_SetItemString(d, "APR_CHR", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_BLK);
+    o = PyLong_FromLong(APR_BLK);
     PyDict_SetItemString(d, "APR_BLK", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_PIPE);
+    o = PyLong_FromLong(APR_PIPE);
     PyDict_SetItemString(d, "APR_PIPE", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_LNK);
+    o = PyLong_FromLong(APR_LNK);
     PyDict_SetItemString(d, "APR_LNK", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_SOCK);
+    o = PyLong_FromLong(APR_SOCK);
     PyDict_SetItemString(d, "APR_SOCK", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(APR_UNKFILE);
+    o = PyLong_FromLong(APR_UNKFILE);
     PyDict_SetItemString(d, "APR_UNKFILE", o);
     Py_DECREF(o);
 
-    o = PyInt_FromLong(MODULE_MAGIC_NUMBER_MAJOR);
+    o = PyLong_FromLong(MODULE_MAGIC_NUMBER_MAJOR);
     PyDict_SetItemString(d, "MODULE_MAGIC_NUMBER_MAJOR", o);
     Py_DECREF(o);
-    o = PyInt_FromLong(MODULE_MAGIC_NUMBER_MINOR);
+    o = PyLong_FromLong(MODULE_MAGIC_NUMBER_MINOR);
     PyDict_SetItemString(d, "MODULE_MAGIC_NUMBER_MINOR", o);
     Py_DECREF(o);
 
 }
 
-PyObject *get_ServerReturn() 
-{
-    return Mp_ServerReturn;
+#if PY_MAJOR_VERSION < 3
+
+PyMODINIT_FUNC init_apache(void) {
+    _apache_module_init();
 }
+
+#else
+
+PyMODINIT_FUNC PyInit_apache(void) {
+    return _apache_module_init();
+}
+
+#endif

@@ -110,7 +110,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
         if (rc != APR_SUCCESS) {
             PyErr_SetObject(PyExc_IOError,
-                            PyString_FromString("Connection read error"));
+                            PyBytes_FromString("Connection read error"));
             return NULL;
         }
     }
@@ -127,14 +127,13 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         return Py_None;
     }
 
-    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
-    result = PyString_FromStringAndSize(NULL, bufsize);
+    result = PyBytes_FromStringAndSize(NULL, bufsize);
 
     /* possibly no more memory */
     if (result == NULL)
         return PyErr_NoMemory();
 
-    buffer = PyString_AS_STRING((PyStringObject *) result);
+    buffer = PyBytes_AS_STRING((PyBytesObject *) result);
 
     bytes_read = 0;
 
@@ -148,7 +147,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
         if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
             PyErr_SetObject(PyExc_IOError,
-                            PyString_FromString("Connection read error"));
+                            PyBytes_FromString("Connection read error"));
             return NULL;
         }
 
@@ -165,9 +164,8 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         /* time to grow destination string? */
         if (len == 0 && bytes_read == bufsize) {
 
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-            _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
-            buffer = PyString_AS_STRING((PyStringObject *) result);
+            _PyBytes_Resize(&result, bufsize + HUGE_STRING_LEN);
+            buffer = PyBytes_AS_STRING((PyBytesObject *) result);
             buffer += bufsize;
             bufsize += HUGE_STRING_LEN;
         }
@@ -185,8 +183,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
 
     /* resize if necessary */
     if (bytes_read < len || len == 0)
-        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-        if(_PyString_Resize(&result, bytes_read))
+        if(_PyBytes_Resize(&result, bytes_read))
             return NULL;
 
     return result;
@@ -244,16 +241,15 @@ static PyObject * conn_write(connobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "O", &s))
         return NULL;
 
-    if (! PyString_Check(s)) {
+    if (! PyBytes_Check(s)) {
         PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
         return NULL;
     }
 
-    /* PYTHON 2.5: 'PyString_Size' uses Py_ssize_t for return values (may need overflow check) */
-    len = PyString_Size(s);
+    len = PyBytes_Size(s);
 
     if (len) {
-        buff = apr_pmemdup(c->pool, PyString_AS_STRING(s), len);
+        buff = apr_pmemdup(c->pool, PyBytes_AS_STRING(s), len);
 
         bb = apr_brigade_create(c->pool, c->bucket_alloc);
 
@@ -282,33 +278,33 @@ static PyMethodDef connobjectmethods[] = {
 #define OFF(x) offsetof(conn_rec, x)
 
 static PyMemberDef conn_memberlist[] = {
-    {"base_server",        T_OBJECT,    0,                       RO},
+    {"base_server",        T_OBJECT,    0,                       READONLY},
     /* XXX vhost_lookup_data? */
     /* XXX client_socket? */
-    {"local_addr",         T_OBJECT,    0,                       RO},
+    {"local_addr",         T_OBJECT,    0,                       READONLY},
 #if AP_MODULE_MAGIC_AT_LEAST(20111130,0)
-    {"client_addr",        T_OBJECT,    0,                       RO},
-    {"client_ip",          T_STRING,    OFF(client_ip),          RO},
-    {"remote_ip",          T_STRING,    OFF(client_ip),          RO}, /* bw compat */
+    {"client_addr",        T_OBJECT,    0,                       READONLY},
+    {"client_ip",          T_STRING,    OFF(client_ip),          READONLY},
+    {"remote_ip",          T_STRING,    OFF(client_ip),          READONLY}, /* bw compat */
 #else
-    {"remote_addr",        T_OBJECT,    0,                       RO},
-    {"remote_ip",          T_STRING,    OFF(remote_ip),          RO},
+    {"remote_addr",        T_OBJECT,    0,                       READONLY},
+    {"remote_ip",          T_STRING,    OFF(remote_ip),          READONLY},
 #endif
-    {"remote_host",        T_STRING,    OFF(remote_host),        RO},
-    {"remote_logname",     T_STRING,    OFF(remote_logname),     RO},
-    {"aborted",            T_INT,       0,                       RO},
-    {"keepalive",          T_INT,       0,                       RO},
-    {"double_reverse",     T_INT,       0,                       RO},
-    {"keepalives",         T_INT,       OFF(keepalives),         RO},
-    {"local_addr",         T_OBJECT,    0,                       RO},
-    {"local_ip",           T_STRING,    OFF(local_ip),           RO},
-    {"local_host",         T_STRING,    OFF(local_host),         RO},
-    {"id",                 T_LONG,      OFF(id),                 RO},
+    {"remote_host",        T_STRING,    OFF(remote_host),        READONLY},
+    {"remote_logname",     T_STRING,    OFF(remote_logname),     READONLY},
+    {"aborted",            T_INT,       0,                       READONLY},
+    {"keepalive",          T_INT,       0,                       READONLY},
+    {"double_reverse",     T_INT,       0,                       READONLY},
+    {"keepalives",         T_INT,       OFF(keepalives),         READONLY},
+    {"local_addr",         T_OBJECT,    0,                       READONLY},
+    {"local_ip",           T_STRING,    OFF(local_ip),           READONLY},
+    {"local_host",         T_STRING,    OFF(local_host),         READONLY},
+    {"id",                 T_LONG,      OFF(id),                 READONLY},
     /* XXX conn_config? */
-    {"notes",              T_OBJECT,    0,                       RO},
+    {"notes",              T_OBJECT,    0,                       READONLY},
     /* XXX filters ? */
     /* XXX document remain */
-    /*{"remain",             T_LONG,      OFF(remain),             RO},*/
+    /*{"remain",             T_LONG,      OFF(remain),             READONLY},*/
     {NULL}  /* Sentinel */
 };
 
@@ -339,9 +335,12 @@ static PyObject * conn_getattr(connobject *self, char *name)
 
     PyObject *res;
 
-    res = Py_FindMethod(connobjectmethods, (PyObject *)self, name);
-    if (res != NULL)
-        return res;
+    PyMethodDef *ml = connobjectmethods;
+    for (; ml->ml_name != NULL; ml++) {
+        if (name[0] == ml->ml_name[0] &&
+            strcmp(name+1, ml->ml_name+1) == 0)
+            return PyCFunction_New(ml, (PyObject*)self);
+    }
 
     PyErr_Clear();
 
@@ -365,13 +364,13 @@ static PyObject * conn_getattr(connobject *self, char *name)
         }
     }
     else if (strcmp(name, "aborted") == 0) {
-        return PyInt_FromLong(self->conn->aborted);
+        return PyLong_FromLong(self->conn->aborted);
     }
     else if (strcmp(name, "keepalive") == 0) {
-        return PyInt_FromLong(self->conn->keepalive);
+        return PyLong_FromLong(self->conn->keepalive);
     }
     else if (strcmp(name, "double_reverse") == 0) {
-        return PyInt_FromLong(self->conn->double_reverse);
+        return PyLong_FromLong(self->conn->double_reverse);
     }
     else if (strcmp(name, "local_addr") == 0) {
         return makesockaddr(self->conn->local_addr);
@@ -399,10 +398,10 @@ static PyObject * conn_getattr(connobject *self, char *name)
         return (PyObject *)self->hlo;
     }
     else if (strcmp(name, "_conn_rec") == 0) {
-#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
-        return PyCapsule_New((void *)self->conn, NULL, NULL);
-#else
+#if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 7
         return PyCObject_FromVoidPtr(self->conn, 0);
+#else
+        return PyCapsule_New((void *)self->conn, NULL, NULL);
 #endif
     }
     else {
@@ -438,11 +437,11 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
         return -1;
     }
     else if (strcmp(name, "keepalive") == 0) {
-        if (! PyInt_Check(value)) {
+        if (! PyLong_Check(value)) {
             PyErr_SetString(PyExc_TypeError, "keepalive must be a integer");
             return -1;
         }
-        self->conn->keepalive = PyInt_AsLong(value);
+        self->conn->keepalive = PyLong_AsLong(value);
         return 0;
     }
     else {
@@ -456,21 +455,20 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
 }
 
 PyTypeObject MpConn_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_conn",
-    sizeof(connobject),
-    0,
-    (destructor) conn_dealloc,       /*tp_dealloc*/
-    0,                               /*tp_print*/
-    (getattrfunc) conn_getattr,      /*tp_getattr*/
-    (setattrfunc) conn_setattr,      /*tp_setattr*/
-    0,                               /*tp_compare*/
-    0,                               /*tp_repr*/
-    0,                               /*tp_as_number*/
-    0,                               /*tp_as_sequence*/
-    0,                               /*tp_as_mapping*/
-    0,                               /*tp_hash*/
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "mp_conn",                       /* tp_name */
+    sizeof(connobject),              /* tp_basicsize */
+    0,                               /* tp_itemsize */
+    (destructor) conn_dealloc,       /* tp_dealloc*/
+    0,                               /* tp_print*/
+    (getattrfunc) conn_getattr,      /* tp_getattr*/
+    (setattrfunc) conn_setattr,      /* tp_setattr*/
+    0,                               /* tp_compare*/
+    0,                               /* tp_repr*/
+    0,                               /* tp_as_number*/
+    0,                               /* tp_as_sequence*/
+    0,                               /* tp_as_mapping*/
+    0,                               /* tp_hash*/
 };
 
 

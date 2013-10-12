@@ -2,7 +2,7 @@
  #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -81,7 +81,7 @@ class metaCookie(type):
                 try:
                     t = time.strptime(value, "%a, %d-%b-%Y %H:%M:%S GMT")
                 except ValueError:
-                    raise ValueError, "Invalid expires time: %s" % value
+                    raise ValueError("Invalid expires time: %s" % value)
                 t = time.mktime(t)
             else:
                 # otherwise assume it's a number
@@ -99,14 +99,16 @@ class metaCookie(type):
 
         return type.__new__(cls, clsname, bases, clsdict)
 
-class Cookie(object):
+# metaclass= workaround, see
+# http://mikewatkins.ca/2008/11/29/python-2-and-3-metaclasses/#using-the-metaclass-in-python-2-x-and-3-x
+_metaCookie = metaCookie('Cookie', (object, ), {})
+
+class Cookie(_metaCookie):
     """
     This class implements the basic Cookie functionality. Note that
     unlike the Python Standard Library Cookie class, this class represents
     a single cookie (not a list of Morsels).
     """
-
-    __metaclass__ = metaCookie
 
     DOWNGRADE = 0
     IGNORE = 1
@@ -129,7 +131,7 @@ class Cookie(object):
         """
         This constructor takes at least a name and value as the
         arguments, as well as optionally any of allowed cookie attributes
-        as defined in the existing cookie standards. 
+        as defined in the existing cookie standards.
         """
         self.name, self.value = name, value
 
@@ -152,7 +154,7 @@ class Cookie(object):
         dictate this. This is because doing so seems to confuse most
         browsers out there.
         """
-        
+
         result = ["%s=%s" % (self.name, self.value)]
         for name in self._valid_attr:
             if hasattr(self, name):
@@ -161,11 +163,11 @@ class Cookie(object):
                 else:
                     result.append("%s=%s" % (name, getattr(self, name)))
         return "; ".join(result)
-    
+
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__,
                                 str(self))
-    
+
 
 class SignedCookie(Cookie):
     """
@@ -210,13 +212,13 @@ class SignedCookie(Cookie):
 
     def hexdigest(self, str):
         if not self.__data__["secret"]:
-            raise CookieError, "Cannot sign without a secret"
+            raise CookieError("Cannot sign without a secret")
         _hmac = hmac.new(self.__data__["secret"], self.name)
         _hmac.update(str)
         return _hmac.hexdigest()
 
     def __str__(self):
-        
+
         result = ["%s=%s%s" % (self.name, self.hexdigest(self.value),
                                self.value)]
         for name in self._valid_attr:
@@ -238,7 +240,7 @@ class SignedCookie(Cookie):
             self.value = val
             self.__data__["secret"] = secret
         else:
-            raise CookieError, "Incorrectly Signed Cookie: %s=%s" % (self.name, self.value)
+            raise CookieError("Incorrectly Signed Cookie: %s=%s" % (self.name, self.value))
 
 
 class MarshalCookie(SignedCookie):
@@ -284,7 +286,7 @@ class MarshalCookie(SignedCookie):
     parse = classmethod(parse)
 
     def __str__(self):
-        
+
         m = base64.encodestring(marshal.dumps(self.value))
         # on long cookies, the base64 encoding can contain multiple lines
         # separated by \n or \r\n
@@ -306,12 +308,12 @@ class MarshalCookie(SignedCookie):
         try:
             data = base64.decodestring(self.value)
         except:
-            raise CookieError, "Cannot base64 Decode Cookie: %s=%s" % (self.name, self.value)
+            raise CookieError("Cannot base64 Decode Cookie: %s=%s" % (self.name, self.value))
 
         try:
             self.value = marshal.loads(data)
         except (EOFError, ValueError, TypeError):
-            raise CookieError, "Cannot Unmarshal Cookie: %s=%s" % (self.name, self.value)
+            raise CookieError("Cannot Unmarshal Cookie: %s=%s" % (self.name, self.value))
 
 
 # This is a simplified and in some places corrected
@@ -360,8 +362,8 @@ def add_cookie(req, cookie, value="", **kw):
 
         # make a cookie
         cookie = Cookie(cookie, value, **kw)
-        
-    if not req.headers_out.has_key("Set-Cookie"):
+
+    if "Set-Cookie" not in req.headers_out:
         req.headers_out.add("Cache-Control", 'no-cache="set-cookie"')
 
     req.headers_out.add("Set-Cookie", str(cookie))
@@ -372,8 +374,8 @@ def get_cookies(req, Class=Cookie, **kw):
     a Cookie class. The class must be one of the classes from
     this module.
     """
-    
-    if not req.headers_in.has_key("cookie"):
+
+    if "cookie" not in req.headers_in:
         return {}
 
     cookies = req.headers_in["cookie"]
@@ -384,5 +386,5 @@ def get_cookies(req, Class=Cookie, **kw):
 
 def get_cookie(req, name, Class=Cookie, **kw):
     cookies = get_cookies(req, Class, names=[name], **kw)
-    if cookies.has_key(name):
+    if name in cookies:
         return cookies[name]

@@ -67,10 +67,10 @@ static PyMethodDef hlistmethods[] = {
 #define OFF(x) offsetof(hl_entry, x)
 
 static PyMemberDef hlist_memberlist[] = {
-    {"handler",            T_STRING,    OFF(handler),              RO},
-    {"silent",             T_INT,       OFF(silent),               RO},
-    {"is_location",        T_INT,       OFF(d_is_location),        RO},
-    {"directory",          T_STRING,    OFF(directory),            RO},
+    {"handler",            T_STRING,    OFF(handler),              READONLY},
+    {"silent",             T_INT,       OFF(silent),               READONLY},
+    {"is_location",        T_INT,       OFF(d_is_location),        READONLY},
+    {"directory",          T_STRING,    OFF(directory),            READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -93,9 +93,12 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
 {
     PyObject *res;
 
-    res = Py_FindMethod(hlistmethods, (PyObject *)self, name);
-    if (res != NULL)
-        return res;
+    PyMethodDef *ml = hlistmethods;
+    for (; ml->ml_name != NULL; ml++) {
+        if (name[0] == ml->ml_name[0] &&
+            strcmp(name+1, ml->ml_name+1) == 0)
+            return PyCFunction_New(ml, (PyObject*)self);
+    }
 
     PyErr_Clear();
 
@@ -124,49 +127,48 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
 static PyObject *hlist_repr(hlistobject *self)
 {
     PyObject *t;
-    PyObject *s = PyString_FromString("{");
+    PyObject *s = PyBytes_FromString("{");
     if (self->head->handler) {
-        PyString_ConcatAndDel(&s, PyString_FromString("'handler':"));
-        t = PyString_FromString(self->head->handler);
-        PyString_ConcatAndDel(&s, PyObject_Repr(t));
+        PyBytes_ConcatAndDel(&s, PyBytes_FromString("'handler':"));
+        t = PyBytes_FromString(self->head->handler);
+        PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
         Py_XDECREF(t);
     }
     if (self->head->directory) {
-        PyString_ConcatAndDel(&s, PyString_FromString(",'directory':"));
-        t = PyString_FromString(self->head->directory);
-        PyString_ConcatAndDel(&s, PyObject_Repr(t));
+        PyBytes_ConcatAndDel(&s, PyBytes_FromString(",'directory':"));
+        t = PyBytes_FromString(self->head->directory);
+        PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
         Py_XDECREF(t);
     }
-    PyString_ConcatAndDel(&s, PyString_FromString(",'is_location':"));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(",'is_location':"));
     if (self->head->d_is_location)
-        PyString_ConcatAndDel(&s, PyString_FromString("True"));
+        PyBytes_ConcatAndDel(&s, PyBytes_FromString("True"));
     else
-        PyString_ConcatAndDel(&s, PyString_FromString("False"));
-    PyString_ConcatAndDel(&s, PyString_FromString(",'silent':"));
+        PyBytes_ConcatAndDel(&s, PyBytes_FromString("False"));
+    PyBytes_ConcatAndDel(&s, PyBytes_FromString(",'silent':"));
     if (self->head->silent)
-        PyString_ConcatAndDel(&s, PyString_FromString("1}"));
+        PyBytes_ConcatAndDel(&s, PyBytes_FromString("1}"));
     else
-        PyString_ConcatAndDel(&s, PyString_FromString("0}"));
+        PyBytes_ConcatAndDel(&s, PyBytes_FromString("0}"));
 
     return s;
 }
 
 PyTypeObject MpHList_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_hlist",
-    sizeof(hlistobject),
-    0,
-    (destructor) hlist_dealloc,      /*tp_dealloc*/
-    0,                               /*tp_print*/
-    (getattrfunc) hlist_getattr,     /*tp_getattr*/
-    0,                               /*tp_setattr*/
-    0,                               /*tp_compare*/
-    (reprfunc)hlist_repr,            /*tp_repr*/
-    0,                               /*tp_as_number*/
-    0,                               /*tp_as_sequence*/
-    0,                               /*tp_as_mapping*/
-    0,                               /*tp_hash*/
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "mp_hlist",                      /* tp_name */
+    sizeof(hlistobject),             /* tp_basicsize */
+    0,                               /* tp_itemsize */
+    (destructor) hlist_dealloc,      /* tp_dealloc*/
+    0,                               /* tp_print*/
+    (getattrfunc) hlist_getattr,     /* tp_getattr*/
+    0,                               /* tp_setattr*/
+    0,                               /* tp_compare*/
+    (reprfunc)hlist_repr,            /* tp_repr*/
+    0,                               /* tp_as_number*/
+    0,                               /* tp_as_sequence*/
+    0,                               /* tp_as_mapping*/
+    0,                               /* tp_hash*/
 };
 
 

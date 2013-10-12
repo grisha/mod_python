@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,7 +17,7 @@
  * Originally developed by Gregory Trubetskoy.
  *
  *
- * finfoobject.h 
+ * finfoobject.h
  *
  *
  */
@@ -34,12 +34,12 @@ extern "C" {
         apr_finfo_t     *finfo;
     } finfoobject;
 
-    extern DL_IMPORT(PyTypeObject) MpFinfo_Type;
-    
-#define MpFinfo_Check(op) ((op)->ob_type == &MpFinfo_Type)
-    
-    extern DL_IMPORT(PyObject *) MpFinfo_FromFinfo Py_PROTO((apr_finfo_t *f));
-    extern DL_IMPORT(PyObject *) MpFinfo_New Py_PROTO((void));
+    PyAPI_DATA(PyTypeObject) MpFinfo_Type;
+
+#define MpFinfo_Check(op) (Py_TYPE(op) == &MpFinfo_Type)
+
+    PyAPI_FUNC(PyObject *) MpFinfo_FromFinfo (apr_finfo_t *f);
+    PyAPI_FUNC(PyObject *) MpFinfo_New (void);
 
 #ifdef __cplusplus
 }

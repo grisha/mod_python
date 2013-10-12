@@ -180,7 +180,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
         if (!APR_STATUS_IS_EAGAIN(self->rc) && !(self->rc == APR_SUCCESS)) {
             PyErr_SetObject(PyExc_IOError,
-                            PyString_FromString("Input filter read error"));
+                            PyBytes_FromString("Input filter read error"));
             return NULL;
         }
     }
@@ -192,7 +192,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     b = APR_BRIGADE_FIRST(self->bb_in);
 
     if (b == APR_BRIGADE_SENTINEL(self->bb_in))
-        return PyString_FromString("");
+        return PyBytes_FromString("");
 
     /* reached eos ? */
     if (APR_BUCKET_IS_EOS(b)) {
@@ -202,14 +202,13 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
     }
 
     bufsize = len < 0 ? HUGE_STRING_LEN : len;
-    /* PYTHON 2.5: 'PyString_FromStringAndSize' uses Py_ssize_t for input parameters */
-    result = PyString_FromStringAndSize(NULL, bufsize);
+    result = PyBytes_FromStringAndSize(NULL, bufsize);
 
     /* possibly no more memory */
     if (result == NULL)
         return PyErr_NoMemory();
 
-    buffer = PyString_AS_STRING((PyStringObject *) result);
+    buffer = PyBytes_AS_STRING((PyBytesObject *) result);
 
     bytes_read = 0;
 
@@ -224,7 +223,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
 
         if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
             PyErr_SetObject(PyExc_IOError,
-                            PyString_FromString("Filter read error"));
+                            PyBytes_FromString("Filter read error"));
             return NULL;
         }
 
@@ -258,9 +257,8 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
         /* time to grow destination string? */
         if (newline == 0 && len < 0 && bytes_read == bufsize) {
 
-            /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-            _PyString_Resize(&result, bufsize + HUGE_STRING_LEN);
-            buffer = PyString_AS_STRING((PyStringObject *) result);
+            _PyBytes_Resize(&result, bufsize + HUGE_STRING_LEN);
+            buffer = PyBytes_AS_STRING((PyBytesObject *) result);
             buffer += bytes_read;
 
             bufsize += HUGE_STRING_LEN;
@@ -275,31 +273,11 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
         b = APR_BUCKET_NEXT(b);
         apr_bucket_delete(old);
 
-/*         if (self->is_input) { */
-
-/*             if (b == APR_BRIGADE_SENTINEL(self->bb_in)) { */
-/*                 /\* brigade ended, but no EOS - get another */
-/*                    brigade *\/ */
-
-/*                 Py_BEGIN_ALLOW_THREADS; */
-/*                 self->rc = ap_get_brigade(self->f->next, self->bb_in, self->mode,  */
-/*                                           APR_BLOCK_READ, self->readbytes); */
-/*                 Py_END_ALLOW_THREADS; */
-
-/*                 if (! APR_STATUS_IS_SUCCESS(self->rc)) { */
-/*                     PyErr_SetObject(PyExc_IOError,  */
-/*                                     PyString_FromString("Input filter read error")); */
-/*                     return NULL; */
-/*                 } */
-/*                 b = APR_BRIGADE_FIRST(self->bb_in); */
-/*             } */
-/*         }  */
     }
 
     /* resize if necessary */
     if (bytes_read < len || len < 0)
-        /* PYTHON 2.5: '_PyString_Resize' uses Py_ssize_t for input parameters */
-        if(_PyString_Resize(&result, bytes_read))
+        if(_PyBytes_Resize(&result, bytes_read))
             return NULL;
 
     return result;
@@ -346,7 +324,7 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "O", &s))
         return NULL;
 
-    if (! PyString_Check(s)) {
+    if (! PyBytes_Check(s)) {
         PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
         return NULL;
     }
@@ -356,8 +334,7 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
         return NULL;
     }
 
-    /* PYTHON 2.5:  'PyString_Size' uses Py_ssize_t for return values (may need overflow check) */
-    len = PyString_Size(s);
+    len = PyBytes_Size(s);
 
     if (len) {
 
@@ -368,7 +345,7 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
         }
 
         buff = apr_bucket_alloc(len, c->bucket_alloc);
-        memcpy(buff, PyString_AS_STRING(s), len);
+        memcpy(buff, PyBytes_AS_STRING(s), len);
 
         b = apr_bucket_heap_create(buff, len, apr_bucket_free,
                                    c->bucket_alloc);
@@ -491,13 +468,13 @@ static PyMethodDef filterobjectmethods[] = {
 #define OFF(x) offsetof(filterobject, x)
 
 static PyMemberDef filter_memberlist[] = {
-    {"softspace",          T_INT,       OFF(softspace),            },
-    {"closed",             T_INT,       OFF(closed),             RO},
-    {"name",               T_OBJECT,    0,                       RO},
-    {"req",                T_OBJECT,    OFF(request_obj),          },
-    {"is_input",           T_INT,       OFF(is_input),           RO},
-    {"handler",            T_STRING,    OFF(handler),            RO},
-    {"dir",                T_STRING,    OFF(dir),                RO},
+    {"softspace",          T_INT,       OFF(softspace),                  },
+    {"closed",             T_INT,       OFF(closed),             READONLY},
+    {"name",               T_OBJECT,    0,                       READONLY},
+    {"req",                T_OBJECT,    OFF(request_obj),                },
+    {"is_input",           T_INT,       OFF(is_input),           READONLY},
+    {"handler",            T_STRING,    OFF(handler),            READONLY},
+    {"dir",                T_STRING,    OFF(dir),                READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -527,9 +504,12 @@ static PyObject * filter_getattr(filterobject *self, char *name)
 
     PyObject *res;
 
-    res = Py_FindMethod(filterobjectmethods, (PyObject *)self, name);
-    if (res != NULL)
-        return res;
+    PyMethodDef *ml = filterobjectmethods;
+    for (; ml->ml_name != NULL; ml++) {
+        if (name[0] == ml->ml_name[0] &&
+            strcmp(name+1, ml->ml_name+1) == 0)
+            return PyCFunction_New(ml, (PyObject*)self);
+    }
 
     PyErr_Clear();
 
@@ -539,7 +519,7 @@ static PyObject * filter_getattr(filterobject *self, char *name)
             return Py_None;
         }
         else {
-            return PyString_FromString(self->f->frec->name);
+            return PyBytes_FromString(self->f->frec->name);
         }
     }
     else if (strcmp(name, "req") == 0) {
@@ -585,20 +565,19 @@ static int filter_setattr(filterobject *self, char *name, PyObject *v)
 }
 
 PyTypeObject MpFilter_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_filter",
-    sizeof(filterobject),
-    0,
-    (destructor) filter_dealloc,    /*tp_dealloc*/
-    0,                              /*tp_print*/
-    (getattrfunc) filter_getattr,   /*tp_getattr*/
-    (setattrfunc) filter_setattr,   /*tp_setattr*/
-    0,                              /*tp_compare*/
-    0,                              /*tp_repr*/
-    0,                              /*tp_as_number*/
-    0,                              /*tp_as_sequence*/
-    0,                              /*tp_as_mapping*/
-    0,                              /*tp_hash*/
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "mp_filter",                    /* tp_name */
+    sizeof(filterobject),           /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    (destructor) filter_dealloc,    /* tp_dealloc*/
+    0,                              /* tp_print*/
+    (getattrfunc) filter_getattr,   /* tp_getattr*/
+    (setattrfunc) filter_setattr,   /* tp_setattr*/
+    0,                              /* tp_compare*/
+    0,                              /* tp_repr*/
+    0,                              /* tp_as_number*/
+    0,                              /* tp_as_sequence*/
+    0,                              /* tp_as_mapping*/
+    0,                              /* tp_hash*/
 };
 

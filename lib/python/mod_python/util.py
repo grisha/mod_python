@@ -19,13 +19,20 @@
  #
 
 import _apache
-import apache
-import cStringIO
+
+import sys
+if sys.version[0] == '2':
+    import apache
+    from cStringIO import StringIO
+else:
+    from . import apache
+    from io import StringIO
 import tempfile
 import re
 
 from types import *
 from exceptions import *
+import collections
 
 parse_qs = _apache.parse_qs
 parse_qsl = _apache.parse_qsl
@@ -75,7 +82,7 @@ class Field:
        self.type_options = type_options
        self.disposition = disp
        self.disposition_options = disp_options
-       if disp_options.has_key("filename"):
+       if "filename" in disp_options:
            self.filename = disp_options["filename"]
        else:
            self.filename = None
@@ -83,11 +90,11 @@ class Field:
 
     def __repr__(self):
         """Return printable representation."""
-        return "Field(%s, %s)" % (`self.name`, `self.value`)
+        return "Field(%s, %s)" % (repr(self.name), repr(self.value))
 
     def __getattr__(self, name):
         if name != 'value':
-            raise AttributeError, name
+            raise AttributeError(name)
         if self.file:
             self.file.seek(0)
             value = self.file.read()
@@ -111,7 +118,7 @@ class StringField(str):
     type_options = {}
     disposition = None
     disp_options = None
-    
+
     # I wanted __init__(name, value) but that does not work (apparently, you
     # cannot subclass str with a constructor that takes >1 argument)
     def __init__(self, value):
@@ -121,13 +128,13 @@ class StringField(str):
 
     def __getattr__(self, name):
         if name != 'file':
-            raise AttributeError, name
-        self.file = cStringIO.StringIO(self.value)
+            raise AttributeError(name)
+        self.file = StringIO(self.value)
         return self.file
-        
+
     def __repr__(self):
         """Return printable representation (to pass unit tests)."""
-        return "Field(%s, %s)" % (`self.name`, `self.value`)
+        return "Field(%s, %s)" % (repr(self.name), repr(self.value))
 
 class FieldList(list):
 
@@ -214,9 +221,9 @@ class FieldStorage:
             clen = int(req.headers_in["content-length"])
         except (KeyError, ValueError):
             # absent content-length is not acceptable
-            raise apache.SERVER_RETURN, apache.HTTP_LENGTH_REQUIRED
+            raise apache.SERVER_RETURN(apache.HTTP_LENGTH_REQUIRED)
 
-        if not req.headers_in.has_key("content-type"):
+        if "content-type" not in req.headers_in:
             ctype = "application/x-www-form-urlencoded"
         else:
             ctype = req.headers_in["content-type"]
@@ -229,7 +236,7 @@ class FieldStorage:
 
         if not ctype.startswith("multipart/"):
             # we don't understand this content-type
-            raise apache.SERVER_RETURN, apache.HTTP_NOT_IMPLEMENTED
+            raise apache.SERVER_RETURN(apache.HTTP_NOT_IMPLEMENTED)
 
         # figure out boundary
         try:
@@ -237,10 +244,10 @@ class FieldStorage:
             boundary = ctype[i+9:]
             if len(boundary) >= 2 and boundary[0] == boundary[-1] == '"':
                 boundary = boundary[1:-1]
-            boundary = re.compile("--" + re.escape(boundary) + "(--)?\r?\n") 
+            boundary = re.compile("--" + re.escape(boundary) + "(--)?\r?\n")
 
         except ValueError:
-            raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
+            raise apache.SERVER_RETURN(apache.HTTP_BAD_REQUEST)
 
         # read until boundary
         self.read_to_boundary(req, boundary, None)
@@ -263,7 +270,7 @@ class FieldStorage:
                 # malformed, but we're tolerating it anyway.
                 end_of_stream = (not line) or (match.group(1) is not None)
                 continue
-  
+
             skip_this_part = False
             while line not in ('\r','\r\n'):
                 nextline = req.readline(readBlockSize)
@@ -287,7 +294,7 @@ class FieldStorage:
                     #
                     if ctype.find('/') == -1:
                         ctype = 'application/octet-stream'
-            
+
                 line = nextline
                 match = boundary.match(line)
                 if (not line) or match:
@@ -300,34 +307,34 @@ class FieldStorage:
                     skip_this_part = True
                     end_of_stream = (not line) or (match.group(1) is not None)
                     break
-           
+
             if skip_this_part:
                 continue
-           
-            if disp_options.has_key("name"):
+
+            if "name" in disp_options:
                 name = disp_options["name"]
             else:
                 name = None
 
             # create a file object
             # is this a file?
-            if disp_options.has_key("filename"):
-                if file_callback and callable(file_callback):
+            if "filename" in disp_options:
+                if file_callback and isinstance(file_callback, collections.Callable):
                     file = file_callback(disp_options["filename"])
                 else:
                     file = tempfile.TemporaryFile("w+b")
             else:
-                if field_callback and callable(field_callback):
+                if field_callback and isinstance(field_callback, collections.Callable):
                     file = field_callback()
                 else:
-                    file = cStringIO.StringIO()
+                    file = StringIO()
 
             # read it in
             self.read_to_boundary(req, boundary, file)
             file.seek(0)
- 
+
             # make a Field
-            if disp_options.has_key("filename"):
+            if "filename" in disp_options:
                 field = Field(name)
                 field.filename = disp_options["filename"]
             else:
@@ -349,7 +356,7 @@ class FieldStorage:
 
     def __setitem__(self, key, value):
         table = self.list.table()
-        if table.has_key(key):
+        if key in table:
             items = table[key]
             for item in items:
                 self.list.remove(item)
@@ -361,13 +368,13 @@ class FieldStorage:
         previous_delimiter = None
         while True:
             line = req.readline(readBlockSize)
-            
+
             if not line:
                 # end of stream
                 if file is not None and previous_delimiter is not None:
                     file.write(previous_delimiter)
-                return True                
-            
+                return True
+
             match = boundary.match(line)
             if match:
                 # the line is the boundary, so we bail out
@@ -383,7 +390,7 @@ class FieldStorage:
                     if previous_delimiter is not None: file.write(previous_delimiter)
                     file.write(line[:-2])
                 previous_delimiter = '\r\n'
-    
+
             elif line[-1:] == '\r':
                 # the line ends with \r, which is only possible if
                 # readBlockSize bytes have been read. In that case the
@@ -394,12 +401,12 @@ class FieldStorage:
                     if previous_delimiter is not None: file.write(previous_delimiter)
                     file.write(line[:-1])
                 previous_delimiter = '\r'
-    
+
             elif line == '\n' and previous_delimiter == '\r':
                 # the line us a single \n and we were in the middle of a \r\n,
                 # so we complete the delimiter
                 previous_delimiter = '\r\n'
-    
+
             else:
                 if file is not None:
                     if previous_delimiter is not None: file.write(previous_delimiter)
@@ -422,10 +429,10 @@ class FieldStorage:
 
     def keys(self):
         """Dictionary style keys() method."""
-        return self.list.table().keys()
+        return list(self.list.table().keys())
 
     def __iter__(self):
-        return iter(self.keys())
+        return iter(list(self.keys()))
 
     def __repr__(self):
         return repr(self.list.table())
@@ -453,7 +460,7 @@ class FieldStorage:
             return self.list.table()[key]
         except KeyError:
             return []
-           
+
     def items(self):
         """Dictionary-style items(), except that items are returned in the same
         order as they were supplied in the form."""
@@ -476,7 +483,7 @@ def parse_header(line):
 
     """
 
-    plist = map(lambda a: a.strip(), line.split(';'))
+    plist = [a.strip() for a in line.split(';')]
     key = plist[0].lower()
     del plist[0]
     pdict = {}
@@ -505,15 +512,15 @@ def apply_fs_data(object, fs, **args):
     expected = []
     if hasattr(object, "func_code"):
         # function
-        fc = object.func_code
+        fc = object.__code__
         expected = fc.co_varnames[0:fc.co_argcount]
     elif hasattr(object, 'im_func'):
         # method
-        fc = object.im_func.func_code
+        fc = object.__func__.__code__
         expected = fc.co_varnames[1:fc.co_argcount]
     elif type(object) in (TypeType,ClassType):
         # class
-        fc = object.__init__.im_func.func_code
+        fc = object.__init__.__func__.__code__
         expected = fc.co_varnames[1:fc.co_argcount]
     elif type(object) is BuiltinFunctionType:
         # builtin
@@ -522,7 +529,7 @@ def apply_fs_data(object, fs, **args):
     elif hasattr(object, '__call__'):
         # callable object
         if type(object.__call__) is MethodType:
-            fc = object.__call__.im_func.func_code
+            fc = object.__call__.__func__.__code__
             expected = fc.co_varnames[1:fc.co_argcount]
         else:
             # abuse of objects to create hierarchy
@@ -547,7 +554,7 @@ def apply_fs_data(object, fs, **args):
     if fc is None:
         args = {}
     elif not (fc.co_flags & 0x08):
-        for name in args.keys():
+        for name in list(args.keys()):
             if name not in expected:
                 del args[name]
 
@@ -559,7 +566,7 @@ def redirect(req, location, permanent=0, text=None):
     """
 
     if req.sent_bodyct:
-        raise IOError, "Cannot redirect after headers have already been sent."
+        raise IOError("Cannot redirect after headers have already been sent.")
 
     req.err_headers_out["Location"] = location
     if permanent:
@@ -574,4 +581,4 @@ def redirect(req, location, permanent=0, text=None):
     else:
         req.write(text)
 
-    raise apache.SERVER_RETURN, apache.DONE
+    raise apache.SERVER_RETURN(apache.DONE)

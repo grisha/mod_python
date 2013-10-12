@@ -27,12 +27,14 @@
 
 #include "mod_python.h"
 
+static PyThreadState* global_tstate;
+
 /* Server object for main server as supplied to python_init(). */
 static server_rec *main_server = NULL;
 
-/* List of available Python obCallBacks/Interpreters
- * (In a Python dictionary) */
-static PyObject * interpreters = NULL;
+/* List of available Python obCallBacks/Interpreters */
+static apr_hash_t *interpreters = NULL;
+static apr_pool_t *interp_pool = NULL;
 
 #if APR_HAS_THREADS
 static apr_thread_mutex_t* interpreters_lock = 0;
@@ -40,41 +42,12 @@ static apr_thread_mutex_t* interpreters_lock = 0;
 
 apr_pool_t *child_init_pool = NULL;
 
+static void release_interpreter_no_lock(interpreterdata *idata);
+
 /* Optional functions imported from mod_include when loaded: */
 static APR_OPTIONAL_FN_TYPE(ap_register_include_handler) *optfn_register_include_handler;
 static APR_OPTIONAL_FN_TYPE(ap_ssi_get_tag_and_value)    *optfn_ssi_get_tag_and_value;
 static APR_OPTIONAL_FN_TYPE(ap_ssi_parse_string)         *optfn_ssi_parse_string;
-
-/**
- ** make_interpreter
- **
- *      Creates a new Python interpreter.
- */
-
-static PyInterpreterState *make_interpreter(const char *name)
-{
-    PyThreadState *tstate;
-
-    /* create a new interpeter */
-    tstate = Py_NewInterpreter();
-
-    if (! tstate) {
-        /* couldn't create an interpreter, this is bad */
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
-                     "make_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
-        return NULL;
-    }
-
-    /* release the thread state */
-    PyThreadState_Swap(NULL);
-
-    /* Strictly speaking we don't need that tstate created
-     * by Py_NewInterpreter but is preferable to waste it than re-write
-     * a cousin to Py_NewInterpreter
-     * XXX (maybe we can destroy it?)
-     */
-    return tstate->interp;
-}
 
 /**
  ** make_obcallback
@@ -95,8 +68,7 @@ static PyObject * make_obcallback(const char *name)
      * >>> import _apache
      * will not give an error.
      */
-    /* Py_InitModule("_apache", _apache_module_methods); */
-    init_apache();
+    _apache_module_init();
 
     /* Now execute the equivalent of
      * >>> import <module>
@@ -118,7 +90,7 @@ static PyObject * make_obcallback(const char *name)
 
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "make_obcallback: Python path being used \"%s\".",
-                     PyString_AsString(path));
+                     PyBytes_AsString(path));
 
         Py_DECREF(path);
 
@@ -141,7 +113,7 @@ static PyObject * make_obcallback(const char *name)
             f = PyDict_GetItemString(d, "__file__");
 
             if (o)
-                mp_dynamic_version = PyString_AsString(o);
+                mp_dynamic_version = PyBytes_AsString(o);
 
             if (strcmp(mp_version_string, mp_dynamic_version) != 0) {
                 ap_log_error(APLOG_MARK, APLOG_WARNING, 0, main_server,
@@ -149,7 +121,7 @@ static PyObject * make_obcallback(const char *name)
                              mp_version_string, mp_dynamic_version);
                 ap_log_error(APLOG_MARK, APLOG_WARNING, 0, main_server,
                              "WARNING: mod_python modules location '%s'.",
-                             PyString_AsString(f));
+                             PyBytes_AsString(f));
             }
             Py_XDECREF(mp);
 
@@ -178,25 +150,24 @@ static PyObject * make_obcallback(const char *name)
 /**
  ** save_interpreter
  **
- *      Save away the interpreter.
+ *      Save the interpreter. The argument is a PyThreadState
+ *      belonging to (i.e. tstate->interp) the interpreter we are
+ *      saving. Creates a new interpreterdata and returns a pointer to
+ *      it.
  */
 
-static interpreterdata *save_interpreter(const char *name, PyInterpreterState *istate)
+static interpreterdata *save_interpreter(const char *name, PyThreadState *tstate)
 {
-    PyObject *p;
     interpreterdata *idata = NULL;
 
     idata = (interpreterdata *)malloc(sizeof(interpreterdata));
-    idata->istate = istate;
-    /* obcallback will be created on first use */
+    if (!idata)
+        return NULL;
+    idata->tstates = apr_array_make(interp_pool, 128, sizeof(interpreterdata *));
+    idata->interp = tstate->interp;
     idata->obcallback = NULL;
-#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
-    p = PyCapsule_New((void *) idata, NULL, NULL);
-#else
-    p = PyCObject_FromVoidPtr((void *) idata, NULL);
-#endif
-    PyDict_SetItemString(interpreters, (char *)name, p);
-    Py_DECREF(p);
+
+    apr_hash_set(interpreters, name, APR_HASH_KEY_STRING, idata);
 
     return idata;
 }
@@ -233,12 +204,19 @@ PyObject *python_interpreter_name()
  ** get_interpreter
  **
  *      Get interpreter given its name.
- *      NOTE: This function will acquire lock
+ *
+ *  A thread state never outlives a handler; when a phase of a handler
+ *  is done, there is no use for this thread state. But there is no
+ *  need to malloc() a new thread state at every request, so when a
+ *  handler is done, in release_interpreter() we push the tstate into
+ *  an array of available tstates for this interpreter. When we need
+ *  another tstate, we pop from this array, and only if that returns
+ *  nothing do we create a new tstate.
+ *
  */
 
 static interpreterdata *get_interpreter(const char *name)
 {
-    PyObject *p;
     PyThreadState *tstate;
     interpreterdata *idata = NULL;
 
@@ -248,74 +226,65 @@ static interpreterdata *get_interpreter(const char *name)
 #if APR_HAS_THREADS
     apr_thread_mutex_lock(interpreters_lock);
 #endif
+
+    idata = apr_hash_get(interpreters, name, APR_HASH_KEY_STRING);
+
+    if (!idata) {
+
 #ifdef WITH_THREAD
-    PyEval_AcquireLock();
+        /* Py_NewInterpreter requires the GIL held, this is one way to have it so */
+        PyEval_AcquireThread(global_tstate);
+#else
+        PyThreadState_Swap(global_tstate);
 #endif
+        tstate = Py_NewInterpreter();
 
-    if (!interpreters) {
-         ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
-                       "get_interpreter: interpreters dictionary not initialised.");
-#ifdef WITH_THREAD
-        PyEval_ReleaseLock();
-#endif
-#if APR_HAS_THREADS
-        apr_thread_mutex_unlock(interpreters_lock);
-#endif
-        return NULL;
-    }
+        if (!tstate) {
+            /* couldn't create an interpreter, this is bad */
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                         "get_interpreter: Py_NewInterpreter() returned NULL. No more memory?");
+            return NULL;
+        }
 
-    p = PyDict_GetItemString(interpreters, (char *)name);
-    if (!p)
-    {
-        PyInterpreterState *istate = make_interpreter(name);
-
-        if (istate)
-            idata = save_interpreter(name, istate);
+        idata = save_interpreter(name, tstate);
+        if (!idata) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                         "get_interpreter: save_interpreter() returned NULL. No more memory?");
+            return NULL;
+        }
     }
     else {
-#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
-        idata = (interpreterdata *)PyCapsule_GetPointer(p, NULL);
-#else
-        idata = (interpreterdata *)PyCObject_AsVoidPtr(p);
-#endif
-    }
 
 #ifdef WITH_THREAD
-    PyEval_ReleaseLock();
-#endif
+        /* use an available tstate, or create a new one */
+        PyThreadState ** tstate_pp;
+        tstate_pp = (PyThreadState **)apr_array_pop(idata->tstates);
+        if (!tstate_pp)
+            tstate = PyThreadState_New(idata->interp);
+        else
+            tstate = *tstate_pp;
 
-    if (! idata) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
-                     "get_interpreter: cannot get interpreter data (no more memory?)");
-#if APR_HAS_THREADS
-        apr_thread_mutex_unlock(interpreters_lock);
-#endif
-        return NULL;
-    }
-
-    /* create thread state and acquire lock */
-    tstate = PyThreadState_New(idata->istate);
-#ifdef WITH_THREAD
-    PyEval_AcquireThread(tstate);
 #else
-    PyThreadState_Swap(tstate);
+        /* always use the first (and only) tstate */
+        tstate = idata->interp->tstate_head;
 #endif
+
+#ifdef WITH_THREAD
+        PyEval_AcquireThread(tstate);
+#else
+        PyThreadState_Swap(tstate);
+#endif
+    }
+    /* At this point GIL is held and tstate is set, we're ready to run */
 
     if (!idata->obcallback) {
 
         idata->obcallback = make_obcallback(name);
 
-        if (!idata->obcallback)
-        {
-            PyThreadState_Clear(tstate);
-#ifdef WITH_THREAD
-            PyEval_ReleaseThread(tstate);
-#else
-            PyThreadState_Swap(NULL);
-#endif
-            PyThreadState_Delete(tstate);
+        if (!idata->obcallback) {
+            release_interpreter_no_lock(idata);
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
-                      "get_interpreter: no interpreter callback found.");
+                         "get_interpreter: no interpreter callback found.");
 #if APR_HAS_THREADS
             apr_thread_mutex_unlock(interpreters_lock);
 #endif
@@ -330,24 +299,35 @@ static interpreterdata *get_interpreter(const char *name)
     return idata;
 }
 
-
 /**
  ** release_interpreter
  **
  *      Release interpreter.
- *      NOTE: This function will release lock
  */
 
-static void release_interpreter(void)
+static void release_interpreter(interpreterdata *idata)
+{
+#if APR_HAS_THREADS
+    apr_thread_mutex_lock(interpreters_lock);
+#endif
+    release_interpreter_no_lock(idata);
+#if APR_HAS_THREADS
+    apr_thread_mutex_unlock(interpreters_lock);
+#endif
+}
+
+static void release_interpreter_no_lock(interpreterdata *idata)
 {
     PyThreadState *tstate = PyThreadState_Get();
-    PyThreadState_Clear(tstate);
+
 #ifdef WITH_THREAD
+    PyThreadState_Clear(tstate);
     PyEval_ReleaseThread(tstate);
-#else
-    PyThreadState_Swap(NULL);
+    if (idata)
+        APR_ARRAY_PUSH(idata->tstates, PyThreadState *) = tstate;
+    else
+        PyThreadState_Delete(tstate);
 #endif
-    PyThreadState_Delete(tstate);
 }
 
 /**
@@ -400,21 +380,21 @@ apr_status_t python_cleanup(void *data)
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0,
                           ci->request_rec,
                           "python_cleanup: Error calling cleanup object %s",
-                          PyString_AsString(handler));
+                          PyBytes_AsString(handler));
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0,
                           ci->request_rec,
-                          "    %s: %s", PyString_AsString(stype),
-                          PyString_AsString(svalue));
+                          "    %s: %s", PyBytes_AsString(stype),
+                          PyBytes_AsString(svalue));
         }
         else {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0,
                          ci->server_rec,
                          "python_cleanup: Error calling cleanup object %s",
-                         PyString_AsString(handler));
+                         PyBytes_AsString(handler));
             ap_log_error(APLOG_MARK, APLOG_ERR, 0,
                          ci->server_rec,
-                         "    %s: %s", PyString_AsString(stype),
-                         PyString_AsString(svalue));
+                         "    %s: %s", PyBytes_AsString(stype),
+                         PyBytes_AsString(svalue));
         }
 
         Py_DECREF(handler);
@@ -427,7 +407,7 @@ apr_status_t python_cleanup(void *data)
     free((void *)ci->interpreter);
     free(ci);
 
-    release_interpreter();
+    release_interpreter(idata);
 
     return APR_SUCCESS;
 }
@@ -668,7 +648,7 @@ PyInterpreterState *mp_acquire_interpreter(const char *name)
 
     idata = get_interpreter(name);
 
-    return idata->istate;
+    return idata->interp;
 }
 
 /*
@@ -680,7 +660,7 @@ PyInterpreterState *mp_acquire_interpreter(const char *name)
 
 void mp_release_interpreter(void)
 {
-    release_interpreter();
+    release_interpreter(NULL);
 }
 
 /*
@@ -824,16 +804,19 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
 #endif
 
         /* create the obCallBack dictionary */
-        interpreters = PyDict_New();
+        interpreters = apr_hash_make(p);
+        interp_pool = p;
+
         if (! interpreters) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                         "python_init: PyDict_New() failed! No more memory?");
+                         "python_init: apr_hash_make() failed! No more memory?");
             exit(1);
         }
 
+        global_tstate = PyThreadState_Get();
+
 #ifdef WITH_THREAD
-        /* release the lock; now other threads can run */
-        PyEval_ReleaseLock();
+        PyEval_ReleaseLock(); // ZZZ
 #endif
     }
 
@@ -1308,7 +1291,7 @@ requestobject *python_get_request_object(request_rec *req, const char *phase)
     if (phase)
     {
         Py_XDECREF(request_obj->phase);
-        request_obj->phase = PyString_FromString(phase);
+        request_obj->phase = PyBytes_FromString(phase);
     }
 
     return request_obj;
@@ -1572,6 +1555,7 @@ static int python_handler(request_rec *req, char *phase)
      * This is the C equivalent of
      * >>> resultobject = obCallBack.HandlerDispatch(request_object)
      */
+
     resultobject = PyObject_CallMethod(idata->obcallback, "HandlerDispatch",
                                        "O", request_obj);
 
@@ -1580,7 +1564,7 @@ static int python_handler(request_rec *req, char *phase)
     request_obj->phase = NULL;
 
     /* release the lock and destroy tstate */
-    release_interpreter();
+    release_interpreter(idata);
 
     if (! resultobject) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
@@ -1590,14 +1574,21 @@ static int python_handler(request_rec *req, char *phase)
     else {
         /* Attempt to analyze the result as a string indicating which
            result to return */
+#if PY_MAJOR_VERSION < 3
         if (! PyInt_Check(resultobject)) {
+#else
+        if (! PyLong_Check(resultobject)) {
+#endif
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                           "python_handler: (%s) HandlerDispatch() returned non-integer.", phase);
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         else {
+#if PY_MAJOR_VERSION < 3
             result = PyInt_AsLong(resultobject);
-
+#else
+            result = PyLong_AsLong(resultobject);
+#endif
             /* authen handlers need one more thing
              * if authentication failed and this handler is not
              * authoritative, let the others handle it
@@ -1694,7 +1685,7 @@ static apr_status_t python_cleanup_handler(void *data)
         Py_XDECREF(request_obj);
 
         /* release interpreter */
-        release_interpreter();
+        release_interpreter(idata);
     }
 
     return rc;
@@ -1758,7 +1749,7 @@ static apr_status_t python_connection(conn_rec *con)
                                        "O", conn_obj);
 
     /* release the lock and destroy tstate*/
-    release_interpreter();
+    release_interpreter(idata);
 
     if (! resultobject) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, con->base_server,
@@ -1768,13 +1759,21 @@ static apr_status_t python_connection(conn_rec *con)
     else {
         /* Attempt to analyze the result as a string indicating which
            result to return */
+#if PY_MAJOR_VERSION < 3
         if (! PyInt_Check(resultobject)) {
+#else
+        if (! PyLong_Check(resultobject)) {
+#endif
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, con->base_server,
                          "python_connection: ConnectionDispatch() returned non-integer.");
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         else
+#if PY_MAJOR_VERSION < 3
             result = PyInt_AsLong(resultobject);
+#else
+            result = PyLong_AsLong(resultobject);
+#endif
     }
 
     /* clean up */
@@ -1887,7 +1886,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     Py_XDECREF(resultobject);
 
     /* release interpreter */
-    release_interpreter();
+    release_interpreter(idata);
 
     return filter->rc;
 }
@@ -2000,8 +1999,8 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                 return APR_SUCCESS;
             }
 
-            tagobject = PyString_FromString(tag);
-            codeobject = PyString_FromString(tag_val);
+            tagobject = PyBytes_FromString(tag);
+            codeobject = PyBytes_FromString(tag_val);
         } else {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                           "unexpected '%s' parameter to tag 'python' in %s",
@@ -2060,7 +2059,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     if (!resultobject)
     {
         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
-        release_interpreter();
+        release_interpreter(idata);
         return APR_SUCCESS;
     }
 
@@ -2068,7 +2067,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     Py_XDECREF(resultobject);
 
     /* release interpreter */
-    release_interpreter();
+    release_interpreter(idata);
 
     return filter->rc;
 }
@@ -2141,8 +2140,8 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                 return APR_SUCCESS;
             }
 
-            tagobject = PyString_FromString(tag);
-            codeobject = PyString_FromString(tag_val);
+            tagobject = PyBytes_FromString(tag);
+            codeobject = PyBytes_FromString(tag_val);
         } else {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                           "unexpected '%s' parameter to tag 'python' in %s",
@@ -2201,7 +2200,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     if (!resultobject)
     {
         CREATE_ERROR_BUCKET(ctx, tmp_buck, head_ptr, *inserted_head);
-        release_interpreter();
+        release_interpreter(idata);
         return APR_SUCCESS;
     }
 
@@ -2209,7 +2208,7 @@ static apr_status_t handle_python(include_ctx_t *ctx,
     Py_XDECREF(resultobject);
 
     /* release interpreter */
-    release_interpreter();
+    release_interpreter(idata);
 
     return filter->rc;
 }
@@ -2652,7 +2651,10 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 #endif
     PyOS_AfterFork();
 
-    save_interpreter(MAIN_INTERPRETER, PyThreadState_Get()->interp);
+    interpreterdata *idata = save_interpreter(MAIN_INTERPRETER, PyThreadState_Get());
+    if (!idata)
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                     "PythonChildInitHandler: save_interpreter() returned NULL. No more memory?");
 
     PyThreadState_Swap(NULL);
 
@@ -2749,7 +2751,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
                 Py_XDECREF(resultobject);
 
                 /* release interpreter */
-                release_interpreter();
+                release_interpreter(idata);
             }
         }
     }

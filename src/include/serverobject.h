@@ -7,7 +7,7 @@ extern "C" {
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -34,12 +34,12 @@ extern "C" {
         server_rec     *server;
         PyObject       *next;
     } serverobject;
-    
-    extern DL_IMPORT(PyTypeObject) MpServer_Type;
-    
-#define MpServer_Check(op) ((op)->ob_type == &MpServer_Type)
-    
-    extern DL_IMPORT(PyObject *) MpServer_FromServer Py_PROTO((server_rec *s));
+
+    PyAPI_DATA(PyTypeObject) MpServer_Type;
+
+#define MpServer_Check(op) (Py_TYPE(op) == &MpServer_Type)
+
+    PyAPI_FUNC(PyObject *) MpServer_FromServer (server_rec *s);
 
 #ifdef __cplusplus
 }

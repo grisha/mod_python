@@ -48,7 +48,7 @@ class bounded_buffer(object):
         return self.list[self.pos:]+self.list[:self.pos]
 
     def __iter__(self):
-        return iter(self.items())
+        return iter(list(self.items()))
 
 def write_table(req,table):
     req.write('<table border="1">')

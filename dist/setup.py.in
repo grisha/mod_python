@@ -21,7 +21,10 @@ from distutils.core import setup, Extension
 import sys
 import re
 import os.path
-import commands
+if sys.version[0] == '2':
+    from commands import getoutput
+else:
+    from subprocess import getoutput
 
 try:
     __file__
@@ -58,7 +61,7 @@ def getconfigure_option(option_name):
     raise AssertionError("unable to find @%s@ definition in %s", (option_name, config_status_file))
 
 def getmp_version():
-  return commands.getoutput('./version.sh')
+  return getoutput('./version.sh')
 
 def getapxs_location():
     """finds the location of apxs from the config.status file"""
@@ -66,8 +69,7 @@ def getapxs_location():
 
 def getapxs_option(option):
     APXS = getapxs_location()
-    import commands
-    return commands.getoutput("%s -q %s" % (APXS, option))
+    return getoutput("%s -q %s" % (APXS, option))
 
 def getapache_srcdir():
     """returns apache src directory"""

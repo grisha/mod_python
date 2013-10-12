@@ -40,7 +40,7 @@ _path_cache_lock = threading.Lock()
 
 _result_warning = """Handler has returned result or raised SERVER_RETURN
 exception with argument having non integer type. Type of value returned
-was %s, whereas expected """ + str(types.IntType) + "."
+was %s, whereas expected """ + str(int) + "."
 
 class CallBack:
     """
@@ -141,10 +141,10 @@ class CallBack:
             else:
                 result = obj(conn)
 
-            assert (result.__class__ is types.IntType), \
+            assert (result.__class__ is int), \
                    "ConnectionHandler '%s' returned invalid return code." % handler
 
-        except PROG_TRACEBACK, traceblock:
+        except PROG_TRACEBACK as traceblock:
             # Program run-time error
             try:
                 (etype, value, traceback) = traceblock
@@ -261,7 +261,7 @@ class CallBack:
             if not filter.closed:
                 filter.flush()
 
-        except SERVER_RETURN, value:
+        except SERVER_RETURN as value:
             # SERVER_RETURN indicates a non-local abort from below
             # with value as (result, status) or (result, None) or result
             try:
@@ -272,7 +272,7 @@ class CallBack:
                 else:
                     result = value.args[0]
 
-                if result.__class__ is not types.IntType:
+                if result.__class__ is not int:
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
                     s = s + "%s, but it must be a tuple or an int." % result.__class__
                     _apache.log_error(s, APLOG_ERR, req.server)
@@ -282,7 +282,7 @@ class CallBack:
             except:
                 pass
 
-        except PROG_TRACEBACK, traceblock:
+        except PROG_TRACEBACK as traceblock:
             # Program run-time error
             try:
                 (etype, value, traceback) = traceblock
@@ -382,7 +382,7 @@ class CallBack:
                     except:
                         if not hlist.silent:
                             s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
-                            raise AttributeError, s
+                            raise AttributeError(s)
                 else:
                     obj = resolve_object(module, obj_str,
                                          arg=req, silent=hlist.silent)
@@ -420,7 +420,7 @@ class CallBack:
                         else:
                             result = obj(req)
 
-                    except SERVER_RETURN, value:
+                    except SERVER_RETURN as value:
 
                         # The SERVER_RETURN exception type when raised
                         # otherwise indicates an abort from below with
@@ -434,7 +434,7 @@ class CallBack:
                         else:
                             result = value.args[0]
 
-                    assert (result.__class__ is types.IntType), \
+                    assert (result.__class__ is int), \
                             _result_warning % result.__class__
 
                     # stop cycling through handlers
@@ -451,7 +451,7 @@ class CallBack:
 
                 hlist.next()
 
-        except PROG_TRACEBACK, traceblock:
+        except PROG_TRACEBACK as traceblock:
             # Program run-time error
             try:
                 (etype, value, traceback) = traceblock
@@ -633,7 +633,7 @@ def import_module(module_name, autoreload=1, log=0, path=None):
                 # reason we use startswith as opposed to exact match is that
                 # modules inside packages are actually in subdirectories.
 
-                if not file or (path and not filter(file.startswith, path)):
+                if not file or (path and not list(filter(file.startswith, path))):
                     # there is a script by this name already imported, but it's in
                     # a different directory, therefore it's a different script
                     mtime, oldmtime = 0, -1 # trigger import
@@ -735,11 +735,11 @@ def resolve_object(module, obj_str, arg=None, silent=0):
         if obj == module and not hasattr(module, obj_str):
             if hasattr(module, "__file__"):
                 s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
-                raise AttributeError, s
+                raise AttributeError(s)
 
         obj = getattr(obj, obj_str)
 
-        if hasattr(obj, "im_self") and not obj.im_self:
+        if hasattr(obj, "im_self") and not obj.__self__:
             # this is an unbound method, its class
             # needs to be instantiated
             instance = parent(arg)
@@ -819,7 +819,7 @@ class CGIStdin(NullIO):
 
     def readlines(self):
         s = (self.buf + self.read()).split('\n')
-        return map(lambda s: s + '\n', s)
+        return [s + '\n' for s in s]
 
     def readline(self, n = -1):
 
@@ -937,7 +937,7 @@ def restore_nocgi(sav_env, si, so):
     osenv = os.environ
 
     # restore env
-    for k in osenv.keys():
+    for k in list(osenv.keys()):
         del osenv[k]
     for k in sav_env:
         osenv[k] = sav_env[k]

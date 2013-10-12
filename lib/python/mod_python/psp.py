@@ -2,7 +2,7 @@
  #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -18,7 +18,7 @@
  # This file originally written by Sterling Hughes
  #
 
-import apache, Session, util, _psp
+from . import apache, Session, util, _psp
 import _apache
 
 import sys
@@ -26,7 +26,7 @@ import os
 import marshal
 import new
 from cgi import escape
-import anydbm, whichdb
+import dbm, dbm
 import tempfile
 
 # dbm types for cache
@@ -49,7 +49,7 @@ def code2str(c):
     ctuple = (c.co_argcount, c.co_nlocals, c.co_stacksize, c.co_flags,
               c.co_code, c.co_consts, c.co_names, c.co_varnames, c.co_filename,
               c.co_name, c.co_firstlineno, c.co_lnotab)
-    
+
     return marshal.dumps(ctuple)
 
 def str2code(s):
@@ -99,7 +99,7 @@ class PSP:
     def __init__(self, req, filename=None, string=None, vars={}):
 
         if (string and filename):
-            raise ValueError, "Must specify either filename or string"
+            raise ValueError("Must specify either filename or string")
 
         self.req, self.vars = req, vars
 
@@ -131,9 +131,9 @@ class PSP:
     def cache_get(self, filename, mtime):
 
         opts = self.req.get_options()
-        if opts.has_key("mod_python.psp.cache_database_filename"):
+        if "mod_python.psp.cache_database_filename" in opts:
             self.dbmcache = opts["mod_python.psp.cache_database_filename"]
-        elif opts.has_key("PSPDbmCache"):
+        elif "PSPDbmCache" in opts:
             # For backwards compatability with versions
             # of mod_python prior to 3.3.
             self.dbmcache = opts["PSPDbmCache"]
@@ -173,7 +173,7 @@ class PSP:
         filename = self.filename
 
         if not os.path.isfile(filename):
-            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+            raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
         mtime = os.path.getmtime(filename)
 
@@ -206,7 +206,7 @@ class PSP:
                 # no existing session, so need to create one,
                 # session has to be saved back to request object
                 # to avoid deadlock if error page tries to use it
-                req.session = session = Session.Session(req) 
+                req.session = session = Session.Session(req)
 
         # does this code use form?
         form = None
@@ -251,13 +251,13 @@ class PSP:
             global_scope["__file__"] = req.filename
             global_scope["__mp_info__"] = _InstanceInfo(
                     None, req.filename, None)
-            global_scope["__mp_path__"] = [] 
+            global_scope["__mp_path__"] = []
 
             try:
-                exec code in global_scope
+                exec(code, global_scope)
                 if flush:
                     req.flush()
-                
+
                 # the mere instantiation of a session changes it
                 # (access time), so it *always* has to be saved
                 if hasattr(req, 'session'):
@@ -268,7 +268,7 @@ class PSP:
                     # run error page
                     psp.error_page.run({"exception": (et, ev, etb)}, flush)
                 else:
-                    raise et, ev, etb
+                    raise et(ev).with_traceback(etb)
         finally:
             # if session was created here, unlock it and don't leave
             # it behind in request object in unlocked state as it
@@ -356,10 +356,10 @@ def dbm_cache_type(dbmfile):
 
     global dbm_types
 
-    if dbm_types.has_key(dbmfile):
+    if dbmfile in dbm_types:
         return dbm_types[dbmfile]
 
-    module = whichdb.whichdb(dbmfile)
+    module = dbm.whichdb(dbmfile)
     if module:
         dbm_type = __import__(module)
         dbm_types[dbmfile] = dbm_type
@@ -369,7 +369,7 @@ def dbm_cache_type(dbmfile):
         return anydbm
 
 def dbm_cache_store(srv, dbmfile, filename, mtime, val):
-   
+
     dbm_type = dbm_cache_type(dbmfile)
 
     # NOTE: acquiring a lock for the dbm file (also applies to dbm_cache_get)
@@ -382,12 +382,12 @@ def dbm_cache_store(srv, dbmfile, filename, mtime, val):
     # used in the same request, which would result in a deadlock. This
     # has been confirmed by testing.
     # We can avoid this by using index 0 and setting the key to None.
-    # Lock index 0 is also used by DbmSession for locking it's dbm file, 
+    # Lock index 0 is also used by DbmSession for locking it's dbm file,
     # but since the lock is not held for the duration of the request there
     # should not be any additional deadlock issues. Likewise, the lock
     # here is only held for a short time, so it will not interfere
     # with DbmSession file locking.
-  
+
     _apache._global_lock(srv, None, 0)
     try:
         dbm = dbm_type.open(dbmfile, 'c')
@@ -406,7 +406,7 @@ def dbm_cache_get(srv, dbmfile, filename, mtime):
         try:
             entry = dbm[filename]
             t, val = entry.split(" ", 1)
-            if long(t) == mtime:
+            if int(t) == mtime:
                 return str2code(val)
         except KeyError:
             return None
@@ -428,7 +428,7 @@ class HitsCache:
             self.clean()
 
     def get(self, key):
-        if self.cache.has_key(key):
+        if key in self.cache:
             hits, val = self.cache[key]
             self.cache[key] = (hits+1, val)
             return val
@@ -436,8 +436,8 @@ class HitsCache:
             return None
 
     def clean(self):
-        
-        byhits = [(n[1], n[0]) for n in self.cache.items()]
+
+        byhits = [(n[1], n[0]) for n in list(self.cache.items())]
         byhits.sort()
 
         # delete enough least hit entries to make cache 75% full

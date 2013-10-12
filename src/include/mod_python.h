@@ -109,6 +109,30 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 
 /** Things specific to mod_python, as an Apache module **/
 
+#if PY_MAJOR_VERSION < 3
+
+#define PyBytesObject PyStringObject
+#define PyBytes_Check PyString_Check
+#define PyBytes_CheckExact PyString_CheckExact
+#define PyBytes_AsString PyString_AsString
+#define PyBytes_FromString PyString_FromString
+#define PyBytes_FromStringAndSize PyString_FromStringAndSize
+#define PyBytes_AS_STRING PyString_AS_STRING
+#define PyBytes_ConcatAndDel PyString_ConcatAndDel
+#define PyBytes_Size PyString_Size
+#define _PyBytes_Resize _PyString_Resize
+
+#ifndef PyVarObject_HEAD_INIT
+#define PyVarObject_HEAD_INIT(type, size)       \
+    PyObject_HEAD_INIT(type) size,
+#endif
+
+#ifndef Py_TYPE
+#define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
+#endif
+
+#endif /* PY_MAJOR_VERSION < 3 */
+
 #define MP_CONFIG_KEY "mod_python_config"
 #define MAIN_INTERPRETER "main_interpreter"
 #define FILTER_NAME "MOD_PYTHON"
@@ -127,11 +151,6 @@ extern module AP_MODULE_DECLARE_DATA python_module;
  */
 #define MUTEX_DIR "/tmp"
 
-/* python 2.3 no longer defines LONG_LONG, it defines PY_LONG_LONG */
-#ifndef LONG_LONG
-#define LONG_LONG PY_LONG_LONG
-#endif
-
 /* version stuff */
 extern const char * const mp_git_sha;
 extern const int mp_version_major;
@@ -142,7 +161,8 @@ extern const char * const mp_version_component;
 
 /* structure to hold interpreter data */
 typedef struct {
-    PyInterpreterState *istate;
+    apr_array_header_t * tstates; /* tstates available for use */
+    PyInterpreterState *interp;
     PyObject *obcallback;
 } interpreterdata;
 
@@ -211,6 +231,7 @@ typedef struct
 apr_status_t python_cleanup(void *data);
 PyObject* python_interpreter_name(void);
 requestobject *python_get_request_object(request_rec *req, const char *phase);
+PyObject *_apache_module_init();
 
 APR_DECLARE_OPTIONAL_FN(PyInterpreterState *, mp_acquire_interpreter, (const char *));
 APR_DECLARE_OPTIONAL_FN(void, mp_release_interpreter, ());

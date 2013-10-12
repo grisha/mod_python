@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -19,6 +19,11 @@
 
 #ifndef __PSP_MODULE_H
 #define __PSP_MODULE_H
+
+#if PY_MAJOR_VERSION < 3
+#define PyBytes_AsString PyString_AsString
+#define PyBytes_FromString PyString_FromString
+#endif
 
 void init_psp(void);
 

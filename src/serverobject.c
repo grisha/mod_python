@@ -145,8 +145,8 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     Py_INCREF(handler);
     ci->handler = handler;
     name_obj = python_interpreter_name();
-    name = (char *)malloc(strlen(PyString_AsString(name_obj))+1);
-    strcpy(name, PyString_AsString(name_obj));
+    name = (char *)malloc(strlen(PyBytes_AsString(name_obj))+1);
+    strcpy(name, PyBytes_AsString(name_obj));
     ci->interpreter = name;
     if (data) {
         Py_INCREF(data);
@@ -205,14 +205,14 @@ static PyMemberDef server_rec_mbrs[] = {
     {"keep_alive_max",     T_INT,     OFF(keep_alive_max)},
     {"keep_alive",         T_INT,     OFF(keep_alive)},
     /* XXX send_buffer_size gone. where? document */
-    /*{"send_buffer_size",   T_INT,       OFF(send_buffer_size),   RO},*/
+    /*{"send_buffer_size",   T_INT,       OFF(send_buffer_size),   READONLY},*/
     {"path",               T_STRING,  OFF(path)},
     {"pathlen",            T_INT,     OFF(pathlen)},
     {"names",              T_OBJECT,  OFF(names)},
     {"wild_names",         T_OBJECT,  OFF(wild_names)},
     /* XXX server_uid and server_gid seem gone. Where? Document. */
-    /*{"server_uid",         T_INT,       OFF(server_uid),         RO},*/
-    /*{"server_gid",         T_INT,       OFF(server_gid),         RO},*/
+    /*{"server_uid",         T_INT,       OFF(server_uid),         READONLY},*/
+    /*{"server_gid",         T_INT,       OFF(server_gid),         READONLY},*/
     /* XXX Document limit* below. Make RW? */
     {"limit_req_line",       T_INT,   OFF(limit_req_line)},
     {"limit_req_fieldsize",  T_INT,   OFF(limit_req_fieldsize)},
@@ -229,10 +229,10 @@ static PyMemberDef server_rec_mbrs[] = {
 static PyObject *getsrv_recmbr(serverobject *self, void *name)
 {
     if (strcmp(name, "_server_rec") == 0) {
-#if PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION >= 7
-        return PyCapsule_New((void *)self->server, NULL, NULL);
-#else
+#if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 7
         return PyCObject_FromVoidPtr(self->server, 0);
+#else
+        return PyCapsule_New((void *)self->server, NULL, NULL);
 #endif
 
     }
@@ -308,7 +308,7 @@ static PyObject *my_generation(serverobject *self, void *objname)
 #else
     mpm_generation = ap_my_generation;
 #endif
-    return PyInt_FromLong((long)mpm_generation);
+    return PyLong_FromLong((long)mpm_generation);
 }
 
 static PyObject *restart_time(serverobject *self, void *objname)
@@ -365,21 +365,20 @@ static char server_doc[] =
 "Apache server_rec structure\n";
 
 PyTypeObject MpServer_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "mp_server",
-    sizeof(serverobject),
-    0,
-    (destructor) server_dealloc,     /*tp_dealloc*/
-    0,                               /*tp_print*/
-    0,                               /*tp_getattr*/
-    0,                               /*tp_setattr*/
-    0,                               /*tp_compare*/
-    0,                               /*tp_repr*/
-    0,                               /*tp_as_number*/
-    0,                               /*tp_as_sequence*/
-    0,                               /*tp_as_mapping*/
-    0,                               /*tp_hash*/
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "mp_server",                     /* tp_name */
+    sizeof(serverobject),            /* tp_basicsize */
+    0,                               /* tp_itemsize */
+    (destructor) server_dealloc,     /* tp_dealloc*/
+    0,                               /* tp_print*/
+    0,                               /* tp_getattr*/
+    0,                               /* tp_setattr*/
+    0,                               /* tp_compare*/
+    0,                               /* tp_repr*/
+    0,                               /* tp_as_number*/
+    0,                               /* tp_as_sequence*/
+    0,                               /* tp_as_mapping*/
+    0,                               /* tp_hash*/
     0,                               /* tp_call */
     0,                               /* tp_str */
     PyObject_GenericGetAttr,         /* tp_getattro */

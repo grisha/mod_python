@@ -18,6 +18,8 @@
  # Config maker, a la HTMLGen. This could grow into something useful.
  #
 
+from __future__ import print_function
+
 import sys
 import os
 import shutil
@@ -35,7 +37,7 @@ class Directive:
 
     def __repr__(self):
         i = " " * self.indent
-        s = i + '%s(%s)' % (self.name, `self.val`)
+        s = i + '%s(%s)' % (self.name, repr(self.val))
         if self.flipslash:
             s = s.replace("\\", "/")
         return s
@@ -67,8 +69,8 @@ class Container:
         s = i + 'Container('
         for arg in self.args:
             arg.indent = self.indent + 4
-            s += "\n%s," % `arg`
-        s += "\n" + i + (self.only_if and ('    only_if=%s)' % `self.only_if`) or ')')
+            s += "\n%s," % repr(arg)
+        s += "\n" + i + (self.only_if and ('    only_if=%s)' % repr(self.only_if)) or ')')
         return s
 
     def __str__(self):
@@ -92,12 +94,12 @@ class ContainerTag:
 
     def __repr__(self):
         i = " " * self.indent
-        s = i + "%s(%s," % (self.tag, `self.attr`)
+        s = i + "%s(%s," % (self.tag, repr(self.attr))
         if self.flipslash:
             s = s.replace("\\", "/")
         for arg in self.args:
             arg.indent = self.indent + 4
-            s += "\n%s," % `arg`
+            s += "\n%s," % repr(arg)
         s += "\n" + i + ")"
         return s
 
@@ -121,9 +123,9 @@ class Comment:
     def __repr__(self):
         i = " " * self.indent
         lines = self.comment.splitlines()
-        s = i + "Comment(%s" % `lines[0]+"\n"`
+        s = i + "Comment(%s" % repr(lines[0]+"\n")
         for line in lines[1:]:
-            s += "\n        " + i + `line+"\n"`
+            s += "\n        " + i + repr(line+"\n")
         s += ")"
         return s
 
@@ -405,7 +407,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
 
     conf_path = os.path.join(server_root, conf, conf_name)
     if os.path.exists(conf_path) and not replace_config:
-        print >> sys.stderr, 'Error: %s already exists, aborting.' % `conf_path`
+        print('Error: %s already exists, aborting.' % repr(conf_path), file=sys.stderr)
         return
 
     if createdirs:
@@ -414,29 +416,29 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
                         os.path.join(server_root, conf),
                         os.path.join(server_root, logs)]:
             if os.path.isdir(dirname):
-                print >> sys.stderr, "Warning: directory %s already exists, continuing." % `dirname`
+                print("Warning: directory %s already exists, continuing." % repr(dirname), file=sys.stderr)
             else:
-                print >> sys.stderr, "Creating directory %s." % `dirname`
+                print("Creating directory %s." % repr(dirname), file=sys.stderr)
                 os.mkdir(dirname)
 
         # try to find mime.types
         mime_types_dest = os.path.join(server_root, conf, 'mime.types')
         if os.path.isfile(mime_types_dest):
-            print >> sys.stderr, "Warning: file %s already exists, continuing." % `mime_types_dest`
+            print("Warning: file %s already exists, continuing." % repr(mime_types_dest), file=sys.stderr)
         else:
             for mime_types_dir in [mod_python.version.SYSCONFDIR, '/etc']:
                 mime_types_src = os.path.join(mime_types_dir, 'mime.types')
                 if os.path.isfile(mime_types_src):
-                    print >> sys.stderr, "Copying %s to %s" % (`mime_types_src`, `mime_types_dest`)
+                    print("Copying %s to %s" % (repr(mime_types_src), repr(mime_types_dest)), file=sys.stderr)
                     shutil.copy(mime_types_src, mime_types_dest)
                     break
 
     mime_types = os.path.join(conf, "mime.types")
     if not os.path.exists(os.path.join(server_root, mime_types)):
-        print >> sys.stderr, "Warning: file %s does not exist." % `os.path.join(server_root, mime_types)`
+        print("Warning: file %s does not exist." % repr(os.path.join(server_root, mime_types)), file=sys.stderr)
 
     if not os.path.isdir(os.path.join(server_root, htdocs)):
-        print >> sys.stderr, "Warning: %s does not exist or not a directory." % `os.path.join(server_root, htdocs)`
+        print("Warning: %s does not exist or not a directory." % repr(os.path.join(server_root, htdocs)), file=sys.stderr)
 
     modpath = mod_python.version.LIBEXECDIR
 
@@ -507,7 +509,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
     if pythonpath:
         pp = "sys.path+["
         for p in pythonpath:
-            pp += `p`+","
+            pp += repr(p)+","
         pp += "]"
         mp.append(PythonPath('"%s"' % pp))
     for po in pythonoptions:
@@ -535,9 +537,9 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
 #\n
 """ % mod_python.version.PYTHON_BIN
     s += "from mod_python.httpdconf import *\n\n"
-    s += "config = " + `config`
-    s += "\n\nprint config\n"
+    s += "config = " + repr(config)
+    s += "\n\nprint(config)\n"
 
-    print >> sys.stderr, "Writing %s." % `conf_path`
+    print("Writing %s." % repr(conf_path), file=sys.stderr)
     open(conf_path, 'w').write(s)
     return conf_path

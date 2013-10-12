@@ -3335,49 +3335,53 @@ fi
 # find out python version
 { $as_echo "$as_me:$LINENO: checking Python version" >&5
 $as_echo_n "checking Python version... " >&6; }
-PyVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:3]'`
-PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print sys.version[:1]'`
+PyVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version[:3])'`
+PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version[:1])'`
 { $as_echo "$as_me:$LINENO: result: $PyVERSION" >&5
 $as_echo "$PyVERSION" >&6; }
 
-# make sure Python is version 2
-if test "$PyMAJVERSION" != "2"; then
-  { { $as_echo "$as_me:$LINENO: error: This version of mod_python only works with Python major version 2. The one you have seems to be $PyVERSION." >&5
-$as_echo "$as_me: error: This version of mod_python only works with Python major version 2. The one you have seems to be $PyVERSION." >&2;}
+# make sure Python is version >= 2
+if test "$PyMAJVERSION" -lt "2"; then
+  { { $as_echo "$as_me:$LINENO: error: This version of mod_python only works with Python major version 2 or higher. The one you have seems to be $PyVERSION." >&5
+$as_echo "$as_me: error: This version of mod_python only works with Python major version 2 or higher. The one you have seems to be $PyVERSION." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
 # calculate compiler options
 CPPFLAGS1=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print "-I" + sysconfig.get_config_var("INCLUDEPY")'`
+    print("-I" + sysconfig.get_config_var("INCLUDEPY"))'`
 
 CPPFLAGS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print " ".join(filter(lambda x: x.startswith("-D"), \
-    sysconfig.get_config_var("CFLAGS").split()))'`
+    print(" ".join(filter(lambda x: x.startswith("-D"), \
+    sysconfig.get_config_var("CFLAGS").split())))'`
 
 CPPFLAGS="${CPPFLAGS1} ${CPPFLAGS2}"
 
 
 
 PYTHONFRAMEWORKDIR=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print sysconfig.get_config_var("PYTHONFRAMEWORKDIR")'`
+    print(sysconfig.get_config_var("PYTHONFRAMEWORKDIR"))'`
 PYTHONFRAMEWORKPREFIX=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX")'`
+    print(sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"))'`
 PYTHONFRAMEWORK=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print sysconfig.get_config_var("PYTHONFRAMEWORK")'`
+    print(sysconfig.get_config_var("PYTHONFRAMEWORK"))'`
 
 if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
     # this directory may contain the .so library, our preference, list 1st
     LDFLAGS1=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
-        print "-L" + distutils.sysconfig.get_config_var("LIBDIR")'`
+        print("-L" + distutils.sysconfig.get_config_var("LIBDIR"))'`
     LDFLAGS2=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
-        print "-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
-        standard_lib=1) +"/config"'`
+        print("-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
+        standard_lib=1) +"/config")'`
     LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
-    LDLIBS1="-lpython${PyVERSION}"
+    if test "$PyMAJVERSION" -eq "3"; then
+        LDLIBS1="-lpython${PyMAJVERSION}"
+    else
+        LDLIBS1="-lpython${PyVERSION}"
+    fi
     LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-        print sysconfig.get_config_var("LIBS")'`
+        print(sysconfig.get_config_var("LIBS"))'`
 
     LDLIBS="${LDLIBS1} ${LDLIBS2}"
 else
@@ -3385,13 +3389,13 @@ else
 
     STRING="${PYTHONFRAMEWORKDIR}/Versions/${PyVERSION}/${PYTHONFRAMEWORK}"
     LDFLAGS2=`${PYTHON_BIN} -c "from distutils import sysconfig; \
-        print sysconfig.get_config_var(\"LINKFORSHARED\").replace( \
-        \"${STRING}\", '')"`
+        print(sysconfig.get_config_var(\"LINKFORSHARED\").replace( \
+        \"${STRING}\", ''))"`
 
     LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
     LDLIBS=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-        print sysconfig.get_config_var("LIBS")'`
+        print(sysconfig.get_config_var("LIBS"))'`
 fi
 
 CFLAGS=""

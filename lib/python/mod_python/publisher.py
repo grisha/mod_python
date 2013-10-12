@@ -1,7 +1,7 @@
  #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -28,8 +28,8 @@
   5. Does not give special meaning to '.' and '..'.
 """
 
-import apache
-import util
+from . import apache
+from . import util
 
 import sys
 import os
@@ -41,21 +41,30 @@ import base64
 import new
 import types
 from types import *
+import collections
+
 
 imp_suffixes = " ".join([x[0][1:] for x in imp.get_suffixes()])
 
+# Python 2/3 compat workaround
+PY2 = sys.version[0] == '2'
+def _callable(obj):
+    if PY2:
+        return callable(obj)
+    else:
+        return isinstance(__auth__, collections.Callable)
 
 ####################### The published page cache ##############################
 
-from cache import ModuleCache, NOT_INITIALIZED
+from .cache import ModuleCache, NOT_INITIALIZED
 
 class PageCache(ModuleCache):
     """ This is the cache for page objects. Handles the automatic reloading of pages. """
-    
+
     def key(self, req):
         """ Extracts the normalized filename from the request """
         return req.filename
-    
+
     def check(self, key, req, entry):
         config = req.get_config()
         autoreload=int(config.get("PythonAutoReload", 1))
@@ -78,7 +87,7 @@ class PageCache(ModuleCache):
 
 page_cache = PageCache()
 
-####################### Interface to the published page cache ##################    
+####################### Interface to the published page cache ##################
 
 # def get_page(req, path):
 #     """
@@ -86,32 +95,32 @@ page_cache = PageCache()
 #         If it is a relative path it is relative to the published page
 #         where the request is really handled (not relative to the path
 #         given in the URL).
-#         
+#
 #         Warning : in order to maintain consistency in case of module reloading,
 #         do not store the resulting module in a place that outlives the request
 #         duration.
 #     """
-#     
+#
 #     real_filename = req.filename
-#     
+#
 #     try:
 #         if isabs(path):
 #             req.filename = path
 #         else:
 #             req.filename = normpath(join(dirname(req.filename), path))
-#         
+#
 #         return page_cache[req]
-#     
+#
 #     finally:
 #         req.filename = real_filename
 
-####################### The publisher handler himself ##########################    
+####################### The publisher handler himself ##########################
 
 def handler(req):
 
     req.allow_methods(["GET", "POST", "HEAD"])
     if req.method not in ["GET", "POST", "HEAD"]:
-        raise apache.SERVER_RETURN, apache.HTTP_METHOD_NOT_ALLOWED
+        raise apache.SERVER_RETURN(apache.HTTP_METHOD_NOT_ALLOWED)
 
     # Derive the name of the actual module which will be
     # loaded. In older version of mod_python.publisher
@@ -134,7 +143,7 @@ def handler(req):
     # a directory. This will mean that the calculated
     # module name will be empty.
 
-    if not module_name:  
+    if not module_name:
         module_name = 'index'
 
     # Now need to strip off any special extension which
@@ -179,11 +188,11 @@ def handler(req):
         else:
             func_path = module_name
 
-        module_name = 'index' 
+        module_name = 'index'
         req.filename = path + '/' + module_name + '.py'
 
         if not exists(req.filename):
-            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+            raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
     # Default to looking for the 'index' function if no
     # function path definition was supplied.
@@ -211,9 +220,9 @@ def handler(req):
 
     # publish the object
     published = publish_object(req, object)
-    
+
     # we log a message if nothing was published, it helps with debugging
-    if (not published) and (req._bytes_queued==0) and (req.next is None):
+    if (not published) and (req._bytes_queued==0) and (req.__next__ is None):
         log=int(req.get_config().get("PythonDebug", 0))
         if log:
             req.log_error("mod_python.publisher: nothing to publish.")
@@ -232,13 +241,13 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
     if type(object) is FunctionType:
         func_object = object
     elif type(object) == types.MethodType:
-        func_object = object.im_func
+        func_object = object.__func__
 
     if func_object:
         # functions are a bit tricky
 
-        func_code = func_object.func_code
-        func_globals = func_object.func_globals
+        func_code = func_object.__code__
+        func_globals = func_object.__globals__
 
         def lookup(name):
             i = None
@@ -280,13 +289,13 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         #
         # to avoid needless header parsing, user and password are parsed
         # once and the are received as arguments
-        if not user and req.headers_in.has_key("Authorization"):
+        if not user and "Authorization" in req.headers_in:
             try:
                 s = req.headers_in["Authorization"][6:]
                 s = base64.decodestring(s)
                 user, passwd = s.split(":", 1)
             except:
-                raise apache.SERVER_RETURN, apache.HTTP_BAD_REQUEST
+                raise apache.SERVER_RETURN(apache.HTTP_BAD_REQUEST)
 
     if found_auth:
 
@@ -294,24 +303,24 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
             # note that Opera supposedly doesn't like spaces around "=" below
             s = 'Basic realm="%s"' % realm
             req.err_headers_out["WWW-Authenticate"] = s
-            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED
+            raise apache.SERVER_RETURN(apache.HTTP_UNAUTHORIZED)
 
-        if callable(__auth__):
+        if _callable(__auth__):
             rc = __auth__(req, user, passwd)
         else:
             if type(__auth__) is DictionaryType:
-                rc = __auth__.has_key(user) and __auth__[user] == passwd
+                rc = user in __auth__ and __auth__[user] == passwd
             else:
                 rc = __auth__
-            
+
         if not rc:
             s = 'Basic realm = "%s"' % realm
             req.err_headers_out["WWW-Authenticate"] = s
-            raise apache.SERVER_RETURN, apache.HTTP_UNAUTHORIZED
+            raise apache.SERVER_RETURN(apache.HTTP_UNAUTHORIZED)
 
     if found_access:
 
-        if callable(__access__):
+        if _callable(__access__):
             rc = __access__(req, user)
         else:
             if type(__access__) in (ListType, TupleType):
@@ -320,7 +329,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 rc = __access__
 
         if not rc:
-            raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+            raise apache.SERVER_RETURN(apache.HTTP_FORBIDDEN)
 
     return realm, user, passwd
 
@@ -333,7 +342,7 @@ tp_rules = {}
 
 # by default, built-in types cannot be traversed, but can be published
 default_builtins_tp_rule = (False, True)
-for t in types.__dict__.values():
+for t in list(types.__dict__.values()):
     if isinstance(t, type):
         tp_rules[t]=default_builtins_tp_rule
 
@@ -342,22 +351,22 @@ tp_rules.update({
     # Those are not traversable nor publishable
     ModuleType          : (False, False),
     BuiltinFunctionType : (False, False),
-    
+
     # This may change in the near future to (False, True)
     ClassType           : (False, False),
     TypeType            : (False, False),
-    
+
     # Publishing a generator may not seem to makes sense, because
     # it can only be done once. However, we could get a brand new generator
     # each time a new-style class property is accessed.
     GeneratorType       : (False, True),
-    
+
     # Old-style instances are traversable
     InstanceType        : (True, True),
 })
 
 # types which are not referenced in the tp_rules dictionary will be traversable
-# AND publishable 
+# AND publishable
 default_tp_rule = (True, True)
 
 def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
@@ -367,14 +376,14 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
     """
     parts = object_str.split('.')
 
-    first_object = True        
+    first_object = True
     for obj_str in parts:
         # path components starting with an underscore are forbidden
         if obj_str[0]=='_':
             req.log_error('Cannot traverse %s in %s because '
                           'it starts with an underscore'
                           % (obj_str, req.unparsed_uri), apache.APLOG_WARNING)
-            raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+            raise apache.SERVER_RETURN(apache.HTTP_FORBIDDEN)
 
         if first_object:
             first_object = False
@@ -386,19 +395,19 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
                 req.log_error('Cannot traverse %s in %s because '
                               '%s is not a traversable object'
                               % (obj_str, req.unparsed_uri, obj), apache.APLOG_WARNING)
-                raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
-        
+                raise apache.SERVER_RETURN(apache.HTTP_FORBIDDEN)
+
         # we know it's OK to call getattr
         # note that getattr can really call some code because
         # of property objects (or attribute with __get__ special methods)...
         try:
             obj = getattr(obj, obj_str)
         except AttributeError:
-            raise apache.SERVER_RETURN, apache.HTTP_NOT_FOUND
+            raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
         # we process the authentication for the object
         realm, user, passwd = process_auth(req, obj, realm, user, passwd)
-    
+
     # we're going to check if the final object is publishable
     rule = tp_rules.get(type(obj), default_tp_rule)
     if not rule[1]:
@@ -406,7 +415,7 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
          req.log_error('Cannot publish %s in %s because '
                        '%s is not publishable'
                        % (obj_str, req.unparsed_uri, obj), apache.APLOG_WARNING)
-         raise apache.SERVER_RETURN, apache.HTTP_FORBIDDEN
+         raise apache.SERVER_RETURN(apache.HTTP_FORBIDDEN)
 
     return obj
 
@@ -415,34 +424,34 @@ def resolve_object(req, obj, object_str, realm=None, user=None, passwd=None):
 re_html = re.compile(r"</HTML\s*>\s*$",re.I)
 re_charset = re.compile(r"charset\s*=\s*([^\s;]+)",re.I);
 
-def publish_object(req, object):
-    if callable(object):
-        
-        # To publish callables, we call them an recursively publish the result
+def publish_object(req, obj):
+    if _callable(obj):
+
+        # To publish callables, we call them and recursively publish the result
         # of the call (as done by util.apply_fs_data)
-        
+
         req.form = util.FieldStorage(req, keep_blank_values=1)
-        return publish_object(req,util.apply_fs_data(object, req.form, req=req))
+        return publish_object(req,util.apply_fs_data(obj, req.form, req=req))
 
 # TODO : we removed this as of mod_python 3.2, let's see if we can put it back
-# in mod_python 3.3    
-#     elif hasattr(object,'__iter__'):
-#     
+# in mod_python 3.3
+#     elif hasattr(obj,'__iter__'):
+#
 #         # To publish iterables, we recursively publish each item
 #         # This way, generators can be published
 #         result = False
-#         for item in object:
+#         for item in obj:
 #             result |= publish_object(req,item)
 #         return result
-#         
+#
     else:
-        if object is None:
-            
+        if obj is None:
+
             # Nothing to publish
             return False
-            
-        elif isinstance(object,UnicodeType):
-            
+
+        elif isinstance(obj,UnicodeType):
+
             # We've got an Unicode string to publish, so we have to encode
             # it to bytes. We try to detect the character encoding
             # from the Content-Type header
@@ -459,12 +468,12 @@ def publish_object(req, object):
             else:
                 # If no character encoding was set, we use UTF8
                 charset = 'UTF8'
-                
-            result = object.encode(charset)
+
+            result = obj.encode(charset)
         else:
             charset = None
-            result = str(object)
-            
+            result = str(obj)
+
         if not req._content_type_set:
             # make an attempt to guess content-type
             # we look for a </HTML in the last 100 characters.
@@ -476,7 +485,7 @@ def publish_object(req, object):
                 req.content_type = 'text/plain'
             if charset is not None:
                 req.content_type += '; charset=%s'%charset
-        
+
         # Write result even if req.method is 'HEAD' as Apache
         # will discard the final output anyway. Truncating
         # output here if req.method is 'HEAD' is likely the

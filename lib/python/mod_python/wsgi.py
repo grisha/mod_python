@@ -27,7 +27,7 @@ def handler(req):
 
         if exc_info:
             try:
-                raise exc_info[0], exc_info[1], exc_info[2]
+                raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
             finally:
                 exc_info = None
 
@@ -74,7 +74,7 @@ def handler(req):
     if not app:
         req.log_error(
             'WSGI handler: mod_python.wsgi.application (%s) not found, declining.'
-            % `app_str`, apache.APLOG_WARNING)
+            % repr(app_str), apache.APLOG_WARNING)
         return apache.DECLINED
 
     ## Build env
@@ -87,7 +87,7 @@ def handler(req):
         base_uri = options.get('mod_python.wsgi.base_uri')
         req.log_error(
             "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."
-            % (`req.uri`, `base_uri`), apache.APLOG_WARNING)
+            % (repr(req.uri), repr(base_uri)), apache.APLOG_WARNING)
         return apache.DECLINED
 
     ## Run the app
