@@ -179,8 +179,7 @@ static PyObject *_filter_read(filterobject *self, PyObject *args, int readline)
         Py_END_ALLOW_THREADS;
 
         if (!APR_STATUS_IS_EAGAIN(self->rc) && !(self->rc == APR_SUCCESS)) {
-            PyErr_SetObject(PyExc_IOError,
-                            PyBytes_FromString("Input filter read error"));
+            PyErr_SetString(PyExc_IOError, "Input filter read error");
             return NULL;
         }
     }
@@ -321,34 +320,24 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
     PyObject *s;
     conn_rec *c = self->request_obj->request_rec->connection;
 
-    if (! PyArg_ParseTuple(args, "O", &s))
-        return NULL;
-
-    if (! PyBytes_Check(s)) {
-        PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
-        return NULL;
-    }
-
     if (self->closed) {
         PyErr_SetString(PyExc_ValueError, "I/O operation on closed filter");
         return NULL;
     }
-
-    len = PyBytes_Size(s);
+    if (! PyArg_ParseTuple(args, "s#", &buff, &len))
+        return NULL;  /* bad args */
 
     if (len) {
 
         /* does the output brigade exist? */
-        if (!self->bb_out) {
+        if (!self->bb_out)
             self->bb_out = apr_brigade_create(self->f->r->pool,
                                               c->bucket_alloc);
-        }
 
-        buff = apr_bucket_alloc(len, c->bucket_alloc);
-        memcpy(buff, PyBytes_AS_STRING(s), len);
-
-        b = apr_bucket_heap_create(buff, len, apr_bucket_free,
-                                   c->bucket_alloc);
+        /* it looks like there is no need to memcpy, an immortal
+           bucket is fine, since Python won't free that memory before
+           the write is over */
+        b = apr_bucket_immortal_create(buff, len, c->bucket_alloc);
 
         APR_BRIGADE_INSERT_TAIL(self->bb_out, b);
     }
@@ -519,7 +508,7 @@ static PyObject * filter_getattr(filterobject *self, char *name)
             return Py_None;
         }
         else {
-            return PyBytes_FromString(self->f->frec->name);
+            return MpBytesOrUnicode_FromString(self->f->frec->name);
         }
     }
     else if (strcmp(name, "req") == 0) {

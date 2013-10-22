@@ -30,11 +30,11 @@ else:
 
 from os import stat
 from time import time, mktime
-from rfc822 import parsedate
+from email.utils import parsedate
 from calendar import timegm
 import re
 import weakref
-import new
+import types
 
 try:
     from threading import Lock
@@ -262,11 +262,11 @@ class FileCache(Cache):
 
         if entry._value is NOT_INITIALIZED:
             entry._timestamp = timestamp
-            return file(key, self.mode)
+            return open(key, self.mode)
         else:
             if entry._timestamp != timestamp:
                 entry._timestamp = timestamp
-                return file(key, self.mode)
+                return open(key, self.mode)
             else:
                 return None
 
@@ -373,9 +373,11 @@ class ModuleCache(FileCache):
 
     def build(self, key, name, opened, entry):
         try:
-            module = new.module(re_not_word.sub('_',key))
+            if hasattr(opened, "read"):
+                opened_as_str = opened.read()
+            module = types.ModuleType(re_not_word.sub('_',key))
             module.__file__ = key
-            exec(opened, module.__dict__)
+            exec(opened_as_str, module.__dict__)
             return module
         finally:
             opened.close()
@@ -390,7 +392,7 @@ class HttpModuleCache(HTTPCache):
 
     def build(self, key, name, opened, entry):
         try:
-            module = new.module(re_not_word.sub('_',key))
+            module = types.ModuleType(re_not_word.sub('_',key))
             module.__file__ = key
             text = opened.read().replace('\r\n', '\n')
             code = compile(text, name, 'exec')

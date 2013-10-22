@@ -83,17 +83,30 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
     PyObject *pairs, *dict;
     int i, n, len, lsize;
     char *qs;
+    PyObject *qso;
+    char unicode = 0;
     int keep_blank_values = 0;
     int strict_parsing = 0; /* XXX not implemented */
 
-    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values,
+    if (! PyArg_ParseTuple(args, "O|ii", &qso, &keep_blank_values,
                            &strict_parsing))
         return NULL; /* error */
 
+    if (PyUnicode_Check(qso))
+        unicode = 1;
+
+    MP_ANYSTR_AS_STR(qs, qso, 1);
+    if (!qs) {
+        Py_DECREF(qso); /* MP_ANYSTR_AS_STR */
+        return NULL;
+    }
+
     /* split query string by '&' and ';' into a list of pairs */
     pairs = PyList_New(0);
-    if (pairs == NULL)
+    if (pairs == NULL) {
+        Py_DECREF(qso);
         return NULL;
+    }
 
     i = 0;
     len = strlen(qs);
@@ -105,8 +118,10 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         int j = 0;
 
         pair = PyBytes_FromStringAndSize(NULL, len);
-        if (pair == NULL)
+        if (pair == NULL) {
+            Py_DECREF(qso);
             return NULL;
+        }
 
         /* split by '&' or ';' */
         cpair = PyBytes_AS_STRING(pair);
@@ -126,6 +141,8 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         Py_XDECREF(pair);
         i++;
     }
+
+    Py_DECREF(qso); /* MP_ANYSTR_AS_STR */
 
     /*
      * now we have a list of "abc=def" string (pairs), let's split
@@ -152,6 +169,7 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
         key = PyBytes_FromStringAndSize(NULL, len);
         if (key == NULL)
             return NULL;
+
         val = PyBytes_FromStringAndSize(NULL, len);
         if (val == NULL)
             return NULL;
@@ -194,17 +212,30 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
                 ckey = PyBytes_AS_STRING(key);
                 cval = PyBytes_AS_STRING(val);
 
-                if (PyMapping_HasKeyString(dict, ckey)) {
+                if (unicode) {
+                    PyObject *list, *ukey, *uval;
+                    ukey = PyUnicode_DecodeLatin1(ckey, strlen(ckey), NULL);
+                    uval = PyUnicode_DecodeLatin1(ckey, strlen(cval), NULL);
+                    list = PyDict_GetItem(dict, ukey);
+                    if (list) {
+                        PyList_Append(list, uval);
+                        Py_DECREF(uval);
+                    } else {
+                        list = Py_BuildValue("[O]", uval);
+                        PyDict_SetItem(dict, ukey, list);
+                        Py_DECREF(ukey);
+                        Py_DECREF(list);
+                    }
+                } else {
                     PyObject *list;
                     list = PyDict_GetItem(dict, key);
-                    PyList_Append(list, val);
-                    /* PyDict_GetItem is a borrowed ref, no decref */
-                }
-                else {
-                    PyObject *list;
-                    list = Py_BuildValue("[O]", val);
-                    PyDict_SetItem(dict, key, list);
-                    Py_DECREF(list);
+                    if (list)
+                        PyList_Append(list, val);
+                    else {
+                        list = Py_BuildValue("[O]", val);
+                        PyDict_SetItem(dict, key, list);
+                        Py_DECREF(list);
+                    }
                 }
             }
         }
@@ -230,18 +261,31 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
 
     PyObject *pairs;
     int i, len;
-    char *qs;
+    PyObject *qso;
+    char unicode = 0;
+    char *qs = NULL;
     int keep_blank_values = 0;
     int strict_parsing = 0; /* XXX not implemented */
 
-    if (! PyArg_ParseTuple(args, "s|ii", &qs, &keep_blank_values,
+    if (! PyArg_ParseTuple(args, "O|ii", &qso, &keep_blank_values,
                            &strict_parsing))
         return NULL; /* error */
 
+    if (PyUnicode_Check(qso))
+        unicode = 1;
+
+    MP_ANYSTR_AS_STR(qs, qso, 1);
+    if (!qs) {
+        Py_DECREF(qso); /* MP_ANYSTR_AS_STR */
+        return NULL;
+    }
+
     /* split query string by '&' and ';' into a list of pairs */
     pairs = PyList_New(0);
-    if (pairs == NULL)
+    if (pairs == NULL) {
+        Py_DECREF(qso); /* MP_ANYSTR_AS_STR */
         return NULL;
+    }
 
     i = 0;
     len = strlen(qs);
@@ -280,12 +324,16 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
         plen = strlen(cpair);
 
         key = PyBytes_FromStringAndSize(NULL, plen);
-        if (key == NULL)
+        if (key == NULL) {
+            Py_DECREF(qso); /* MP_ANYSTR_AS_STR */
             return NULL;
+        }
 
         val = PyBytes_FromStringAndSize(NULL, plen);
-        if (val == NULL)
+        if (val == NULL) {
+            Py_DECREF(qso); /* MP_ANYSTR_AS_STR */
             return NULL;
+        }
 
         ckey = PyBytes_AS_STRING(key);
         cval = PyBytes_AS_STRING(val);
@@ -320,7 +368,16 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
             _PyBytes_Resize(&val, strlen(cval));
 
             if (key && val) {
-                PyObject* listitem = Py_BuildValue("(O,O)", key, val);
+                PyObject *listitem = NULL;
+                if (unicode) {
+                    PyObject *ukey, *uval;
+                    ukey = PyUnicode_DecodeLatin1(ckey, strlen(ckey), NULL);
+                    uval = PyUnicode_DecodeLatin1(cval, strlen(cval), NULL);
+                    listitem = Py_BuildValue("(O,O)", ukey, uval);
+                    Py_DECREF(ukey);
+                    Py_DECREF(uval);
+                } else
+                    listitem = Py_BuildValue("(O,O)", key, val);
                 if(listitem) {
                     PyList_Append(pairs, listitem);
                     Py_DECREF(listitem);
@@ -334,6 +391,7 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
         i++;
     }
 
+    Py_DECREF(qso);
     return pairs;
 }
 
@@ -356,7 +414,7 @@ static PyObject *config_tree(void)
 
 static PyObject *server_root(void)
 {
-    return PyBytes_FromString(ap_server_root);
+    return MpBytesOrUnicode_FromString(ap_server_root);
 }
 
 /**
@@ -760,7 +818,6 @@ static PyMethodDef _apache_module_methods[] = {
 
 /* Module initialization */
 
-
 #if PY_MAJOR_VERSION >= 3
 
 static struct PyModuleDef _apache_moduledef = {
@@ -793,6 +850,8 @@ PyObject *_apache_module_init()
     m = Py_InitModule("_apache", _apache_module_methods);
 #else
     m = PyModule_Create(&_apache_moduledef);
+    PyObject *name = PyUnicode_FromString("_apache");
+    _PyImport_FixupExtensionObject(m, name, name);
 #endif
     d = PyModule_GetDict(m);
     Mp_ServerReturn = PyErr_NewException("_apache.SERVER_RETURN", NULL, NULL);
@@ -847,6 +906,7 @@ PyObject *_apache_module_init()
     PyDict_SetItemString(d, "MODULE_MAGIC_NUMBER_MINOR", o);
     Py_DECREF(o);
 
+    return m;
 }
 
 #if PY_MAJOR_VERSION < 3

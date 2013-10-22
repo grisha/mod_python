@@ -79,6 +79,7 @@ static PyObject * make_obcallback(const char *name)
     m = PyImport_ImportModule("mod_python.apache");
     if (!m) {
         PyObject *path;
+        char *c_path;
 
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "make_obcallback: could not import mod_python.apache.\n");
@@ -87,10 +88,11 @@ static PyObject * make_obcallback(const char *name)
         fflush(stderr);
 
         path = PyObject_Repr(PySys_GetObject("path"));
+        MP_ANYSTR_AS_STR(c_path, path, 0);
 
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "make_obcallback: Python path being used \"%s\".",
-                     PyBytes_AsString(path));
+                     c_path);
 
         Py_DECREF(path);
 
@@ -98,31 +100,36 @@ static PyObject * make_obcallback(const char *name)
 
     } else {
 
+        /* Make sure that C and Python code have the same version */
+
         const char *mp_dynamic_version = "<unknown>";
-        PyObject *mp = NULL;
-        PyObject *o = NULL;
-        PyObject *d = NULL;
-        PyObject *f = NULL;
+        PyObject *mp = PyImport_ImportModule("mod_python");
 
-        /* First make sure that C and Python code have the same version */
-
-        mp = PyImport_ImportModule("mod_python");
         if (mp) {
-            d = PyModule_GetDict(mp);
-            o = PyDict_GetItemString(d, "mp_version");
-            f = PyDict_GetItemString(d, "__file__");
+            PyObject *d = PyModule_GetDict(mp);
+            PyObject *o = PyDict_GetItemString(d, "mp_version");
+            PyObject *f = PyDict_GetItemString(d, "__file__");
 
-            if (o)
-                mp_dynamic_version = PyBytes_AsString(o);
+            MP_ANYSTR_AS_STR(mp_dynamic_version, o, 1);
+            if (!mp_dynamic_version) {
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                             "make_obcallback: fatal: mp_dynamic_version is NULL.");
+                Py_DECREF(o);
+                Py_DECREF(mp);
+                return NULL;
+            }
 
             if (strcmp(mp_version_string, mp_dynamic_version) != 0) {
+                char *c_f;
                 ap_log_error(APLOG_MARK, APLOG_WARNING, 0, main_server,
                              "WARNING: mod_python version mismatch, expected '%s', found '%s'.",
                              mp_version_string, mp_dynamic_version);
+                MP_ANYSTR_AS_STR(c_f, f, 1);
                 ap_log_error(APLOG_MARK, APLOG_WARNING, 0, main_server,
-                             "WARNING: mod_python modules location '%s'.",
-                             PyBytes_AsString(f));
+                             "WARNING: mod_python modules location '%s'.", c_f);
+                Py_DECREF(f); /* MP_ANYSTR_AS_STR */
             }
+            Py_DECREF(o); /* MP_ANYSTR_AS_STR */
             Py_XDECREF(mp);
 
             /* call init to get obCallBack */
@@ -131,7 +138,7 @@ static PyObject * make_obcallback(const char *name)
                        m, "init", "sO", name, MpServer_FromServer(main_server)))) {
 
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
-                             "make_obcallback: could not call init().\n");
+                             "make_obcallback: could not call init().");
 
                 PyErr_Print();
                 fflush(stderr);
@@ -366,6 +373,7 @@ apr_status_t python_cleanup(void *data)
         PyObject *handler;
         PyObject *stype;
         PyObject *svalue;
+        char *c_handler, *c_svalue, *c_stype;
 
         PyErr_Fetch(&ptype, &pvalue, &ptb);
         handler = PyObject_Str(ci->handler);
@@ -376,25 +384,30 @@ apr_status_t python_cleanup(void *data)
         Py_XDECREF(pvalue);
         Py_XDECREF(ptb);
 
+        MP_ANYSTR_AS_STR(c_handler, handler, 0);
+        if (!c_handler) c_handler = "<ERROR>";
+        MP_ANYSTR_AS_STR(c_svalue, svalue, 0);
+        if (!c_svalue) c_svalue = "<ERROR>";
+        MP_ANYSTR_AS_STR(c_stype, stype, 0);
+        if (!c_stype) c_stype = "<ERROR>";
+
         if (ci->request_rec) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0,
                           ci->request_rec,
                           "python_cleanup: Error calling cleanup object %s",
-                          PyBytes_AsString(handler));
+                          c_handler);
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0,
                           ci->request_rec,
-                          "    %s: %s", PyBytes_AsString(stype),
-                          PyBytes_AsString(svalue));
+                          "    %s: %s", c_stype, c_svalue);
         }
         else {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0,
                          ci->server_rec,
                          "python_cleanup: Error calling cleanup object %s",
-                         PyBytes_AsString(handler));
+                         c_handler);
             ap_log_error(APLOG_MARK, APLOG_ERR, 0,
                          ci->server_rec,
-                         "    %s: %s", PyBytes_AsString(stype),
-                         PyBytes_AsString(svalue));
+                          "    %s: %s", c_stype, c_svalue);
         }
 
         Py_DECREF(handler);
@@ -1291,7 +1304,7 @@ requestobject *python_get_request_object(request_rec *req, const char *phase)
     if (phase)
     {
         Py_XDECREF(request_obj->phase);
-        request_obj->phase = PyBytes_FromString(phase);
+        request_obj->phase = MpBytesOrUnicode_FromString(phase);
     }
 
     return request_obj;
@@ -1455,6 +1468,8 @@ static int python_handler(request_rec *req, char *phase)
     hl_entry *hlohle = NULL;
 
     py_req_config *req_conf;
+
+
 
     /* get configuration */
     conf = (py_config *) ap_get_module_config(req->per_dir_config,
@@ -1999,8 +2014,8 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                 return APR_SUCCESS;
             }
 
-            tagobject = PyBytes_FromString(tag);
-            codeobject = PyBytes_FromString(tag_val);
+            tagobject = MpBytesOrUnicode_FromString(tag);
+            codeobject = MpBytesOrUnicode_FromString(tag_val);
         } else {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                           "unexpected '%s' parameter to tag 'python' in %s",
@@ -2140,8 +2155,8 @@ static apr_status_t handle_python(include_ctx_t *ctx,
                 return APR_SUCCESS;
             }
 
-            tagobject = PyBytes_FromString(tag);
-            codeobject = PyBytes_FromString(tag_val);
+            tagobject = MpBytesOrUnicode_FromString(tag);
+            codeobject = MpBytesOrUnicode_FromString(tag_val);
         } else {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
                           "unexpected '%s' parameter to tag 'python' in %s",

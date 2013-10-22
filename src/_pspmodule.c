@@ -115,10 +115,10 @@ static PyObject * _psp_module_parse(PyObject *self, PyObject *argv)
     }
 
     if (parser->pycode.blob) {
-        code = PyBytes_FromString(parser->pycode.blob);
+        code = MpBytesOrUnicode_FromString(parser->pycode.blob);
     }
     else {
-        code = PyBytes_FromString("");
+        code = MpBytesOrUnicode_FromString("");
     }
 
     psp_parser_cleanup(parser);
@@ -130,6 +130,8 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
 {
     PyObject *code;
     PyObject *str;
+    PyObject *latin = NULL;
+    char *c_str = NULL;
     yyscan_t scanner;
     psp_parser_t  *parser;
     YY_BUFFER_STATE bs;
@@ -143,8 +145,19 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     yylex_init(&scanner);
     yyset_extra(parser, scanner);
 
-    bs = yy_scan_string(PyBytes_AsString(str), scanner);
+    if (PyUnicode_Check(str)) {
+        latin = PyUnicode_AsLatin1String(str);
+        if (latin)
+            c_str = PyBytes_AsString(latin);
+    } else if (PyBytes_Check(str))
+        c_str = PyBytes_AsString(str);
+
+    if (!c_str) c_str = "UNICODE ERROR";
+
+    bs = yy_scan_string(c_str, scanner);
     yylex(scanner);
+
+    Py_XDECREF(latin);
 
     /* yy_delete_buffer(bs, scanner); */
     yylex_destroy(scanner);
@@ -153,10 +166,10 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     Py_END_ALLOW_THREADS
 
     if (parser->pycode.blob) {
-        code = PyBytes_FromString(parser->pycode.blob);
+        code = MpBytesOrUnicode_FromString(parser->pycode.blob);
     }
     else {
-        code = PyBytes_FromString("");
+        code = MpBytesOrUnicode_FromString("");
     }
 
     psp_parser_cleanup(parser);
@@ -170,7 +183,43 @@ static PyMethodDef _psp_module_methods[] = {
     {NULL, NULL}
 };
 
-void init_psp(void)
+#if PY_MAJOR_VERSION >= 3
+
+static struct PyModuleDef _psp_moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_psp",                 /* m_name */
+    NULL,                   /* m_doc */
+    -1,                     /* m_size */
+    _psp_module_methods, /* m_methods */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+
+#endif
+
+PyObject * _init_psp(void)
 {
-    Py_InitModule("_psp", _psp_module_methods);
+    PyObject *m;
+#if PY_MAJOR_VERSION < 3
+    m = Py_InitModule("_psp", _psp_module_methods);
+#else
+    m = PyModule_Create(&_psp_moduledef);
+#endif
+    return m;
 }
+
+#if PY_MAJOR_VERSION < 3
+
+PyMODINIT_FUNC init_psp(void) {
+    _init_psp();
+}
+
+#else
+
+PyMODINIT_FUNC PyInit__psp(void) {
+    return _init_psp();
+}
+
+#endif

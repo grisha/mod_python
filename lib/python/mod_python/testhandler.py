@@ -1,7 +1,7 @@
  #
  # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- # 
+ #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
  # may not use this file except in compliance with the License.  You
  # may obtain a copy of the License at
@@ -30,20 +30,20 @@ class bounded_buffer(object):
     """
         This class implements a bounded buffer, i.e. a list that keeps the last
         n lines. It doesn't use pop(0), which is costly.
-    
+
     """
     def __init__(self,size):
         self.max_size = size
         self.list = []
         self.pos = 0
-    
+
     def append(self,value):
         if len(self.list)<self.max_size:
             self.list.append(value)
         else:
             self.list[self.pos]=value
         self.pos = (self.pos+1)%self.max_size
-    
+
     def items(self):
         return self.list[self.pos:]+self.list[:self.pos]
 
@@ -71,9 +71,9 @@ def write_tree(req,tree,level):
 
 def handler(req):
     req.form = util.FieldStorage(req)
-    
+
     if req.form.getfirst('view_log'):
-        log = file(os.path.join(apache.server_root(),req.server.error_fname),'rb')
+        log = open(os.path.join(apache.server_root(),req.server.error_fname),'rb')
         lines = bounded_buffer(100)
         for line in log:
             lines.append(line)
@@ -81,12 +81,12 @@ def handler(req):
         req.content_type='text/plain'
         for line in lines:
             req.write(line)
-        return apache.OK        
+        return apache.OK
 
     req.add_common_vars()
     req.content_type = 'text/html'
     req.write('<html><head><title>mod_python test page</title></head><body>\n')
-    
+
     req.write('<h3>General information</h3>\n')
     req.write('<table border="1">\n')
     req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
@@ -156,16 +156,16 @@ def handler(req):
     req.write('</table>\n')
 
     req.write('<h3>Request input headers</h3>\n')
-    write_table(req,req.headers_in)    
+    write_table(req,req.headers_in)
 
     req.write('<h3>Request environment</h3>\n')
-    write_table(req,req.subprocess_env)    
+    write_table(req,req.subprocess_env)
 
     req.write('<h3>Request configuration</h3>\n')
-    write_table(req,req.get_config())    
+    write_table(req,req.get_config())
 
     req.write('<h3>Request options</h3>\n')
-    write_table(req,req.get_options())    
+    write_table(req,req.get_options())
 
     req.write('<h3>Request notes</h3>\n')
     write_table(req,req.notes)

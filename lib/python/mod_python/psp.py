@@ -24,7 +24,7 @@ import _apache
 import sys
 import os
 import marshal
-import new
+import types
 from cgi import escape
 import dbm, dbm
 import tempfile
@@ -54,7 +54,7 @@ def code2str(c):
 
 def str2code(s):
 
-    return new.code(*marshal.loads(s))
+    return types.CodeType(*marshal.loads(s))
 
 class PSPInterface:
 

@@ -20,12 +20,13 @@
 #ifndef __PSP_MODULE_H
 #define __PSP_MODULE_H
 
+#include "Python.h"
+
 #if PY_MAJOR_VERSION < 3
 #define PyBytes_AsString PyString_AsString
 #define PyBytes_FromString PyString_FromString
 #endif
 
-void init_psp(void);
 
 #endif /* __PSP_MODULE_H */
 

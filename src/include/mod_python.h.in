@@ -104,7 +104,6 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #include "_apachemodule.h"
 #include "requestobject.h"
 #include "filterobject.h"
-#include "_pspmodule.h"
 #include "finfoobject.h"
 
 /** Things specific to mod_python, as an Apache module **/
@@ -114,13 +113,14 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define PyBytesObject PyStringObject
 #define PyBytes_Check PyString_Check
 #define PyBytes_CheckExact PyString_CheckExact
-#define PyBytes_AsString PyString_AsString
 #define PyBytes_FromString PyString_FromString
 #define PyBytes_FromStringAndSize PyString_FromStringAndSize
 #define PyBytes_AS_STRING PyString_AS_STRING
 #define PyBytes_ConcatAndDel PyString_ConcatAndDel
 #define PyBytes_Size PyString_Size
 #define _PyBytes_Resize _PyString_Resize
+#define MpObject_ReprAsBytes PyObjec_Repr
+#define MpBytesOrUnicode_FromString PyString_FromString
 
 #ifndef PyVarObject_HEAD_INIT
 #define PyVarObject_HEAD_INIT(type, size)       \
@@ -130,6 +130,10 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #ifndef Py_TYPE
 #define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
 #endif
+
+#else
+
+#define MpBytesOrUnicode_FromString PyUnicode_FromString
 
 #endif /* PY_MAJOR_VERSION < 3 */
 
@@ -238,6 +242,60 @@ APR_DECLARE_OPTIONAL_FN(void, mp_release_interpreter, ());
 APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_request_object, (request_rec *));
 APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_server_object, (server_rec *));
 APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_connection_object, (conn_rec *));
+
+/* This macro assigns a C string representation of PyObject *obj to
+ * char *str. obj must be a Unicode Latin1 or Bytes. It will try its
+ * best to accomplish this with zero-copy. WARNING - it DECREFs
+ * (unless obj_is_borrowed) and changes the value of obj when it is
+ * unicode that must be recoded, so do not use obj afterwards other
+ * than to DECREF it - it may not be what you expected. You MUST
+ * Py_DECREF(obj) afterward (even if error), but not before you're
+ * done with the value of str. Note that if the obj reference was
+ * borrowed, and without the macro you wouldn't be DECREFing it, you
+ * should indicate that by setting obj_is_borrowed to 1 and DECREF
+ * it. If after this macro str is NULL, then a TypeError error has
+ * been set by the macro.
+ */
+#define MP_ANYSTR_AS_STR(str, obj, obj_is_borrowed) do {                \
+        str = NULL;                                                     \
+        if (PyUnicode_CheckExact(obj)) {                                \
+            if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 3 &&       \
+                PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND) {          \
+                if (obj_is_borrowed) Py_INCREF(obj); /* so DECREF ok */ \
+                str = PyUnicode_1BYTE_DATA(obj);                        \
+            } else {                                                    \
+                PyObject *latin = PyUnicode_AsLatin1String(obj);        \
+                if (latin) {                                            \
+                    str = PyBytes_AsString(latin); /* #define on 2.6 */ \
+                    if (!obj_is_borrowed) Py_DECREF(obj);               \
+                    obj = latin;           /* remember to DECREF me! */ \
+                }                                                       \
+            }                                                           \
+        } else if (PyBytes_CheckExact(obj)) {   /* #define on 2.6 */    \
+            str = PyBytes_AsString(obj);        /* #define on 2.6 */    \
+            if (obj_is_borrowed) Py_INCREF(obj);     /* so DECREF ok */ \
+        }                                                               \
+        if (!str) {                                                     \
+            if (obj_is_borrowed) Py_INCREF(obj);     /* so DECREF ok */ \
+            PyErr_SetString(PyExc_TypeError,                            \
+                            "not an ISO-8859-1 string");                \
+        }                                                               \
+    } while (0)
+
+#ifndef MpObject_ReprAsBytes
+static inline PyObject *MpObject_ReprAsBytes(PyObject *o) {
+    PyObject *result;
+    PyObject *ucode = PyObject_Repr(o);
+    /* we can do this because repr() should never have non-ascii characters XXX (really?) */
+    char *c = PyUnicode_1BYTE_DATA(ucode);
+    if (c[0] == 'b')
+        result = PyBytes_FromStringAndSize(PyUnicode_1BYTE_DATA(ucode)+1, PyUnicode_GET_LENGTH(ucode)-1);
+    else
+        result = PyBytes_FromStringAndSize(PyUnicode_1BYTE_DATA(ucode), PyUnicode_GET_LENGTH(ucode));
+    Py_DECREF(ucode);
+    return result;
+}
+#endif
 
 #endif /* !Mp_MOD_PYTHON_H */
 

@@ -128,16 +128,17 @@ static PyObject *hlist_repr(hlistobject *self)
 {
     PyObject *t;
     PyObject *s = PyBytes_FromString("{");
+
     if (self->head->handler) {
         PyBytes_ConcatAndDel(&s, PyBytes_FromString("'handler':"));
         t = PyBytes_FromString(self->head->handler);
-        PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+        PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
         Py_XDECREF(t);
     }
     if (self->head->directory) {
         PyBytes_ConcatAndDel(&s, PyBytes_FromString(",'directory':"));
         t = PyBytes_FromString(self->head->directory);
-        PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+        PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
         Py_XDECREF(t);
     }
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(",'is_location':"));
@@ -151,7 +152,15 @@ static PyObject *hlist_repr(hlistobject *self)
     else
         PyBytes_ConcatAndDel(&s, PyBytes_FromString("0}"));
 
+#if PY_MAJOR_VERSION < 3
     return s;
+#else
+    {
+        PyObject *str = PyUnicode_FromString(PyBytes_AS_STRING(s));
+        Py_DECREF(s);
+        return str;
+    }
+#endif
 }
 
 PyTypeObject MpHList_Type = {

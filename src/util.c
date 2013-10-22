@@ -48,7 +48,7 @@ PyObject * tuple_from_array_header(const apr_array_header_t *ah)
 
         s = (char **) ah->elts;
         for (i = 0; i < ah->nelts; i++)
-            PyTuple_SetItem(t, i, PyBytes_FromString(s[i]));
+            PyTuple_SetItem(t, i, MpBytesOrUnicode_FromString(s[i]));
     }
     return t;
 }
@@ -73,7 +73,7 @@ PyObject * tuple_from_method_list(const ap_method_list_t *l)
 
         methods = (char **)l->method_list->elts;
         for (i = 0; i < l->method_list->nelts; ++i)
-            PyTuple_SetItem(t, i, PyBytes_FromString(methods[i]));
+            PyTuple_SetItem(t, i, MpBytesOrUnicode_FromString(methods[i]));
     }
     return t;
 }
@@ -160,14 +160,14 @@ PyObject *tuple_from_finfo(apr_finfo_t *f)
         PyTuple_SET_ITEM(t, 9, Py_None);
     }
     if (f->fname) {
-        PyTuple_SET_ITEM(t, 10, PyBytes_FromString(f->fname));
+        PyTuple_SET_ITEM(t, 10, MpBytesOrUnicode_FromString(f->fname));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 10, Py_None);
     }
     if (f->valid & APR_FINFO_NAME) {
-        PyTuple_SET_ITEM(t, 11, PyBytes_FromString(f->name));
+        PyTuple_SET_ITEM(t, 11, MpBytesOrUnicode_FromString(f->name));
     } else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 11, Py_None);
@@ -193,35 +193,35 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u)
     t = PyTuple_New(9);
 
     if (u->scheme) {
-        PyTuple_SET_ITEM(t, 0, PyBytes_FromString(u->scheme));
+        PyTuple_SET_ITEM(t, 0, MpBytesOrUnicode_FromString(u->scheme));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 0, Py_None);
     }
     if (u->hostinfo) {
-        PyTuple_SET_ITEM(t, 1, PyBytes_FromString(u->hostinfo));
+        PyTuple_SET_ITEM(t, 1, MpBytesOrUnicode_FromString(u->hostinfo));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 1, Py_None);
     }
     if (u->user) {
-        PyTuple_SET_ITEM(t, 2, PyBytes_FromString(u->user));
+        PyTuple_SET_ITEM(t, 2, MpBytesOrUnicode_FromString(u->user));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 2, Py_None);
     }
     if (u->password) {
-        PyTuple_SET_ITEM(t, 3, PyBytes_FromString(u->password));
+        PyTuple_SET_ITEM(t, 3, MpBytesOrUnicode_FromString(u->password));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 3, Py_None);
     }
     if (u->hostname) {
-        PyTuple_SET_ITEM(t, 4, PyBytes_FromString(u->hostname));
+        PyTuple_SET_ITEM(t, 4, MpBytesOrUnicode_FromString(u->hostname));
     }
     else {
         Py_INCREF(Py_None);
@@ -235,21 +235,21 @@ PyObject *tuple_from_apr_uri(apr_uri_t *u)
         PyTuple_SET_ITEM(t, 5, Py_None);
     }
     if (u->path) {
-        PyTuple_SET_ITEM(t, 6, PyBytes_FromString(u->path));
+        PyTuple_SET_ITEM(t, 6, MpBytesOrUnicode_FromString(u->path));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 6, Py_None);
     }
     if (u->query) {
-        PyTuple_SET_ITEM(t, 7, PyBytes_FromString(u->query));
+        PyTuple_SET_ITEM(t, 7, MpBytesOrUnicode_FromString(u->query));
     }
     else {
         Py_INCREF(Py_None);
         PyTuple_SET_ITEM(t, 7, Py_None);
     }
     if (u->fragment) {
-        PyTuple_SET_ITEM(t, 8, PyBytes_FromString(u->fragment));
+        PyTuple_SET_ITEM(t, 8, MpBytesOrUnicode_FromString(u->fragment));
     }
     else {
         Py_INCREF(Py_None);
@@ -426,9 +426,9 @@ static PyObject *makeipaddr(struct apr_sockaddr_t *addr)
     apr_status_t rc;
     PyObject *ret = NULL;
 
-    rc = apr_sockaddr_ip_get( &str, addr );
+    rc = apr_sockaddr_ip_get(&str, addr);
     if (rc==APR_SUCCESS) {
-        ret = PyBytes_FromString( str );
+        ret = MpBytesOrUnicode_FromString(str);
     }
     else {
         PyErr_SetString(PyExc_SystemError,"apr_sockaddr_ip_get failure");

@@ -47,6 +47,13 @@ extern "C" {
     PyAPI_FUNC(PyObject *) MpTable_FromTable (apr_table_t *t);
     PyAPI_FUNC(PyObject *) MpTable_New (void);
 
+/* #define DEBUG_TABLES 1 */
+#ifdef DEBUG_TABLES
+#define TABLE_DEBUG(str) printf("mp_table: %s\n", str)
+#else
+#define TABLE_DEBUG(str)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -49,6 +49,8 @@ PyObject * MpTable_FromTable(apr_table_t *t)
 {
     tableobject *result;
 
+    TABLE_DEBUG("MpTable_FromTable");
+
     result = PyObject_New(tableobject, &MpTable_Type);
     if (! result)
         return PyErr_NoMemory();
@@ -78,6 +80,8 @@ PyObject * MpTable_New()
     tableobject *t;
     apr_pool_t *p;
 
+    TABLE_DEBUG("MpTable_New");
+
     /* XXX need second arg abort function to report mem error */
     apr_pool_create_ex(&p, NULL, NULL, NULL);
 
@@ -101,6 +105,8 @@ static void table_dealloc(register void *o)
 {
     tableobject *self = (tableobject *)o;
 
+    TABLE_DEBUG("table_dealloc");
+
     if (MpTable_Check(self)) {
         if (self->pool)
             apr_pool_destroy(self->pool);
@@ -115,6 +121,7 @@ static void table_dealloc(register void *o)
  ** table_print
  **
  *      prints table like a dictionary
+ *      (Useful when debugging)
  */
 
 static int table_print(register tableobject *self, register FILE *fp, register int flags)
@@ -122,6 +129,8 @@ static int table_print(register tableobject *self, register FILE *fp, register i
     const apr_array_header_t *ah = NULL;
     apr_table_entry_t *elts;
     register int i;
+
+    TABLE_DEBUG("table_print");
 
     fprintf(fp, "{");
 
@@ -151,7 +160,7 @@ static int table_print(register tableobject *self, register FILE *fp, register i
 /**
  ** table_repr
  **
- *      prints table like a dictionary
+ *      repr table like a dictionary
  */
 
 static PyObject * table_repr(tableobject *self)
@@ -161,6 +170,8 @@ static PyObject * table_repr(tableobject *self)
     const apr_array_header_t *ah;
     apr_table_entry_t *elts;
     int i;
+
+    TABLE_DEBUG("table_repr");
 
     s = PyBytes_FromString("{");
 
@@ -175,7 +186,7 @@ static PyObject * table_repr(tableobject *self)
         if (elts[i].key)
         {
             t = PyBytes_FromString(elts[i].key);
-            PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+            PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));;
             Py_XDECREF(t);
 
             PyBytes_ConcatAndDel(&s, PyBytes_FromString(": "));
@@ -187,7 +198,7 @@ static PyObject * table_repr(tableobject *self)
               Py_INCREF(t);
             }
 
-            PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+            PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
             Py_XDECREF(t);
 
             if (i > 0)
@@ -196,7 +207,15 @@ static PyObject * table_repr(tableobject *self)
                 PyBytes_ConcatAndDel(&s, PyBytes_FromString("}"));
         }
 
+#if PY_MAJOR_VERSION < 3
     return s;
+#else
+    {
+        PyObject *str = PyUnicode_FromString(PyBytes_AS_STRING(s));
+        Py_DECREF(s);
+        return str;
+    }
+#endif
 }
 
 /**
@@ -208,6 +227,8 @@ static PyObject * table_repr(tableobject *self)
 
 static Py_ssize_t tablelength(PyObject *self)
 {
+    TABLE_DEBUG("tablelength");
+
     return apr_table_elts(((tableobject *)self)->table)->nelts;
 }
 
@@ -225,12 +246,13 @@ static PyObject * table_subscript(PyObject *self, register PyObject *key)
     register int i;
     PyObject *list;
 
-    if (key && !PyBytes_CheckExact(key)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "table keys must be strings");
+    TABLE_DEBUG("table_subscript");
+
+    MP_ANYSTR_AS_STR(k, key, 1);
+    if (!k) {
+        Py_DECREF(key);
         return NULL;
     }
-    k = PyBytes_AsString(key);
 
     /* it's possible that we have duplicate keys, so
        we can't simply use apr_table_get since that just
@@ -250,9 +272,9 @@ static PyObject * table_subscript(PyObject *self, register PyObject *key)
         if (elts[i].key) {
             if (apr_strnatcasecmp(elts[i].key, k) == 0) {
                 PyObject *v = NULL;
-                if (elts[i].val != NULL) {
-                    v = PyBytes_FromString(elts[i].val);
-                } else {
+                if (elts[i].val != NULL)
+                    v = MpBytesOrUnicode_FromString(elts[i].val);
+                else {
                     v = Py_None;
                     Py_INCREF(v);
                 }
@@ -260,6 +282,8 @@ static PyObject * table_subscript(PyObject *self, register PyObject *key)
                 Py_DECREF(v);
             }
         }
+
+    Py_DECREF(key); /* becasue of MP_ANYSTR_AS_STR */
 
     /* if no match */
     if (PyList_Size(list) == 0) {
@@ -293,35 +317,35 @@ static PyObject * table_subscript(PyObject *self, register PyObject *key)
 static int table_ass_subscript(PyObject *self, PyObject *key,
                                PyObject *val)
 {
+    char *k, *v;
 
-    char *k;
+    TABLE_DEBUG("table_ass_subscript");
 
-    if (key && !PyBytes_CheckExact(key)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "table keys must be strings");
+    MP_ANYSTR_AS_STR(k, key, 1);
+    if (!k) {
+        Py_XDECREF(key); /* MP_ANYSTR_AS_STR */
         return -1;
     }
 
-    k = PyBytes_AsString(key);
-
-    if (val == NULL) {
+    if (val == NULL)
         apr_table_unset(((tableobject *)self)->table, k);
-    }
     else {
-        if (val && !PyBytes_CheckExact(val)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "table values must be strings");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_XDECREF(key); /* MP_ANYSTR_AS_STR */
+            Py_XDECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
-        apr_table_set(((tableobject *)self)->table, k, PyBytes_AsString(val));
+        apr_table_set(((tableobject *)self)->table, k, v);
     }
+    Py_XDECREF(key); /* MP_ANYSTR_AS_STR */
+    Py_XDECREF(val); /* MP_ANYSTR_AS_STR */
     return 0;
 }
 
 /* table as mapping */
 
 static PyMappingMethods table_as_mapping = {
-    /* PYTHON 2.5: 'inquiry' should be perhaps replaced with 'lenfunc' */
     tablelength,           /*mp_length*/
     table_subscript,       /*mp_subscript*/
     table_ass_subscript,   /*mp_ass_subscript*/
@@ -336,11 +360,12 @@ static PyMappingMethods table_as_mapping = {
 
 static PyObject * table_keys(register tableobject *self)
 {
-
     PyObject *v;
     const apr_array_header_t *ah;
     apr_table_entry_t *elts;
     int i, j;
+
+    TABLE_DEBUG("table_keys");
 
     ah = apr_table_elts(self->table);
     elts = (apr_table_entry_t *) ah->elts;
@@ -351,7 +376,7 @@ static PyObject * table_keys(register tableobject *self)
     {
         if (elts[i].key)
         {
-            PyObject *key = PyBytes_FromString(elts[i].key);
+            PyObject *key = MpBytesOrUnicode_FromString(elts[i].key);
             PyList_SetItem(v, j, key);
             j++;
         }
@@ -374,6 +399,8 @@ static PyObject * table_values(register tableobject *self)
     apr_table_entry_t *elts;
     int i, j;
 
+    TABLE_DEBUG("table_values");
+
     ah = apr_table_elts(self->table);
     elts = (apr_table_entry_t *) ah->elts;
     v = PyList_New(ah->nelts);
@@ -383,9 +410,9 @@ static PyObject * table_values(register tableobject *self)
         if (elts[i].key)
         {
             PyObject *val = NULL;
-            if (elts[i].val != NULL) {
-                val = PyBytes_FromString(elts[i].val);
-            } else {
+            if (elts[i].val != NULL)
+                val = MpBytesOrUnicode_FromString(elts[i].val);
+            else {
                 val = Py_None;
                 Py_INCREF(val);
             }
@@ -410,6 +437,8 @@ static PyObject * table_items(register tableobject *self)
     const apr_array_header_t *ah;
     apr_table_entry_t *elts;
     int i, j;
+
+    TABLE_DEBUG("table_items");
 
     ah = apr_table_elts(self->table);
     elts = (apr_table_entry_t *) ah->elts;
@@ -442,23 +471,38 @@ static int table_merge(tableobject *a, PyObject *b, int override)
     PyObject *key, *value, *skey, *svalue;
     int status;
 
-    if (keys == NULL)
+    TABLE_DEBUG("table_merge");
+
+    if (keys == NULL) {
+        TABLE_DEBUG("  table_merge: keys NULL");
         return -1;
+    }
 
     iter = PyObject_GetIter(keys);
     Py_DECREF(keys);
-    if (iter == NULL)
+    if (iter == NULL) {
+        TABLE_DEBUG("  table_merge: iter NULL");
         return -1;
+    }
 
     for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
+        char *c_skey;
 
         skey = PyObject_Str(key);
         if (skey == NULL) {
             Py_DECREF(iter);
             Py_DECREF(key);
+            TABLE_DEBUG("  table_merge: skey NULL");
             return -1;
         }
-        if (!override && apr_table_get(a->table, PyBytes_AsString(skey)) != NULL) {
+        MP_ANYSTR_AS_STR(c_skey, skey, 0);
+        if (!c_skey) {
+            Py_DECREF(key);
+            Py_DECREF(skey);
+            TABLE_DEBUG("  table_merge: c_skey NULL");
+            return -1;
+        }
+        if (!override && apr_table_get(a->table, c_skey) != NULL) {
             Py_DECREF(key);
             Py_DECREF(skey);
             continue;
@@ -469,6 +513,7 @@ static int table_merge(tableobject *a, PyObject *b, int override)
             Py_DECREF(iter);
             Py_DECREF(key);
             Py_DECREF(skey);
+            TABLE_DEBUG("  table_merge: value NULL");
             return -1;
         }
         svalue = PyObject_Str(value);
@@ -477,6 +522,7 @@ static int table_merge(tableobject *a, PyObject *b, int override)
             Py_DECREF(key);
             Py_DECREF(skey);
             Py_DECREF(value);
+            TABLE_DEBUG("  table_merge: svalue NULL");
             return -1;
         }
         status = table_ass_subscript((PyObject *)a, skey, svalue);
@@ -486,13 +532,16 @@ static int table_merge(tableobject *a, PyObject *b, int override)
         Py_DECREF(svalue);
         if (status < 0) {
             Py_DECREF(iter);
+            TABLE_DEBUG("  table_merge: status < 0");
             return -1;
         }
     }
     Py_DECREF(iter);
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
         /* Iterator completed, via error */
+        TABLE_DEBUG("  table_merge: PyErr_Occurred()");
         return -1;
+    }
 
     return 0;
 }
@@ -504,6 +553,8 @@ static int table_merge(tableobject *a, PyObject *b, int override)
 
 static PyObject *table_update(tableobject *self, PyObject *other)
 {
+    TABLE_DEBUG("table_update");
+
     if (table_merge(self, other, 1) < 0)
         return NULL;
 
@@ -524,12 +575,15 @@ static int table_mergefromseq2(tableobject *self, PyObject *seq2, int override)
     PyObject *item;     /* seq2[i] */
     PyObject *fast;     /* item as a 2-tuple or 2-list */
 
+    TABLE_DEBUG("table_mergefromseq2");
+
     it = PyObject_GetIter(seq2);
     if (it == NULL)
         return -1;
 
     for (i = 0; ; ++i) {
         PyObject *key, *value, *skey, *svalue;
+        char *c_skey;
         int n;
 
         fast = NULL;
@@ -571,8 +625,14 @@ static int table_mergefromseq2(tableobject *self, PyObject *seq2, int override)
             goto Fail;
         }
 
-        if (override || apr_table_get(self->table,
-                                      PyBytes_AsString(skey)) == NULL) {
+        MP_ANYSTR_AS_STR(c_skey, skey, 0);
+        if (!c_skey) {
+            Py_DECREF(skey);
+            Py_DECREF(svalue);
+            goto Fail;
+        }
+
+        if (override || apr_table_get(self->table, c_skey) == NULL) {
             int status = table_ass_subscript((PyObject *)self, skey, svalue);
             if (status < 0) {
                 Py_DECREF(skey);
@@ -606,6 +666,9 @@ static int table_mergefromseq2(tableobject *self, PyObject *seq2, int override)
 static PyObject *table_copy(register tableobject *from)
 {
     tableobject *to = (tableobject *)MpTable_New();
+
+    TABLE_DEBUG("table_copy");
+
     if (to != NULL)
         apr_table_overlap(to->table, from->table, 0);
 
@@ -629,6 +692,8 @@ static int table_compare(tableobject *a, tableobject *b)
     PyObject *ad, *bd;
     int result;
 
+    TABLE_DEBUG("table_compare");
+
     ad = PyDict_New();
     bd = PyDict_New();
 
@@ -649,10 +714,26 @@ static int table_compare(tableobject *a, tableobject *b)
  **
  */
 
-static PyObject *table_richcompare(PyObject *v, PyObject *w, int op)
+static PyObject *table_richcompare(PyObject *a, PyObject *b, int op)
 {
-    Py_INCREF(Py_NotImplemented); /* XXX */
-    return Py_NotImplemented;
+
+    PyObject *ad, *bd, *result;
+
+    TABLE_DEBUG("table_richcompare");
+
+    ad = PyDict_New();
+    bd = PyDict_New();
+
+    PyDict_Merge(ad, (PyObject*)a, 0);
+    PyDict_Merge(bd, (PyObject*)b, 0);
+
+    result = PyObject_RichCompare(ad, bd, op);
+
+    Py_DECREF(ad);
+    Py_DECREF(bd);
+
+    return result;
+
 }
 
 /**
@@ -663,17 +744,17 @@ static PyObject *table_richcompare(PyObject *v, PyObject *w, int op)
 static PyObject * table_has_key(tableobject *self, PyObject *key)
 {
 
-    const char *val;
+    const char *k;
 
-    if (!PyBytes_CheckExact(key)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "table keys must be strings");
+    TABLE_DEBUG("table_has_key");
+
+    MP_ANYSTR_AS_STR(k, key, 1);
+    if (!k) {
+        Py_DECREF(key); /* MP_ANYSTR_AS_STR */
         return NULL;
     }
 
-    val = apr_table_get(self->table, PyBytes_AsString(key));
-
-    if (val)
+    if (apr_table_get(self->table, k))
         return PyLong_FromLong(1);
     else
         return PyLong_FromLong(0);
@@ -691,20 +772,28 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
     PyObject *key;
     PyObject *failobj = Py_None;
     PyObject *val = NULL;
-    const char *sval;
+    const char *k, *v;
 
-    if (!PyArg_ParseTuple(args, "S|O:get", &key, &failobj))
+    TABLE_DEBUG("table_get");
+
+    if (!PyArg_ParseTuple(args, "O|O:get", &key, &failobj))
         return NULL;
 
-    sval = apr_table_get(self->table, PyBytes_AsString(key));
+    MP_ANYSTR_AS_STR(k, key, 1);
+    if (!k) {
+        Py_DECREF(key); /* MP_ANYSTR_AS_STR */
+        return NULL;
+    }
 
-    if (sval == NULL) {
+    v = apr_table_get(self->table, k);
+    if (!v) {
         val = failobj;
         Py_INCREF(val);
     }
     else
-        val = PyBytes_FromString(sval);
+        val = MpBytesOrUnicode_FromString(v);
 
+    Py_DECREF(key); /* MP_ANYSTR_AS_STR */
     return val;
 }
 
@@ -716,44 +805,47 @@ static PyObject *table_get(register tableobject *self, PyObject *args)
 
 static PyObject *table_setdefault(register tableobject *self, PyObject *args)
 {
-    PyObject *key;
+    int len;
     PyObject *failobj = NULL;
-    PyObject *val = NULL;
-    char *k = NULL;
+    PyObject *key, *val = NULL;
+    char *k = NULL, *f = NULL;
     const char *v = NULL;
+
+    TABLE_DEBUG("table_setdefault");
 
     if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
         return NULL;
 
-    if (!PyBytes_CheckExact(key)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "table keys must be strings");
+    MP_ANYSTR_AS_STR(k, key, 1);
+    if (!k) {
+        Py_DECREF(key); /* MP_ANYSTR_AS_STR */
         return NULL;
     }
 
-    if (failobj && !PyBytes_CheckExact(failobj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "table values must be strings");
-        return NULL;
+    if (failobj) {
+        MP_ANYSTR_AS_STR(f, failobj, 1);
+        if (!f) {
+            Py_DECREF(failobj); /* MP_ANYSTR_AS_ATR */
+            return NULL;
+        }
     }
 
-    k = PyBytes_AsString(key);
     v = apr_table_get(self->table, k);
-
-    if (v == NULL) {
-        if (failobj == NULL) {
-            apr_table_set(self->table, k, "");
-            val = PyBytes_FromString("");
+    if (!v) {
+        if (f) {
+            apr_table_set(self->table, k, f);
+            val = failobj;
+            Py_INCREF(val);
         }
         else {
-            apr_table_set(self->table, k, PyBytes_AsString(failobj));
-            val = failobj;
-            Py_XINCREF(val);
+            apr_table_set(self->table, k, "");
+            v = "";
         }
     }
-    else
-        val = PyBytes_FromString(v);
 
+    val = MpBytesOrUnicode_FromString(v);
+
+    Py_XDECREF(failobj); /* MP_ANYSTR_AS_ATR */
     return val;
 }
 
@@ -764,6 +856,8 @@ static PyObject *table_setdefault(register tableobject *self, PyObject *args)
 
 static PyObject *table_clear(register tableobject *self)
 {
+    TABLE_DEBUG("table_clear");
+
     apr_table_clear(self->table);
 
     Py_INCREF(Py_None);
@@ -780,6 +874,8 @@ static PyObject *table_popitem(tableobject *self)
     apr_array_header_t *ah;
     apr_table_entry_t *elts;
     PyObject *res;
+
+    TABLE_DEBUG("table_popitem");
 
     ah = (apr_array_header_t *) apr_table_elts(self->table);
     elts = (apr_table_entry_t *) ah->elts;
@@ -808,6 +904,8 @@ static int table_traverse(tableobject *self, visitproc visit, void *arg)
     apr_table_entry_t *elts;
     register int i;
 
+    TABLE_DEBUG("table_traverse");
+
     ah = apr_table_elts (self->table);
     elts = (apr_table_entry_t *) ah->elts;
 
@@ -818,9 +916,9 @@ static int table_traverse(tableobject *self, visitproc visit, void *arg)
             int err;
 
             PyObject *v = NULL;
-            if (elts[i].val != NULL) {
-                v = PyBytes_FromString(elts[i].val);
-            } else {
+            if (elts[i].val != NULL)
+                v = MpBytesOrUnicode_FromString(elts[i].val);
+            else {
                 v = Py_None;
                 Py_INCREF(v);
             }
@@ -841,6 +939,8 @@ static int table_traverse(tableobject *self, visitproc visit, void *arg)
 
 static int table_tp_clear(tableobject *self)
 {
+    TABLE_DEBUG("table_tp_clear");
+
     table_clear(self);
     return 0;
 }
@@ -854,13 +954,26 @@ static int table_tp_clear(tableobject *self)
 
 static PyObject * mp_table_add(tableobject *self, PyObject *args)
 {
+    PyObject *key, *val;
+    const char *k, *v;
 
-    const char *val, *key;
+    TABLE_DEBUG("mp_table_add");
 
-    if (! PyArg_ParseTuple(args, "ss", &key, &val))
+    if (! PyArg_ParseTuple(args, "OO", &key, &val))
         return NULL;
 
-    apr_table_add(self->table, key, val);
+    MP_ANYSTR_AS_STR(k, key, 1);
+    MP_ANYSTR_AS_STR(v, val, 1);
+    if ((!k) || (!v)) {
+        Py_DECREF(key); /* MP_ANYSTR_AS_STR */
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
+        return NULL;
+    }
+
+    apr_table_add(self->table, k, v);
+
+    Py_DECREF(key); /* MP_ANYSTR_AS_STR */
+    Py_DECREF(val); /* MP_ANYSTR_AS_STR */
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -872,15 +985,18 @@ static PyObject *tableiter_new(tableobject *, tableselectfunc);
 
 static PyObject *select_key(apr_table_entry_t *elts)
 {
-    return PyBytes_FromString(elts->key);
+    return MpBytesOrUnicode_FromString(elts->key);
 }
 
 static PyObject *select_value(apr_table_entry_t *elts)
 {
     PyObject *val = NULL;
-    if (elts->val != NULL) {
-        val = PyBytes_FromString(elts->val);
-    } else {
+
+    TABLE_DEBUG("select_value");
+
+    if (elts->val != NULL)
+        val = MpBytesOrUnicode_FromString(elts->val);
+    else {
         val = Py_None;
         Py_INCREF(val);
     }
@@ -890,21 +1006,29 @@ static PyObject *select_value(apr_table_entry_t *elts)
 
 static PyObject *select_item(apr_table_entry_t *elts)
 {
+    TABLE_DEBUG("select_item");
+
     return Py_BuildValue("(s,s)", elts->key, elts->val);
 }
 
 static PyObject *table_iterkeys(tableobject *self)
 {
+    TABLE_DEBUG("table_iterkeys");
+
     return tableiter_new(self, select_key);
 }
 
 static PyObject *table_itervalues(tableobject *self)
 {
+    TABLE_DEBUG("table_itervalues");
+
     return tableiter_new(self, select_value);
 }
 
 static PyObject *table_iteritems(tableobject *self)
 {
+    TABLE_DEBUG("table_iteritems");
+
     return tableiter_new(self, select_item);
 }
 
@@ -972,10 +1096,22 @@ static PyMethodDef mp_table_methods[] = {
 
 static int table_contains(tableobject *self, PyObject *key)
 {
-    return apr_table_get(self->table, PyBytes_AsString(key)) != NULL;
+    char *k;
+    const char *v;
+    int rc;
+
+    TABLE_DEBUG("table_contains");
+
+    MP_ANYSTR_AS_STR(k, key, 1);
+    if (!k) {
+        Py_DECREF(key);
+        return -1;
+    }
+    v = apr_table_get(self->table, k);
+    Py_DECREF(key);
+    return (v != NULL);
 }
 
-/* Hack to implement "key in table" */
 static PySequenceMethods table_as_sequence = {
     0,                                  /* sq_length */
     0,                                  /* sq_concat */
@@ -996,6 +1132,8 @@ static PySequenceMethods table_as_sequence = {
 
 static PyObject *table_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    TABLE_DEBUG("table_new");
+
     return MpTable_New();
 }
 
@@ -1004,6 +1142,8 @@ static int table_init(tableobject *self, PyObject *args, PyObject *kwds)
     PyObject *arg = NULL;
     static char *kwlist[] = {"items", 0};
     int result = 0;
+
+    TABLE_DEBUG("table_init");
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:mp_table",
                                      kwlist, &arg))
@@ -1020,12 +1160,16 @@ static int table_init(tableobject *self, PyObject *args, PyObject *kwds)
 
 static long table_nohash(PyObject *self)
 {
+    TABLE_DEBUG("table_nohash");
+
     PyErr_SetString(PyExc_TypeError, "mp_table objects are unhashable");
     return -1;
 }
 
 static PyObject *table_iter(tableobject *self)
 {
+    TABLE_DEBUG("table_iter");
+
     return tableiter_new(self, select_key);
 }
 
@@ -1101,6 +1245,9 @@ typedef struct {
 static PyObject *tableiter_new(tableobject *table, tableselectfunc select)
 {
     tableiterobject *ti;
+
+    TABLE_DEBUG("tableiter_new");
+
     ti = PyObject_NEW(tableiterobject, &MpTableIter_Type);
     if (ti == NULL)
         return NULL;
@@ -1121,6 +1268,8 @@ static void tableiter_dealloc(tableiterobject *ti)
 static PyObject *tableiter_next(tableiterobject *ti, PyObject *args)
 {
     apr_table_entry_t *elts = (apr_table_entry_t *) ti->table->table->a.elts;
+
+    TABLE_DEBUG("tableiter_next");
 
     /* make sure the table hasn't change while being iterated */
 
@@ -1144,6 +1293,8 @@ static PyObject *tableiter_next(tableiterobject *ti, PyObject *args)
 
 static PyObject *tableiter_getiter(PyObject *it)
 {
+    TABLE_DEBUG("tableiter_getiter");
+
     Py_INCREF(it);
     return it;
 }
@@ -1157,6 +1308,8 @@ static PyMethodDef tableiter_methods[] = {
 static PyObject *tableiter_iternext(tableiterobject *ti)
 {
     apr_table_entry_t *elts = (apr_table_entry_t *) ti->table->table->a.elts;
+
+    TABLE_DEBUG("tableiter_iternext");
 
     /* make sure the table hasn't change while being iterated */
 

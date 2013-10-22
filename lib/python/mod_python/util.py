@@ -21,18 +21,21 @@
 import _apache
 
 import sys
-if sys.version[0] == '2':
+PY2 = sys.version[0] == '2'
+if PY2:
     import apache
-    from cStringIO import StringIO
+    from exceptions import *
 else:
     from . import apache
-    from io import StringIO
+
+from io import BytesIO
 import tempfile
 import re
 
 from types import *
-from exceptions import *
 import collections
+
+MethodWrapper = type(object.__call__)
 
 parse_qs = _apache.parse_qs
 parse_qsl = _apache.parse_qsl
@@ -98,6 +101,8 @@ class Field:
         if self.file:
             self.file.seek(0)
             value = self.file.read()
+            if not isinstance(value, bytes):
+                raise TypeError("value must be bytes, is file opened in binary mode?")
             self.file.seek(0)
         else:
             value = None
@@ -106,35 +111,65 @@ class Field:
     def __del__(self):
         self.file.close()
 
-class StringField(str):
-    """ This class is basically a string with
-    added attributes for compatibility with std lib cgi.py. Basically, this
-    works the opposite of Field, as it stores its data in a string, but creates
-    a file on demand. Field creates a value on demand and stores data in a file.
-    """
-    filename = None
-    headers = {}
-    ctype = "text/plain"
-    type_options = {}
-    disposition = None
-    disp_options = None
+if PY2:
+    class StringField(str):
+        """ This class is basically a string with
+        added attributes for compatibility with std lib cgi.py. Basically, this
+        works the opposite of Field, as it stores its data in a string, but creates
+        a file on demand. Field creates a value on demand and stores data in a file.
+        """
+        filename = None
+        headers = {}
+        ctype = "text/plain"
+        type_options = {}
+        disposition = None
+        disp_options = None
 
-    # I wanted __init__(name, value) but that does not work (apparently, you
-    # cannot subclass str with a constructor that takes >1 argument)
-    def __init__(self, value):
-        '''Create StringField instance. You'll have to set name yourself.'''
-        str.__init__(self, value)
-        self.value = value
+        # I wanted __init__(name, value) but that does not work (apparently, you
+        # cannot subclass str with a constructor that takes >1 argument)
+        def __init__(self, value):
+            '''Create StringField instance. You'll have to set name yourself.'''
+            str.__init__(self, value)
+            self.value = value
 
-    def __getattr__(self, name):
-        if name != 'file':
-            raise AttributeError(name)
-        self.file = StringIO(self.value)
-        return self.file
+        def __getattr__(self, name):
+            if name != 'file':
+                raise AttributeError(name)
+            self.file = BytesIO(self.value)
+            return self.file
 
-    def __repr__(self):
-        """Return printable representation (to pass unit tests)."""
-        return "Field(%s, %s)" % (repr(self.name), repr(self.value))
+        def __repr__(self):
+            """Return printable representation (to pass unit tests)."""
+            return "Field(%s, %s)" % (repr(self.name), repr(self.value))
+else:
+    class StringField(bytes):
+        """ This class is basically a string with
+        added attributes for compatibility with std lib cgi.py. Basically, this
+        works the opposite of Field, as it stores its data in a string, but creates
+        a file on demand. Field creates a value on demand and stores data in a file.
+        """
+        filename = None
+        headers = {}
+        ctype = "text/plain"
+        type_options = {}
+        disposition = None
+        disp_options = None
+
+        def __new__(self, value):
+            return bytes.__new__(self, value)
+
+        def __init__(self, value):
+            self.value = value
+
+        def __getattr__(self, name):
+            if name != 'file':
+                raise AttributeError(name)
+            self.file = BytesIO(self.value)
+            return self.file
+
+        def __repr__(self):
+            """Return printable representation (to pass unit tests)."""
+            return "Field(%s, %s)" % (repr(self.name), repr(self.value))
 
 class FieldList(list):
 
@@ -224,27 +259,33 @@ class FieldStorage:
             raise apache.SERVER_RETURN(apache.HTTP_LENGTH_REQUIRED)
 
         if "content-type" not in req.headers_in:
-            ctype = "application/x-www-form-urlencoded"
+            ctype = b"application/x-www-form-urlencoded"
         else:
-            ctype = req.headers_in["content-type"]
+            ctype = req.headers_in["content-type"].encode("latin1")
 
-        if ctype.startswith("application/x-www-form-urlencoded"):
-            pairs = parse_qsl(req.read(clen), keep_blank_values)
+        if not isinstance(ctype, bytes):
+            raise TypeError("ctype must be of type bytes")
+
+        if ctype.startswith(b"application/x-www-form-urlencoded"):
+            v = req.read(clen)
+            if not isinstance(v, bytes):
+                raise TypeError("req.read() must return bytes")
+            pairs = parse_qsl(v, keep_blank_values)
             for pair in pairs:
                 self.add_field(pair[0], pair[1])
             return
 
-        if not ctype.startswith("multipart/"):
+        if not ctype.startswith(b"multipart/"):
             # we don't understand this content-type
             raise apache.SERVER_RETURN(apache.HTTP_NOT_IMPLEMENTED)
 
         # figure out boundary
         try:
-            i = ctype.lower().rindex("boundary=")
+            i = ctype.lower().rindex(b"boundary=")
             boundary = ctype[i+9:]
-            if len(boundary) >= 2 and boundary[0] == boundary[-1] == '"':
+            if len(boundary) >= 2 and boundary[:1] == boundary[-1:] == b'"':
                 boundary = boundary[1:-1]
-            boundary = re.compile("--" + re.escape(boundary) + "(--)?\r?\n")
+            boundary = re.compile(b"--" + re.escape(boundary) + b"(--)?\r?\n")
 
         except ValueError:
             raise apache.SERVER_RETURN(apache.HTTP_BAD_REQUEST)
@@ -253,14 +294,16 @@ class FieldStorage:
         self.read_to_boundary(req, boundary, None)
 
         end_of_stream = False
-        while not end_of_stream: # jjj JIM BEGIN WHILE
+        while not end_of_stream:
             ## parse headers
 
-            ctype, type_options = "text/plain", {}
+            ctype, type_options = b"text/plain", {}
             disp, disp_options = None, {}
             headers = apache.make_table()
 
             line = req.readline(readBlockSize)
+            if not isinstance(line, bytes):
+                raise TypeError("req.readline() must return bytes")
             match = boundary.match(line)
             if (not line) or match:
                 # we stop if we reached the end of the stream or a stop
@@ -272,28 +315,28 @@ class FieldStorage:
                 continue
 
             skip_this_part = False
-            while line not in ('\r','\r\n'):
+            while line not in (b'\r',b'\r\n'):
                 nextline = req.readline(readBlockSize)
-                while nextline and nextline[0] in [ ' ', '\t']:
+                while nextline and nextline[:1] in [ b' ', b'\t']:
                     line = line + nextline
                     nextline = req.readline(readBlockSize)
                 # we read the headers until we reach an empty line
                 # NOTE : a single \n would mean the entity is malformed, but
                 # we're tolerating it anyway
-                h, v = line.split(":", 1)
-                headers.add(h, v)
+                h, v = line.split(b":", 1)
+                headers.add(h, v)  # mp_table accepts bytes, but always returns str
                 h = h.lower()
-                if h == "content-disposition":
+                if h == b"content-disposition":
                     disp, disp_options = parse_header(v)
-                elif h == "content-type":
+                elif h == b"content-type":
                     ctype, type_options = parse_header(v)
                     #
                     # NOTE: FIX up binary rubbish sent as content type
                     # from Microsoft IE 6.0 when sending a file which
                     # does not have a suffix.
                     #
-                    if ctype.find('/') == -1:
-                        ctype = 'application/octet-stream'
+                    if ctype.find(b'/') == -1:
+                        ctype = b'application/octet-stream'
 
                 line = nextline
                 match = boundary.match(line)
@@ -311,32 +354,32 @@ class FieldStorage:
             if skip_this_part:
                 continue
 
-            if "name" in disp_options:
-                name = disp_options["name"]
+            if b"name" in disp_options:
+                name = disp_options[b"name"]
             else:
                 name = None
 
             # create a file object
             # is this a file?
-            if "filename" in disp_options:
+            if b"filename" in disp_options:
                 if file_callback and isinstance(file_callback, collections.Callable):
-                    file = file_callback(disp_options["filename"])
+                    file = file_callback(disp_options[b"filename"])
                 else:
                     file = tempfile.TemporaryFile("w+b")
             else:
                 if field_callback and isinstance(field_callback, collections.Callable):
                     file = field_callback()
                 else:
-                    file = StringIO()
+                    file = BytesIO()
 
             # read it in
             self.read_to_boundary(req, boundary, file)
             file.seek(0)
 
             # make a Field
-            if "filename" in disp_options:
+            if b"filename" in disp_options:
                 field = Field(name)
-                field.filename = disp_options["filename"]
+                field.filename = disp_options[b"filename"]
             else:
                 field = StringField(file.read())
                 field.name = name
@@ -355,6 +398,10 @@ class FieldStorage:
         self.list.append(item)
 
     def __setitem__(self, key, value):
+        if not isinstance(value, bytes):
+            raise TypeError("Field value must be bytes")
+        if not isinstance(key, bytes):
+            raise TypeError("Field key must be bytes")
         table = self.list.table()
         if key in table:
             items = table[key]
@@ -368,6 +415,8 @@ class FieldStorage:
         previous_delimiter = None
         while True:
             line = req.readline(readBlockSize)
+            if not isinstance(line, bytes):
+                raise TypeError("req.readline() must return bytes")
 
             if not line:
                 # end of stream
@@ -378,10 +427,10 @@ class FieldStorage:
             match = boundary.match(line)
             if match:
                 # the line is the boundary, so we bail out
-                # if the two last chars are '--' it is the end of the entity
+                # if the two last bytes are '--' it is the end of the entity
                 return match.group(1) is not None
 
-            if line[-2:] == '\r\n':
+            if line[-2:] == b'\r\n':
                 # the line ends with a \r\n, which COULD be part
                 # of the next boundary. We write the previous line delimiter
                 # then we write the line without \r\n and save it for the next
@@ -389,9 +438,9 @@ class FieldStorage:
                 if file is not None:
                     if previous_delimiter is not None: file.write(previous_delimiter)
                     file.write(line[:-2])
-                previous_delimiter = '\r\n'
+                previous_delimiter = b'\r\n'
 
-            elif line[-1:] == '\r':
+            elif line[-1:] == b'\r':
                 # the line ends with \r, which is only possible if
                 # readBlockSize bytes have been read. In that case the
                 # \r COULD be part of the next boundary, so we save it
@@ -400,12 +449,12 @@ class FieldStorage:
                 if file is not None:
                     if previous_delimiter is not None: file.write(previous_delimiter)
                     file.write(line[:-1])
-                previous_delimiter = '\r'
+                previous_delimiter = b'\r'
 
-            elif line == '\n' and previous_delimiter == '\r':
+            elif line == b'\n' and previous_delimiter == b'\r':
                 # the line us a single \n and we were in the middle of a \r\n,
                 # so we complete the delimiter
-                previous_delimiter = '\r\n'
+                previous_delimiter = b'\r\n'
 
             else:
                 if file is not None:
@@ -483,16 +532,19 @@ def parse_header(line):
 
     """
 
-    plist = [a.strip() for a in line.split(';')]
+    if not isinstance(line, bytes):
+        raise TypeError("parse_header() only accepts bytes")
+
+    plist = [a.strip() for a in line.split(b';')]
     key = plist[0].lower()
     del plist[0]
     pdict = {}
     for p in plist:
-        i = p.find('=')
+        i = p.find(b'=')
         if i >= 0:
             name = p[:i].strip().lower()
             value = p[i+1:].strip()
-            if len(value) >= 2 and value[0] == value[-1] == '"':
+            if len(value) >= 2 and value[:1] == value[-1:] == b'"':
                 value = value[1:-1]
             pdict[name] = value
     return key, pdict
@@ -510,30 +562,57 @@ def apply_fs_data(object, fs, **args):
 
     fc = None
     expected = []
-    if hasattr(object, "func_code"):
-        # function
-        fc = object.__code__
-        expected = fc.co_varnames[0:fc.co_argcount]
-    elif hasattr(object, 'im_func'):
-        # method
-        fc = object.__func__.__code__
-        expected = fc.co_varnames[1:fc.co_argcount]
-    elif type(object) in (TypeType,ClassType):
-        # class
-        fc = object.__init__.__func__.__code__
-        expected = fc.co_varnames[1:fc.co_argcount]
-    elif type(object) is BuiltinFunctionType:
-        # builtin
-        fc = None
-        expected = []
-    elif hasattr(object, '__call__'):
-        # callable object
-        if type(object.__call__) is MethodType:
-            fc = object.__call__.__func__.__code__
+
+    if PY2:
+        if hasattr(object, "func_code"):
+            # function
+            fc = object.func_code
+            expected = fc.co_varnames[0:fc.co_argcount]
+        elif hasattr(object, 'im_func'):
+            # method
+            fc = object.im_func.func_code
             expected = fc.co_varnames[1:fc.co_argcount]
-        else:
-            # abuse of objects to create hierarchy
-            return apply_fs_data(object.__call__, fs, **args)
+        elif type(object) in (TypeType,ClassType) and hasattr(object, "__init__"):
+            # class
+            fc = object.__init__.im_func.func_code
+            expected = fc.co_varnames[1:fc.co_argcount]
+        elif type(object) is BuiltinFunctionType:
+            # builtin
+            fc = None
+            expected = []
+        elif hasattr(object, '__call__'):
+            # callable object
+            if type(object.__call__) is MethodType:
+                fc = object.__call__.im_func.func_code
+                expected = fc.co_varnames[1:fc.co_argcount]
+            else:
+                # abuse of objects to create hierarchy
+                return apply_fs_data(object.__call__, fs, **args)
+    else:
+        if hasattr(object, '__code__'):
+            # function
+            fc = object.__code__
+            expected = fc.co_varnames[0:fc.co_argcount]
+        elif hasattr(object, '__func__'):
+            # method
+            fc = object.__func__.__code__
+            expected = fc.co_varnames[1:fc.co_argcount]
+        elif type(object) is type and hasattr(object, "__init__") and hasattr(object.__init__, "__code__"):
+            # class
+            fc = object.__init__.__code__
+            expected = fc.co_varnames[1:fc.co_argcount]
+        elif type(object) is [type, BuiltinFunctionType]:
+            # builtin
+            fc = None
+            expected = []
+        elif hasattr(object, '__call__'):
+            # callable object
+            if type(object.__call__) is MethodType:
+                fc = object.__call__.__func__.__code__
+                expected = fc.co_varnames[1:fc.co_argcount]
+            elif type(object.__call__) != MethodWrapper:
+                # abuse of objects to create hierarchy
+                return apply_fs_data(object.__call__, fs, **args)
 
     # add form data to args
     for field in fs.list:
@@ -545,7 +624,7 @@ def apply_fs_data(object, fs, **args):
 
     # replace lists with single values
     for arg in args:
-        if ((type(args[arg]) is ListType) and
+        if ((type(args[arg]) is list) and
             (len(args[arg]) == 1)):
             args[arg] = args[arg][0]
 
@@ -564,6 +643,9 @@ def redirect(req, location, permanent=0, text=None):
     """
     A convenience function to provide redirection
     """
+
+    if not isinstance(location, str):
+        raise TypeError("location must be of type str")
 
     if req.sent_bodyct:
         raise IOError("Cannot redirect after headers have already been sent.")

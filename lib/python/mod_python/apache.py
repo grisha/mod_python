@@ -144,18 +144,8 @@ class CallBack:
             assert (result.__class__ is int), \
                    "ConnectionHandler '%s' returned invalid return code." % handler
 
-        except PROG_TRACEBACK as traceblock:
-            # Program run-time error
-            try:
-                (etype, value, traceback) = traceblock
-                result = self.ReportError(etype, value, traceback, srv=conn.base_server,
-                                          phase="ConnectionHandler",
-                                          hname=handler, debug=debug)
-            finally:
-                traceback = None
-
         except:
-            # Any other rerror (usually parsing)
+            # Error (usually parsing)
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 result = self.ReportError(exc_type, exc_value, exc_traceback, srv=conn.base_server,
@@ -166,9 +156,8 @@ class CallBack:
 
         return result
 
-    def FilterDispatch(self, filter):
-
-        req = filter.req
+    def FilterDispatch(self, fltr):
+        req = fltr.req
 
         # config
         config, debug  = req.get_config(), False
@@ -178,11 +167,11 @@ class CallBack:
         try:
 
             # split module::handler
-            l = filter.handler.split('::', 1)
+            l = fltr.handler.split('::', 1)
             module_name = l[0]
             if len(l) == 1:
                 # no oject, provide default
-                if filter.is_input:
+                if fltr.is_input:
                     obj_str = "inputfilter"
                 else:
                     obj_str = "outputfilter"
@@ -205,11 +194,11 @@ class CallBack:
                 finally:
                     _path_cache_lock.release()
             else:
-                if filter.dir:
+                if fltr.dir:
                     _path_cache_lock.acquire()
                     try:
-                        if filter.dir not in sys.path:
-                            sys.path[:0] = [filter.dir]
+                        if fltr.dir not in sys.path:
+                            sys.path[:0] = [fltr.dir]
                     finally:
                         _path_cache_lock.release()
 
@@ -223,7 +212,7 @@ class CallBack:
 
             # find the object
             obj = resolve_object(module, obj_str,
-                                    arg=filter, silent=0)
+                                    arg=fltr, silent=0)
 
             # Only permit debugging using pdb if Apache has
             # actually been started in single process mode.
@@ -246,20 +235,20 @@ class CallBack:
                 sys.settrace(debugger.trace_dispatch)
 
                 try:
-                    result = obj(filter)
+                    result = obj(fltr)
 
                 finally:
                     debugger.quitting = 1
                     sys.settrace(None)
 
             else:
-                result = obj(filter)
+                result = obj(fltr)
 
             # always flush the filter. without a FLUSH or EOS bucket,
             # the content is never written to the network.
             # XXX an alternative is to tell the user to flush() always
-            if not filter.closed:
-                filter.flush()
+            if not fltr.closed:
+                fltr.flush()
 
         except SERVER_RETURN as value:
             # SERVER_RETURN indicates a non-local abort from below
@@ -282,24 +271,13 @@ class CallBack:
             except:
                 pass
 
-        except PROG_TRACEBACK as traceblock:
-            # Program run-time error
-            try:
-                (etype, value, traceback) = traceblock
-                filter.disable()
-                result = self.ReportError(etype, value, traceback, req=req, filter=filter,
-                                          phase="Filter: " + filter.name,
-                                          hname=filter.handler, debug=debug)
-            finally:
-                traceback = None
-
         except:
-            # Any other rerror (usually parsing)
+            # Error (usually parsing)
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                filter.disable()
-                result = self.ReportError(exc_type, exc_value, exc_traceback, req=req, filter=filter,
-                                          phase=filter.name, hname=filter.handler,
+                fltr.disable()
+                result = self.ReportError(exc_type, exc_value, exc_traceback, req=req, filter=fltr,
+                                          phase=fltr.name, hname=fltr.handler,
                                           debug=debug)
             finally:
                 exc_traceback = None
@@ -323,7 +301,6 @@ class CallBack:
 
         # Lookup expected status values that allow us to
         # continue when multiple handlers exist.
-
         expected = _status_values[default_obj_str]
 
         try:
@@ -451,18 +428,8 @@ class CallBack:
 
                 hlist.next()
 
-        except PROG_TRACEBACK as traceblock:
-            # Program run-time error
-            try:
-                (etype, value, traceback) = traceblock
-                result = self.ReportError(etype, value, traceback, req=req,
-                                          phase=req.phase, hname=hlist.handler,
-                                          debug=debug)
-            finally:
-                traceback = None
-
         except:
-            # Any other rerror (usually parsing)
+            # Error (usually parsing)
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 result = self.ReportError(exc_type, exc_value, exc_traceback, req=req,
@@ -472,46 +439,46 @@ class CallBack:
 
         return result
 
-    def IncludeDispatch(self, filter, tag, code):
+    def IncludeDispatch(self, fltr, tag, code):
 
         try:
             # config
-            config, debug = filter.req.get_config(), False
+            config, debug = fltr.req.get_config(), False
             if "PythonDebug" in config:
                 debug = config["PythonDebug"] == "1"
 
-            if not hasattr(filter.req,"ssi_globals"):
-                filter.req.ssi_globals = {}
+            if not hasattr(fltr.req,"ssi_globals"):
+                fltr.req.ssi_globals = {}
 
-            filter.req.ssi_globals["filter"] = filter
-            filter.req.ssi_globals["__file__"] = filter.req.filename
+            fltr.req.ssi_globals["filter"] = fltr
+            fltr.req.ssi_globals["__file__"] = fltr.req.filename
 
             code = code.replace('\r\n', '\n').rstrip()
 
             if tag == 'eval':
-                result = eval(code, filter.req.ssi_globals)
+                result = eval(code, fltr.req.ssi_globals)
                 if result is not None:
-                    filter.write(str(result))
+                    fltr.write(str(result))
             elif tag == 'exec':
-                exec(code, filter.req.ssi_globals)
+                exec(code, fltr.req.ssi_globals)
 
-            filter.flush()
+            fltr.flush()
 
         except:
             try:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                filter.disable()
+                fltr.disable()
                 result = self.ReportError(exc_type, exc_value, exc_traceback,
-                                          req=filter.req, filter=filter,
-                                          phase=filter.name,
-                                          hname=filter.req.filename,
+                                          req=fltr.req, filter=fltr,
+                                          phase=fltr.name,
+                                          hname=fltr.req.filename,
                                           debug=debug)
             finally:
                 exc_traceback = None
 
             raise
 
-        filter.req.ssi_globals["filter"] = None
+        fltr.req.ssi_globals["filter"] = None
 
         return OK
 
@@ -770,7 +737,7 @@ def build_cgi_env(req):
 
     return env
 
-class NullIO:
+class NullIO(object):
     """ Abstract IO
     """
     def tell(self): return 0
@@ -783,6 +750,7 @@ class NullIO:
     def isatty(self): return 0
     def flush(self): pass
     def close(self): pass
+    def detach(self): pass
     def seek(self, pos, mode = 0): pass
 
 class CGIStdin(NullIO):
@@ -1098,7 +1066,6 @@ REMOTE_DOUBLE_REV = 3
 REQ_ABORTED = HTTP_INTERNAL_SERVER_ERROR
 REQ_EXIT = "REQ_EXIT"
 SERVER_RETURN = _apache.SERVER_RETURN
-PROG_TRACEBACK = "PROG_TRACEBACK"
 
 # the req.finfo tuple
 FINFO_MODE = 0

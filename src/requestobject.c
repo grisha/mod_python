@@ -248,8 +248,8 @@ static PyObject *req_build_wsgi_env(requestobject *self)
 
     /* authorization */
     if ((val = apr_table_get(r->headers_in, "authorization"))) {
-        v = PyBytes_FromString(val);
-        PyDict_SetItemString(env, "HTTP_AUTHORIZATION", PyBytes_FromString(val));
+        v = MpBytesOrUnicode_FromString(val);
+        PyDict_SetItemString(env, "HTTP_AUTHORIZATION", v);
         Py_DECREF(v);
     }
 
@@ -267,18 +267,18 @@ static PyObject *req_build_wsgi_env(requestobject *self)
         wsgi_multiprocess = PyBool_FromLong(result);
     }
 
-    /* these are global vars which we never decref */
+    /* NOTE: these are global vars which we never decref! */
     PyDict_SetItemString(env, "wsgi.version", wsgi_version);
     PyDict_SetItemString(env, "wsgi.multithread", wsgi_multithread);
     PyDict_SetItemString(env, "wsgi.multiprocess", wsgi_multiprocess);
 
     val = apr_table_get(r->subprocess_env, "HTTPS");
     if (!val || !strcasecmp(val, "off")) {
-        v = PyBytes_FromString("http");
+        v = MpBytesOrUnicode_FromString("http");
         PyDict_SetItemString(env, "wsgi.url_scheme", v);
         Py_DECREF(v);
     } else {
-        v = PyBytes_FromString("https");
+        v = MpBytesOrUnicode_FromString("https");
         PyDict_SetItemString(env, "wsgi.url_scheme", v);
         Py_DECREF(v);
     }
@@ -318,7 +318,8 @@ static int valid_phase(const char *p)
 
 static PyObject *req_add_handler(requestobject *self, PyObject *args)
 {
-    char *phase;
+    char *phase = NULL;
+    PyObject *o_phase;
     char *handler;
     const char *dir = NULL;
     const char *currphase;
@@ -366,7 +367,8 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
     handler = apr_pstrdup(self->request_rec->pool, handler);
 
     /* which phase are we processing? */
-    currphase = PyBytes_AsString(self->phase);
+    o_phase = self->phase;
+    MP_ANYSTR_AS_STR(currphase, o_phase, 1);
 
     /* are we in same phase as what's being added? */
     if (strcmp(currphase, phase) == 0) {
@@ -397,6 +399,7 @@ static PyObject *req_add_handler(requestobject *self, PyObject *args)
         }
     }
 
+    Py_XDECREF(o_phase);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -613,27 +616,28 @@ static PyObject *req_allow_methods(requestobject *self, PyObject *args)
     if (len) {
 
         PyObject *method;
+        char *m;
 
         method = PySequence_GetItem(methods, 0);
-        if (! PyBytes_Check(method)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "Methods must be strings");
+
+        MP_ANYSTR_AS_STR(m, method, 1);
+        if (!m) {
+            Py_DECREF(method); /* MP_ANYSTR_AS_STR */
             return NULL;
         }
-
-        ap_allow_methods(self->request_rec, (reset == REPLACE_ALLOW),
-                         PyBytes_AS_STRING(method), NULL);
+        ap_allow_methods(self->request_rec, (reset == REPLACE_ALLOW), m, NULL);
+        Py_DECREF(method); /* MP_ANYSTR_AS_STR */
 
         for (i = 1; i < len; i++) {
             method = PySequence_GetItem(methods, i);
-            if (! PyBytes_Check(method)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "Methods must be strings");
+            MP_ANYSTR_AS_STR(m, method, 1);
+            if (!m) {
+                Py_DECREF(method); /* MP_ANYSTR_AS_STR */
                 return NULL;
             }
 
-            ap_allow_methods(self->request_rec, MERGE_ALLOW,
-                             PyBytes_AS_STRING(method), NULL);
+            ap_allow_methods(self->request_rec, MERGE_ALLOW, m, NULL);
+            Py_DECREF(method); /* MP_ANYSTR_AS_STR */
         }
     }
 
@@ -685,7 +689,7 @@ static PyObject * req_ssl_var_lookup(requestobject *self, PyObject *args)
                                self->request_rec,
                                var_name);
         if (val)
-            return PyBytes_FromString(val);
+            return MpBytesOrUnicode_FromString(val);
     }
 
     /* variable not found, or mod_ssl is not loaded */
@@ -702,9 +706,7 @@ static PyObject * req_ssl_var_lookup(requestobject *self, PyObject *args)
 
 static PyObject *req_document_root(requestobject *self)
 {
-
-    return PyBytes_FromString(ap_document_root(self->request_rec));
-
+    return MpBytesOrUnicode_FromString(ap_document_root(self->request_rec));
 }
 
 /**
@@ -718,6 +720,8 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
 {
     const char *pw;
     request_rec *req;
+
+    /* http://stackoverflow.com/questions/702629/utf-8-characters-mangled-in-http-basic-auth-username/703341#703341 */
 
     req = self->request_rec;
 
@@ -743,7 +747,7 @@ static PyObject *req_auth_name(requestobject *self)
         Py_INCREF(Py_None);
         return Py_None;
     }
-    return PyBytes_FromString(auth_name);
+    return MpBytesOrUnicode_FromString(auth_name);
 }
 
 /**
@@ -761,7 +765,7 @@ static PyObject *req_auth_type(requestobject *self)
         return Py_None;
     }
 
-    return PyBytes_FromString(auth_type);
+    return MpBytesOrUnicode_FromString(auth_type);
 }
 
 /**
@@ -777,7 +781,7 @@ static PyObject *req_construct_url(requestobject *self, PyObject *args)
     if (! PyArg_ParseTuple(args, "s", &uri))
         return NULL;
 
-    return PyBytes_FromString(ap_construct_url(self->request_rec->pool,
+    return MpBytesOrUnicode_FromString(ap_construct_url(self->request_rec->pool,
                                uri, self->request_rec));
 }
 
@@ -808,9 +812,9 @@ static PyObject * req_get_addhandler_exts(requestobject *self, PyObject *args)
     char *exts = get_addhandler_extensions(self->request_rec);
 
     if (exts)
-        return PyBytes_FromString(exts);
+        return MpBytesOrUnicode_FromString(exts);
     else
-        return PyBytes_FromString("");
+        return MpBytesOrUnicode_FromString("");
 }
 
 /**
@@ -870,7 +874,7 @@ static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
             return Py_BuildValue("(s,i)", host, _str_is_ip);
         }
         else {
-            return PyBytes_FromString(host);
+            return MpBytesOrUnicode_FromString(host);
         }
     }
 }
@@ -1048,8 +1052,7 @@ static PyObject * req_read(requestobject *self, PyObject *args)
                                         buffer+bytes_read, len-bytes_read);
         Py_END_ALLOW_THREADS
         if (chunk_len == -1) {
-            PyErr_SetObject(PyExc_IOError,
-                            PyBytes_FromString("Client read error (Timeout?)"));
+            PyErr_SetString(PyExc_IOError, "Client read error (Timeout?)");
             return NULL;
         }
         else
@@ -1184,8 +1187,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
         free(self->rbuff);
         self->rbuff = NULL;
 
-        PyErr_SetObject(PyExc_IOError,
-                        PyBytes_FromString("Client read error (Timeout?)"));
+        PyErr_SetString(PyExc_IOError, "Client read error (Timeout?)");
         return NULL;
     }
 
@@ -1206,8 +1208,7 @@ static PyObject * req_readline(requestobject *self, PyObject *args)
             free(self->rbuff);
             self->rbuff = NULL;
 
-            PyErr_SetObject(PyExc_IOError,
-                            PyBytes_FromString("Client read error (Timeout?)"));
+            PyErr_SetString(PyExc_IOError, "Client read error (Timeout?)");
             return NULL;
         }
         else
@@ -1296,6 +1297,7 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
     PyObject *handler = NULL;
     PyObject *data = NULL;
     PyObject *name_obj = NULL;
+    char * c_name_obj;
     char *name = NULL;
 
     if (! PyArg_ParseTuple(args, "O|O", &handler, &data))
@@ -1308,9 +1310,17 @@ static PyObject *req_register_cleanup(requestobject *self, PyObject *args)
         Py_INCREF(handler);
         ci->handler = handler;
         name_obj = python_interpreter_name();
-        name = (char *)malloc(strlen(PyBytes_AsString(name_obj))+1);
-        strcpy(name, PyBytes_AsString(name_obj));
+        MP_ANYSTR_AS_STR(c_name_obj, name_obj, 1);
+        if (!c_name_obj) {
+            Py_DECREF(name_obj); /* MP_ANYSTR_AS_STR */
+            return NULL;
+        }
+        name = (char *)malloc(strlen(c_name_obj)+1);
+        if (!name)
+            return PyErr_NoMemory();
+        strcpy(name, c_name_obj);
         ci->interpreter = name;
+        Py_DECREF(name_obj); /* MP_ANYSTR_AS_STR */
         if (data) {
             Py_INCREF(data);
             ci->data = data;
@@ -1371,7 +1381,7 @@ static PyObject * req_requires(requestobject *self)
     for (i = 0; i < reqs_arr->nelts; ++i) {
         if (reqs[i].method_mask & (AP_METHOD_BIT << self->request_rec->method_number)) {
             PyTuple_SetItem(result, ti++,
-                            PyBytes_FromString(reqs[i].requirement));
+                            MpBytesOrUnicode_FromString(reqs[i].requirement));
         }
     }
 
@@ -1741,6 +1751,15 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
             return PyLong_FromLong(l);
         }
     }
+    else if (strcmp(name, "user") == 0) {
+        /* http://stackoverflow.com/questions/702629/utf-8-characters-mangled-in-http-basic-auth-username/703341#703341 */
+        if (self->request_rec->user)
+            return PyBytes_FromString(self->request_rec->user);
+        else {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+    }
     else if (strcmp(name, "_request_rec") == 0) {
 #if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 7
         return PyCObject_FromVoidPtr(self->request_rec, 0);
@@ -1766,70 +1785,83 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
 
 static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
 {
-
+    char *v;
     if (strcmp(name, "content_type") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "content_type must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         ap_set_content_type(self->request_rec,
-                            apr_pstrdup(self->request_rec->pool,
-                                        PyBytes_AsString(val)));
+                            apr_pstrdup(self->request_rec->pool, v));
         self->content_type_set = 1;
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "user") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "user must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->user =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "ap_auth_type") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "ap_auth_type must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->ap_auth_type =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "filename") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "filename must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->filename =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "canonical_filename") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "canonical_filename must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->canonical_filename =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "path_info") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "path_info must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->path_info =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "args") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "args must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->args =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "handler") == 0) {
@@ -1837,21 +1869,25 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
             self->request_rec->handler = 0;
             return 0;
         }
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "handler must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->handler =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "uri") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "uri must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->uri =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
     else if (strcmp(name, "finfo") == 0) {
@@ -1863,10 +1899,9 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         f = (finfoobject *)val;
         self->request_rec->finfo = *f->finfo;
         self->request_rec->finfo.fname = apr_pstrdup(self->request_rec->pool,
-                                                      f->finfo->fname);
+                                                     f->finfo->fname);
         self->request_rec->finfo.name = apr_pstrdup(self->request_rec->pool,
-                                                      f->finfo->name);
-
+                                                    f->finfo->name);
         return 0;
     }
     else if (strcmp(name, "chunked") == 0) {
@@ -1878,12 +1913,14 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
     else if (strcmp(name, "status_line") == 0) {
-        if (! PyBytes_Check(val)) {
-            PyErr_SetString(PyExc_TypeError, "status line must be a string");
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if (!v) {
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
             return -1;
         }
         self->request_rec->status_line =
-            apr_pstrdup(self->request_rec->pool, PyBytes_AsString(val));
+            apr_pstrdup(self->request_rec->pool, v);
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
         return 0;
     }
 

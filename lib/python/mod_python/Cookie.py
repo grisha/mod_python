@@ -41,13 +41,14 @@ Max-Age and Version) could be a waste of cookie space...
 
 """
 
+import sys
 import time
 import re
 import hmac
 import marshal
 import base64
 
-# import apache
+PY2 = sys.version[0] == '2'
 
 class CookieError(Exception):
     pass
@@ -58,7 +59,7 @@ class metaCookie(type):
 
         _valid_attr = (
             "version", "path", "domain", "secure",
-            "comment", "expires", "max_age",
+            "comment", "max_age",
             # RFC 2965
             "commentURL", "discard", "port",
             # Microsoft Extension
@@ -215,7 +216,10 @@ class SignedCookie(Cookie):
             raise CookieError("Cannot sign without a secret")
         _hmac = hmac.new(self.__data__["secret"], self.name)
         _hmac.update(str)
-        return _hmac.hexdigest()
+        if PY2:
+            return _hmac.hexdigest()
+        else:
+            return _hmac.hexdigest().decode()
 
     def __str__(self):
 

@@ -38,7 +38,6 @@ import imp
 import re
 import base64
 
-import new
 import types
 from types import *
 import collections
@@ -52,7 +51,8 @@ def _callable(obj):
     if PY2:
         return callable(obj)
     else:
-        return isinstance(__auth__, collections.Callable)
+        return (isinstance(obj, collections.Callable) or
+                (hasattr(obj, "__call__") and isinstance(obj.__call__, collections.Callable)))
 
 ####################### The published page cache ##############################
 
@@ -222,7 +222,7 @@ def handler(req):
     published = publish_object(req, object)
 
     # we log a message if nothing was published, it helps with debugging
-    if (not published) and (req._bytes_queued==0) and (req.__next__ is None):
+    if (not published) and (req._bytes_queued==0) and (req.next is None):
         log=int(req.get_config().get("PythonDebug", 0))
         if log:
             req.log_error("mod_python.publisher: nothing to publish.")
@@ -258,16 +258,19 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 if name in names:
                     i = list(names).index(name)
             if i is not None:
-                return (1, func_code.co_consts[i+1])
+                if PY2:
+                    return (1, func_code.co_consts[i+1])
+                else:
+                    return (1, func_code.co_consts[1+i*2])
             return (0, None)
 
         (found_auth, __auth__) = lookup('__auth__')
         if found_auth and type(__auth__) == types.CodeType:
-            __auth__ = new.function(__auth__, func_globals)
+            __auth__ = types.FunctionType(__auth__, func_globals)
 
         (found_access, __access__) = lookup('__access__')
         if found_access and type(__access__) == types.CodeType:
-            __access__ = new.function(__access__, func_globals)
+            __access__ = types.FunctionType(__access__, func_globals)
 
         (found_realm, __auth_realm__) = lookup('__auth_realm__')
         if found_realm:
@@ -291,8 +294,12 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         # once and the are received as arguments
         if not user and "Authorization" in req.headers_in:
             try:
-                s = req.headers_in["Authorization"][6:]
-                s = base64.decodestring(s)
+                if PY2:
+                    s = req.headers_in["Authorization"][6:]
+                    s = base64.decodestring(s)
+                else:
+                    s = req.headers_in["Authorization"][6:].encode()
+                    s = base64.decodestring(s).decode()
                 user, passwd = s.split(":", 1)
             except:
                 raise apache.SERVER_RETURN(apache.HTTP_BAD_REQUEST)
@@ -323,7 +330,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
         if _callable(__access__):
             rc = __access__(req, user)
         else:
-            if type(__access__) in (ListType, TupleType):
+            if type(__access__) in (list, tuple):
                 rc = user in __access__
             else:
                 rc = __access__
@@ -351,19 +358,24 @@ tp_rules.update({
     # Those are not traversable nor publishable
     ModuleType          : (False, False),
     BuiltinFunctionType : (False, False),
-
-    # This may change in the near future to (False, True)
-    ClassType           : (False, False),
-    TypeType            : (False, False),
+    type                : (False, False),
 
     # Publishing a generator may not seem to makes sense, because
     # it can only be done once. However, we could get a brand new generator
     # each time a new-style class property is accessed.
     GeneratorType       : (False, True),
 
-    # Old-style instances are traversable
-    InstanceType        : (True, True),
 })
+
+if PY2:
+    tp_rules.update({
+        # This may change in the near future to (False, True)
+        ClassType           : (False, False),
+        TypeType            : (False, False),
+
+        # Old-style instances are traversable
+        InstanceType        : (True, True),
+    })
 
 # types which are not referenced in the tp_rules dictionary will be traversable
 # AND publishable
@@ -431,7 +443,7 @@ def publish_object(req, obj):
         # of the call (as done by util.apply_fs_data)
 
         req.form = util.FieldStorage(req, keep_blank_values=1)
-        return publish_object(req,util.apply_fs_data(obj, req.form, req=req))
+        return publish_object(req, util.apply_fs_data(obj, req.form, req=req))
 
 # TODO : we removed this as of mod_python 3.2, let's see if we can put it back
 # in mod_python 3.3
@@ -450,7 +462,7 @@ def publish_object(req, obj):
             # Nothing to publish
             return False
 
-        elif isinstance(obj,UnicodeType):
+        elif PY2 and isinstance(obj, UnicodeType):
 
             # We've got an Unicode string to publish, so we have to encode
             # it to bytes. We try to detect the character encoding

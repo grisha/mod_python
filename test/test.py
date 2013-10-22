@@ -117,6 +117,8 @@ from __future__ import print_function
 import sys
 import os
 
+PY2 = sys.version[0] == '2'
+
 try:
     import mod_python.version
 except:
@@ -157,7 +159,7 @@ else:
 from mod_python.httpdconf import *
 
 import unittest
-if sys.version[0] == '2':
+if PY2:
     from commands import getoutput
     import urllib2
     import httplib
@@ -172,7 +174,7 @@ else:
     import http.client
     from http.client import UNAUTHORIZED
     from hashlib import md5
-    from io import StringIO
+    from io import StringIO, BytesIO, TextIOWrapper
     from urllib.request import urlopen
     from urllib.parse import urlencode
 import shutil
@@ -215,10 +217,18 @@ def findUnusedPort():
     return port
 
 def http_connection(conn_str):
-    if sys.version[0] == '2':
+    if PY2:
         return httplib.HTTPConnection(conn_str)
     else:
         return http.client.HTTPConnection(conn_str)
+
+def md5_hash(s):
+    if PY2:
+        return md5.new(s).hexdigest()
+    else:
+        if isinstance(s, str):
+            s = s.encode('latin1')
+        return md5(s).hexdigest().encode('latin1')
 
 def get_ab_path():
     """ Find the location of the ab (apache benchmark) program """
@@ -447,7 +457,10 @@ class PerRequestTestCase(unittest.TestCase):
         conn.putheader("Host", "%s:%s" % (vhost, PORT))
         conn.endheaders()
         response = conn.getresponse()
-        rsp = response.read()
+        if PY2:
+            rsp = response.read()
+        else:
+            rsp = response.read().decode('latin1')
         conn.close()
 
         return rsp
@@ -457,16 +470,21 @@ class PerRequestTestCase(unittest.TestCase):
         # files is a { name : (filename, content) } dict
 
         # build the POST entity
-        entity = StringIO()
-        # This is the MIME boundary
-        boundary = "============="+''.join( [ random.choice('0123456789') for x in range(10) ] )+'=='
+        if sys.version == '2':
+            entity = StringIO()
+            boundary = "============="+''.join( [ random.choice('0123456789') for x in range(10) ] )+'=='
+        else:
+            bio = BytesIO()
+            entity = TextIOWrapper(bio, encoding='latin1')
+            boundary = "============="+''.join( [ random.choice('0123456789') for x in range(10) ] )+'=='
+
         # A part for each variable
         for name, value in variables.items():
             entity.write('--')
             entity.write(boundary)
             entity.write('\r\n')
             entity.write('Content-Type: text/plain\r\n')
-            entity.write('Content-Disposition: form-data;\r\n name="%s"\r\n'%name)
+            entity.write('Content-Disposition: form-data;\r\n name="%s"\r\n' % name)
             entity.write('\r\n')
             entity.write(str(value))
             entity.write('\r\n')
@@ -480,12 +498,14 @@ class PerRequestTestCase(unittest.TestCase):
             except:
                 pass
 
+            if not isinstance(content, str): # always false on 2.x
+                content = content.decode('latin1')
+
             entity.write('--')
             entity.write(boundary)
             entity.write('\r\n')
-
             entity.write('Content-Type: application/octet-stream\r\n')
-            entity.write('Content-Disposition: form-data; name="%s"; filename="%s"\r\n'%(name,filename))
+            entity.write('Content-Disposition: form-data; name="%s"; filename="%s"\r\n' % (name, filename))
             entity.write('\r\n')
             entity.write(content)
             entity.write('\r\n')
@@ -495,13 +515,17 @@ class PerRequestTestCase(unittest.TestCase):
         entity.write(boundary)
         entity.write('--\r\n')
 
-        entity = entity.getvalue()
+        entity.flush()
+        if PY2:
+            entity = entity.getvalue()
+        else:
+            entity = bio.getvalue()
 
         conn = http_connection("127.0.0.1:%s" % PORT)
-        # conn.set_debuglevel(1000)
+        #conn.set_debuglevel(1000)
         conn.putrequest("POST", path, skip_host=1)
         conn.putheader("Host", "%s:%s" % (vhost, PORT))
-        conn.putheader("Content-Type", 'multipart/form-data; boundary="%s"'%boundary)
+        conn.putheader("Content-Type", 'multipart/form-data; boundary="%s"' % boundary)
         conn.putheader("Content-Length", '%s'%(len(entity)))
         conn.endheaders()
 
@@ -727,21 +751,27 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
-        auth = base64.encodestring("spam:eggs").strip()
-        conn.putheader("Authorization", "Basic %s" % auth)
+        auth = base64.encodestring(b"spam:eggs").strip()
+        if PY2:
+            conn.putheader("Authorization", "Basic %s" % auth)
+        else:
+            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
-        auth = base64.encodestring("spam:BAD PASSWD").strip()
-        conn.putheader("Authorization", "Basic %s" % auth)
+        auth = base64.encodestring(b"spam:BAD PASSWD").strip()
+        if PY2:
+            conn.putheader("Authorization", "Basic %s" % auth)
+        else:
+            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -750,7 +780,7 @@ class PerRequestTestCase(unittest.TestCase):
         if response.status != UNAUTHORIZED:
             self.fail("req.status is not httplib.UNAUTHORIZED, but: %s" % repr(response.status))
 
-        if rsp == "test ok":
+        if rsp == b"test ok":
             self.fail("We were supposed to get HTTP_UNAUTHORIZED")
 
     def test_req_get_basic_auth_pw_conf(self):
@@ -786,14 +816,17 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
-        auth = base64.encodestring("spam:eggs").strip()
-        conn.putheader("Authorization", "Basic %s" % auth)
+        auth = base64.encodestring(b"spam:eggs").strip()
+        if PY2:
+            conn.putheader("Authorization", "Basic %s" % auth)
+        else:
+            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
     def test_req_auth_type_conf(self):
@@ -824,7 +857,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
     def test_req_requires_conf(self):
@@ -851,14 +884,17 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_requires", PORT))
-        auth = base64.encodestring("spam:eggs").strip()
-        conn.putheader("Authorization", "Basic %s" % auth)
+        auth = base64.encodestring(b"spam:eggs").strip()
+        if PY2:
+            conn.putheader("Authorization", "Basic %s" % auth)
+        else:
+            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
     def test_req_internal_redirect_conf(self):
@@ -916,7 +952,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.read()")
 
-        params = '1234567890'*10000
+        params = b'1234567890'*10000
         print("    writing %d bytes..." % len(params))
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
@@ -938,12 +974,12 @@ class PerRequestTestCase(unittest.TestCase):
         conn.putheader("Host", "test_req_read:%s" % PORT)
         conn.putheader("Content-Length", str(10))
         conn.endheaders()
-        conn.send("123456789")
+        conn.send(b"123456789")
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
-        if rsp.find("IOError") < 0:
+        if rsp.find(b"IOError") < 0 and rsp.find(b"OSError") < 0:
             self.fail("timeout test failed")
 
 
@@ -962,7 +998,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.readline()")
 
-        params = ('1234567890'*3000+'\n')*4
+        params = (b'1234567890'*3000+b'\n')*4
         print("    writing %d bytes..." % len(params))
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
@@ -993,7 +1029,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.readlines()")
 
-        params = ('1234567890'*3000+'\n')*4
+        params = (b'1234567890'*3000+b'\n')*4
         print("    writing %d bytes..." % len(params))
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
@@ -1011,7 +1047,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.readlines(size_hint=30000)")
 
-        params = ('1234567890'*3000+'\n')*4
+        params = (b'1234567890'*3000+b'\n')*4
         print("    writing %d bytes..." % len(params))
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
@@ -1025,12 +1061,12 @@ class PerRequestTestCase(unittest.TestCase):
         conn.close()
 
         print("    response size: %d\n" % len(rsp))
-        if (rsp != ('1234567890'*3000+'\n')):
+        if (rsp != (b'1234567890'*3000+b'\n')):
             self.fail(repr(rsp))
 
         print("\n  * Testing req.readlines(size_hint=32000)")
 
-        params = ('1234567890'*3000+'\n')*4
+        params = (b'1234567890'*3000+b'\n')*4
         print("    writing %d bytes..." % len(params))
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("POST", "/tests.py", skip_host=1)
@@ -1044,7 +1080,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn.close()
 
         print("    response size: %d\n" % len(rsp))
-        if (rsp != (('1234567890'*3000+'\n')*2)):
+        if (rsp != ((b'1234567890'*3000+b'\n')*2)):
             self.fail(repr(rsp))
 
     def test_req_discard_request_body_conf(self):
@@ -1063,7 +1099,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.discard_request_body()")
 
-        params = '1234567890'*2
+        params = b'1234567890'*2
         print("    writing %d bytes..." % len(params))
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
@@ -1075,7 +1111,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
     def test_req_register_cleanup_conf(self):
@@ -1222,7 +1258,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
     def test_req_no_cache_conf(self):
@@ -1251,7 +1287,7 @@ class PerRequestTestCase(unittest.TestCase):
         if response.getheader("expires", None) is None:
             self.fail(repr(response.getheader("expires", None)))
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
     def test_req_update_mtime_conf(self):
@@ -1283,7 +1319,7 @@ class PerRequestTestCase(unittest.TestCase):
         if response.getheader("last-modified", None) is None:
             self.fail(repr(response.getheader("last-modified", None)))
 
-        if (rsp != "test ok"):
+        if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
     def test_util_redirect_conf(self):
@@ -1310,12 +1346,12 @@ class PerRequestTestCase(unittest.TestCase):
         conn.close()
 
         if response.status != 302:
-            self.fail('did not receive 302 status response')
+            self.fail('did not receive 302 status response: %s' % repr(response.status))
 
         if response.getheader("location", None) != "/dummy":
             self.fail('did not receive correct location for redirection')
 
-        if rsp != "test ok":
+        if rsp != b"test ok":
             self.fail(repr(rsp))
 
     def test_req_server_get_config_conf(self):
@@ -1379,7 +1415,7 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing 1 MB file upload support")
 
         content = ''.join( [ chr(random.randrange(256)) for x in range(1024*1024) ] )
-        digest = md5.new(content).hexdigest()
+        digest = md5_hash(content)
 
         rsp = self.vhost_post_multipart_form_data(
             "test_fileupload",
@@ -1388,7 +1424,7 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail('1 MB file upload failed, its contents were corrupted (%s)'%rsp)
+            self.fail('1 MB file upload failed, its contents were corrupted. Expected (%s), got (%s)' % (repr(digest), repr(rsp)))
 
     def test_fileupload_embedded_cr_conf(self):
 
@@ -1415,7 +1451,7 @@ class PerRequestTestCase(unittest.TestCase):
             + 'b'*(readBlockSize-1) + '\r' # trick !
             + 'ccc' + 'd'*100 + '\r\n'
         )
-        digest = md5.new(content).hexdigest()
+        digest = md5_hash(content)
 
         rsp = self.vhost_post_multipart_form_data(
             "test_fileupload",
@@ -1432,7 +1468,7 @@ class PerRequestTestCase(unittest.TestCase):
         # that ugh.pdf will always be the same in the future so the test may not be valid
         # over the long term.
         try:
-            ugh = file('ugh.pdf','rb')
+            ugh = open('ugh.pdf','rb')
             content = ugh.read()
             ugh.close()
         except:
@@ -1443,7 +1479,7 @@ class PerRequestTestCase(unittest.TestCase):
         else:
             print("  * Testing The UNIX-HATERS handbook file upload support")
 
-            digest = md5.new(content).hexdigest()
+            digest = md5_hash(content)
 
             rsp = self.vhost_post_multipart_form_data(
                 "test_fileupload",
@@ -1485,7 +1521,7 @@ class PerRequestTestCase(unittest.TestCase):
             'a'*100 + '\r\n'
             + 'b'*(readBlockSize-1)  # trick !
         )
-        digest = md5.new(content).hexdigest()
+        digest = md5_hash(content)
 
         rsp = self.vhost_post_multipart_form_data(
             "test_fileupload",
@@ -1503,7 +1539,7 @@ class PerRequestTestCase(unittest.TestCase):
             + 'b'*(readBlockSize-1)
             + '\r'  # second trick !
         )
-        digest = md5.new(content).hexdigest()
+        digest = md5_hash(content)
 
         rsp = self.vhost_post_multipart_form_data(
             "test_fileupload",
@@ -1718,7 +1754,8 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if (rsp != "[Field('spam', '1'), Field('spam', '2'), Field('eggs', '3'), Field('bacon', '4')]"):
+        if (rsp != "[Field('spam', '1'), Field('spam', '2'), Field('eggs', '3'), Field('bacon', '4')]" and
+            rsp != b"[Field(b'spam', b'1'), Field(b'spam', b'2'), Field(b'eggs', b'3'), Field(b'bacon', b'4')]"):
             self.fail(repr(rsp))
 
     def test_postreadrequest_conf(self):
@@ -1863,7 +1900,10 @@ class PerRequestTestCase(unittest.TestCase):
 
         url = "http://127.0.0.1:%s/tests.py" % self.conport
         f = urlopen(url)
-        rsp = f.read()
+        if PY2:
+            rsp = f.read()
+        else:
+            rsp = f.read().decode('latin1')
         f.close()
 
         if (rsp != "test ok"):
@@ -2097,7 +2137,10 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if rsp != "test ok" or setcookie != 'path=blah, eggs=bar, bar=foo, spam=foo':
+        if rsp != b"test ok" or ('path=blah' not in setcookie and
+                                 'eggs=bar'  not in setcookie and
+                                 'bar=foo'   not in setcookie and
+                                 'spam=foo'  not in setcookie):
             print(repr(rsp))
             print(repr(setcookie))
             self.fail("cookie parsing failed")
@@ -2129,7 +2172,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if rsp != "test ok" or setcookie != mc:
+        if rsp != b"test ok" or setcookie != mc:
             print(repr(rsp))
             self.fail("marshalled cookie parsing failed")
 
@@ -2150,7 +2193,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if rsp != "test ok" or setcookie != mc:
+        if rsp != b"test ok" or setcookie != mc:
             print(repr(rsp))
             self.fail("long marshalled cookie parsing failed")
 
@@ -2173,6 +2216,7 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing Session.Session")
 
         conn = http_connection("127.0.0.1:%s" % PORT)
+        #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "test_Session_Session:%s" % PORT)
         conn.endheaders()
@@ -2181,7 +2225,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if rsp != "test ok" or setcookie == None:
+        if rsp != b"test ok" or setcookie == None:
             self.fail("session did not set a cookie")
 
         parts = setcookie.split('; ')
@@ -2197,6 +2241,7 @@ class PerRequestTestCase(unittest.TestCase):
             self.fail("session did not contain expected 'domain'")
 
         conn = http_connection("127.0.0.1:%s" % PORT)
+        #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "test_Session_Session:%s" % PORT)
         conn.putheader("Cookie", setcookie)
@@ -2204,8 +2249,8 @@ class PerRequestTestCase(unittest.TestCase):
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
-        if rsp != "test ok":
-            self.fail("session did not accept our cookie")
+        if rsp != b"test ok":
+            self.fail("session did not accept our cookie: %s" % repr(rsp))
 
     def test_Session_illegal_sid_conf(self):
 
@@ -2400,16 +2445,20 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing mod_python.publisher auth nested")
 
         conn = http_connection("127.0.0.1:%s" % PORT)
+        #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_nested", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_nested", PORT))
-        auth = base64.encodestring("spam:eggs").strip()
-        conn.putheader("Authorization", "Basic %s" % auth)
+        auth = base64.encodestring(b"spam:eggs").strip()
+        if PY2:
+            conn.putheader("Authorization", "Basic %s" % auth)
+        else:
+            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok, interpreter=test_publisher_auth_nested"):
+        if (rsp != b"test ok, interpreter=test_publisher_auth_nested"):
             self.fail(repr(rsp))
 
     def test_publisher_auth_method_nested_conf(self):
@@ -2428,14 +2477,17 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_method_nested/method", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_method_nested", PORT))
-        auth = base64.encodestring("spam:eggs").strip()
-        conn.putheader("Authorization", "Basic %s" % auth)
+        auth = base64.encodestring(b"spam:eggs").strip()
+        if PY2:
+            conn.putheader("Authorization", "Basic %s" % auth)
+        else:
+            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok, interpreter=test_publisher_auth_method_nested"):
+        if (rsp != b"test ok, interpreter=test_publisher_auth_method_nested"):
             self.fail(repr(rsp))
 
     def test_publisher_auth_digest_conf(self):
@@ -2463,7 +2515,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if (rsp != "test ok, interpreter=test_publisher_auth_digest"):
+        if (rsp != b"test ok, interpreter=test_publisher_auth_digest"):
             self.fail(repr(rsp))
 
     def test_publisher_security_conf(self):
@@ -2481,6 +2533,7 @@ class PerRequestTestCase(unittest.TestCase):
 
         def get_status(path):
             conn = http_connection("127.0.0.1:%s" % PORT)
+            #conn.set_debuglevel(1000)
             conn.putrequest("GET", path, skip_host=1)
             conn.putheader("Host", "test_publisher:%s" % PORT)
             conn.endheaders()
@@ -2567,9 +2620,10 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != "Called root"):
             self.fail(repr(rsp))
 
-        rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root_2")
-        if (rsp != "test ok, interpreter=test_publisher_hierarchy"):
-            self.fail(repr(rsp))
+        if PY2:
+            rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root_2")
+            if (rsp != "test ok, interpreter=test_publisher_hierarchy"):
+                self.fail(repr(rsp))
 
         rsp = self.vhost_get("test_publisher_hierarchy", path="/tests.py/hierarchy_root/page1")
         if (rsp != "Called page1"):
@@ -2824,7 +2878,10 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.startHttpd()
 
         f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
-        rsp = f.read()
+        if PY2:
+            rsp = f.read()
+        else:
+            rsp = f.read().decode('latin1')
         f.close()
 
         if (rsp != "test ok"):
@@ -3019,7 +3076,10 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.startHttpd()
 
         f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
-        rsp = f.read()
+        if PY2:
+            rsp = f.read()
+        else:
+            rsp = f.read().decode('latin1')
         f.close()
 
         self.stopHttpd()
@@ -3030,7 +3090,11 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.startHttpd(extra="-DFOOBAR")
 
         f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
-        rsp = f.read()
+        if PY2:
+            rsp = f.read()
+        else:
+            rsp = f.read().decode('latin1')
+        f.close()
         f.close()
 
         self.stopHttpd()

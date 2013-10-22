@@ -100,7 +100,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
 {
     if (strcmp(name, "fname") == 0) {
         if (self->finfo->fname)
-            return PyBytes_FromString(self->finfo->fname);
+            return MpBytesOrUnicode_FromString(self->finfo->fname);
     }
     else if (strcmp(name, "filetype") == 0) {
         return PyLong_FromLong(self->finfo->filetype);
@@ -204,7 +204,7 @@ static PyObject * finfo_getattr(finfoobject *self, char *name)
             return Py_None;
         }
         if (self->finfo->valid & APR_FINFO_NAME)
-            return PyBytes_FromString(self->finfo->name);
+            return MpBytesOrUnicode_FromString(self->finfo->name);
     }
     else {
         PyErr_Format(PyExc_AttributeError,
@@ -295,77 +295,85 @@ static PyObject *finfo_repr(finfoobject *self)
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString("'fname': "));
     t = finfo_getattr(self, "fname");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'filetype': "));
     t = finfo_getattr(self, "filetype");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'valid': "));
     t = finfo_getattr(self, "valid");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'protection': "));
     t = finfo_getattr(self, "protection");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'user': "));
     t = finfo_getattr(self, "user");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'group': "));
     t = finfo_getattr(self, "group");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'size': "));
     t = finfo_getattr(self, "size");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'inode': "));
     t = finfo_getattr(self, "inode");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'device': "));
     t = finfo_getattr(self, "device");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'nlink': "));
     t = finfo_getattr(self, "nlink");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'atime': "));
     t = finfo_getattr(self, "atime");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'mtime': "));
     t = finfo_getattr(self, "mtime");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'ctime': "));
     t = finfo_getattr(self, "ctime");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString(", 'name': "));
     t = finfo_getattr(self, "name");
-    PyBytes_ConcatAndDel(&s, PyObject_Repr(t));
+    PyBytes_ConcatAndDel(&s, MpObject_ReprAsBytes(t));
     Py_XDECREF(t);
 
     PyBytes_ConcatAndDel(&s, PyBytes_FromString("}"));
 
+#if PY_MAJOR_VERSION < 3
     return s;
+#else
+    {
+        PyObject *str = PyUnicode_FromString(PyBytes_AS_STRING(s));
+        Py_DECREF(s);
+        return str;
+    }
+#endif
 }
 
 PyTypeObject MpFinfo_Type = {

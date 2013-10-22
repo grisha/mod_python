@@ -124,6 +124,7 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     requestobject *req = NULL;
     PyObject *name_obj = NULL;
     char *name = NULL;
+    char *c_name_obj;
 
     if (! PyArg_ParseTuple(args, "OO|O", &req, &handler, &data))
         return NULL;
@@ -145,9 +146,17 @@ static PyObject *server_register_cleanup(serverobject *self, PyObject *args)
     Py_INCREF(handler);
     ci->handler = handler;
     name_obj = python_interpreter_name();
-    name = (char *)malloc(strlen(PyBytes_AsString(name_obj))+1);
-    strcpy(name, PyBytes_AsString(name_obj));
+    MP_ANYSTR_AS_STR(c_name_obj, name_obj, 1);
+    if (!c_name_obj) {
+        Py_DECREF(name_obj); /* MP_ANYSTR_AS_STR */
+        return NULL;
+    }
+    name = (char *)malloc(strlen(c_name_obj)+1);
+    if (!name)
+        return PyErr_NoMemory();
+    strcpy(name, c_name_obj);
     ci->interpreter = name;
+    Py_DECREF(name_obj); /* MP_ANYSTR_AS_STR */
     if (data) {
         Py_INCREF(data);
         ci->data = data;

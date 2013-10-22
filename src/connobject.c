@@ -109,8 +109,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         Py_END_ALLOW_THREADS;
 
         if (rc != APR_SUCCESS) {
-            PyErr_SetObject(PyExc_IOError,
-                            PyBytes_FromString("Connection read error"));
+            PyErr_SetString(PyExc_IOError, "Connection read error");
             return NULL;
         }
     }
@@ -146,8 +145,7 @@ static PyObject * _conn_read(conn_rec *c, ap_input_mode_t mode, long len)
         apr_bucket *old;
 
         if (apr_bucket_read(b, &data, &size, APR_BLOCK_READ) != APR_SUCCESS) {
-            PyErr_SetObject(PyExc_IOError,
-                            PyBytes_FromString("Connection read error"));
+            PyErr_SetString(PyExc_IOError, "Connection read error");
             return NULL;
         }
 
@@ -238,19 +236,10 @@ static PyObject * conn_write(connobject *self, PyObject *args)
     PyObject *s;
     conn_rec *c = self->conn;
 
-    if (! PyArg_ParseTuple(args, "O", &s))
-        return NULL;
-
-    if (! PyBytes_Check(s)) {
-        PyErr_SetString(PyExc_TypeError, "Argument to write() must be a string");
-        return NULL;
-    }
-
-    len = PyBytes_Size(s);
+    if (! PyArg_ParseTuple(args, "s#", &buff, &len))
+        return NULL;  /* bad args */
 
     if (len) {
-        buff = apr_pmemdup(c->pool, PyBytes_AS_STRING(s), len);
-
         bb = apr_brigade_create(c->pool, c->bucket_alloc);
 
         b = apr_bucket_pool_create(buff, len, c->pool, c->bucket_alloc);

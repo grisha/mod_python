@@ -19,16 +19,20 @@
  #
 
 import sys
-if sys.version[0] == '2':
+PY2 = sys.version[0] == '2'
+
+if PY2:
     import apache, Cookie
-    import anydbm
+    import md5
+    import anydbm as dbm
     from whichdb import whichdb
     from cPickle import load, loads, dump, dumps
     from cStringIO import StringIO
 else:
     from . import apache, Cookie
+    from hashlib import md5
     import dbm
-    from dmp import whichdb
+    from dbm import whichdb
     from io import StringIO
     from pickle import load, loads, dump, dumps
 
@@ -38,7 +42,6 @@ import os
 import stat
 import time
 import random
-import md5
 import tempfile
 import traceback
 import re
@@ -49,6 +52,14 @@ DFT_LOCK = True
 CLEANUP_CHANCE=1000 # cleanups have 1 in CLEANUP_CHANCE chance
 
 tempdir = tempfile.gettempdir()
+
+def md5_hash(s):
+    if PY2:
+        return md5.new(s).hexdigest()
+    else:
+        if isinstance(s, str):
+            s = s.encode('latin1')
+        return md5(s).hexdigest()
 
 def _init_rnd():
     """ initialize random number generators
@@ -71,7 +82,6 @@ def _init_rnd():
         laststate = g.getstate()
         g = random.Random()
         g.setstate(laststate)
-        g.jumpahead(1000000)
         result.append(g)
 
     return result
@@ -116,7 +126,7 @@ def _new_sid(req):
     rnd2 = g.randint(0, 999999999)
     ip = req.connection.remote_ip
 
-    return md5.new("%d%d%d%d%s" % (t, pid, rnd1, rnd2, ip)).hexdigest()
+    return md5_hash("%d%d%d%d%s" % (t, pid, rnd1, rnd2, ip))
 
 validate_sid_re = re.compile('[0-9a-f]{32}$')
 
@@ -356,7 +366,7 @@ def dbm_cleanup(data):
 
 class DbmSession(BaseSession):
 
-    def __init__(self, req, dbm=None, sid=0, secret=None, dbmtype=anydbm,
+    def __init__(self, req, dbm=None, sid=0, secret=None, dbmtype=dbm,
                  timeout=0, lock=1):
 
         if not dbm:
@@ -389,7 +399,7 @@ class DbmSession(BaseSession):
 
     def _get_dbm(self):
         result = self._dbmtype.open(self._dbmfile, 'c', stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
-        if self._dbmtype is anydbm:
+        if self._dbmtype is dbm:
             self._set_dbm_type()
         return result
 
@@ -403,8 +413,8 @@ class DbmSession(BaseSession):
         _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
-            if self._sid in dbm:
-                return loads(dbm[self._sid])
+            if self._sid.encode() in dbm:
+                return loads(dbm[self._sid.encode()])
             else:
                 return None
         finally:
@@ -415,7 +425,7 @@ class DbmSession(BaseSession):
         _apache._global_lock(self._req.server, None, 0)
         dbm = self._get_dbm()
         try:
-            dbm[self._sid] = dumps(dict)
+            dbm[self._sid.encode()] = dumps(dict)
         finally:
             dbm.close()
             _apache._global_unlock(self._req.server, None, 0)
@@ -425,7 +435,7 @@ class DbmSession(BaseSession):
         dbm = self._get_dbm()
         try:
             try:
-                del dbm[self._sid]
+                del dbm[self._sid.encode()]
             except KeyError: pass
         finally:
             dbm.close()
@@ -519,7 +529,7 @@ class FileSession(BaseSession):
             try:
                 path = os.path.join(self._sessdir, self._sid[0:2])
                 filename = os.path.join(path, self._sid)
-                fp = file(filename,'rb')
+                fp = open(filename,'rb')
                 try:
                     data = load(fp)
                     if (time.time() - data["_accessed"]) <= data["_timeout"]:
@@ -547,7 +557,7 @@ class FileSession(BaseSession):
                 if not os.path.exists(path):
                     make_filesession_dirs(self._sessdir)
                 filename = os.path.join(path, self._sid)
-                fp = file(filename, 'wb')
+                fp = open(filename, 'wb')
                 try:
                     dump(dict, fp, 2)
                 finally:
@@ -633,7 +643,7 @@ def filesession_cleanup(data):
         return
 
     try:
-        status_file = file(os.path.join(sessdir, 'fs_status.txt'), 'r')
+        status_file = open(os.path.join(sessdir, 'fs_status.txt'), 'r')
         d = status_file.readline()
         status_file.close()
 
@@ -679,7 +689,7 @@ def filesession_cleanup(data):
                         delete_session = True
                     else:
                         try:
-                            fp = file(filename)
+                            fp = open(filename)
                             dict = load(fp)
                             if (time.time() - dict['_accessed']) > (dict['_timeout'] + grace_period):
                                 delete_session = True
@@ -717,7 +727,7 @@ def filesession_cleanup(data):
                         % (next_i, next_i),
                         apache.APLOG_NOTICE)
 
-        status_file = file(os.path.join(sessdir, 'fs_status.txt'), 'w')
+        status_file = open(os.path.join(sessdir, 'fs_status.txt'), 'w')
         status_file.write('%s %d %d %d %f\n' % (stat_version, next_i, expired_file_count, total_file_count, total_time))
         status_file.close()
 
