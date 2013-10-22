@@ -470,7 +470,7 @@ class PerRequestTestCase(unittest.TestCase):
         # files is a { name : (filename, content) } dict
 
         # build the POST entity
-        if sys.version == '2':
+        if PY2:
             entity = StringIO()
             boundary = "============="+''.join( [ random.choice('0123456789') for x in range(10) ] )+'=='
         else:

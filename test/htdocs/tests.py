@@ -17,15 +17,17 @@
 
 # mod_python tests
 
-
 from mod_python.python22 import *
 
 from mod_python import apache
+import sys
 import unittest
 import re
 import time
 import os
 import io
+
+PY2 = sys.version[0] == '2'
 
 # This is used for mod_python.publisher security tests
 _SECRET_PASSWORD = 'root'
@@ -598,7 +600,10 @@ def make_suite(req):
 
 def handler(req):
 
-    out = io.StringIO()
+    if PY2:
+        out = io.BytesIO()
+    else:
+        out = io.StringIO()
 
     tr = unittest.TextTestRunner(out)
     result = tr.run(make_suite(req))
@@ -990,7 +995,7 @@ def fileupload(req):
     fields = util.FieldStorage(req)
     f = fields.getfirst(b'testfile') # ZZZ these shouldn't be bytes?
 
-    if sys.version == '2':
+    if PY2:
         import md5
         req.write(md5.new(f.file.read()).hexdigest())
     else:
@@ -1443,6 +1448,8 @@ def _test_table():
                         self.i = 0
                         return 'a'
                     raise ValueError
+                def next(self):
+                    return self.__next__()
             return BogonIter()
         def __getitem__(self, key):
             return key
@@ -1462,6 +1469,8 @@ def _test_table():
                         self.i += 1
                         return rtn
                     raise StopIteration
+                def next(self):
+                    return self.__next__()
             return BogonIter()
         def __getitem__(self, key):
             raise ValueError

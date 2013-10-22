@@ -119,7 +119,7 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define PyBytes_ConcatAndDel PyString_ConcatAndDel
 #define PyBytes_Size PyString_Size
 #define _PyBytes_Resize _PyString_Resize
-#define MpObject_ReprAsBytes PyObjec_Repr
+#define MpObject_ReprAsBytes PyObject_Repr
 #define MpBytesOrUnicode_FromString PyString_FromString
 
 #ifndef PyVarObject_HEAD_INIT
@@ -256,6 +256,11 @@ APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_connection_object, (conn_rec *));
  * it. If after this macro str is NULL, then a TypeError error has
  * been set by the macro.
  */
+#if PY_MAJOR_VERSION < 3
+#define PyUnicode_1BYTE_KIND NULL
+#define PyUnicode_KIND(str)  NULL
+#define PyUnicode_1BYTE_DATA(obj) ""
+#endif
 #define MP_ANYSTR_AS_STR(str, obj, obj_is_borrowed) do {                \
         str = NULL;                                                     \
         if (PyUnicode_CheckExact(obj)) {                                \

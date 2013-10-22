@@ -25,8 +25,10 @@
 #if PY_MAJOR_VERSION < 3
 #define PyBytes_AsString PyString_AsString
 #define PyBytes_FromString PyString_FromString
+#define MpBytesOrUnicode_FromString PyString_FromString
+#else
+#define MpBytesOrUnicode_FromString PyUnicode_FromString
 #endif
-
 
 #endif /* __PSP_MODULE_H */
 
