@@ -2137,9 +2137,9 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if rsp != b"test ok" or ('path=blah' not in setcookie and
-                                 'eggs=bar'  not in setcookie and
-                                 'bar=foo'   not in setcookie and
+        if rsp != b"test ok" or ('path=blah' not in setcookie or
+                                 'eggs=bar'  not in setcookie or
+                                 'bar=foo'   not in setcookie or
                                  'spam=foo'  not in setcookie):
             print(repr(rsp))
             print(repr(setcookie))
