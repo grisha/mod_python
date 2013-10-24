@@ -473,8 +473,8 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
         index = (hash % (glb->nlocks-1)+1);
     }
 
-    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-              "_global_lock at index %d from pid %d", index, getpid());
+    /* ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
+    /*           "_global_lock at index %d from pid %d", index, getpid()); */
     Py_BEGIN_ALLOW_THREADS
     rv = apr_global_mutex_lock(glb->g_locks[index]);
     Py_END_ALLOW_THREADS
@@ -485,8 +485,8 @@ static PyObject *_global_lock(PyObject *self, PyObject *args)
                         "Failed to acquire global mutex lock");
         return NULL;
     }
-    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-              "_global_lock DONE at index %d from pid %d", index, getpid());
+    /* ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, */
+    /*           "_global_lock DONE at index %d from pid %d", index, getpid()); */
 
     Py_INCREF(Py_None);
     return Py_None;

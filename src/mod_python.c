@@ -238,12 +238,9 @@ static interpreterdata *get_interpreter(const char *name)
 
     if (!idata) {
 
-#ifdef WITH_THREAD
         /* Py_NewInterpreter requires the GIL held, this is one way to have it so */
-        PyEval_AcquireThread(global_tstate);
-#else
-        PyThreadState_Swap(global_tstate);
-#endif
+        PyEval_RestoreThread(global_tstate);
+
         tstate = Py_NewInterpreter();
 
         if (!tstate) {
@@ -270,17 +267,12 @@ static interpreterdata *get_interpreter(const char *name)
             tstate = PyThreadState_New(idata->interp);
         else
             tstate = *tstate_pp;
-
 #else
         /* always use the first (and only) tstate */
         tstate = idata->interp->tstate_head;
 #endif
 
-#ifdef WITH_THREAD
-        PyEval_AcquireThread(tstate);
-#else
-        PyThreadState_Swap(tstate);
-#endif
+        PyEval_RestoreThread(tstate);
     }
     /* At this point GIL is held and tstate is set, we're ready to run */
 
@@ -326,7 +318,6 @@ static void release_interpreter(interpreterdata *idata)
 static void release_interpreter_no_lock(interpreterdata *idata)
 {
     PyThreadState *tstate = PyThreadState_Get();
-
 #ifdef WITH_THREAD
     PyThreadState_Clear(tstate);
     PyEval_ReleaseThread(tstate);
@@ -334,6 +325,8 @@ static void release_interpreter_no_lock(interpreterdata *idata)
         APR_ARRAY_PUSH(idata->tstates, PyThreadState *) = tstate;
     else
         PyThreadState_Delete(tstate);
+#else
+    if (!idata) PyThreadState_Delete(tstate);
 #endif
 }
 
@@ -826,11 +819,8 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
             exit(1);
         }
 
-        global_tstate = PyThreadState_Get();
-
-#ifdef WITH_THREAD
-        PyEval_ReleaseLock(); // ZZZ
-#endif
+        /* save the global_tstate */
+        global_tstate = PyEval_SaveThread();
     }
 
     APR_REGISTER_OPTIONAL_FN(mp_acquire_interpreter);
@@ -2629,17 +2619,11 @@ static apr_status_t python_finalize(void *data)
     idata = get_interpreter(NULL);
 
     if (idata) {
-
         Py_Finalize();
-
-#ifdef WITH_THREAD
-        PyEval_ReleaseLock();
-#endif
-
+        PyEval_SaveThread();
     }
 
     return APR_SUCCESS;
-
 }
 
 /**
@@ -2660,10 +2644,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     PyObject *resultobject = NULL;
 
     /* accordig Py C Docs we must do this after forking */
-
-#ifdef WITH_THREAD
-    PyEval_AcquireLock();
-#endif
+    PyEval_RestoreThread(global_tstate);
     PyOS_AfterFork();
 
     interpreterdata *idata = save_interpreter(MAIN_INTERPRETER, PyThreadState_Get());
@@ -2671,11 +2652,11 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "PythonChildInitHandler: save_interpreter() returned NULL. No more memory?");
 
-    PyThreadState_Swap(NULL);
-
-#ifdef WITH_THREAD
-    PyEval_ReleaseLock();
-#endif
+    if (PyEval_SaveThread() != global_tstate) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
+                     "PythonChildInitHandler: not in global thread state, aborting.");
+        return;
+    }
 
     /*
      * Cleanups registered first will be called last. This will

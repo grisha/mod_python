@@ -1546,7 +1546,7 @@ def memory(req):
     for x in range(10000):
         req.write("test ok")
 
-    ## check memory usage before
+    ## check memory usage before (the unit is pages, usually 4k)
     before = list(map(int, open("/proc/self/statm").read().split()))
 
     for x in range(100000):

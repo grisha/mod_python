@@ -72,11 +72,13 @@ static PyObject * conn_log_error(connobject *self, PyObject *args)
         if (! level)
             level = APLOG_ERR;
 
+        Py_BEGIN_ALLOW_THREADS
 #if AP_MODULE_MAGIC_AT_LEAST(20020903,10)
         ap_log_cerror(APLOG_MARK, level, 0, self->conn, "%s", message);
 #else
         ap_log_error(APLOG_MARK, level, 0, self->conn->base_server, "%s", message);
 #endif
+        Py_END_ALLOW_THREADS
     }
 
     Py_INCREF(Py_None);

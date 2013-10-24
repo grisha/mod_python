@@ -184,6 +184,12 @@ import tempfile
 import base64
 import random
 
+try:
+    import threading
+    THREADS = True
+except:
+    THREADS = False
+
 HTTPD = mod_python.version.HTTPD
 TESTHOME = mod_python.version.TESTHOME
 MOD_PYTHON_SO = mod_python.version.TEST_MOD_PYTHON_SO
@@ -2983,7 +2989,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         # perRequestSuite.addTest(PerRequestTestCase("test_publisher_iterator"))
         perRequestSuite.addTest(PerRequestTestCase("test_publisher_hierarchy"))
         perRequestSuite.addTest(PerRequestTestCase("test_server_side_include"))
-        if APACHE_VERSION == '2.4' and sys.platform.startswith("linux"):
+        if APACHE_VERSION == '2.4' and sys.platform.startswith("linux") and THREADS:
             perRequestSuite.addTest(PerRequestTestCase("test_memory"))
         perRequestSuite.addTest(PerRequestTestCase("test_wsgihandler"))
         perRequestSuite.addTest(PerRequestTestCase("test_wsgihandler_location"))
