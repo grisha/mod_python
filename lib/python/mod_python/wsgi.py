@@ -22,32 +22,6 @@ from mod_python import apache
 
 def handler(req):
 
-    # using a closure is faster than an object-based implementation
-    def start_response(status, headers, exc_info=None):
-
-        if exc_info:
-            try:
-                raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
-            finally:
-                exc_info = None
-
-        # avoid str2int conversion for frequently used ones
-        if status == '200':
-            req.status = 200
-        elif status == '301':
-            req.status = 301
-        elif status == '302':
-            req.status = 302
-        else:
-            req.status = int(status[:3])
-
-        # There is no need to req.set_content_length() or set
-        # req.content_type because it will be in the headers anyhow.
-        for k,v in headers:
-            req.headers_out.add(k,v)
-
-        return req.write
-
     options = req.get_options()
 
     ## Find the application callable
@@ -94,7 +68,7 @@ def handler(req):
 
     response = None
     try:
-        response = app(env, start_response)
+        response = app(env, req.wsgi_start_response)
         [req.write(token) for token in response]
     finally:
         # call close() if there is one

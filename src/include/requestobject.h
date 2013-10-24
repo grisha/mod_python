@@ -59,6 +59,10 @@ extern "C" {
 
     PyAPI_FUNC(PyObject *) MpRequest_FromRequest (request_rec *r);
 
+#ifndef ap_is_HTTP_VALID_RESPONSE
+#define ap_is_HTTP_VALID_RESPONSE(x) (((x) >= 100)&&((x) < 600))
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -204,7 +204,7 @@ static int set_wsgi_path_info(requestobject *self)
 }
 
 /**
- ** request.build_wsgi_env(reqeust self)
+ ** request.build_wsgi_env(request self)
  **
  *     Build a WSGI environment dictionary.
  *
@@ -287,6 +287,96 @@ static PyObject *req_build_wsgi_env(requestobject *self)
     }
 
     return env;
+}
+
+/**
+ ** request.wsgi_start_response(self, args)
+ **
+ *     The WSGI start_response()
+ *
+ */
+static PyObject *req_wsgi_start_response(requestobject *self, PyObject *args)
+{
+
+    char *status_line = NULL;
+    PyObject *headers = NULL;
+    PyObject *exc_info = NULL;
+    int status, i;
+
+    if (! PyArg_ParseTuple(args, "sO|O:wsgi_start_response", &status_line, &headers, &exc_info))
+        return NULL;
+
+    if (!PyList_Check(headers)) {
+        PyErr_Format(PyExc_TypeError, "headers argument must be a list, not a '%.200s'",
+                     headers->ob_type->tp_name);
+        return NULL;
+    }
+
+    /* I don't understand what PEP3333 wants us to do with the
+     * exception, we just re-raise it like other WSGI tools do */
+    if (exc_info) {
+        PyObject *exc, *value, *tb;
+        if (PyArg_UnpackTuple(exc_info, "wsgi_start_response", 3, 3, &exc, &value, &tb)) {
+            Py_INCREF(exc);
+            Py_INCREF(value);
+            Py_INCREF(tb);
+            PyErr_Restore(exc, value, tb);
+        }
+        return NULL;
+    }
+
+    /* add the headers */
+    for (i=0; i < PyList_Size(headers); i++) {
+        PyObject *key = NULL, *val = NULL;
+        char *k, *v;
+        PyObject *item = PyList_GetItem(headers, i);
+
+        if (!PyTuple_CheckExact(item)) {
+            PyErr_Format(PyExc_TypeError, "each header must be a tuple, not a '%.200s'",
+                         item->ob_type->tp_name);
+            return NULL;
+        }
+
+        if (! PyArg_ParseTuple(item, "OO", &key, &val))
+            return NULL;
+
+        if (!((PyUnicode_CheckExact(key) || PyBytes_CheckExact(key)))) {
+            PyErr_Format(PyExc_TypeError, "header names must be strings, not '%.200s'",
+                         key->ob_type->tp_name);
+            return NULL;
+        }
+
+        if (!((PyUnicode_CheckExact(val) || PyBytes_CheckExact(val)))) {
+            PyErr_Format(PyExc_TypeError, "header values must be strings, not '%.200s'",
+                         val->ob_type->tp_name);
+            return NULL;
+        }
+
+        MP_ANYSTR_AS_STR(k, key, 1);
+        MP_ANYSTR_AS_STR(v, val, 1);
+        if ((!k) || (!v)) {
+            Py_DECREF(key); /* MP_ANYSTR_AS_STR */
+            Py_DECREF(val); /* MP_ANYSTR_AS_STR */
+            return NULL;
+        }
+
+        apr_table_add(self->request_rec->headers_out, k, v);
+
+        Py_DECREF(key); /* MP_ANYSTR_AS_STR */
+        Py_DECREF(val); /* MP_ANYSTR_AS_STR */
+    }
+
+    status = atoi(status_line);
+    if (!ap_is_HTTP_VALID_RESPONSE(status)) {
+        PyErr_SetString(PyExc_ValueError,
+                        apr_psprintf(self->request_rec->pool,
+                                     "Invalid status line: %s", status_line));
+        return NULL;
+    }
+
+    self->request_rec->status_line = apr_pstrdup(self->request_rec->pool, status_line);
+
+    return PyObject_GetAttrString((PyObject*)self, "write");
 }
 
 /**
@@ -1591,6 +1681,7 @@ static PyMethodDef request_methods[] = {
     {"write",                 (PyCFunction) req_write,                 METH_VARARGS},
     {"get_config",            (PyCFunction) req_get_config,            METH_NOARGS},
     {"build_wsgi_env",        (PyCFunction) req_build_wsgi_env,        METH_NOARGS},
+    {"wsgi_start_response",   (PyCFunction) req_wsgi_start_response,   METH_VARARGS},
     {"add_cgi_vars",          (PyCFunction) req_add_cgi_vars,          METH_NOARGS},
     {"add_common_vars",       (PyCFunction) req_add_common_vars,       METH_NOARGS},
     {"add_handler",           (PyCFunction) req_add_handler,           METH_VARARGS},
