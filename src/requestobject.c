@@ -58,11 +58,11 @@ PyObject * MpRequest_FromRequest(request_rec *req)
     result->request_rec = req;
     result->connection = NULL;
     result->server = NULL;
-    result->headers_in = MpTable_FromTable(req->headers_in);
-    result->headers_out = MpTable_FromTable(req->headers_out);
-    result->err_headers_out = MpTable_FromTable(req->err_headers_out);
-    result->subprocess_env = MpTable_FromTable(req->subprocess_env);
-    result->notes = MpTable_FromTable(req->notes);
+    result->headers_in = NULL;
+    result->headers_out = NULL;
+    result->err_headers_out = NULL;
+    result->subprocess_env = NULL;
+    result->notes = NULL;
     result->phase = NULL;
     result->config = NULL;
     result->options = NULL;
@@ -243,7 +243,10 @@ static PyObject *req_build_wsgi_env(requestobject *self)
     req_add_cgi_vars(self);
 
     /* copy r->subprocess_env */
-    ((tableobject*)self->subprocess_env)->table = r->subprocess_env;
+    if (!self->subprocess_env)
+        self->subprocess_env = MpTable_FromTable(self->request_rec->subprocess_env);
+    else
+        ((tableobject*)self->subprocess_env)->table = r->subprocess_env;
     PyDict_Merge(env, (PyObject*)self->subprocess_env, 0);
 
     /* authorization */
@@ -1711,31 +1714,41 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
         return python_interpreter_name();
     }
     else if (strcmp(name, "headers_in") == 0) {
-        if (((tableobject*)self->headers_in)->table != self->request_rec->headers_in)
+        if (!self->headers_in)
+            self->headers_in = MpTable_FromTable(self->request_rec->headers_in);
+        else if (((tableobject*)self->headers_in)->table != self->request_rec->headers_in)
             ((tableobject*)self->headers_in)->table = self->request_rec->headers_in;
         Py_INCREF(self->headers_in);
         return self->headers_in;
     }
     else if (strcmp(name, "headers_out") == 0) {
-        if (((tableobject*)self->headers_out)->table != self->request_rec->headers_out)
+        if (!self->headers_out)
+            self->headers_out = MpTable_FromTable(self->request_rec->headers_out);
+        else if (((tableobject*)self->headers_out)->table != self->request_rec->headers_out)
             ((tableobject*)self->headers_out)->table = self->request_rec->headers_out;
         Py_INCREF(self->headers_out);
         return self->headers_out;
     }
     else if (strcmp(name, "err_headers_out") == 0) {
-        if (((tableobject*)self->err_headers_out)->table != self->request_rec->err_headers_out)
+        if (!self->err_headers_out)
+            self->err_headers_out = MpTable_FromTable(self->request_rec->err_headers_out);
+        else if (((tableobject*)self->err_headers_out)->table != self->request_rec->err_headers_out)
             ((tableobject*)self->err_headers_out)->table = self->request_rec->err_headers_out;
         Py_INCREF(self->err_headers_out);
         return self->err_headers_out;
     }
     else if (strcmp(name, "subprocess_env") == 0) {
-        if (((tableobject*)self->subprocess_env)->table != self->request_rec->subprocess_env)
+        if (!self->subprocess_env)
+            self->subprocess_env = MpTable_FromTable(self->request_rec->subprocess_env);
+        else if (((tableobject*)self->subprocess_env)->table != self->request_rec->subprocess_env)
             ((tableobject*)self->subprocess_env)->table = self->request_rec->subprocess_env;
         Py_INCREF(self->subprocess_env);
         return self->subprocess_env;
     }
     else if (strcmp(name, "notes") == 0) {
-        if (((tableobject*)self->notes)->table != self->request_rec->notes)
+        if (!self->notes)
+            self->notes = MpTable_FromTable(self->request_rec->notes);
+        else if (((tableobject*)self->notes)->table != self->request_rec->notes)
             ((tableobject*)self->notes)->table = self->request_rec->notes;
         Py_INCREF(self->notes);
         return self->notes;
