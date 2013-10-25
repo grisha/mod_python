@@ -5,6 +5,22 @@
 Changes
 *******
 
+.. _changes_from_3_4_1:
+
+Changes from version 3.4.1
+==========================
+
+New Features
+------------
+
+* Support for Python 3.3
+
+Improvements
+------------
+
+* Simpler, faster and up-to-date with latest Python code for creating/maintaining interpreter and thread state.
+* A much faster WSGI implementation (start_response now implemented in C)
+
 .. _changes_from_3_3_1:
 
 Changes from version 3.3.1
