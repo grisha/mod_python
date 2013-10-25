@@ -3337,14 +3337,29 @@ fi
 $as_echo_n "checking Python version... " >&6; }
 PyVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version[:3])'`
 PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version[:1])'`
+PyMINVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version.split(".")[1])'`
 { $as_echo "$as_me:$LINENO: result: $PyVERSION" >&5
 $as_echo "$PyVERSION" >&6; }
 
-# make sure Python is version >= 2
+# make sure Python version is >= 2.6 for 2 and >= 3.3 for 3
 if test "$PyMAJVERSION" -lt "2"; then
   { { $as_echo "$as_me:$LINENO: error: This version of mod_python only works with Python major version 2 or higher. The one you have seems to be $PyVERSION." >&5
 $as_echo "$as_me: error: This version of mod_python only works with Python major version 2 or higher. The one you have seems to be $PyVERSION." >&2;}
    { (exit 1); exit 1; }; }
+fi
+if test "$PyMAJVERSION" -eq "2"; then
+  if test "$PyMINVERSION" -lt "6"; then
+    { { $as_echo "$as_me:$LINENO: error: This version of mod_python only works with Python 2.x version 2.6 or higher. The one you have seems to be $PyVERSION." >&5
+$as_echo "$as_me: error: This version of mod_python only works with Python 2.x version 2.6 or higher. The one you have seems to be $PyVERSION." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+fi
+if test "$PyMAJVERSION" -eq "3"; then
+  if test "$PyMINVERSION" -lt "3"; then
+    { { $as_echo "$as_me:$LINENO: error: This version of mod_python only works with Python 3.x version 3.3 or higher. The one you have seems to be $PyVERSION." >&5
+$as_echo "$as_me: error: This version of mod_python only works with Python 3.x version 3.3 or higher. The one you have seems to be $PyVERSION." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
 fi
 
 # calculate compiler options

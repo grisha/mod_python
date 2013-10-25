@@ -169,11 +169,22 @@ fi
 AC_MSG_CHECKING(Python version)
 PyVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version[:3])'`]
 PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version[:1])'`]
+PyMINVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version.split(".")[1])'`]
 AC_MSG_RESULT($PyVERSION)
 
-# make sure Python is version >= 2
+# make sure Python version is >= 2.6 for 2 and >= 3.3 for 3
 if test "$PyMAJVERSION" -lt "2"; then
   AC_MSG_ERROR([This version of mod_python only works with Python major version 2 or higher. The one you have seems to be $PyVERSION.])
+fi
+if test "$PyMAJVERSION" -eq "2"; then
+  if test "$PyMINVERSION" -lt "6"; then
+    AC_MSG_ERROR([This version of mod_python only works with Python 2.x version 2.6 or higher. The one you have seems to be $PyVERSION.])
+  fi
+fi
+if test "$PyMAJVERSION" -eq "3"; then
+  if test "$PyMINVERSION" -lt "3"; then
+    AC_MSG_ERROR([This version of mod_python only works with Python 3.x version 3.3 or higher. The one you have seems to be $PyVERSION.])
+  fi
 fi
 
 # calculate compiler options
