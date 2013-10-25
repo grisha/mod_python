@@ -708,18 +708,22 @@ def req_allow_methods(req):
 
 def req_get_basic_auth_pw(req):
 
+    LATIN1_SPAM = 'sp\xe1m'
+    LATIN1_EGGS = '\xe9ggs'
+
     pw = req.get_basic_auth_pw()
-    if req.user != b"spam" or pw != b"eggs":
-        req.write("test failed, user %s, pw %s" % (repr(req.user), repr(pw)))
-    else:
+    if (req.user == "spam" and pw == "eggs" or
+        req.user == LATIN1_SPAM and pw == LATIN1_EGGS):
         req.write("test ok")
+    else:
+        req.write("test failed, user %s, pw %s" % (repr(req.user), repr(pw)))
 
     return apache.OK
 
 def req_unauthorized(req):
 
     pw = req.get_basic_auth_pw()
-    if req.user == b"spam" and pw == b"eggs":
+    if req.user == "spam" and pw == "eggs":
         req.write("test ok")
         return apache.OK
 
@@ -955,8 +959,8 @@ def util_redirect(req):
 
 def req_server_get_config(req):
 
-    if req.server.get_config().get(b"PythonDebug", "0") != "1" or \
-            req.get_config().get(b"PythonDebug", "0") != "0":
+    if req.server.get_config().get("PythonDebug", "0") != "1" or \
+            req.get_config().get("PythonDebug", "0") != "0":
         req.write('test failed')
     else:
         req.write('test ok')
@@ -993,7 +997,7 @@ def fileupload(req):
     from mod_python import util
 
     fields = util.FieldStorage(req)
-    f = fields.getfirst(b'testfile') # ZZZ these shouldn't be bytes?
+    f = fields.getfirst('testfile')
 
     if PY2:
         import md5

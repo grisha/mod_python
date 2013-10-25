@@ -835,6 +835,29 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
+    def test_req_get_basic_auth_pw_latin1_conf(self):
+        return self.test_req_get_basic_auth_pw_conf()
+
+    def test_req_get_basic_auth_pw_latin1(self):
+
+        print("\n  * Testing req.get_basic_auth_pw_latin1()")
+
+        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn.putrequest("GET", "/tests.py", skip_host=1)
+        conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
+        auth = base64.encodestring(b'sp\xe1m:\xe9ggs').strip()
+        if PY2:
+            conn.putheader("Authorization", "Basic %s" % auth)
+        else:
+            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+        conn.endheaders()
+        response = conn.getresponse()
+        rsp = response.read()
+        conn.close()
+
+        if (rsp != b"test ok"):
+            self.fail(repr(rsp))
+
     def test_req_auth_type_conf(self):
 
         c = VirtualHost("*",
@@ -2929,6 +2952,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         perRequestSuite.addTest(PerRequestTestCase("test_req_allow_methods"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_unauthorized"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw"))
+        perRequestSuite.addTest(PerRequestTestCase("test_req_get_basic_auth_pw_latin1"))
         perRequestSuite.addTest(PerRequestTestCase("test_req_auth_type"))
         if APACHE_VERSION != '2.4':
             perRequestSuite.addTest(PerRequestTestCase("test_req_requires"))

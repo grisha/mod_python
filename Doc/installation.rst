@@ -9,7 +9,7 @@ Installation
   By far the best place to get help with installation and other issues
   is the mod_python mailing list. Please take a moment to join the
   mod_python mailing list by sending an e-mail with the word
-  "subscribe" in the subject to mod_python-request@modpython.org or visit the 
+  "subscribe" in the subject to mod_python-request@modpython.org or visit the
   `mod_python mailing list page <http://mailman.modpython.org/mailman/listinfo/mod_python>`_
 
 
@@ -22,7 +22,7 @@ In the ideal case your Operating System provides a pre-packaged
 version of mod_python. If not, you will need to compile it
 yourself. This version of mod_python requires:
 
-* Python 2.6 or 2.7. (earlier versions might work too).
+* Python 2 (2.6 and up) or Python 3 (3.3 and up).
 * Apache 2.2 or later. Apache 2.4 is highly recommended over 2.2.
 
 In order to compile mod_python you will need to have the include files
@@ -60,7 +60,7 @@ standard autoconf stuff, :file:`./configure` does the following:
   You can manually specify the location of apxs by using the
   :option:`with-apxs` option, e.g.::
 
-     $ ./configure --with-apxs=/usr/local/apache/bin/apxs        
+     $ ./configure --with-apxs=/usr/local/apache/bin/apxs
 
   It is recommended that you specify this option.
 
@@ -97,7 +97,7 @@ standard autoconf stuff, :file:`./configure` does the following:
 
      $ ./configure --with-mutex-dir=/var/run/mod_python
 
-  The mutex directory can also be specified at run time using 
+  The mutex directory can also be specified at run time using
   :ref:`dir-other-po` ``mod_python.mutex_directory``.
   See :ref:`inst-apacheconfig`.
 
@@ -115,14 +115,14 @@ standard autoconf stuff, :file:`./configure` does the following:
 
   The mutexes used for locking are a limited resource on some
   systems. Increasing the maximum number of locks may increase performance
-  when using session locking.  The default is 8. A reasonable number for 
+  when using session locking.  The default is 8. A reasonable number for
   higher performance would be 32.
   Use :option:`with-max-locks` option, e.g::
 
      $ ./configure --with-max-locks=32
 
   The number of locks can also be specified at run time using
-  :ref:`dir-other-po` ``mod_python.mutex_locks``. 
+  :ref:`dir-other-po` ``mod_python.mutex_locks``.
   See :ref:`inst-apacheconfig`.
 
   *New in version 3.2.0*
@@ -131,20 +131,20 @@ standard autoconf stuff, :file:`./configure` does the following:
    single: flex
    pair: ./configure; --with-flex
 
-* Attempts to locate :program:`flex` and determine its version. 
+* Attempts to locate :program:`flex` and determine its version.
   If :program:`flex` cannot be found in your :envvar:`PATH` :program:`configure`
   will fail.  If the wrong version is found :program:`configure` will generate a warning.
   You can generally ignore this warning unless you need to re-create
   :file:`src/psp_parser.c`.
- 
+
   The parser used by psp (See :ref:`pyapi-psp`) is written in C
   generated using :program:`flex`. (This requires a reentrant version
   of :program:`flex`, 2.5.31 or later).
- 
+
   If the first flex binary in the path is not suitable or not the one desired
   you can specify an alternative location with the option:with-flex:
   option, e.g::
- 
+
      $ ./configure --with-flex=/usr/local/bin/flex
 
   *New in version 3.2.0*
@@ -227,10 +227,10 @@ Testing
 
 #. Add the following configuration directives to the main server config file::
 
-     <Directory /some/directory/htdocs/test> 
+     <Directory /some/directory/htdocs/test>
          AddHandler mod_python .py
-         PythonHandler mptest 
-         PythonDebug On 
+         PythonHandler mptest
+         PythonDebug On
      </Directory>
 
    (Substitute ``/some/directory`` above for something applicable to
@@ -262,7 +262,7 @@ Testing
      def handler(req):
          req.content_type = 'text/plain'
          req.write("Hello World!")
-         return apache.OK 
+         return apache.OK
 
 #. Point your browser to the URL referring to the :file:`mptest.py`;
    you should see ``'Hello World!'``. If you didn't - refer to the
@@ -284,11 +284,11 @@ Testing
 Troubleshooting
 ===============
 
-There are a few things you can try to identify the problem: 
+There are a few things you can try to identify the problem:
 
-* Carefully study the error output, if any. 
+* Carefully study the error output, if any.
 
-* Check the server error log file, it may contain useful clues. 
+* Check the server error log file, it may contain useful clues.
 
 * Try running Apache from the command line in single process mode::
 
@@ -309,7 +309,7 @@ There are a few things you can try to identify the problem:
   (e.g. :file:`http://localhost/mpinfo`) and note down the information given.
   This will help you reporting your problem to the mod_python list.
 
-* Ask on the `mod_python list <http://mailman.modpython.org/mailman/listinfo/mod_python>`_. 
+* Ask on the `mod_python list <http://mailman.modpython.org/mailman/listinfo/mod_python>`_.
   Please make sure to provide specifics such as:
 
   * mod_python version.

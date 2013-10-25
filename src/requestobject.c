@@ -815,12 +815,17 @@ static PyObject * req_get_basic_auth_pw(requestobject *self, PyObject *args)
     request_rec *req;
 
     /* http://stackoverflow.com/questions/702629/utf-8-characters-mangled-in-http-basic-auth-username/703341#703341 */
+    /* Latin1 is Safari, Chrome and Mozilla - otherwise it can be decoded manually */
 
     req = self->request_rec;
 
-    if (! ap_get_basic_auth_pw(req, &pw))
+    if (! ap_get_basic_auth_pw(req, &pw)) {
+#if PY_MAJOR_VERSION < 3
         return PyBytes_FromString(pw);
-    else {
+#else
+        return PyUnicode_DecodeLatin1(pw, strlen(pw), NULL);
+#endif
+    } else {
         Py_INCREF(Py_None);
         return Py_None;
     }
@@ -1856,10 +1861,14 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
         }
     }
     else if (strcmp(name, "user") == 0) {
-        /* http://stackoverflow.com/questions/702629/utf-8-characters-mangled-in-http-basic-auth-username/703341#703341 */
-        if (self->request_rec->user)
+        /* Use Latin1, see req_get_basic_auth_pw() comment */
+        if (self->request_rec->user) {
+#if PY_MAJOR_VERSION < 3
             return PyBytes_FromString(self->request_rec->user);
-        else {
+#else
+            return PyUnicode_DecodeLatin1(self->request_rec->user, strlen(self->request_rec->user), NULL);
+#endif
+        } else {
             Py_INCREF(Py_None);
             return Py_None;
         }

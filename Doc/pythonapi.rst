@@ -706,6 +706,7 @@ Request Methods
    Returns a string containing the password when Basic authentication is
    used.
 
+   On Python 3 the string will be decoded to Unicode using Latin1.
 
 .. method:: request.get_config()
 
@@ -861,6 +862,7 @@ Request Methods
    more data than available, which will make the function block until
    a ``Timeout`` is reached.
 
+   On Python 3 the output is always bytes.
 
 .. method:: request.readline([len])
 
@@ -1004,7 +1006,8 @@ Request Methods
 .. method:: request.write(string[, flush=1])
 
    Writes *string* directly to the client, then flushes the buffer,
-   unless flush is 0.
+   unless flush is 0. Unicode strings are encoded using ``utf-8``
+   encoding.
 
 
 .. method:: request.flush()
@@ -1303,6 +1306,11 @@ Request Members
 
    If an authentication check is made, this will hold the user
    name. Same as CGI :envvar:`REMOTE_USER`.
+
+   On Python 3 the string is decoded using Latin1. (Different browsers
+   use different encodings for non-Latin1 characters for the basic
+   authentication string making a solution that fits all impossible,
+   you can always decode the header manually.)
 
    .. note::
 

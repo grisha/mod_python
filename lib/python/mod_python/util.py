@@ -361,9 +361,11 @@ class FieldStorage:
 
             # create a file object
             # is this a file?
+            filename = None
             if b"filename" in disp_options:
+                filename = disp_options[b"filename"]
                 if file_callback and isinstance(file_callback, collections.Callable):
-                    file = file_callback(disp_options[b"filename"])
+                    file = file_callback(filename)
                 else:
                     file = tempfile.TemporaryFile("w+b")
             else:
@@ -377,16 +379,16 @@ class FieldStorage:
             file.seek(0)
 
             # make a Field
-            if b"filename" in disp_options:
+            if filename:
                 field = Field(name)
-                field.filename = disp_options[b"filename"]
+                field.filename = filename
             else:
                 field = StringField(file.read())
                 field.name = name
             field.file = file
-            field.type = ctype
+            field.type = PY2 and ctype or ctype.decode('latin1')
             field.type_options = type_options
-            field.disposition = disp
+            field.disposition = PY2 and disp or disp.decode('latin1')
             field.disposition_options = disp_options
             field.headers = headers
             self.list.append(field)
@@ -546,7 +548,7 @@ def parse_header(line):
             value = p[i+1:].strip()
             if len(value) >= 2 and value[:1] == value[-1:] == b'"':
                 value = value[1:-1]
-            pdict[name] = value
+            pdict[name] = PY2 and value or value.decode('latin1')
     return key, pdict
 
 def apply_fs_data(object, fs, **args):
