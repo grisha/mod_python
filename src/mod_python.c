@@ -35,14 +35,9 @@ static server_rec *main_server = NULL;
 /* List of available Python obCallBacks/Interpreters */
 static apr_hash_t *interpreters = NULL;
 static apr_pool_t *interp_pool = NULL;
-
-#if APR_HAS_THREADS
-static apr_thread_mutex_t* interpreters_lock = 0;
-#endif
+static void release_interpreter(interpreterdata *idata);
 
 apr_pool_t *child_init_pool = NULL;
-
-static void release_interpreter_no_lock(interpreterdata *idata);
 
 /* Optional functions imported from mod_include when loaded: */
 static APR_OPTIONAL_FN_TYPE(ap_register_include_handler) *optfn_register_include_handler;
@@ -230,16 +225,12 @@ static interpreterdata *get_interpreter(const char *name)
     if (! name)
         name = MAIN_INTERPRETER;
 
-#if APR_HAS_THREADS
-    apr_thread_mutex_lock(interpreters_lock);
-#endif
+    /* Py_NewInterpreter requires the GIL held, this is one way to have it so */
+    PyEval_RestoreThread(global_tstate);
 
     idata = apr_hash_get(interpreters, name, APR_HASH_KEY_STRING);
 
     if (!idata) {
-
-        /* Py_NewInterpreter requires the GIL held, this is one way to have it so */
-        PyEval_RestoreThread(global_tstate);
 
         tstate = Py_NewInterpreter();
 
@@ -272,7 +263,8 @@ static interpreterdata *get_interpreter(const char *name)
         tstate = idata->interp->tstate_head;
 #endif
 
-        PyEval_RestoreThread(tstate);
+        PyThreadState_Swap(tstate);
+
     }
     /* At this point GIL is held and tstate is set, we're ready to run */
 
@@ -281,19 +273,12 @@ static interpreterdata *get_interpreter(const char *name)
         idata->obcallback = make_obcallback(name);
 
         if (!idata->obcallback) {
-            release_interpreter_no_lock(idata);
+            release_interpreter(idata);
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                          "get_interpreter: no interpreter callback found.");
-#if APR_HAS_THREADS
-            apr_thread_mutex_unlock(interpreters_lock);
-#endif
             return NULL;
         }
     }
-
-#if APR_HAS_THREADS
-    apr_thread_mutex_unlock(interpreters_lock);
-#endif
 
     return idata;
 }
@@ -306,25 +291,14 @@ static interpreterdata *get_interpreter(const char *name)
 
 static void release_interpreter(interpreterdata *idata)
 {
-#if APR_HAS_THREADS
-    apr_thread_mutex_lock(interpreters_lock);
-#endif
-    release_interpreter_no_lock(idata);
-#if APR_HAS_THREADS
-    apr_thread_mutex_unlock(interpreters_lock);
-#endif
-}
-
-static void release_interpreter_no_lock(interpreterdata *idata)
-{
     PyThreadState *tstate = PyThreadState_Get();
 #ifdef WITH_THREAD
     PyThreadState_Clear(tstate);
-    PyEval_ReleaseThread(tstate);
     if (idata)
         APR_ARRAY_PUSH(idata->tstates, PyThreadState *) = tstate;
     else
         PyThreadState_Delete(tstate);
+    PyEval_ReleaseThread(tstate);
 #else
     if (!idata) PyThreadState_Delete(tstate);
 #endif
@@ -801,9 +775,6 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* initialze the interpreter */
         Py_Initialize();
 
-#if APR_HAS_THREADS
-        apr_thread_mutex_create(&interpreters_lock, APR_THREAD_MUTEX_UNNESTED, p);
-#endif
 #ifdef WITH_THREAD
         /* create and acquire the interpreter lock */
         PyEval_InitThreads();
