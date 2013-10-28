@@ -26,7 +26,7 @@
 import sys
 import os
 import platform
-import StringIO
+import io
 import mod_python
 from mod_python import httpdconf
 
@@ -64,7 +64,7 @@ def cmd_genconfig():
     if len(args) != 1:
         parser.error("Must specify <src>")
 
-    execfile(args[0])
+    exec(compile(open(args[0]).read(), args[0], 'exec'))
 
 def cmd_create():
 
@@ -92,11 +92,11 @@ def cmd_create():
                                                         pythonpath=pythonpath, pythonoptions=options.pythonoptions,
                                                         mp_comments=mp_comments)
     if conf_path:
-        print "\nCreated! Please look over %s." % `conf_path`
-        print "Remember to generate the Apache httpd config by running"
-        print "%s genconfig %s > %s" % (sys.argv[0], conf_path,
-                                        os.path.join(os.path.split(conf_path)[0], 'httpd.conf'))
-        print "From here on you can tweak %s and re-generate Apache config at any time." % `conf_path`
+        print("\nCreated! Please look over %s." % repr(conf_path))
+        print("Remember to generate the Apache httpd config by running")
+        print("%s genconfig %s > %s" % (sys.argv[0], conf_path,
+                                        os.path.join(os.path.split(conf_path)[0], 'httpd.conf')))
+        print("From here on you can tweak %s and re-generate Apache config at any time." % repr(conf_path))
 
 def cmd_version():
 
@@ -105,15 +105,15 @@ def cmd_version():
 
     version =  "\n"
     version += "mod_python:  %s\n" % mod_python.mp_version
-    version += "             %s\n\n" % `os.path.join(mod_python.version.LIBEXECDIR, "mod_python.so")`
+    version += "             %s\n\n" % repr(os.path.join(mod_python.version.LIBEXECDIR, "mod_python.so"))
     version += "python:      %s\n" % ''.join(sys.version.splitlines())
-    version += "             %s\n\n" % `mod_python.version.PYTHON_BIN`
+    version += "             %s\n\n" % repr(mod_python.version.PYTHON_BIN)
     version += "httpd:       %s\n" % mod_python.version.HTTPD_VERSION
-    version += "             %s\n\n" % `mod_python.version.HTTPD`
+    version += "             %s\n\n" % repr(mod_python.version.HTTPD)
     version += "apr:         %s\n" % mod_python.version.APR_VERSION
     version += "platform:    %s\n" % platform.platform()
 
-    print version
+    print(version)
 
 import optparse
 
