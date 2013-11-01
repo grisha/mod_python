@@ -16,7 +16,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
                 $(SPHINXOPTS) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help checkout update build html htmlhelp latex text changes linkcheck \
-	suspicious coverage htmlview clean dist check serve \
+	suspicious coverage htmlview distclean clean dist check serve \
 	autobuild-dev autobuild-stable
 
 help:
@@ -101,6 +101,8 @@ coverage: build
 
 htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
+
+distclean: clean
 
 clean:
 	-rm -rf build/*

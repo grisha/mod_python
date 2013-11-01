@@ -748,10 +748,10 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
                      py_compile_version, py_dynamic_version);
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                      "python_init: Python executable found '%s'.",
-                     Py_GetProgramFullPath());
+                     (char *)Py_GetProgramFullPath());
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                      "python_init: Python path being used '%s'.",
-                     Py_GetPath());
+                     (char *)Py_GetPath());
     }
 
     /* Python version */

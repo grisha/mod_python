@@ -267,7 +267,7 @@ APR_DECLARE_OPTIONAL_FN(PyObject *, mp_get_connection_object, (conn_rec *));
             if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 3 &&       \
                 PyUnicode_KIND(obj) == PyUnicode_1BYTE_KIND) {          \
                 if (obj_is_borrowed) Py_INCREF(obj); /* so DECREF ok */ \
-                str = PyUnicode_1BYTE_DATA(obj);                        \
+                str = (char *)PyUnicode_1BYTE_DATA(obj);                \
             } else {                                                    \
                 PyObject *latin = PyUnicode_AsLatin1String(obj);        \
                 if (latin) {                                            \
@@ -292,11 +292,11 @@ static inline PyObject *MpObject_ReprAsBytes(PyObject *o) {
     PyObject *result;
     PyObject *ucode = PyObject_Repr(o);
     /* we can do this because repr() should never have non-ascii characters XXX (really?) */
-    char *c = PyUnicode_1BYTE_DATA(ucode);
+    char *c = (char *)PyUnicode_1BYTE_DATA(ucode);
     if (c[0] == 'b')
-        result = PyBytes_FromStringAndSize(PyUnicode_1BYTE_DATA(ucode)+1, PyUnicode_GET_LENGTH(ucode)-1);
+        result = PyBytes_FromStringAndSize((char *)PyUnicode_1BYTE_DATA(ucode)+1, PyUnicode_GET_LENGTH(ucode)-1);
     else
-        result = PyBytes_FromStringAndSize(PyUnicode_1BYTE_DATA(ucode), PyUnicode_GET_LENGTH(ucode));
+        result = PyBytes_FromStringAndSize((char *)PyUnicode_1BYTE_DATA(ucode), PyUnicode_GET_LENGTH(ucode));
     Py_DECREF(ucode);
     return result;
 }
