@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{a90f906b-139f-461b-9179-9f6767afec72}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\connobject.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filterobject.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\hlist.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\hlistobject.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mod_python.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\requestobject.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\serverobject.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tableobject.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\util.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="_apachemodule.c" />
+    <ClCompile Include="connobject.c" />
+    <ClCompile Include="filterobject.c" />
+    <ClCompile Include="hlist.c" />
+    <ClCompile Include="hlistobject.c" />
+    <ClCompile Include="mod_python.c" />
+    <ClCompile Include="requestobject.c" />
+    <ClCompile Include="serverobject.c" />
+    <ClCompile Include="tableobject.c" />
+    <ClCompile Include="util.c" />
+    <ClCompile Include="finfoobject.c" />
+    <ClCompile Include="version.c" />
+  </ItemGroup>
+</Project>

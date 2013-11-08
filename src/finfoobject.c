@@ -35,7 +35,7 @@
 PyObject * MpFinfo_FromFinfo(apr_finfo_t *f)
 {
     finfoobject *result;
-
+	MpFinfo_Type.ob_type = &PyType_Type;
     result = PyObject_New(finfoobject, &MpFinfo_Type);
     if (! result)
         return PyErr_NoMemory();
@@ -377,7 +377,7 @@ static PyObject *finfo_repr(finfoobject *self)
 }
 
 PyTypeObject MpFinfo_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "mp_finfo",                         /* tp_name */
     sizeof(finfoobject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */

@@ -47,7 +47,7 @@ static APR_OPTIONAL_FN_TYPE(ssl_is_https) *optfn_is_https = NULL;
 PyObject * MpRequest_FromRequest(request_rec *req)
 {
     requestobject *result;
-
+	MpRequest_Type.ob_type = &PyType_Type;
     result = PyObject_GC_New(requestobject, &MpRequest_Type);
     if (! result)
         return PyErr_NoMemory();
@@ -221,13 +221,13 @@ static PyObject *req_build_wsgi_env(requestobject *self)
     apr_table_t *e = r->subprocess_env;
     PyObject *env, *v;
     const char *val;
-    int i, j;
+    int i, j, rc;
 
     env = PyDict_New();
     if (!env)
         return NULL;
 
-    int rc = set_wsgi_path_info(self);
+    rc = set_wsgi_path_info(self);
     if (rc == 1) {
         /* bad base_uri, the error is already set */
         Py_DECREF(env);
@@ -984,6 +984,10 @@ static PyObject * req_get_remote_host(requestobject *self, PyObject *args)
 
 static PyObject * req_get_options(requestobject *self, PyObject *args)
 {
+	const apr_array_header_t* ah;
+	apr_table_entry_t* elts;
+	int i;
+
     py_config *conf =
         (py_config *) ap_get_module_config(self->request_rec->per_dir_config,
                                            &python_module);
@@ -993,9 +997,9 @@ static PyObject * req_get_options(requestobject *self, PyObject *args)
     if (((tableobject*)self->options)->table != conf->options)
         ((tableobject*)self->options)->table = conf->options;
 
-    const apr_array_header_t* ah = apr_table_elts(conf->options);
-    apr_table_entry_t* elts = (apr_table_entry_t *) ah->elts;
-    int i;
+    ah = apr_table_elts(conf->options);
+    elts = (apr_table_entry_t *) ah->elts;
+    
 
     /* Remove the empty values as a way to unset values.
      * See https://issues.apache.org/jira/browse/MODPYTHON-6 */
@@ -1899,6 +1903,7 @@ static PyObject *getreq_recmbr(requestobject *self, void *name)
 static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
 {
     char *v;
+	PyMemberDef *md;
     if (strcmp(name, "content_type") == 0) {
         MP_ANYSTR_AS_STR(v, val, 1);
         if (!v) {
@@ -2037,7 +2042,7 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
 
-    PyMemberDef *md = find_memberdef(request_rec_mbrs, name);
+    md = find_memberdef(request_rec_mbrs, name);
     if (!md) {
         PyErr_SetString(PyExc_AttributeError, name);
         return -1;
@@ -2377,7 +2382,7 @@ static char request_doc[] =
 "Apache request_rec structure\n";
 
 PyTypeObject MpRequest_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "mp_request",                      /* tp_name */
     sizeof(requestobject),             /* tp_basicsize */
     0,                                 /* tp_itemsize */

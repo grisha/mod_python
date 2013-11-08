@@ -40,7 +40,7 @@
 PyObject * MpConn_FromConn(conn_rec *c)
 {
     connobject *result;
-
+	MpConn_Type.ob_type = &PyType_Type;
     result = PyObject_New(connobject, &MpConn_Type);
     if (! result)
         return PyErr_NoMemory();
@@ -325,7 +325,7 @@ static PyObject * conn_getattr(connobject *self, char *name)
 {
 
     PyObject *res;
-
+	PyMemberDef *md;
     PyMethodDef *ml = connobjectmethods;
     for (; ml->ml_name != NULL; ml++) {
         if (name[0] == ml->ml_name[0] &&
@@ -404,7 +404,7 @@ static PyObject * conn_getattr(connobject *self, char *name)
                           "use req.useragent_ip or conn.client_ip");
         }
 #endif
-        PyMemberDef *md = find_memberdef(conn_memberlist, name);
+        md = find_memberdef(conn_memberlist, name);
         if (!md) {
             PyErr_SetString(PyExc_AttributeError, name);
             return NULL;
@@ -446,7 +446,7 @@ static int conn_setattr(connobject *self, char* name, PyObject* value)
 }
 
 PyTypeObject MpConn_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "mp_conn",                       /* tp_name */
     sizeof(connobject),              /* tp_basicsize */
     0,                               /* tp_itemsize */

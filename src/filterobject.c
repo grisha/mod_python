@@ -78,7 +78,7 @@ PyObject *MpFilter_FromFilter(ap_filter_t *f, apr_bucket_brigade *bb, int is_inp
                               char * handler, char *dir)
 {
     filterobject *result;
-
+	MpFilter_Type.ob_type = &PyType_Type;
     result = PyObject_New(filterobject, &MpFilter_Type);
     if (! result)
         return PyErr_NoMemory();
@@ -540,12 +540,13 @@ static PyObject * filter_getattr(filterobject *self, char *name)
 
 static int filter_setattr(filterobject *self, char *name, PyObject *v)
 {
+	PyMemberDef *md;
     if (v == NULL) {
         PyErr_SetString(PyExc_AttributeError,
                         "can't delete filter attributes");
         return -1;
     }
-    PyMemberDef *md = find_memberdef(filter_memberlist, name);
+    md = find_memberdef(filter_memberlist, name);
     if (!md) {
         PyErr_SetString(PyExc_AttributeError, name);
         return -1;
@@ -554,7 +555,7 @@ static int filter_setattr(filterobject *self, char *name, PyObject *v)
 }
 
 PyTypeObject MpFilter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "mp_filter",                    /* tp_name */
     sizeof(filterobject),           /* tp_basicsize */
     0,                              /* tp_itemsize */

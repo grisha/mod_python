@@ -50,7 +50,7 @@ PyObject * MpTable_FromTable(apr_table_t *t)
     tableobject *result;
 
     TABLE_DEBUG("MpTable_FromTable");
-
+	MpTable_Type.ob_type = &PyType_Type;
     result = PyObject_New(tableobject, &MpTable_Type);
     if (! result)
         return PyErr_NoMemory();
@@ -1183,7 +1183,7 @@ static char mp_table_doc[] =
 "        d[k] = v";
 
 PyTypeObject MpTable_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "mp_table",                         /* tp_name */
     sizeof(tableobject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -1247,7 +1247,7 @@ static PyObject *tableiter_new(tableobject *table, tableselectfunc select)
     tableiterobject *ti;
 
     TABLE_DEBUG("tableiter_new");
-
+	MpTableIter_Type.ob_type = &PyType_Type;
     ti = PyObject_NEW(tableiterobject, &MpTableIter_Type);
     if (ti == NULL)
         return NULL;
@@ -1333,7 +1333,7 @@ static PyObject *tableiter_iternext(tableiterobject *ti)
 }
 
 PyTypeObject MpTableIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "dictionary-iterator",              /* tp_name */
     sizeof(tableiterobject),            /* tp_basicsize */
     0,                                  /* tp_itemsize */

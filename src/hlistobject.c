@@ -36,7 +36,7 @@
 PyObject *MpHList_FromHLEntry(hl_entry *hle)
 {
     hlistobject *result;
-
+	MpHList_Type.ob_type = &PyType_Type;
     result = PyObject_New(hlistobject, &MpHList_Type);
     if (! result)
         PyErr_NoMemory();
@@ -92,6 +92,7 @@ static void hlist_dealloc(hlistobject *self)
 static PyObject *hlist_getattr(hlistobject *self, char *name)
 {
     PyObject *res;
+	PyMemberDef *md;
 
     PyMethodDef *ml = hlistmethods;
     for (; ml->ml_name != NULL; ml++) {
@@ -109,7 +110,7 @@ static PyObject *hlist_getattr(hlistobject *self, char *name)
         return Py_None;
     }
 
-    PyMemberDef *md = find_memberdef(hlist_memberlist, name);
+    md = find_memberdef(hlist_memberlist, name);
     if (!md) {
         PyErr_SetString(PyExc_AttributeError, name);
         return NULL;
@@ -164,7 +165,7 @@ static PyObject *hlist_repr(hlistobject *self)
 }
 
 PyTypeObject MpHList_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "mp_hlist",                      /* tp_name */
     sizeof(hlistobject),             /* tp_basicsize */
     0,                               /* tp_itemsize */

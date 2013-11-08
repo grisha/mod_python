@@ -1153,6 +1153,7 @@ static const char *python_directive_handler(cmd_parms *cmd, py_config* conf,
     char d_is_fnmatch = 0;
     char d_is_location = 0;
     ap_regex_t *regex = NULL;
+	const char *exts;
 
     determine_context(cmd->pool, cmd, &directory, &d_is_fnmatch, &d_is_location, &regex);
 
@@ -1169,7 +1170,7 @@ static const char *python_directive_handler(cmd_parms *cmd, py_config* conf,
      * PythonHandler.ext2 foo
      */
 
-    const char *exts = val;
+    exts = val;
     val = ap_getword(cmd->pool, &exts, '|');
 
     if (*exts == '\0') {
@@ -2609,6 +2610,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     const apr_array_header_t *ah;
     apr_table_entry_t *elts;
     int i;
+	interpreterdata *idata;
 
     py_config *conf = ap_get_module_config(s->module_config, &python_module);
     py_global_config *glb;
@@ -2618,7 +2620,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
     PyEval_RestoreThread(global_tstate);
     PyOS_AfterFork();
 
-    interpreterdata *idata = save_interpreter(MAIN_INTERPRETER, PyThreadState_Get());
+    idata = save_interpreter(MAIN_INTERPRETER, PyThreadState_Get());
     if (!idata)
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, main_server,
                      "PythonChildInitHandler: save_interpreter() returned NULL. No more memory?");

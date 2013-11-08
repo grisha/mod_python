@@ -36,7 +36,7 @@
 PyObject * MpServer_FromServer(server_rec *s)
 {
     serverobject *result;
-
+	MpServer_Type.ob_type = &PyType_Type;
     result = PyObject_New(serverobject, &MpServer_Type);
     if (! result)
         return PyErr_NoMemory();
@@ -237,6 +237,7 @@ static PyMemberDef server_rec_mbrs[] = {
 
 static PyObject *getsrv_recmbr(serverobject *self, void *name)
 {
+	PyMemberDef *md;
     if (strcmp(name, "_server_rec") == 0) {
 #if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 7
         return PyCObject_FromVoidPtr(self->server, 0);
@@ -246,7 +247,7 @@ static PyObject *getsrv_recmbr(serverobject *self, void *name)
 
     }
 
-    PyMemberDef *md = find_memberdef(server_rec_mbrs, name);
+    md = find_memberdef(server_rec_mbrs, name);
     if (!md) {
         PyErr_SetString(PyExc_AttributeError, name);
         return NULL;
@@ -374,7 +375,7 @@ static char server_doc[] =
 "Apache server_rec structure\n";
 
 PyTypeObject MpServer_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "mp_server",                     /* tp_name */
     sizeof(serverobject),            /* tp_basicsize */
     0,                               /* tp_itemsize */
