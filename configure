@@ -3340,7 +3340,11 @@ PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version[:1])'`
 PyMINVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version.split(".")[1])'`
 { $as_echo "$as_me:$LINENO: result: $PyVERSION" >&5
 $as_echo "$PyVERSION" >&6; }
-
+if test -z "$PyMAJVERSION"; then
+  { { $as_echo "$as_me:$LINENO: error: Unable to get Python version - is your Python working?" >&5
+$as_echo "$as_me: error: Unable to get Python version - is your Python working?" >&2;}
+   { (exit 1); exit 1; }; }
+fi
 # make sure Python version is >= 2.6 for 2 and >= 3.3 for 3
 if test "$PyMAJVERSION" -lt "2"; then
   { { $as_echo "$as_me:$LINENO: error: This version of mod_python only works with Python major version 2 or higher. The one you have seems to be $PyVERSION." >&5
@@ -3391,7 +3395,8 @@ if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
     LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
     if test "$PyMAJVERSION" -eq "3"; then
-        LDLIBS1="-lpython${PyMAJVERSION}"
+        PyLDVERSION=`$PYTHON_BIN -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION"))'`
+        LDLIBS1="-lpython${PyLDVERSION}"
     else
         LDLIBS1="-lpython${PyVERSION}"
     fi
