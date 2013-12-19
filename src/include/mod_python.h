@@ -156,7 +156,6 @@ extern module AP_MODULE_DECLARE_DATA python_module;
 #define MUTEX_DIR "/tmp"
 
 /* version stuff */
-extern const char * const mp_git_sha;
 extern const int mp_version_major;
 extern const int mp_version_minor;
 extern const int mp_version_patch;

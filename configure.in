@@ -323,9 +323,9 @@ if test "$LEX" && test -x "$LEX"; then
 
   AC_MSG_CHECKING(flex version)
   FlexVERSION=`$LEX --version | sed 's/version//g' | awk '/flex/ {print $2}'`
-  Flex_MAJOR=`echo $FlexVERSION| awk -F .  '{print $1}'`
-  Flex_MINOR=`echo $FlexVERSION| awk -F .  '{print $2}'`
-  Flex_PATCH=`echo $FlexVERSION| awk -F .  '{print $3}'`
+  Flex_MAJOR=`echo $FlexVERSION| awk -F.  '{print $1}'`
+  Flex_MINOR=`echo $FlexVERSION| awk -F.  '{print $2}'`
+  Flex_PATCH=`echo $FlexVERSION| awk -F.  '{print $3}'`
 
   if test "$Flex_MAJOR" -eq "2" && test "$Flex_MINOR" -eq "5" && test "$Flex_PATCH" -ge "31"; then
     AC_MSG_RESULT([$FlexVERSION. Good])
