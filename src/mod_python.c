@@ -1795,7 +1795,7 @@ static apr_status_t python_filter(int is_input, ap_filter_t *f,
     }
 
     /* are we in transparent mode? transparent mode is on after an error,
-       so a fitler can spit out an error without causing infinite loop */
+       so a filter can spit out an error without causing infinite loop */
     if (ctx->transparent) {
         if (is_input)
             return ap_get_brigade(f->next, bb, mode, block, readbytes);
