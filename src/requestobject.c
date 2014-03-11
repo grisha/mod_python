@@ -1967,6 +1967,10 @@ static int setreq_recmbr(requestobject *self, PyObject *val, void *name)
         return 0;
     }
     else if (strcmp(name, "args") == 0) {
+        if (val == Py_None) {
+            self->request_rec->args = 0;
+            return 0;
+        }
         MP_ANYSTR_AS_STR(v, val, 1);
         if (!v) {
             Py_DECREF(val); /* MP_ANYSTR_AS_STR */
