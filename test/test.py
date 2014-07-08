@@ -310,6 +310,7 @@ class HttpdCtrl:
         modpath = LIBEXECDIR
 
         s = Container(
+            LoadModule("mpm_prefork_module modules/mod_mpm_prefork.so"),
             IfModule("prefork.c",
                      StartServers("3"),
                      MaxSpareServers("1")),
