@@ -772,6 +772,9 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     {
         initialized = 1;
 
+        /* disable user site directories */
+        Py_NoUserSiteDirectory = 1;
+
         /* initialze the interpreter */
         Py_Initialize();
 
