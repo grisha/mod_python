@@ -213,9 +213,11 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
                 cval = PyBytes_AS_STRING(val);
 
                 if (unicode) {
+                    // The query string is supposed to be a valid UTF8 string
+                    // https://url.spec.whatwg.org/#percent-encoded-bytes
                     PyObject *list, *ukey, *uval;
-                    ukey = PyUnicode_DecodeLatin1(ckey, strlen(ckey), NULL);
-                    uval = PyUnicode_DecodeLatin1(ckey, strlen(cval), NULL);
+                    ukey = PyUnicode_DecodeUTF8(ckey, strlen(ckey), NULL);
+                    uval = PyUnicode_DecodeUTF8(ckey, strlen(cval), NULL);
                     list = PyDict_GetItem(dict, ukey);
                     if (list) {
                         PyList_Append(list, uval);
@@ -371,8 +373,8 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
                 PyObject *listitem = NULL;
                 if (unicode) {
                     PyObject *ukey, *uval;
-                    ukey = PyUnicode_DecodeLatin1(ckey, strlen(ckey), NULL);
-                    uval = PyUnicode_DecodeLatin1(cval, strlen(cval), NULL);
+                    ukey = PyUnicode_DecodeUTF8(ckey, strlen(ckey), NULL);
+                    uval = PyUnicode_DecodeUTF8(cval, strlen(cval), NULL);
                     listitem = Py_BuildValue("(O,O)", ukey, uval);
                     Py_DECREF(ukey);
                     Py_DECREF(uval);
