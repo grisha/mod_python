@@ -213,6 +213,8 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
                 cval = PyBytes_AS_STRING(val);
 
                 if (unicode) {
+                    // The query string is supposed to be a valid UTF8 string
+                    // https://url.spec.whatwg.org/#percent-encoded-bytes
                     PyObject *list, *ukey, *uval;
                     ukey = PyUnicode_DecodeUTF8(ckey, strlen(ckey), NULL);
                     uval = PyUnicode_DecodeUTF8(ckey, strlen(cval), NULL);
