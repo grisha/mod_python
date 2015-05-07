@@ -156,7 +156,7 @@ else:
         disp_options = None
 
         def __new__(self, value):
-            return bytes.__new__(self, value)
+            return bytes.__new__(self, value, "utf8")
 
         def __init__(self, value):
             self.value = value
