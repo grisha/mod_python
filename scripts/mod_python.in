@@ -105,7 +105,7 @@ def cmd_version():
 
     version =  "\n"
     version += "mod_python:  %s\n" % mod_python.mp_version
-    version += "             %s\n\n" % repr(s.path.join(mod_python.version.LIBEXECDIR, "mod_python.so"))
+    version += "             %s\n\n" % repr(os.path.join(mod_python.version.LIBEXECDIR, "mod_python.so"))
     version += "python:      %s\n" % ''.join(sys.version.splitlines())
     version += "             %s\n\n" % repr(mod_python.version.PYTHON_BIN)
     version += "httpd:       %s\n" % mod_python.version.HTTPD_VERSION
