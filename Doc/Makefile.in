@@ -109,6 +109,9 @@ clean:
 	-rm -rf tools/jinja2
 	-rm -rf tools/docutils
 
+distclean: clean
+	rm -f Makefile
+
 dist:
 	rm -rf dist
 	mkdir -p dist
