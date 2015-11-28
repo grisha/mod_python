@@ -17,7 +17,7 @@
  #
 
 INSTALL=@INSTALL@
-BINDIR=@prefix@/bin
+BINDIR=`dirname @PYTHON_BIN@`
 
 clean:
 	rm -rf *~
