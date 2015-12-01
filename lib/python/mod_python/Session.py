@@ -124,7 +124,7 @@ def _new_sid(req):
     g = _get_generator()
     rnd1 = g.randint(0, 999999999)
     rnd2 = g.randint(0, 999999999)
-    ip = req.connection.remote_ip
+    ip = req.connection.client_ip
 
     return md5_hash("%d%d%d%d%s" % (t, pid, rnd1, rnd2, ip))
 
