@@ -338,9 +338,9 @@ def unlock_session_cleanup(sess):
 ## DbmSession
 
 def dbm_cleanup(data):
-    dbm, server = data
+    filename, server = data
     _apache._global_lock(server, None, 0)
-    db = dbm.open(dbm, 'c')
+    db = dbm.open(filename, 'c')
     try:
         old = []
         s = db.first()
