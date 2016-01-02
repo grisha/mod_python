@@ -477,11 +477,15 @@ class PerRequestTestCase(unittest.TestCase):
 
         return rsp
 
-    def vhost_post_multipart_form_data(self, vhost, path="/tests.py",variables={}, files={}):
+    def vhost_post_multipart_form_data(self, vhost, path="/tests.py",variables=None, files=None):
         # variables is a { name : value } dict
         # files is a { name : (filename, content) } dict
 
         # build the POST entity
+        if variables is None:
+            variables = {}
+        if files is None:
+            files = {}
         if PY2:
             entity = StringIO()
             boundary = "============="+''.join( [ random.choice('0123456789') for x in range(10) ] )+'=='

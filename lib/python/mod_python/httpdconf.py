@@ -401,9 +401,15 @@ def quote_if_space(s):
 
 def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="logs",
                         htdocs="public", pythonhandler="mod_python.publisher",
-                        pythonpath=[], pythonoptions=[], mp_comments=[],
+                        pythonpath=None, pythonoptions=None, mp_comments=None,
                         conf_name='httpd_conf.py', createdirs=True, replace_config=False):
     """This generates a sensible Apache configuration"""
+    if pythonpath is None:
+        pythonpath = []
+    if pythonoptions is None:
+        pythonoptions = []
+    if mp_comments is None:
+        mp_comments = []
 
     conf_path = os.path.join(server_root, conf, conf_name)
     if os.path.exists(conf_path) and not replace_config:
