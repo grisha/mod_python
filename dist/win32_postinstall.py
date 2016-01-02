@@ -34,7 +34,7 @@ def getApacheDirOptions():
             def subkeynames(self):
                 return []
             def getvalue(self, valuename):
-                raise AttributeError("Cannot access registry value %r: key does not exist" % (valuename))
+                raise AttributeError("Cannot access registry value {0!r}: key does not exist".format((valuename)))
         class regkey:
             """simple wrapper for registry functions that closes keys nicely..."""
             def __init__(self, parent, subkeyname):
@@ -51,7 +51,7 @@ def getApacheDirOptions():
                try:
                    return win32api.RegQueryValueEx(self.key, valuename)
                except win32api.error:
-                   raise AttributeError("Cannot access registry value %r" % (valuename))
+                   raise AttributeError("Cannot access registry value {0!r}".format((valuename)))
             def __del__(self):
                if hasattr(self, "key"):
                    win32api.RegCloseKey(self.key)
@@ -120,14 +120,14 @@ if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
         1. This script does not attempt to modify Apache configuration,
            you must do it manually:
 
-           Edit %s,
+           Edit {0!s},
            find where other LoadModule lines are and add this:
                 LoadModule python_module modules/mod_python.so
 
         2. Now test your installation using the instructions at this link:
            http://www.modpython.org/live/current/doc-html/inst-testing.html
 
-        """ % os.path.join(apachedir, "conf", "httpd.conf")
+        """.format(os.path.join(apachedir, "conf", "httpd.conf"))
 
     else:
 
@@ -136,17 +136,17 @@ if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
         1. It appears that you do not have Tkinter installed,
            which is required for a part of this installation.
            Therefore you must manually take
-           "%s"
+           "{0!s}"
            and copy it to your Apache modules directory.
 
         2. This script does not attempt to modify Apache configuration,
            you must do it manually:
 
-           Edit %s,
+           Edit {1!s},
            find where other LoadModule lines and add this:
                 LoadModule python_module modules/mod_python.so
 
         3. Now test your installation using the instructions at this link:
            http://www.modpython.org/live/current/doc-html/inst-testing.html
 
-        """ % (mp, os.path.join(apachedir, "conf", "httpd.conf"))
+        """.format(mp, os.path.join(apachedir, "conf", "httpd.conf"))

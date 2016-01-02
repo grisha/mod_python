@@ -80,9 +80,9 @@ class PageCache(ModuleCache):
         log=int(config.get("PythonDebug", 0))
         if log:
             if entry._value is NOT_INITIALIZED:
-                req.log_error('Publisher loading page %s'%req.filename, apache.APLOG_NOTICE)
+                req.log_error('Publisher loading page {0!s}'.format(req.filename), apache.APLOG_NOTICE)
             else:
-                req.log_error('Publisher reloading page %s'%req.filename, apache.APLOG_NOTICE)
+                req.log_error('Publisher reloading page {0!s}'.format(req.filename), apache.APLOG_NOTICE)
         return ModuleCache.build(self, key, req, opened, entry)
 
 page_cache = PageCache()
@@ -308,7 +308,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
 
         if not user:
             # note that Opera supposedly doesn't like spaces around "=" below
-            s = 'Basic realm="%s"' % realm
+            s = 'Basic realm="{0!s}"'.format(realm)
             req.err_headers_out["WWW-Authenticate"] = s
             raise apache.SERVER_RETURN(apache.HTTP_UNAUTHORIZED)
 
@@ -321,7 +321,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 rc = __auth__
 
         if not rc:
-            s = 'Basic realm = "%s"' % realm
+            s = 'Basic realm = "{0!s}"'.format(realm)
             req.err_headers_out["WWW-Authenticate"] = s
             raise apache.SERVER_RETURN(apache.HTTP_UNAUTHORIZED)
 
@@ -496,7 +496,7 @@ def publish_object(req, obj):
             else:
                 req.content_type = 'text/plain'
             if charset is not None:
-                req.content_type += '; charset=%s'%charset
+                req.content_type += '; charset={0!s}'.format(charset)
 
         # Write result even if req.method is 'HEAD' as Apache
         # will discard the final output anyway. Truncating

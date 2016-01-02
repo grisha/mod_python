@@ -111,8 +111,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
     def finish(self):
         unused_rules = [rule for rule in self.rules if not rule.used]
         if unused_rules:
-            self.warn('Found %s/%s unused rules:' %
-                      (len(unused_rules), len(self.rules)))
+            self.warn('Found {0!s}/{1!s} unused rules:'.format(len(unused_rules), len(self.rules)))
             for rule in unused_rules:
                 self.info(repr(rule))
         return
@@ -147,7 +146,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
         if not self.any_issue: self.info()
         self.any_issue = True
         self.write_log_entry(lineno, issue, text)
-        self.warn('[%s:%d] "%s" found in "%-.120s"' % (
+        self.warn('[{0!s}:{1:d}] "{2!s}" found in "{3:<.120!s}"'.format(
                 self.docname.encode(sys.getdefaultencoding(),'replace'),
                 lineno,
                 issue.encode(sys.getdefaultencoding(),'replace'),
@@ -176,7 +175,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
         for i, row in enumerate(csv.reader(f)):
             if len(row) != 4:
                 raise ValueError(
-                    "wrong format in %s, line %d: %s" % (filename, i+1, row))
+                    "wrong format in {0!s}, line {1:d}: {2!s}".format(filename, i+1, row))
             docname, lineno, issue, text = row
             docname = docname.decode('utf-8')
             if lineno: lineno = int(lineno)
@@ -186,7 +185,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
             rule = Rule(docname, lineno, issue, text)
             rules.append(rule)
         f.close()
-        self.info('done, %d rules loaded' % len(self.rules))
+        self.info('done, {0:d} rules loaded'.format(len(self.rules)))
 
 
 def get_lineno(node):
