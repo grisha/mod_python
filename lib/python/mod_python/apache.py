@@ -142,7 +142,7 @@ class CallBack:
                 result = obj(conn)
 
             assert (result.__class__ is int), \
-                   "ConnectionHandler '%s' returned invalid return code." % handler
+                   "ConnectionHandler '{0!s}' returned invalid return code.".format(handler)
 
         except:
             # Error (usually parsing)
@@ -263,7 +263,7 @@ class CallBack:
 
                 if result.__class__ is not int:
                     s = "Value raised with SERVER_RETURN is invalid. It is a "
-                    s = s + "%s, but it must be a tuple or an int." % result.__class__
+                    s = s + "{0!s}, but it must be a tuple or an int.".format(result.__class__)
                     _apache.log_error(s, APLOG_ERR, req.server)
 
                     return
@@ -358,7 +358,7 @@ class CallBack:
                         obj = module.__dict__[obj_str]
                     except:
                         if not hlist.silent:
-                            s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
+                            s = "module '{0!s}' contains no '{1!s}'".format(module.__file__, obj_str)
                             raise AttributeError(s)
                 else:
                     obj = resolve_object(module, obj_str,
@@ -534,7 +534,7 @@ class CallBack:
 
                 # write to log
                 for e in traceback.format_exception(etype, evalue, etb):
-                    s = "%s %s: %s" % (phase, hname, e[:-1])
+                    s = "{0!s} {1!s}: {2!s}".format(phase, hname, e[:-1])
                     if req:
                         req.log_error(s, APLOG_ERR)
                     else:
@@ -547,7 +547,7 @@ class CallBack:
                     req.status = HTTP_INTERNAL_SERVER_ERROR
                     req.content_type = 'text/html'
 
-                    s = '\n<pre>\nMod_python error: "%s %s"\n\n' % (phase, hname)
+                    s = '\n<pre>\nMod_python error: "{0!s} {1!s}"\n\n'.format(phase, hname)
                     for e in traceback.format_exception(etype, evalue, etb):
                         s = s + cgi.escape(e) + '\n'
                     s = s + "</pre>\n"
@@ -623,9 +623,9 @@ def import_module(module_name, autoreload=1, log=0, path=None):
             # Import the module
             if log:
                 if path:
-                    s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
+                    s = "mod_python: (Re)importing module '{0!s}' with path set to '{1!s}'".format(module_name, path)
                 else:
-                    s = "mod_python: (Re)importing module '%s'" % module_name
+                    s = "mod_python: (Re)importing module '{0!s}'".format(module_name)
                 _apache.log_error(s, APLOG_NOTICE)
 
             parent = None
@@ -701,7 +701,7 @@ def resolve_object(module, obj_str, arg=None, silent=0):
         # this adds a little clarity if we have an attriute error
         if obj == module and not hasattr(module, obj_str):
             if hasattr(module, "__file__"):
-                s = "module '%s' contains no '%s'" % (module.__file__, obj_str)
+                s = "module '{0!s}' contains no '{1!s}'".format(module.__file__, obj_str)
                 raise AttributeError(s)
 
         obj = getattr(obj, obj_str)

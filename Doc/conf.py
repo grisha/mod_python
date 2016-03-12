@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath('tools/sphinxext'))
 
 # General substitutions.
 project = 'Mod_python'
-copyright = '1990-%s, Apache Software Foundation, Gregory Trubetskoy' % time.strftime('%Y')
+copyright = '1990-{0!s}, Apache Software Foundation, Gregory Trubetskoy'.format(time.strftime('%Y'))
 
 # The default replacements for |version| and |release|.
 #

@@ -18,7 +18,7 @@
 # mod_python tests
 
 def index(req):
-    return "test 1 ok, interpreter=%s" % req.interpreter
+    return "test 1 ok, interpreter={0!s}".format(req.interpreter)
 
 def foobar(req):
-    return "test 2 ok, interpreter=%s" % req.interpreter
+    return "test 2 ok, interpreter={0!s}".format(req.interpreter)
