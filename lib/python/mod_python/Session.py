@@ -126,7 +126,7 @@ def _new_sid(req):
     rnd2 = g.randint(0, 999999999)
     ip = req.connection.remote_ip
 
-    return md5_hash("%d%d%d%d%s" % (t, pid, rnd1, rnd2, ip))
+    return md5_hash("{0:d}{1:d}{2:d}{3:d}{4!s}".format(t, pid, rnd1, rnd2, ip))
 
 validate_sid_re = re.compile('[0-9a-f]{32}$')
 
@@ -186,7 +186,7 @@ class BaseSession(dict):
                     # Supplied explicitly by user of the class,
                     # raise an exception and make the user code
                     # deal with it.
-                    raise ValueError("Invalid Session ID: sid=%s" % sid)
+                    raise ValueError("Invalid Session ID: sid={0!s}".format(sid))
                 else:
                     # Derived from the cookie sent by browser,
                     # wipe it out so it gets replaced with a
@@ -544,7 +544,7 @@ class FileSession(BaseSession):
                 s = StringIO()
                 traceback.print_exc(file=s)
                 s = s.getvalue()
-                self._req.log_error('Error while loading a session : %s'%s)
+                self._req.log_error('Error while loading a session : {0!s}'.format(s))
                 return None
         finally:
             self.unlock_file()
@@ -566,7 +566,7 @@ class FileSession(BaseSession):
                 s = StringIO()
                 traceback.print_exc(file=s)
                 s = s.getvalue()
-                self._req.log_error('Error while saving a session : %s'%s)
+                self._req.log_error('Error while saving a session : {0!s}'.format(s))
         finally:
             self.unlock_file()
 
@@ -617,8 +617,7 @@ def filesession_cleanup(data):
     grace_period = data['grace_period']
     cleanup_time_limit = data['cleanup_time_limit']
 
-    req.log_error('FileSession cleanup: (fast=%s, verify=%s) ...'
-                    % (fast_cleanup,verify_cleanup),
+    req.log_error('FileSession cleanup: (fast={0!s}, verify={1!s}) ...'.format(fast_cleanup, verify_cleanup),
                     apache.APLOG_NOTICE)
 
     lockfile = os.path.join(sessdir,'.mp_sess.lck')
@@ -670,7 +669,7 @@ def filesession_cleanup(data):
         filelist =  os.listdir(sessdir)
         dir_index = list(range(0,256))[next_i:]
         for i in dir_index:
-            path = '%s/%s' % (sessdir,'%02x' % i)
+            path = '{0!s}/{1!s}'.format(sessdir, '{0:02x}'.format(i))
             if not os.path.exists(path):
                 continue
 
@@ -704,8 +703,7 @@ def filesession_cleanup(data):
                     s = StringIO()
                     traceback.print_exc(file=s)
                     s = s.getvalue()
-                    req.log_error('FileSession cleanup error: %s'
-                                    % (s),
+                    req.log_error('FileSession cleanup error: {0!s}'.format((s)),
                                     apache.APLOG_NOTICE)
 
             next_i = (i + 1) % 256
@@ -716,19 +714,17 @@ def filesession_cleanup(data):
         total_time += time.time() - start_time
         if next_i == 0:
             # next_i can only be 0 when the full cleanup has run to completion
-            req.log_error("FileSession cleanup: deleted %d of %d in %.4f seconds"
-                            % (expired_file_count, total_file_count, total_time),
+            req.log_error("FileSession cleanup: deleted {0:d} of {1:d} in {2:.4f} seconds".format(expired_file_count, total_file_count, total_time),
                             apache.APLOG_NOTICE)
             expired_file_count = 0
             total_file_count = 0
             total_time = 0.0
         else:
-            req.log_error("FileSession cleanup incomplete: next cleanup will start at index %d (%02x)"
-                        % (next_i, next_i),
+            req.log_error("FileSession cleanup incomplete: next cleanup will start at index {0:d} ({1:02x})".format(next_i, next_i),
                         apache.APLOG_NOTICE)
 
         status_file = open(os.path.join(sessdir, 'fs_status.txt'), 'w')
-        status_file.write('%s %d %d %d %f\n' % (stat_version, next_i, expired_file_count, total_file_count, total_time))
+        status_file.write('{0!s} {1:d} {2:d} {3:d} {4:f}\n'.format(stat_version, next_i, expired_file_count, total_file_count, total_time))
         status_file.close()
 
         try:
@@ -742,7 +738,7 @@ def filesession_cleanup(data):
 def make_filesession_dirs(sess_dir):
     """Creates the directory structure used for storing session files"""
     for i in range(0,256):
-        path = os.path.join(sess_dir, '%02x' % i)
+        path = os.path.join(sess_dir, '{0:02x}'.format(i))
         if not os.path.exists(path):
             os.makedirs(path,  stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP)
 
@@ -818,7 +814,7 @@ def Session(req, sid=0, secret=None, timeout=0, lock=1):
     else:
         # TODO Add capability to load a user defined class
         # For now, just raise an exception.
-        raise Exception('Unknown session type %s' % sess_type)
+        raise Exception('Unknown session type {0!s}'.format(sess_type))
 
     return sess(req, sid=sid, secret=secret,
                          timeout=timeout, lock=lock)

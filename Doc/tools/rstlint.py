@@ -42,7 +42,7 @@ directives = [
 ]
 
 all_directives = '(' + '|'.join(directives) + ')'
-seems_directive_re = re.compile(r'\.\. %s([^a-z:]|:(?!:))' % all_directives)
+seems_directive_re = re.compile(r'\.\. {0!s}([^a-z:]|:(?!:))'.format(all_directives))
 default_role_re = re.compile(r'(^| )`\w([^`]*?\w)?`($| )')
 leaked_markup_re = re.compile(r'[a-z]::[^=]|:[a-z]+:|`|\.\.\s*\w+:')
 
@@ -73,7 +73,7 @@ def check_syntax(fn, lines):
     try:
         compile(code, fn, 'exec')
     except SyntaxError, err:
-        yield err.lineno, 'not compilable: %s' % err
+        yield err.lineno, 'not compilable: {0!s}'.format(err)
 
 
 @checker('.rst', severity=2)
@@ -124,18 +124,18 @@ def check_leaked_markup(fn, lines):
     """
     for lno, line in enumerate(lines):
         if leaked_markup_re.search(line):
-            yield lno+1, 'possibly leaked markup: %r' % line
+            yield lno+1, 'possibly leaked markup: {0!r}'.format(line)
 
 
 def main(argv):
     usage = '''\
-Usage: %s [-v] [-f] [-s sev] [-i path]* [path]
+Usage: {0!s} [-v] [-f] [-s sev] [-i path]* [path]
 
 Options:  -v       verbose (print all checked file names)
           -f       enable checkers that yield many false positives
           -s sev   only show problems with severity >= sev
           -i path  ignore subdir or file path
-''' % argv[0]
+'''.format(argv[0])
     try:
         gopts, args = getopt.getopt(argv[1:], 'vfs:i:')
     except getopt.GetoptError:
@@ -165,7 +165,7 @@ Options:  -v       verbose (print all checked file names)
         return 2
 
     if not exists(path):
-        print 'Error: path %s does not exist' % path
+        print 'Error: path {0!s} does not exist'.format(path)
         return 2
 
     count = defaultdict(int)
@@ -196,13 +196,13 @@ Options:  -v       verbose (print all checked file names)
                 continue
 
             if verbose:
-                print 'Checking %s...' % fn
+                print 'Checking {0!s}...'.format(fn)
 
             try:
                 with open(fn, 'r') as f:
                     lines = list(f)
             except (IOError, OSError), err:
-                print '%s: cannot open: %s' % (fn, err)
+                print '{0!s}: cannot open: {1!s}'.format(fn, err)
                 count[4] += 1
                 continue
 
@@ -212,20 +212,19 @@ Options:  -v       verbose (print all checked file names)
                 csev = checker.severity
                 if csev >= severity:
                     for lno, msg in checker(fn, lines):
-                        print >>out, '[%d] %s:%d: %s' % (csev, fn, lno, msg)
+                        print >>out, '[{0:d}] {1!s}:{2:d}: {3!s}'.format(csev, fn, lno, msg)
                         count[csev] += 1
     if verbose:
         print
     if not count:
         if severity > 1:
-            print 'No problems with severity >= %d found.' % severity
+            print 'No problems with severity >= {0:d} found.'.format(severity)
         else:
             print 'No problems found.'
     else:
         for severity in sorted(count):
             number = count[severity]
-            print '%d problem%s with severity %d found.' % \
-                  (number, number > 1 and 's' or '', severity)
+            print '{0:d} problem{1!s} with severity {2:d} found.'.format(number, number > 1 and 's' or '', severity)
     return int(bool(count))
 
 

@@ -288,7 +288,7 @@ class HTTPEntity(object):
         self.metadata=metadata
 
     def __repr__(self):
-        return 'HTTPEntity(%s, %s)'%(repr(self.entity), self.metadata)
+        return 'HTTPEntity({0!s}, {1!s})'.format(repr(self.entity), self.metadata)
 
     def __str__(self):
         return self.entity

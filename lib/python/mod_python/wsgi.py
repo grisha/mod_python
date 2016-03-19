@@ -47,8 +47,7 @@ def handler(req):
 
     if not app:
         req.log_error(
-            'WSGI handler: mod_python.wsgi.application (%s) not found, declining.'
-            % repr(app_str), apache.APLOG_WARNING)
+            'WSGI handler: mod_python.wsgi.application ({0!s}) not found, declining.'.format(repr(app_str)), apache.APLOG_WARNING)
         return apache.DECLINED
 
     ## Build env
@@ -60,8 +59,7 @@ def handler(req):
         # was Location, then it must be mod_python.wsgi.base_uri.
         base_uri = options.get('mod_python.wsgi.base_uri')
         req.log_error(
-            "WSGI handler: req.uri (%s) does not start with mod_python.wsgi.base_uri (%s), declining."
-            % (repr(req.uri), repr(base_uri)), apache.APLOG_WARNING)
+            "WSGI handler: req.uri ({0!s}) does not start with mod_python.wsgi.base_uri ({1!s}), declining.".format(repr(req.uri), repr(base_uri)), apache.APLOG_WARNING)
         return apache.DECLINED
 
     ## Run the app

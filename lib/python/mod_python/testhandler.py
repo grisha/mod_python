@@ -54,7 +54,7 @@ def write_table(req,table):
     req.write('<table border="1">')
     req.write('<tr><th>Key</th><th>Value</th></tr>\n')
     for key in table:
-        req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+        req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
             key,
             table[key]
         ))
@@ -89,53 +89,53 @@ def handler(req):
 
     req.write('<h3>General information</h3>\n')
     req.write('<table border="1">\n')
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
         'Apache version',
         req.subprocess_env.get('SERVER_SOFTWARE')
     ))
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
         'Apache threaded MPM',
         (
             apache.mpm_query(apache.AP_MPMQ_IS_THREADED) and
-            'Yes, maximum %i threads / process'%
-            apache.mpm_query(apache.AP_MPMQ_MAX_THREADS)
+            'Yes, maximum {0:d} threads / process'.format(
+            apache.mpm_query(apache.AP_MPMQ_MAX_THREADS))
         ) or 'No (single thread MPM)'
     ))
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
         'Apache forked MPM',
         (
             apache.mpm_query(apache.AP_MPMQ_IS_FORKED) and
-            'Yes, maximum %i processes'%
-            apache.mpm_query(apache.AP_MPMQ_MAX_DAEMONS)
+            'Yes, maximum {0:d} processes'.format(
+            apache.mpm_query(apache.AP_MPMQ_MAX_DAEMONS))
         ) or 'No (single process MPM)'
     ))
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
         'Apache server root',
         apache.server_root()
     ))
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
         'Apache document root',
         req.document_root()
     ))
     if req.server.error_fname:
-        req.write('<tr><td><code>%s</code></td><td><code>%s</code> (<a href="?view_log=1" target="_new">view last 100 lines</a>)</td></tr>\n'%(
+        req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code> (<a href="?view_log=1" target="_new">view last 100 lines</a>)</td></tr>\n'.format(
             'Apache error log',
             os.path.join(apache.server_root(),req.server.error_fname)
         ))
     else:
-        req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+        req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
             'Apache error log',
             'None'
         ))
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
         'Python sys.version',
         sys.version
     ))
-    req.write('<tr><td><code>%s</code></td><td><pre>%s</pre></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><pre>{1!s}</pre></td></tr>\n'.format(
         'Python sys.path',
         '\n'.join(sys.path)
     ))
-    req.write('<tr><td><code>%s</code></td><td><code>%s</code></td></tr>\n'%(
+    req.write('<tr><td><code>{0!s}</code></td><td><code>{1!s}</code></td></tr>\n'.format(
         'Python interpreter name',
         req.interpreter
     ))

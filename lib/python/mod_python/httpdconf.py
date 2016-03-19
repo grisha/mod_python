@@ -37,14 +37,14 @@ class Directive:
 
     def __repr__(self):
         i = " " * self.indent
-        s = i + '%s(%s)' % (self.name, repr(self.val))
+        s = i + '{0!s}({1!s})'.format(self.name, repr(self.val))
         if self.flipslash:
             s = s.replace("\\", "/")
         return s
 
     def __str__(self):
         i = " " * self.indent
-        s = i + '%s %s\n' % (self.name, self.val)
+        s = i + '{0!s} {1!s}\n'.format(self.name, self.val)
         if self.flipslash:
             s = s.replace("\\", "/")
         return s
@@ -69,8 +69,8 @@ class Container:
         s = i + 'Container('
         for arg in self.args:
             arg.indent = self.indent + 4
-            s += "\n%s," % repr(arg)
-        s += "\n" + i + (self.only_if and ('    only_if=%s)' % repr(self.only_if)) or ')')
+            s += "\n{0!s},".format(repr(arg))
+        s += "\n" + i + (self.only_if and ('    only_if={0!s})'.format(repr(self.only_if))) or ')')
         return s
 
     def __str__(self):
@@ -79,7 +79,7 @@ class Container:
         s = ""
         for arg in self.args:
             arg.indent = self.indent
-            s += "%s" % str(arg)
+            s += "{0!s}".format(str(arg))
 
         return s
 
@@ -94,24 +94,24 @@ class ContainerTag:
 
     def __repr__(self):
         i = " " * self.indent
-        s = i + "%s(%s," % (self.tag, repr(self.attr))
+        s = i + "{0!s}({1!s},".format(self.tag, repr(self.attr))
         if self.flipslash:
             s = s.replace("\\", "/")
         for arg in self.args:
             arg.indent = self.indent + 4
-            s += "\n%s," % repr(arg)
+            s += "\n{0!s},".format(repr(arg))
         s += "\n" + i + ")"
         return s
 
     def __str__(self):
         i = " " * self.indent
-        s = i + "<%s %s>\n" % (self.tag, self.attr)
+        s = i + "<{0!s} {1!s}>\n".format(self.tag, self.attr)
         if self.flipslash:
             s = s.replace("\\", "/")
         for arg in self.args:
             arg.indent = self.indent + 2
-            s += "%s" % str(arg)
-        s += i + "</%s>\n" % self.tag
+            s += "{0!s}".format(str(arg))
+        s += i + "</{0!s}>\n".format(self.tag)
         return s
 
 class Comment:
@@ -123,7 +123,7 @@ class Comment:
     def __repr__(self):
         i = " " * self.indent
         lines = self.comment.splitlines()
-        s = i + "Comment(%s" % repr(lines[0]+"\n")
+        s = i + "Comment({0!s}".format(repr(lines[0]+"\n"))
         for line in lines[1:]:
             s += "\n        " + i + repr(line+"\n")
         s += ")"
@@ -133,7 +133,7 @@ class Comment:
         i = " " * self.indent
         s = ""
         for line in self.comment.splitlines():
-            s += i + '# %s\n' % line
+            s += i + '# {0!s}\n'.format(line)
         return s
 
 ## directives
@@ -396,7 +396,7 @@ def quote_if_space(s):
     # no spaces, but needs them otherwise,
     # TODO: Is this still true?
     if s.find(" ") != -1:
-        s = '"%s"' % s
+        s = '"{0!s}"'.format(s)
     return s
 
 def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="logs",
@@ -407,7 +407,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
 
     conf_path = os.path.join(server_root, conf, conf_name)
     if os.path.exists(conf_path) and not replace_config:
-        print('Error: %s already exists, aborting.' % repr(conf_path), file=sys.stderr)
+        print('Error: {0!s} already exists, aborting.'.format(repr(conf_path)), file=sys.stderr)
         return
 
     if createdirs:
@@ -416,29 +416,29 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
                         os.path.join(server_root, conf),
                         os.path.join(server_root, logs)]:
             if os.path.isdir(dirname):
-                print("Warning: directory %s already exists, continuing." % repr(dirname), file=sys.stderr)
+                print("Warning: directory {0!s} already exists, continuing.".format(repr(dirname)), file=sys.stderr)
             else:
-                print("Creating directory %s." % repr(dirname), file=sys.stderr)
+                print("Creating directory {0!s}.".format(repr(dirname)), file=sys.stderr)
                 os.mkdir(dirname)
 
         # try to find mime.types
         mime_types_dest = os.path.join(server_root, conf, 'mime.types')
         if os.path.isfile(mime_types_dest):
-            print("Warning: file %s already exists, continuing." % repr(mime_types_dest), file=sys.stderr)
+            print("Warning: file {0!s} already exists, continuing.".format(repr(mime_types_dest)), file=sys.stderr)
         else:
             for mime_types_dir in [mod_python.version.SYSCONFDIR, '/etc']:
                 mime_types_src = os.path.join(mime_types_dir, 'mime.types')
                 if os.path.isfile(mime_types_src):
-                    print("Copying %s to %s" % (repr(mime_types_src), repr(mime_types_dest)), file=sys.stderr)
+                    print("Copying {0!s} to {1!s}".format(repr(mime_types_src), repr(mime_types_dest)), file=sys.stderr)
                     shutil.copy(mime_types_src, mime_types_dest)
                     break
 
     mime_types = os.path.join(conf, "mime.types")
     if not os.path.exists(os.path.join(server_root, mime_types)):
-        print("Warning: file %s does not exist." % repr(os.path.join(server_root, mime_types)), file=sys.stderr)
+        print("Warning: file {0!s} does not exist.".format(repr(os.path.join(server_root, mime_types))), file=sys.stderr)
 
     if not os.path.isdir(os.path.join(server_root, htdocs)):
-        print("Warning: %s does not exist or not a directory." % repr(os.path.join(server_root, htdocs)), file=sys.stderr)
+        print("Warning: {0!s} does not exist or not a directory.".format(repr(os.path.join(server_root, htdocs))), file=sys.stderr)
 
     modpath = mod_python.version.LIBEXECDIR
 
@@ -468,7 +468,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
         ['alias_module', 'mod_alias.so'],
         ]:
         modules.append(
-            LoadModule("%s %s" % (module[0], quote_if_space(os.path.join(modpath, module[1]))))
+            LoadModule("{0!s} {1!s}".format(module[0], quote_if_space(os.path.join(modpath, module[1]))))
             )
 
     main = Container(Comment("\nMain configuration options:\n\n"),
@@ -481,7 +481,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
                                only_if="mod_python.version.HTTPD_VERSION[0:3] < '2.4'"),
 
                      LogFormat(r'"%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined'),
-                     CustomLog("%s combined" % quote_if_space(os.path.join(logs, "access_log"))),
+                     CustomLog("{0!s} combined".format(quote_if_space(os.path.join(logs, "access_log")))),
                      ErrorLog(quote_if_space(os.path.join(logs, "error_log"))),
                      LogLevel("warn"),
 
@@ -500,7 +500,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
                      )
 
     mp = Container(Comment("\nmod_python-specific options:\n\n"),
-                   LoadModule("python_module %s" % quote_if_space(quote_if_space(os.path.join(modpath, 'mod_python.so')))),
+                   LoadModule("python_module {0!s}".format(quote_if_space(quote_if_space(os.path.join(modpath, 'mod_python.so'))))),
                    SetHandler("mod_python"),
                    Comment("PythonDebug On"),
                    PythonHandler(pythonhandler),
@@ -511,7 +511,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
         for p in pythonpath:
             pp += repr(p)+","
         pp += "]"
-        mp.append(PythonPath('"%s"' % pp))
+        mp.append(PythonPath('"{0!s}"'.format(pp)))
     for po in pythonoptions:
         mp.append(PythonOption(po))
     for c in mp_comments:
@@ -527,7 +527,7 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
     config.append(main)
     config.append(mp)
 
-    s = """#!%s
+    s = """#!{0!s}
 
 #
 # This config was auto-generated, but you can edit it!
@@ -535,11 +535,11 @@ def write_basic_config(server_root, listen='0.0.0.0:8888', conf="conf", logs="lo
 # running it. We recommend you run it like this:
 # $ mod_python genconfig <this filename> > <new apache confg>
 #\n
-""" % mod_python.version.PYTHON_BIN
+""".format(mod_python.version.PYTHON_BIN)
     s += "from mod_python.httpdconf import *\n\n"
     s += "config = " + repr(config)
     s += "\n\nprint(config)\n"
 
-    print("Writing %s." % repr(conf_path), file=sys.stderr)
+    print("Writing {0!s}.".format(repr(conf_path)), file=sys.stderr)
     open(conf_path, 'w').write(s)
     return conf_path
