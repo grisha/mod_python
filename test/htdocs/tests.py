@@ -410,7 +410,7 @@ class SimpleTestCase(unittest.TestCase):
         log = req.log_error
         log("req.get_get_remote_host(): {0!s}".format(repr(req.get_remote_host(apache.REMOTE_HOST))))
         log("req.get_get_remote_host(): {0!s}".format(repr(req.get_remote_host())))
-        if (req.get_remote_host(apache.REMOTE_HOST) != None) or \
+        if (req.get_remote_host(apache.REMOTE_HOST) is not None) or \
            (req.get_remote_host() != "127.0.0.1"):
             self.fail("remote host test failed: {0!s}".format(req.get_remote_host()))
 
