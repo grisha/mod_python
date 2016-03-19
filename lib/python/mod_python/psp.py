@@ -96,8 +96,10 @@ class PSP:
     code = None
     dbmcache = None
 
-    def __init__(self, req, filename=None, string=None, vars={}):
+    def __init__(self, req, filename=None, string=None, vars=None):
 
+        if vars is None:
+            vars = {}
         if (string and filename):
             raise ValueError("Must specify either filename or string")
 
@@ -195,8 +197,10 @@ class PSP:
 
         self.code = code
 
-    def run(self, vars={}, flush=0):
+    def run(self, vars=None, flush=0):
 
+        if vars is None:
+            vars = {}
         code, req = self.code, self.req
 
         # does this code use session?

@@ -79,7 +79,9 @@ class Field:
             self.__bc_init__(*args, **kwargs)
 
     def __bc_init__(self, file, ctype, type_options,
-                    disp, disp_options, headers = {}):
+                    disp, disp_options, headers = None):
+       if headers is None:
+          headers = {}
        self.file = file
        self.type = ctype
        self.type_options = type_options
