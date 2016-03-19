@@ -269,7 +269,7 @@ class BaseSession(dict):
 
     def load(self):
         dict = self.do_load()
-        if dict == None:
+        if dict is None:
             return 0
 
         if (time.time() - dict["_accessed"]) > dict["_timeout"]:

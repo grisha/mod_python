@@ -2263,7 +2263,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        if rsp != b"test ok" or setcookie == None:
+        if rsp != b"test ok" or setcookie is None:
             self.fail("session did not set a cookie")
 
         parts = setcookie.split('; ')
