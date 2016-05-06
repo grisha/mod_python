@@ -29,6 +29,8 @@ from cgi import escape
 import dbm, dbm
 import tempfile
 
+PY2 = sys.version[0] == '2'
+
 # dbm types for cache
 dbm_types = {}
 
@@ -268,7 +270,10 @@ class PSP:
                     # run error page
                     psp.error_page.run({"exception": (et, ev, etb)}, flush)
                 else:
-                    raise et(ev).with_traceback(etb)
+                    if PY2:
+                        raise et, ev, etb
+                    else:
+                        raise et(ev).with_traceback(etb)
         finally:
             # if session was created here, unlock it and don't leave
             # it behind in request object in unlocked state as it

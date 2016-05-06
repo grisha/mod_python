@@ -124,7 +124,7 @@ def _new_sid(req):
     g = _get_generator()
     rnd1 = g.randint(0, 999999999)
     rnd2 = g.randint(0, 999999999)
-    ip = req.connection.remote_ip
+    ip = req.connection.client_ip
 
     return md5_hash("%d%d%d%d%s" % (t, pid, rnd1, rnd2, ip))
 
@@ -338,9 +338,9 @@ def unlock_session_cleanup(sess):
 ## DbmSession
 
 def dbm_cleanup(data):
-    dbm, server = data
+    filename, server = data
     _apache._global_lock(server, None, 0)
-    db = dbm.open(dbm, 'c')
+    db = dbm.open(filename, 'c')
     try:
         old = []
         s = db.first()
