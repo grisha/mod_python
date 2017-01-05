@@ -700,6 +700,8 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
 
     const char *py_compile_version = PY_VERSION;
     const char *py_dynamic_version = 0;
+    int dots = 0;
+    int ok = 1;
 
     /* The "initialized" flag is a fudge for Mac OS X. It
      * addresses two issues. The first is that when an Apache
@@ -740,11 +742,25 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     /* mod_python version */
     ap_add_version_component(p, mp_version_component);
 
-    py_dynamic_version = strtok((char *)Py_GetVersion(), " ");
+    py_dynamic_version = Py_GetVersion();
+    for (const char *sv = py_compile_version, *dv = py_dynamic_version;
+         dots < 2; sv++, dv++) {
+        char c = *sv;
+        if (c != *dv) {
+            ok = 0;
+            break;
+        }
+        if (c == '.' || c == ' ') {
+            dots++;
+        } else if (c == '\0') {
+            dots += 2;
+        }
+    }
 
-    if (strcmp(py_compile_version, py_dynamic_version) != 0) {
+    if (!ok) {
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python version mismatch, expected '%s', found '%s'.",
+                     "python_init: Python major/minor version mismatch, "
+                     "expected '%s', found '%s'.",
                      py_compile_version, py_dynamic_version);
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
                      "python_init: Python executable found '%s'.",
