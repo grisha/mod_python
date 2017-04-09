@@ -350,7 +350,7 @@ def _parse_cookie(str, Class, names=None):
 
         # We just ditch the cookies names which start with a dollar sign since
         # those are in fact RFC2965 cookies attributes. See bug [#MODPYTHON-3].
-        if key[0]!='$' and names is None or key in names:
+        if key[0]!='$' and (names is None or key in names):
             result[key] = Class(key, val)
 
     return result
