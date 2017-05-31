@@ -98,8 +98,10 @@ class PSP:
     code = None
     dbmcache = None
 
-    def __init__(self, req, filename=None, string=None, vars={}):
+    def __init__(self, req, filename=None, string=None, vars=None):
 
+        if vars is None:
+            vars = {}
         if (string and filename):
             raise ValueError("Must specify either filename or string")
 
@@ -197,8 +199,10 @@ class PSP:
 
         self.code = code
 
-    def run(self, vars={}, flush=0):
+    def run(self, vars=None, flush=0):
 
+        if vars is None:
+            vars = {}
         code, req = self.code, self.req
 
         # does this code use session?
@@ -309,8 +313,8 @@ class PSP:
 
         req.write("<table>\n<tr>")
         for s in ("", "&nbsp;PSP-produced Python Code:",
-                  "&nbsp;%s:" % filename):
-            req.write("<td><tt>%s</tt></td>" % s)
+                  "&nbsp;{0!s}:".format(filename)):
+            req.write("<td><tt>{0!s}</tt></td>".format(s))
         req.write("</tr>\n")
 
         n = 1
@@ -321,10 +325,10 @@ class PSP:
                 right = ""
             else:
                 right = escape(source[n-1]).replace("\t", " "*4).replace(" ", "&nbsp;")
-            for s in ("%d.&nbsp;" % n,
-                      "<font color=blue>%s</font>" % left,
-                      "&nbsp;<font color=green>%s</font>" % right):
-                req.write("<td><tt>%s</tt></td>" % s)
+            for s in ("{0:d}.&nbsp;".format(n),
+                      "<font color=blue>{0!s}</font>".format(left),
+                      "&nbsp;<font color=green>{0!s}</font>".format(right)):
+                req.write("<td><tt>{0!s}</tt></td>".format(s))
             req.write("</tr>\n")
 
             n += 1
@@ -396,7 +400,7 @@ def dbm_cache_store(srv, dbmfile, filename, mtime, val):
     _apache._global_lock(srv, None, 0)
     try:
         dbm = dbm_type.open(dbmfile, 'c')
-        dbm[filename] = "%d %s" % (mtime, code2str(val))
+        dbm[filename] = "{0:d} {1!s}".format(mtime, code2str(val))
     finally:
         try: dbm.close()
         except: pass

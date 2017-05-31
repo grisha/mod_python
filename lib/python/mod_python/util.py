@@ -79,7 +79,9 @@ class Field:
             self.__bc_init__(*args, **kwargs)
 
     def __bc_init__(self, file, ctype, type_options,
-                    disp, disp_options, headers = {}):
+                    disp, disp_options, headers = None):
+       if headers is None:
+          headers = {}
        self.file = file
        self.type = ctype
        self.type_options = type_options
@@ -93,7 +95,7 @@ class Field:
 
     def __repr__(self):
         """Return printable representation."""
-        return "Field(%s, %s)" % (repr(self.name), repr(self.value))
+        return "Field({0!s}, {1!s})".format(repr(self.name), repr(self.value))
 
     def __getattr__(self, name):
         if name != 'value':
@@ -140,7 +142,7 @@ if PY2:
 
         def __repr__(self):
             """Return printable representation (to pass unit tests)."""
-            return "Field(%s, %s)" % (repr(self.name), repr(self.value))
+            return "Field({0!s}, {1!s})".format(repr(self.name), repr(self.value))
 else:
     class StringField(bytes):
         """ This class is basically a string with
@@ -169,7 +171,7 @@ else:
 
         def __repr__(self):
             """Return printable representation (to pass unit tests)."""
-            return "Field(%s, %s)" % (repr(self.name), repr(self.value))
+            return "Field({0!s}, {1!s})".format(repr(self.name), repr(self.value))
 
 class FieldList(list):
 

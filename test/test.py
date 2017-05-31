@@ -138,7 +138,7 @@ else:
         else:
             if os.path.isdir(value):
                 return True
-        print('Bad value for mod_python.version.%s : %s'%(
+        print('Bad value for mod_python.version.{0!s} : {1!s}'.format(
             variable,
             value
         ))
@@ -249,7 +249,7 @@ def get_apache_version():
 
     print("Checking Apache version....")
     httpd = quote_if_space(HTTPD)
-    stdout = getoutput('%s -v' % (httpd))
+    stdout = getoutput('{0!s} -v'.format((httpd)))
 
     version_str = None
     for line in stdout.splitlines():
@@ -260,7 +260,7 @@ def get_apache_version():
     if version_str:
         version_str = version_str.split('/')[1]
         major,minor,patch = version_str.split('.',3)
-        version = '%s.%s' % (major,minor)
+        version = '{0!s}.{1!s}'.format(major, minor)
     else:
 
         print("Can't determine Apache version. Assuming 2.0")
@@ -270,8 +270,7 @@ def get_apache_version():
 
 APACHE_VERSION = get_apache_version()
 if not mod_python.version.HTTPD_VERSION.startswith(APACHE_VERSION):
-    print("ERROR: Build version %s does not match version reported by %s: %s, re-run ./configure?" % \
-        (mod_python.version.HTTPD_VERSION, HTTPD, APACHE_VERSION))
+    print("ERROR: Build version {0!s} does not match version reported by {1!s}: {2!s}, re-run ./configure?".format(mod_python.version.HTTPD_VERSION, HTTPD, APACHE_VERSION))
     sys.exit()
 
 class HttpdCtrl:
@@ -335,17 +334,17 @@ class HttpdCtrl:
                      ThreadsPerChild("5"),
                      MaxRequestsPerChild("0")),
             IfModule("!mod_mime.c",
-                     LoadModule("mime_module %s" %
-                                quote_if_space(os.path.join(modpath, "mod_mime.so")))),
+                     LoadModule("mime_module {0!s}".format(
+                                quote_if_space(os.path.join(modpath, "mod_mime.so"))))),
             IfModule("!mod_log_config.c",
-                     LoadModule("log_config_module %s" %
-                                quote_if_space(os.path.join(modpath, "mod_log_config.so")))),
+                     LoadModule("log_config_module {0!s}".format(
+                                quote_if_space(os.path.join(modpath, "mod_log_config.so"))))),
             IfModule("!mod_dir.c",
-                     LoadModule("dir_module %s" %
-                                quote_if_space(os.path.join(modpath, "mod_dir.so")))),
+                     LoadModule("dir_module {0!s}".format(
+                                quote_if_space(os.path.join(modpath, "mod_dir.so"))))),
             IfModule("!mod_include.c",
-                     LoadModule("include_module %s" %
-                                quote_if_space(os.path.join(modpath, "mod_include.so")))),
+                     LoadModule("include_module {0!s}".format(
+                                quote_if_space(os.path.join(modpath, "mod_include.so"))))),
             ServerRoot(SERVER_ROOT),
             ErrorLog("logs/error_log"),
             LogLevel("debug"),
@@ -356,10 +355,10 @@ class HttpdCtrl:
             ServerName("127.0.0.1"),
             Listen(PORT),
             Timeout(60),
-            PythonOption('mod_python.mutex_directory %s' % TMP_DIR),
+            PythonOption('mod_python.mutex_directory {0!s}'.format(TMP_DIR)),
             PythonOption('PythonOptionTest sample_value'),
             DocumentRoot(DOCUMENT_ROOT),
-            LoadModule("python_module %s" % quote_if_space(MOD_PYTHON_SO)))
+            LoadModule("python_module {0!s}".format(quote_if_space(MOD_PYTHON_SO))))
 
         if APACHE_VERSION == '2.4':
             s.append(Mutex("file:logs"))
@@ -368,34 +367,34 @@ class HttpdCtrl:
 
         if APACHE_VERSION == '2.4':
             s.append(IfModule("!mod_unixd.c",
-                              LoadModule("unixd_module %s" %
-                                         quote_if_space(os.path.join(modpath, "mod_unixd.so")))))
+                              LoadModule("unixd_module {0!s}".format(
+                                         quote_if_space(os.path.join(modpath, "mod_unixd.so"))))))
             s.append(IfModule("!mod_authn_core.c",
-                              LoadModule("authn_core_module %s" %
-                                         quote_if_space(os.path.join(modpath, "mod_authn_core.so")))))
+                              LoadModule("authn_core_module {0!s}".format(
+                                         quote_if_space(os.path.join(modpath, "mod_authn_core.so"))))))
             s.append(IfModule("!mod_authz_core.c",
-                              LoadModule("authz_core_module %s" %
-                                         quote_if_space(os.path.join(modpath, "mod_authz_core.so")))))
+                              LoadModule("authz_core_module {0!s}".format(
+                                         quote_if_space(os.path.join(modpath, "mod_authz_core.so"))))))
             s.append(IfModule("!mod_authn_file.c",
-                              LoadModule("authn_file_module %s" %
-                                         quote_if_space(os.path.join(modpath, "mod_authn_file.so")))))
+                              LoadModule("authn_file_module {0!s}".format(
+                                         quote_if_space(os.path.join(modpath, "mod_authn_file.so"))))))
             s.append(IfModule("!mod_authz_user.c",
-                              LoadModule("authz_user_module %s" %
-                                         quote_if_space(os.path.join(modpath, "mod_authz_user.so")))))
+                              LoadModule("authz_user_module {0!s}".format(
+                                         quote_if_space(os.path.join(modpath, "mod_authz_user.so"))))))
 
         if APACHE_VERSION in ['2.2', '2.4']:
             # mod_auth has been split into mod_auth_basic and some other modules
             s.append(IfModule("!mod_auth_basic.c",
-                     LoadModule("auth_basic_module %s" %
-                                quote_if_space(os.path.join(modpath, "mod_auth_basic.so")))))
+                     LoadModule("auth_basic_module {0!s}".format(
+                                quote_if_space(os.path.join(modpath, "mod_auth_basic.so"))))))
 
             # Default KeepAliveTimeout is 5 for apache 2.2, but 15 in apache 2.0
             # Explicitly set the value so it's the same as 2.0
             s.append(KeepAliveTimeout("15"))
         else:
             s.append(IfModule("!mod_auth.c",
-                     LoadModule("auth_module %s" %
-                                quote_if_space(os.path.join(modpath, "mod_auth.so")))))
+                     LoadModule("auth_module {0!s}".format(
+                                quote_if_space(os.path.join(modpath, "mod_auth.so"))))))
 
 
         s.append(Comment(" --APPENDED--"))
@@ -410,7 +409,7 @@ class HttpdCtrl:
         print("  Starting Apache....")
         httpd = quote_if_space(HTTPD)
         config = quote_if_space(CONFIG)
-        cmd = '%s %s -k start -f %s' % (httpd, extra, config)
+        cmd = '{0!s} {1!s} -k start -f {2!s}'.format(httpd, extra, config)
         print("    ", cmd)
         os.system(cmd)
         time.sleep(1)
@@ -421,7 +420,7 @@ class HttpdCtrl:
         print("  Stopping Apache...")
         httpd = quote_if_space(HTTPD)
         config = quote_if_space(CONFIG)
-        cmd = '%s -k stop -f %s' % (httpd, config)
+        cmd = '{0!s} -k stop -f {1!s}'.format(httpd, config)
         print("    ", cmd)
         os.system(cmd)
         time.sleep(1)
@@ -460,13 +459,13 @@ class PerRequestTestCase(unittest.TestCase):
     def vhost_get(self, vhost, path="/tests.py"):
 
         # this is so that tests could easily be staged with curl
-        curl = "curl --verbose --header 'Host: %s' http://127.0.0.1:%s%s" % (vhost, PORT, path)
-        print("    $ %s" % curl)
+        curl = "curl --verbose --header 'Host: {0!s}' http://127.0.0.1:{1!s}{2!s}".format(vhost, PORT, path)
+        print("    $ {0!s}".format(curl))
 
         # allows to specify a custom host: header
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", path, skip_host=1)
-        conn.putheader("Host", "%s:%s" % (vhost, PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format(vhost, PORT))
         conn.endheaders()
         response = conn.getresponse()
         if PY2:
@@ -477,11 +476,15 @@ class PerRequestTestCase(unittest.TestCase):
 
         return rsp
 
-    def vhost_post_multipart_form_data(self, vhost, path="/tests.py",variables={}, files={}):
+    def vhost_post_multipart_form_data(self, vhost, path="/tests.py",variables=None, files=None):
         # variables is a { name : value } dict
         # files is a { name : (filename, content) } dict
 
         # build the POST entity
+        if variables is None:
+            variables = {}
+        if files is None:
+            files = {}
         if PY2:
             entity = StringIO()
             boundary = "============="+''.join( [ random.choice('0123456789') for x in range(10) ] )+'=='
@@ -496,7 +499,7 @@ class PerRequestTestCase(unittest.TestCase):
             entity.write(boundary)
             entity.write('\r\n')
             entity.write('Content-Type: text/plain\r\n')
-            entity.write('Content-Disposition: form-data;\r\n name="%s"\r\n' % name)
+            entity.write('Content-Disposition: form-data;\r\n name="{0!s}"\r\n'.format(name))
             entity.write('\r\n')
             entity.write(str(value))
             entity.write('\r\n')
@@ -517,7 +520,7 @@ class PerRequestTestCase(unittest.TestCase):
             entity.write(boundary)
             entity.write('\r\n')
             entity.write('Content-Type: application/octet-stream\r\n')
-            entity.write('Content-Disposition: form-data; name="%s"; filename="%s"\r\n' % (name, filename))
+            entity.write('Content-Disposition: form-data; name="{0!s}"; filename="{1!s}"\r\n'.format(name, filename))
             entity.write('\r\n')
             entity.write(content)
             entity.write('\r\n')
@@ -533,12 +536,12 @@ class PerRequestTestCase(unittest.TestCase):
         else:
             entity = bio.getvalue()
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         #conn.set_debuglevel(1000)
         conn.putrequest("POST", path, skip_host=1)
-        conn.putheader("Host", "%s:%s" % (vhost, PORT))
-        conn.putheader("Content-Type", 'multipart/form-data; boundary="%s"' % boundary)
-        conn.putheader("Content-Length", '%s'%(len(entity)))
+        conn.putheader("Host", "{0!s}:{1!s}".format(vhost, PORT))
+        conn.putheader("Content-Type", 'multipart/form-data; boundary="{0!s}"'.format(boundary))
+        conn.putheader("Content-Length", '{0!s}'.format((len(entity))))
         conn.endheaders()
 
         start = time.time()
@@ -546,7 +549,7 @@ class PerRequestTestCase(unittest.TestCase):
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
-        print('    --> Send + process + receive took %.3f s'%(time.time()-start))
+        print('    --> Send + process + receive took {0:.3f} s'.format((time.time()-start)))
 
         return rsp
 
@@ -720,9 +723,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.allow_methods()")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_allow_methods", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_allow_methods", PORT))
         conn.endheaders()
         response = conn.getresponse()
         server_hdr = response.getheader("Allow", "")
@@ -760,14 +763,14 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing whether returning HTTP_UNAUTHORIZED works")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_unauthorized", PORT))
         auth = base64.encodestring(b"spam:eggs").strip()
         if PY2:
-            conn.putheader("Authorization", "Basic %s" % auth)
+            conn.putheader("Authorization", "Basic {0!s}".format(auth))
         else:
-            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+            conn.putheader("Authorization", "Basic {0!s}".format(auth.decode("latin1")))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -776,21 +779,21 @@ class PerRequestTestCase(unittest.TestCase):
         if (rsp != b"test ok"):
             self.fail(repr(rsp))
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_unauthorized", PORT))
         auth = base64.encodestring(b"spam:BAD PASSWD").strip()
         if PY2:
-            conn.putheader("Authorization", "Basic %s" % auth)
+            conn.putheader("Authorization", "Basic {0!s}".format(auth))
         else:
-            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+            conn.putheader("Authorization", "Basic {0!s}".format(auth.decode("latin1")))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
         if response.status != UNAUTHORIZED:
-            self.fail("req.status is not httplib.UNAUTHORIZED, but: %s" % repr(response.status))
+            self.fail("req.status is not httplib.UNAUTHORIZED, but: {0!s}".format(repr(response.status)))
 
         if rsp == b"test ok":
             self.fail("We were supposed to get HTTP_UNAUTHORIZED")
@@ -825,14 +828,14 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.get_basic_auth_pw()")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_get_basic_auth_pw", PORT))
         auth = base64.encodestring(b"spam:eggs").strip()
         if PY2:
-            conn.putheader("Authorization", "Basic %s" % auth)
+            conn.putheader("Authorization", "Basic {0!s}".format(auth))
         else:
-            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+            conn.putheader("Authorization", "Basic {0!s}".format(auth.decode("latin1")))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -848,14 +851,14 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.get_basic_auth_pw_latin1()")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_get_basic_auth_pw", PORT))
         auth = base64.encodestring(b'sp\xe1m:\xe9ggs').strip()
         if PY2:
-            conn.putheader("Authorization", "Basic %s" % auth)
+            conn.putheader("Authorization", "Basic {0!s}".format(auth))
         else:
-            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+            conn.putheader("Authorization", "Basic {0!s}".format(auth.decode("latin1")))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -884,9 +887,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.auth_type()")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_auth_type", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_auth_type", PORT))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -916,14 +919,14 @@ class PerRequestTestCase(unittest.TestCase):
 
         rsp = self.vhost_get("test_req_requires")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_requires", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_requires", PORT))
         auth = base64.encodestring(b"spam:eggs").strip()
         if PY2:
-            conn.putheader("Authorization", "Basic %s" % auth)
+            conn.putheader("Authorization", "Basic {0!s}".format(auth))
         else:
-            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+            conn.putheader("Authorization", "Basic {0!s}".format(auth.decode("latin1")))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -988,10 +991,10 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing req.read()")
 
         params = b'1234567890'*10000
-        print("    writing %d bytes..." % len(params))
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        print("    writing {0:d} bytes...".format(len(params)))
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_read:%s" % PORT)
+        conn.putheader("Host", "test_req_read:{0!s}".format(PORT))
         conn.putheader("Content-Length", str(len(params)))
         conn.endheaders()
         conn.send(params)
@@ -999,14 +1002,14 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        print("    response size: %d\n" % len(rsp))
+        print("    response size: {0:d}\n".format(len(rsp)))
         if (rsp != params):
             self.fail(repr(rsp))
 
         print("    read/write ok, now lets try causing a timeout (should be 5 secs)")
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_read:%s" % PORT)
+        conn.putheader("Host", "test_req_read:{0!s}".format(PORT))
         conn.putheader("Content-Length", str(10))
         conn.endheaders()
         conn.send(b"123456789")
@@ -1034,10 +1037,10 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing req.readline()")
 
         params = (b'1234567890'*3000+b'\n')*4
-        print("    writing %d bytes..." % len(params))
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        print("    writing {0:d} bytes...".format(len(params)))
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_readline:%s" % PORT)
+        conn.putheader("Host", "test_req_readline:{0!s}".format(PORT))
         conn.putheader("Content-Length", str(len(params)))
         conn.endheaders()
         conn.send(params)
@@ -1045,7 +1048,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        print("    response size: %d\n" % len(rsp))
+        print("    response size: {0:d}\n".format(len(rsp)))
         if (rsp != params):
             self.fail(repr(rsp))
 
@@ -1065,10 +1068,10 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing req.readlines()")
 
         params = (b'1234567890'*3000+b'\n')*4
-        print("    writing %d bytes..." % len(params))
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        print("    writing {0:d} bytes...".format(len(params)))
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_readlines:%s" % PORT)
+        conn.putheader("Host", "test_req_readlines:{0!s}".format(PORT))
         conn.putheader("Content-Length", str(len(params)))
         conn.endheaders()
         conn.send(params)
@@ -1076,17 +1079,17 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        print("    response size: %d\n" % len(rsp))
+        print("    response size: {0:d}\n".format(len(rsp)))
         if (rsp != params):
             self.fail(repr(rsp))
 
         print("\n  * Testing req.readlines(size_hint=30000)")
 
         params = (b'1234567890'*3000+b'\n')*4
-        print("    writing %d bytes..." % len(params))
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        print("    writing {0:d} bytes...".format(len(params)))
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_readlines:%s" % PORT)
+        conn.putheader("Host", "test_req_readlines:{0!s}".format(PORT))
         conn.putheader("Content-Length", str(len(params)))
         conn.putheader("SizeHint", str(30000))
         conn.endheaders()
@@ -1095,17 +1098,17 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        print("    response size: %d\n" % len(rsp))
+        print("    response size: {0:d}\n".format(len(rsp)))
         if (rsp != (b'1234567890'*3000+b'\n')):
             self.fail(repr(rsp))
 
         print("\n  * Testing req.readlines(size_hint=32000)")
 
         params = (b'1234567890'*3000+b'\n')*4
-        print("    writing %d bytes..." % len(params))
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        print("    writing {0:d} bytes...".format(len(params)))
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("POST", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_readlines:%s" % PORT)
+        conn.putheader("Host", "test_req_readlines:{0!s}".format(PORT))
         conn.putheader("Content-Length", str(len(params)))
         conn.putheader("SizeHint", str(32000))
         conn.endheaders()
@@ -1114,7 +1117,7 @@ class PerRequestTestCase(unittest.TestCase):
         rsp = response.read()
         conn.close()
 
-        print("    response size: %d\n" % len(rsp))
+        print("    response size: {0:d}\n".format(len(rsp)))
         if (rsp != ((b'1234567890'*3000+b'\n')*2)):
             self.fail(repr(rsp))
 
@@ -1135,10 +1138,10 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing req.discard_request_body()")
 
         params = b'1234567890'*2
-        print("    writing %d bytes..." % len(params))
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        print("    writing {0:d} bytes...".format(len(params)))
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_req_discard_request_body:%s" % PORT)
+        conn.putheader("Host", "test_req_discard_request_body:{0!s}".format(PORT))
         conn.putheader("Content-Length", str(len(params)))
         conn.endheaders()
         conn.send(params)
@@ -1189,9 +1192,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.headers_out")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/test.py", skip_host=1)
-        conn.putheader("Host", "test_req_headers_out:%s" % PORT)
+        conn.putheader("Host", "test_req_headers_out:{0!s}".format(PORT))
         conn.endheaders()
         response = conn.getresponse()
         h = response.getheader("x-test-header", None)
@@ -1285,9 +1288,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.handler")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_handler", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_handler", PORT))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -1311,9 +1314,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.no_cache")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_no_cache", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_no_cache", PORT))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -1340,9 +1343,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing req.update_mtime")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_req_update_mtime", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_req_update_mtime", PORT))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -1372,16 +1375,16 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing util.redirect()")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_util_redirect", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_util_redirect", PORT))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
 
         if response.status != 302:
-            self.fail('did not receive 302 status response: %s' % repr(response.status))
+            self.fail('did not receive 302 status response: {0!s}'.format(repr(response.status)))
 
         if response.getheader("location", None) != "/dummy":
             self.fail('did not receive correct location for redirection')
@@ -1459,7 +1462,7 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail('1 MB file upload failed, its contents were corrupted. Expected (%s), got (%s)' % (repr(digest), repr(rsp)))
+            self.fail('1 MB file upload failed, its contents were corrupted. Expected ({0!s}), got ({1!s})'.format(repr(digest), repr(rsp)))
 
     def test_fileupload_embedded_cr_conf(self):
 
@@ -1495,7 +1498,7 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail('file upload embedded \\r test failed, its contents were corrupted (%s)'%rsp)
+            self.fail('file upload embedded \\r test failed, its contents were corrupted ({0!s})'.format(rsp))
 
         # The UNIX-HATERS handbook illustrates this problem. Once we've done some additional
         # investigation to make sure that our synthetic file used above is correct,
@@ -1524,7 +1527,7 @@ class PerRequestTestCase(unittest.TestCase):
 
 
             if (rsp != digest):
-                self.fail('The UNIX-HATERS handbook file upload failed, its contents was corrupted (%s)'%rsp)
+                self.fail('The UNIX-HATERS handbook file upload failed, its contents was corrupted ({0!s})'.format(rsp))
 
     def test_fileupload_split_boundary_conf(self):
 
@@ -1565,7 +1568,7 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail('file upload long line test failed, its contents were corrupted (%s)'%rsp)
+            self.fail('file upload long line test failed, its contents were corrupted ({0!s})'.format(rsp))
 
         print("  * Testing file upload where length of last line == readBlockSize - 1 with an extra \\r")
 
@@ -1583,7 +1586,7 @@ class PerRequestTestCase(unittest.TestCase):
         )
 
         if (rsp != digest):
-            self.fail('file upload long line test failed, its contents were corrupted (%s)'%rsp)
+            self.fail('file upload long line test failed, its contents were corrupted ({0!s})'.format(rsp))
 
     def test_sys_argv_conf(self):
 
@@ -1783,7 +1786,7 @@ class PerRequestTestCase(unittest.TestCase):
         headers = {"Host": "test_util_fieldstorage",
                    "Content-type": "application/x-www-form-urlencoded",
                    "Accept": "text/plain"}
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.request("POST", "/tests.py", params, headers)
         response = conn.getresponse()
         rsp = response.read()
@@ -1799,7 +1802,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_postreadrequest"),
                         DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("mod_python"),
-                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                         PythonPostReadRequestHandler("tests::postreadrequest"),
                         PythonDebug("On"))
         return c
@@ -1818,7 +1821,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_trans"),
                         DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("mod_python"),
-                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                         PythonTransHandler("tests::trans"),
                         PythonDebug("On"))
         return c
@@ -1834,7 +1837,7 @@ class PerRequestTestCase(unittest.TestCase):
     def test_import_conf(self):
 
         # configure apache to import it at startup
-        c = Container(PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+        c = Container(PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                       PythonImport("dummymodule test_import"),
                       PythonImport("dummymodule::function test_import"),
                       VirtualHost("*",
@@ -1860,7 +1863,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_outputfilter"),
                         DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("mod_python"),
-                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                         PythonHandler("tests::simplehandler"),
                         PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
                         PythonDebug("On"),
@@ -1881,7 +1884,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_add_output_filter"),
                         DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("mod_python"),
-                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                         PythonHandler("tests::req_add_output_filter"),
                         PythonOutputFilter("tests::outputfilter MP_TEST_FILTER"),
                         PythonDebug("On"))
@@ -1901,7 +1904,7 @@ class PerRequestTestCase(unittest.TestCase):
                         ServerName("test_req_register_output_filter"),
                         DocumentRoot(DOCUMENT_ROOT),
                         SetHandler("mod_python"),
-                        PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                        PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                         PythonHandler("tests::req_register_output_filter"),
                         PythonDebug("On"))
         return c
@@ -1922,18 +1925,18 @@ class PerRequestTestCase(unittest.TestCase):
             localip = "127.0.0.1"
 
         self.conport = findUnusedPort()
-        c = Container(Listen("%d" % self.conport),
-                      VirtualHost("%s:%d" % (localip, self.conport),
+        c = Container(Listen("{0:d}".format(self.conport)),
+                      VirtualHost("{0!s}:{1:d}".format(localip, self.conport),
                                   SetHandler("mod_python"),
-                                  PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                                  PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                                   PythonConnectionHandler("tests::connectionhandler")))
         return c
 
     def test_connectionhandler(self):
 
-        print("\n  * Testing PythonConnectionHandler on port %d" % self.conport)
+        print("\n  * Testing PythonConnectionHandler on port {0:d}".format(self.conport))
 
-        url = "http://127.0.0.1:%s/tests.py" % self.conport
+        url = "http://127.0.0.1:{0!s}/tests.py".format(self.conport)
         f = urlopen(url)
         if PY2:
             rsp = f.read()
@@ -2027,7 +2030,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Location("/foo",
                                  SetHandler("mod_python"),
                                  PythonHandler("mod_python.wsgi"),
-                                 PythonPath("[r'%s']+sys.path" % DOCUMENT_ROOT),
+                                 PythonPath("[r'{0!s}']+sys.path".format(DOCUMENT_ROOT)),
                                  PythonOption("mod_python.wsgi.application wsgitest::base_uri"),
                                  PythonDebug("On")))
         return c
@@ -2121,7 +2124,7 @@ class PerRequestTestCase(unittest.TestCase):
             #print 'expect{%s} got{%s}' % (expected_result, test_string)
 
         if failures:
-            msg = 'psp_parser parse errors for: %s' % (', '.join(failures))
+            msg = 'psp_parser parse errors for: {0!s}'.format((', '.join(failures)))
             self.fail(msg)
 
     def test_psp_error_conf(self):
@@ -2132,7 +2135,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("mod_python.psp"),
-                                  PythonOption('mod_python.session.database_directory "%s"' % TMP_DIR),
+                                  PythonOption('mod_python.session.database_directory "{0!s}"'.format(TMP_DIR)),
                                   PythonDebug("On")))
         return c
 
@@ -2160,10 +2163,10 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing Cookie.Cookie")
 
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/testz.py", skip_host=1)
         # this is three cookies, nastily formatted
-        conn.putheader("Host", "test_Cookie_Cookie:%s" % PORT)
+        conn.putheader("Host", "test_Cookie_Cookie:{0!s}".format(PORT))
         conn.putheader("Cookie", "spam=foo; path=blah;;eggs=bar;")
         conn.putheader("Cookie", "bar=foo")
         conn.endheaders()
@@ -2197,9 +2200,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         mc = "eggs=d049b2b61adb6a1d895646719a3dc30bcwQAAABzcGFt"
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/testz.py", skip_host=1)
-        conn.putheader("Host", "test_Cookie_MarshalCookie:%s" % PORT)
+        conn.putheader("Host", "test_Cookie_MarshalCookie:{0!s}".format(PORT))
         conn.putheader("Cookie", mc)
         conn.endheaders()
         response = conn.getresponse()
@@ -2218,9 +2221,9 @@ class PerRequestTestCase(unittest.TestCase):
              'mcgbG9uZyBsb25nIGxvbmcgc28gbG9uZyBidXQgd2UnbG'
              'wgZmluaXNoIGl0IHNvb24=')
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/testz.py", skip_host=1)
-        conn.putheader("Host", "test_Cookie_MarshalCookie:%s" % PORT)
+        conn.putheader("Host", "test_Cookie_MarshalCookie:{0!s}".format(PORT))
         conn.putheader("Cookie", mc)
         conn.endheaders()
         response = conn.getresponse()
@@ -2240,7 +2243,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::Session_Session"),
-                                  PythonOption('mod_python.session.database_directory "%s"' % TMP_DIR),
+                                  PythonOption('mod_python.session.database_directory "{0!s}"'.format(TMP_DIR)),
                                   PythonOption('mod_python.session.application_path "/path"'),
                                   PythonOption('mod_python.session.application_domain "test_Session_Session"'),
                                   PythonDebug("On")))
@@ -2250,17 +2253,17 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing Session.Session")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.putheader("Host", "test_Session_Session:{0!s}".format(PORT))
         conn.endheaders()
         response = conn.getresponse()
         setcookie = response.getheader("set-cookie", None)
         rsp = response.read()
         conn.close()
 
-        if rsp != b"test ok" or setcookie == None:
+        if rsp != b"test ok" or setcookie is None:
             self.fail("session did not set a cookie")
 
         parts = setcookie.split('; ')
@@ -2275,17 +2278,17 @@ class PerRequestTestCase(unittest.TestCase):
         if 'domain' not in fields or fields['domain'] != 'test_Session_Session':
             self.fail("session did not contain expected 'domain'")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.putheader("Host", "test_Session_Session:{0!s}".format(PORT))
         conn.putheader("Cookie", setcookie)
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
         conn.close()
         if rsp != b"test ok":
-            self.fail("session did not accept our cookie: %s" % repr(rsp))
+            self.fail("session did not accept our cookie: {0!s}".format(repr(rsp)))
 
     def test_Session_illegal_sid_conf(self):
 
@@ -2295,7 +2298,7 @@ class PerRequestTestCase(unittest.TestCase):
                         Directory(DOCUMENT_ROOT,
                                   SetHandler("mod_python"),
                                   PythonHandler("tests::Session_Session"),
-                                  PythonOption('mod_python.session.database_directory "%s"' % TMP_DIR),
+                                  PythonOption('mod_python.session.database_directory "{0!s}"'.format(TMP_DIR)),
                                   PythonDebug("On")))
         return c
 
@@ -2303,9 +2306,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing Session with illegal session id value")
         bad_cookie = 'pysid=/path/traversal/attack/bad; path=/'
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.putheader("Host", "test_Session_Session:{0!s}".format(PORT))
         conn.putheader("Cookie", bad_cookie)
         conn.endheaders()
         response = conn.getresponse()
@@ -2315,10 +2318,10 @@ class PerRequestTestCase(unittest.TestCase):
         if status != 200 or not setcookie:
             self.fail("session id with illegal characters not replaced")
 
-        bad_cookie = 'pysid=%s; path=/' % ('abcdef'*64)
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        bad_cookie = 'pysid={0!s}; path=/'.format(('abcdef'*64))
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_Session_Session:%s" % PORT)
+        conn.putheader("Host", "test_Session_Session:{0!s}".format(PORT))
         conn.putheader("Cookie", bad_cookie)
         conn.endheaders()
         response = conn.getresponse()
@@ -2363,9 +2366,9 @@ class PerRequestTestCase(unittest.TestCase):
 
         print("\n  * Testing None handler")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py", skip_host=1)
-        conn.putheader("Host", "test_none_handler:%s" % PORT)
+        conn.putheader("Host", "test_none_handler:{0!s}".format(PORT))
         conn.endheaders()
         response = conn.getresponse()
         status = response.status
@@ -2479,15 +2482,15 @@ class PerRequestTestCase(unittest.TestCase):
     def test_publisher_auth_nested(self):
         print("\n  * Testing mod_python.publisher auth nested")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_nested", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_publisher_auth_nested", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_publisher_auth_nested", PORT))
         auth = base64.encodestring(b"spam:eggs").strip()
         if PY2:
-            conn.putheader("Authorization", "Basic %s" % auth)
+            conn.putheader("Authorization", "Basic {0!s}".format(auth))
         else:
-            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+            conn.putheader("Authorization", "Basic {0!s}".format(auth.decode("latin1")))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -2509,14 +2512,14 @@ class PerRequestTestCase(unittest.TestCase):
     def test_publisher_auth_method_nested(self):
         print("\n  * Testing mod_python.publisher auth method nested")
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py/test_publisher_auth_method_nested/method", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_publisher_auth_method_nested", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_publisher_auth_method_nested", PORT))
         auth = base64.encodestring(b"spam:eggs").strip()
         if PY2:
-            conn.putheader("Authorization", "Basic %s" % auth)
+            conn.putheader("Authorization", "Basic {0!s}".format(auth))
         else:
-            conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
+            conn.putheader("Authorization", "Basic {0!s}".format(auth.decode("latin1")))
         conn.endheaders()
         response = conn.getresponse()
         rsp = response.read()
@@ -2541,9 +2544,9 @@ class PerRequestTestCase(unittest.TestCase):
         # The contents of the authorization header is not relevant,
         # as long as it looks valid.
 
-        conn = http_connection("127.0.0.1:%s" % PORT)
+        conn = http_connection("127.0.0.1:{0!s}".format(PORT))
         conn.putrequest("GET", "/tests.py/test_publisher", skip_host=1)
-        conn.putheader("Host", "%s:%s" % ("test_publisher_auth_digest", PORT))
+        conn.putheader("Host", "{0!s}:{1!s}".format("test_publisher_auth_digest", PORT))
         conn.putheader("Authorization", 'Digest username="Mufasa", realm="testrealm@host.com", nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093", uri="/dir/index.html", qop=auth, nc=00000001, cnonce="0a4f113b", response="6629fae49393a05397450978507c4ef1", opaque="5ccc069c403ebaf9f0171e9517f40e41"')
         conn.endheaders()
         response = conn.getresponse()
@@ -2567,10 +2570,10 @@ class PerRequestTestCase(unittest.TestCase):
         print("\n  * Testing mod_python.publisher security")
 
         def get_status(path):
-            conn = http_connection("127.0.0.1:%s" % PORT)
+            conn = http_connection("127.0.0.1:{0!s}".format(PORT))
             #conn.set_debuglevel(1000)
             conn.putrequest("GET", path, skip_host=1)
-            conn.putheader("Host", "test_publisher:%s" % PORT)
+            conn.putheader("Host", "test_publisher:{0!s}".format(PORT))
             conn.endheaders()
             response = conn.getresponse()
             status, response = response.status, response.read()
@@ -2579,43 +2582,43 @@ class PerRequestTestCase(unittest.TestCase):
 
         status, response = get_status("/tests.py/_SECRET_PASSWORD")
         if status != 403:
-            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : underscore prefixed attribute ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/__ANSWER")
         if status != 403:
-            self.fail('Vulnerability : underscore prefixed attribute (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : underscore prefixed attribute ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/re")
         if status != 403:
-            self.fail('Vulnerability : module published (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : module published ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/OldStyleClassTest")
         if status != 403:
-            self.fail('Vulnerability : old style class published (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : old style class published ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/InstanceTest")
         if status != 403:
-            self.fail('Vulnerability : new style class published (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : new style class published ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/index/func_code")
         if status != 403:
-            self.fail('Vulnerability : function traversal (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : function traversal ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/old_instance/traverse/func_code")
         if status != 403:
-            self.fail('Vulnerability : old-style method traversal (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : old-style method traversal ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/instance/traverse/func_code")
         if status != 403:
-            self.fail('Vulnerability : new-style method traversal (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : new-style method traversal ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/test_dict/keys")
         if status != 403:
-            self.fail('Vulnerability : built-in type traversal (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : built-in type traversal ({0:d})\n{1!s}'.format(status, response))
 
         status, response = get_status("/tests.py/test_dict_keys")
         if status != 403:
-            self.fail('Vulnerability : built-in type publishing (%i)\n%s' % (status, response))
+            self.fail('Vulnerability : built-in type publishing ({0:d})\n{1!s}'.format(status, response))
 
     def test_publisher_iterator_conf(self):
         c = VirtualHost("*",
@@ -2831,7 +2834,7 @@ class PerRequestTestCase(unittest.TestCase):
         before, after = list(map(int, rsp.split("|")[1:]))
 
         if before != after:
-            self.fail("Memory before: %s, memory after: %s" % (before, after))
+            self.fail("Memory before: {0!s}, memory after: {1!s}".format(before, after))
 
 class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
     # this is a test case which requires a complete
@@ -2848,12 +2851,11 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.makeConfig()
         self.startHttpd()
 
-        f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f = urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
         server_hdr = f.info()["Server"]
         f.close()
         self.failUnless(server_hdr.find("Python") > -1,
-                        "%s does not appear to load, Server header does not contain Python"
-                        % MOD_PYTHON_SO)
+                        "{0!s} does not appear to load, Server header does not contain Python".format(MOD_PYTHON_SO))
 
     def testVersionCheck(self):
 
@@ -2866,7 +2868,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.makeConfig(c)
 
         self.startHttpd()
-        urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
         self.stopHttpd()
 
         # see what's in the log now
@@ -2888,7 +2890,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
 
             try:
                 self.startHttpd()
-                urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+                urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
                 self.stopHttpd()
 
                 time.sleep(0.1)
@@ -2912,7 +2914,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
 
         self.startHttpd()
 
-        f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f = urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
         if PY2:
             rsp = f.read()
         else:
@@ -2931,17 +2933,15 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         t1 = time.time()
         print("    ", time.ctime())
         if os.name == "nt":
-            cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > NUL:' \
-                  % (ab, PORT)
+            cmd = '{0!s} -c 5 -n 5 http://127.0.0.1:{1!s}/tests.py > NUL:'.format(ab, PORT)
         else:
-            cmd = '%s -c 5 -n 5 http://127.0.0.1:%s/tests.py > /dev/null' \
-                  % (ab, PORT)
+            cmd = '{0!s} -c 5 -n 5 http://127.0.0.1:{1!s}/tests.py > /dev/null'.format(ab, PORT)
         print("    ", cmd)
         os.system(cmd)
         print("    ", time.ctime())
         t2 = time.time()
         if (t2 - t1) < 5:
-            self.fail("global_lock is broken (too quick): %f" % (t2 - t1))
+            self.fail("global_lock is broken (too quick): {0:f}".format((t2 - t1)))
 
     def testPerRequestTests(self):
 
@@ -3053,7 +3053,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
 
         self.startHttpd()
 
-        f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f = urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
         f.read()
         f.close()
 
@@ -3082,7 +3082,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
 
         self.startHttpd()
 
-        f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f = urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
         f.read()
         f.close()
 
@@ -3111,7 +3111,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
 
         self.startHttpd()
 
-        f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f = urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
         if PY2:
             rsp = f.read()
         else:
@@ -3121,11 +3121,11 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.stopHttpd()
 
         if rsp != 'NO_FOOBAR':
-            self.fail('Failure on apache.exists_config_define() : %s'%rsp)
+            self.fail('Failure on apache.exists_config_define() : {0!s}'.format(rsp))
 
         self.startHttpd(extra="-DFOOBAR")
 
-        f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
+        f = urlopen("http://127.0.0.1:{0!s}/tests.py".format(PORT))
         if PY2:
             rsp = f.read()
         else:
@@ -3136,7 +3136,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         self.stopHttpd()
 
         if rsp != 'FOOBAR':
-            self.fail('Failure on apache.exists_config_define() : %s'%rsp)
+            self.fail('Failure on apache.exists_config_define() : {0!s}'.format(rsp))
 
 def suite():
 

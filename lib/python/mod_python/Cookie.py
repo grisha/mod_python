@@ -82,7 +82,7 @@ class metaCookie(type):
                 try:
                     t = time.strptime(value, "%a, %d-%b-%Y %H:%M:%S GMT")
                 except ValueError:
-                    raise ValueError("Invalid expires time: %s" % value)
+                    raise ValueError("Invalid expires time: {0!s}".format(value))
                 t = time.mktime(t)
             else:
                 # otherwise assume it's a number
@@ -91,7 +91,7 @@ class metaCookie(type):
                 value = time.strftime("%a, %d-%b-%Y %H:%M:%S GMT",
                                       time.gmtime(t))
 
-            self._expires = "%s" % value
+            self._expires = "{0!s}".format(value)
 
         def get_expires(self):
             return self._expires
@@ -156,17 +156,17 @@ class Cookie(_metaCookie):
         browsers out there.
         """
 
-        result = ["%s=%s" % (self.name, self.value)]
+        result = ["{0!s}={1!s}".format(self.name, self.value)]
         for name in self._valid_attr:
             if hasattr(self, name):
                 if name in ("secure", "discard", "httponly"):
                     result.append(name)
                 else:
-                    result.append("%s=%s" % (name, getattr(self, name)))
+                    result.append("{0!s}={1!s}".format(name, getattr(self, name)))
         return "; ".join(result)
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__,
+        return '<{0!s}: {1!s}>'.format(self.__class__.__name__,
                                 str(self))
 
 
@@ -223,14 +223,14 @@ class SignedCookie(Cookie):
 
     def __str__(self):
 
-        result = ["%s=%s%s" % (self.name, self.hexdigest(self.value),
+        result = ["{0!s}={1!s}{2!s}".format(self.name, self.hexdigest(self.value),
                                self.value)]
         for name in self._valid_attr:
             if hasattr(self, name):
                 if name in ("secure", "discard", "httponly"):
                     result.append(name)
                 else:
-                    result.append("%s=%s" % (name, getattr(self, name)))
+                    result.append("{0!s}={1!s}".format(name, getattr(self, name)))
         return "; ".join(result)
 
     def unsign(self, secret):
@@ -244,7 +244,7 @@ class SignedCookie(Cookie):
             self.value = val
             self.__data__["secret"] = secret
         else:
-            raise CookieError("Incorrectly Signed Cookie: %s=%s" % (self.name, self.value))
+            raise CookieError("Incorrectly Signed Cookie: {0!s}={1!s}".format(self.name, self.value))
 
 
 class MarshalCookie(SignedCookie):
@@ -296,13 +296,13 @@ class MarshalCookie(SignedCookie):
         # separated by \n or \r\n
         m = ''.join(m.split())
 
-        result = ["%s=%s%s" % (self.name, self.hexdigest(m), m)]
+        result = ["{0!s}={1!s}{2!s}".format(self.name, self.hexdigest(m), m)]
         for name in self._valid_attr:
             if hasattr(self, name):
                 if name in ("secure", "discard", "httponly"):
                     result.append(name)
                 else:
-                    result.append("%s=%s" % (name, getattr(self, name)))
+                    result.append("{0!s}={1!s}".format(name, getattr(self, name)))
         return "; ".join(result)
 
     def unmarshal(self, secret):
@@ -312,12 +312,12 @@ class MarshalCookie(SignedCookie):
         try:
             data = base64.decodestring(self.value)
         except:
-            raise CookieError("Cannot base64 Decode Cookie: %s=%s" % (self.name, self.value))
+            raise CookieError("Cannot base64 Decode Cookie: {0!s}={1!s}".format(self.name, self.value))
 
         try:
             self.value = marshal.loads(data)
         except (EOFError, ValueError, TypeError):
-            raise CookieError("Cannot Unmarshal Cookie: %s=%s" % (self.name, self.value))
+            raise CookieError("Cannot Unmarshal Cookie: {0!s}={1!s}".format(self.name, self.value))
 
 
 # This is a simplified and in some places corrected

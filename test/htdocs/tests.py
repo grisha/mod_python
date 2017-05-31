@@ -74,7 +74,7 @@ class SimpleTestCase(unittest.TestCase):
         c.log_error("xDEBUGx", apache.APLOG_DEBUG)
 
         # see what's in the log now
-        f = open("%s/logs/error_log" % apache.server_root())
+        f = open("{0!s}/logs/error_log".format(apache.server_root()))
         # for some reason re doesn't like \n, why?
         log = "".join(map(str.strip, f.readlines()))
         f.close()
@@ -104,7 +104,7 @@ class SimpleTestCase(unittest.TestCase):
         a = apache.table({'a':'b'})
         a.add('a', 'c')
         if a['a'] != ['b', 'c']:
-            self.fail('table.add() broken: a["a"] is %s' % repr(a["a"]))
+            self.fail('table.add() broken: a["a"] is {0!s}'.format(repr(a["a"])))
 
         log("Table test DONE.")
 
@@ -138,238 +138,238 @@ class SimpleTestCase(unittest.TestCase):
 
         log("Examining request memebers:")
 
-        log("    req.connection: %s" % repr(req.connection))
+        log("    req.connection: {0!s}".format(repr(req.connection)))
         s = str(type(req.connection))
         if s not in ("<class 'mp_conn'>", "<type 'mp_conn'>"):
-            self.fail("strange req.connection type %s" % repr(s))
+            self.fail("strange req.connection type {0!s}".format(repr(s)))
 
-        log("    req.server: '%s'" % repr(req.server))
+        log("    req.server: '{0!s}'".format(repr(req.server)))
         s = str(type(req.server))
         if s not in ("<class 'mp_server'>", "<type 'mp_server'>"):
-            self.fail("strange req.server type %s" % repr(s))
+            self.fail("strange req.server type {0!s}".format(repr(s)))
 
         for x in ((req.next, "next"),
                   (req.prev, "prev"),
                   (req.main, "main")):
             val, name = x
-            log("    req.%s: '%s'" % (name, repr(val)))
+            log("    req.{0!s}: '{1!s}'".format(name, repr(val)))
             if val:
-                self.fail("strange, req.%s should be None, not %s" % (name, repr(val)))
+                self.fail("strange, req.{0!s} should be None, not {1!s}".format(name, repr(val)))
 
-        log("    req.the_request: '%s'" % req.the_request)
+        log("    req.the_request: '{0!s}'".format(req.the_request))
         if not re.match(r"GET /.* HTTP/1\.", req.the_request):
-            self.fail("strange req.the_request %s" % repr(req.the_request))
+            self.fail("strange req.the_request {0!s}".format(repr(req.the_request)))
 
         for x in ((req.assbackwards, "assbackwards"),
                   (req.proxyreq, "proxyreq"),
                   (req.header_only, "header_only")):
             val, name = x
-            log("    req.%s: %s" % (name, repr(val)))
+            log("    req.{0!s}: {1!s}".format(name, repr(val)))
             if val:
-                self.fail("%s should be 0" % name)
+                self.fail("{0!s} should be 0".format(name))
 
-        log("    req.protocol: %s" % repr(req.protocol))
+        log("    req.protocol: {0!s}".format(repr(req.protocol)))
         if not req.protocol == req.the_request.split()[-1]:
             self.fail("req.protocol doesn't match req.the_request")
 
-        log("    req.proto_num: %s" % repr(req.proto_num))
+        log("    req.proto_num: {0!s}".format(repr(req.proto_num)))
         if req.proto_num != 1000 + int(req.protocol[-1]):
             self.fail("req.proto_num doesn't match req.protocol")
 
-        log("    req.hostname: %s" % repr(req.hostname))
+        log("    req.hostname: {0!s}".format(repr(req.hostname)))
         if req.hostname != "test_internal":
             self.fail("req.hostname isn't 'test_internal'")
 
-        log("    req.request_time: %s" % repr(req.request_time))
+        log("    req.request_time: {0!s}".format(repr(req.request_time)))
         if (time.time() - req.request_time) > 10:
             self.fail("req.request_time suggests request started more than 10 secs ago")
 
-        log("    req.status_line: %s" % repr(req.status_line))
+        log("    req.status_line: {0!s}".format(repr(req.status_line)))
         if req.status_line:
             self.fail("req.status_line should be None at this point")
 
-        log("    req.status: %s" % repr(req.status))
+        log("    req.status: {0!s}".format(repr(req.status)))
         if req.status != 200:
             self.fail("req.status should be 200")
         req.status = req.status # make sure its writable
 
-        log("    req.method: %s" % repr(req.method))
+        log("    req.method: {0!s}".format(repr(req.method)))
         if req.method != "GET":
             self.fail("req.method should be 'GET'")
 
-        log("    req.method_number: %s" % repr(req.method_number))
+        log("    req.method_number: {0!s}".format(repr(req.method_number)))
         if req.method_number != 0:
             self.fail("req.method_number should be 0")
 
-        log("    req.allowed: %s" % repr(req.allowed))
+        log("    req.allowed: {0!s}".format(repr(req.allowed)))
         if req.allowed != 0:
             self.fail("req.allowed should be 0")
 
-        log("    req.allowed_xmethods: %s" % repr(req.allowed_xmethods))
+        log("    req.allowed_xmethods: {0!s}".format(repr(req.allowed_xmethods)))
         if req.allowed_xmethods != ():
             self.fail("req.allowed_xmethods should be an empty tuple")
 
-        log("    req.allowed_methods: %s" % repr(req.allowed_methods))
+        log("    req.allowed_methods: {0!s}".format(repr(req.allowed_methods)))
         if req.allowed_methods != ():
             self.fail("req.allowed_methods should be an empty tuple")
 
-        log("    req.sent_bodyct: %s" % repr(req.sent_bodyct))
+        log("    req.sent_bodyct: {0!s}".format(repr(req.sent_bodyct)))
         if req.sent_bodyct != 0:
             self.fail("req.sent_bodyct should be 0")
 
-        log("    req.bytes_sent: %s" % repr(req.bytes_sent))
+        log("    req.bytes_sent: {0!s}".format(repr(req.bytes_sent)))
         save = req.bytes_sent
         log("       writing 4 bytes...")
         req.write("1234")
-        log("       req.bytes_sent: %s" % repr(req.bytes_sent))
+        log("       req.bytes_sent: {0!s}".format(repr(req.bytes_sent)))
         if req.bytes_sent - save != 4:
             self.fail("req.bytes_sent should have incremented by 4, but didn't")
 
-        log("    req.mtime: %s" % repr(req.mtime))
+        log("    req.mtime: {0!s}".format(repr(req.mtime)))
         if req.mtime != 0:
             self.fail("req.mtime should be 0")
 
-        log("    req.chunked: %s" % repr(req.chunked))
+        log("    req.chunked: {0!s}".format(repr(req.chunked)))
         if req.chunked != 1:
             self.fail("req.chunked should be 1")
 
-        log("    req.range: %s" % repr(req.range))
+        log("    req.range: {0!s}".format(repr(req.range)))
         if req.range:
             self.fail("req.range should be None")
 
-        log("    req.clength: %s" % repr(req.clength))
+        log("    req.clength: {0!s}".format(repr(req.clength)))
         log("        calling req.set_content_length(15)...")
         req.set_content_length(15)
-        log("        req.clength: %s" % repr(req.clength))
+        log("        req.clength: {0!s}".format(repr(req.clength)))
         if req.clength != 15:
             self.fail("req.clength should be 15")
 
-        log("    req.remaining: %s" % repr(req.remaining))
+        log("    req.remaining: {0!s}".format(repr(req.remaining)))
         if req.remaining != 0:
             self.fail("req.remaining should be 0")
 
-        log("    req.read_length: %s" % repr(req.read_length))
+        log("    req.read_length: {0!s}".format(repr(req.read_length)))
         if req.read_length != 0:
             self.fail("req.read_length should be 0")
 
-        log("    req.read_body: %s" % repr(req.read_body))
+        log("    req.read_body: {0!s}".format(repr(req.read_body)))
         if req.read_body != 0:
             self.fail("req.read_body should be 0")
 
-        log("    req.read_chunked: %s" % repr(req.read_chunked))
+        log("    req.read_chunked: {0!s}".format(repr(req.read_chunked)))
         if req.read_chunked != 0:
             self.fail("req.read_chunked should be 0")
 
-        log("    req.expecting_100: %s" % repr(req.expecting_100))
+        log("    req.expecting_100: {0!s}".format(repr(req.expecting_100)))
         if req.expecting_100 != 0:
             self.fail("req.expecting_100 should be 0")
 
-        log("    req.headers_in: %s" % repr(req.headers_in))
+        log("    req.headers_in: {0!s}".format(repr(req.headers_in)))
         if req.headers_in["Host"][:13].lower() != "test_internal":
             self.fail("The 'Host' header should begin with 'test_internal'")
 
-        log("    req.headers_out: %s" % repr(req.headers_out))
+        log("    req.headers_out: {0!s}".format(repr(req.headers_out)))
         if (("content-length" not in req.headers_out) or
             req.headers_out["content-length"] != "15"):
             self.fail("req.headers_out['content-length'] should be 15")
 
-        log("    req.subprocess_env: %s" % repr(req.subprocess_env))
+        log("    req.subprocess_env: {0!s}".format(repr(req.subprocess_env)))
         if req.subprocess_env["SERVER_SOFTWARE"].find("Python") == -1:
             self.fail("req.subprocess_env['SERVER_SOFTWARE'] should contain 'Python'")
 
-        log("    req.notes: %s" % repr(req.notes))
+        log("    req.notes: {0!s}".format(repr(req.notes)))
         log("        doing req.notes['testing'] = '123' ...")
         req.notes['testing'] = '123'
-        log("    req.notes: %s" % repr(req.notes))
+        log("    req.notes: {0!s}".format(repr(req.notes)))
         if req.notes["testing"] != '123':
             self.fail("req.notes['testing'] should be '123'")
 
-        log("    req.phase: %s" % repr(req.phase))
+        log("    req.phase: {0!s}".format(repr(req.phase)))
         if req.phase != "PythonHandler":
             self.fail("req.phase should be 'PythonHandler'")
 
-        log("    req.interpreter: %s" % repr(req.interpreter))
+        log("    req.interpreter: {0!s}".format(repr(req.interpreter)))
         if req.interpreter != apache.interpreter:
-            self.fail("req.interpreter should be same as apache.interpreter" % repr(apache.interpreter))
+            self.fail("req.interpreter should be same as apache.interpreter".format(*repr(apache.interpreter)))
         if req.interpreter != req.server.server_hostname:
-            self.fail("req.interpreter should be same as req.server.server_hostname: %s" % repr(req.server.server_hostname))
+            self.fail("req.interpreter should be same as req.server.server_hostname: {0!s}".format(repr(req.server.server_hostname)))
 
-        log("    req.content_type: %s" % repr(req.content_type))
+        log("    req.content_type: {0!s}".format(repr(req.content_type)))
         log("        doing req.content_type = 'test/123' ...")
         req.content_type = 'test/123'
-        log("        req.content_type: %s" % repr(req.content_type))
+        log("        req.content_type: {0!s}".format(repr(req.content_type)))
         if req.content_type != 'test/123' or not req._content_type_set:
             self.fail("req.content_type should be 'test/123' and req._content_type_set 1")
 
-        log("    req.handler: %s" % repr(req.handler))
+        log("    req.handler: {0!s}".format(repr(req.handler)))
         if req.handler != "mod_python":
             self.fail("req.handler should be 'mod_python'")
 
-        log("    req.content_encoding: %s" % repr(req.content_encoding))
+        log("    req.content_encoding: {0!s}".format(repr(req.content_encoding)))
         if req.content_encoding:
             self.fail("req.content_encoding should be None")
 
-        log("    req.content_languages: %s" % repr(req.content_languages))
+        log("    req.content_languages: {0!s}".format(repr(req.content_languages)))
         if req.content_languages != ():
             self.fail("req.content_languages should be an empty tuple")
 
-        log("    req.vlist_validator: %s" % repr(req.vlist_validator))
+        log("    req.vlist_validator: {0!s}".format(repr(req.vlist_validator)))
         if req.vlist_validator:
             self.fail("req.vlist_validator should be None")
 
-        log("    req.user: %s" % repr(req.user))
+        log("    req.user: {0!s}".format(repr(req.user)))
         if req.user:
             self.fail("req.user should be None")
 
-        log("    req.ap_auth_type: %s" % repr(req.ap_auth_type))
+        log("    req.ap_auth_type: {0!s}".format(repr(req.ap_auth_type)))
         if req.ap_auth_type:
             self.fail("req.ap_auth_type should be None")
 
-        log("    req.no_cache: %s" % repr(req.no_cache))
+        log("    req.no_cache: {0!s}".format(repr(req.no_cache)))
         if req.no_cache != 0:
             self.fail("req.no_cache should be 0")
 
-        log("    req.no_local_copy: %s" % repr(req.no_local_copy))
+        log("    req.no_local_copy: {0!s}".format(repr(req.no_local_copy)))
         if req.no_local_copy != 0:
             self.fail("req.no_local_copy should be 0")
 
-        log("    req.unparsed_uri: %s" % repr(req.unparsed_uri))
+        log("    req.unparsed_uri: {0!s}".format(repr(req.unparsed_uri)))
         if req.unparsed_uri != "/tests.py":
             self.fail("req.unparsed_uri should be '/tests.py'")
 
-        log("    req.uri: %s" % repr(req.uri))
+        log("    req.uri: {0!s}".format(repr(req.uri)))
         if req.uri != "/tests.py":
             self.fail("req.uri should be '/tests.py'")
 
-        log("    req.filename: %s" % repr(req.filename))
+        log("    req.filename: {0!s}".format(repr(req.filename)))
         if req.filename != req.document_root() + req.uri:
             self.fail("req.filename should be req.document_root() + req.uri, but it isn't")
 
-        log("    req.canonical_filename: %s" % repr(req.canonical_filename))
+        log("    req.canonical_filename: {0!s}".format(repr(req.canonical_filename)))
         if not req.canonical_filename:
             self.fail("req.canonical_filename should not be blank")
 
-        log("    req.path_info: %s" % repr(req.path_info))
+        log("    req.path_info: {0!s}".format(repr(req.path_info)))
         if req.path_info != '':
             self.fail("req.path_info should be ''")
 
-        log("    req.args: %s" % repr(req.args))
+        log("    req.args: {0!s}".format(repr(req.args)))
         if req.args:
             self.fail("req.args should be None")
 
-        log("    req.finfo: %s" % repr(req.finfo))
+        log("    req.finfo: {0!s}".format(repr(req.finfo)))
         if req.finfo[apache.FINFO_FNAME] and (req.finfo[apache.FINFO_FNAME] != req.canonical_filename):
             self.fail("req.finfo[apache.FINFO_FNAME] should be the (canonical) filename")
 
-        log("    req.parsed_uri: %s" % repr(req.parsed_uri))
+        log("    req.parsed_uri: {0!s}".format(repr(req.parsed_uri)))
         if req.parsed_uri[apache.URI_PATH] != '/tests.py':
             self.fail("req.parsed_uri[apache.URI_PATH] should be '/tests.py'")
 
-        log("    req.used_path_info: %s" % repr(req.used_path_info))
+        log("    req.used_path_info: {0!s}".format(repr(req.used_path_info)))
         if req.used_path_info != 2:
             self.fail("req.used_path_info should be 2") # XXX really? :-)
 
-        log("    req.eos_sent: %s" % repr(req.eos_sent))
+        log("    req.eos_sent: {0!s}".format(repr(req.eos_sent)))
         if req.eos_sent:
             self.fail("req.eos_sent says we sent EOS, but we didn't")
 
@@ -381,11 +381,11 @@ class SimpleTestCase(unittest.TestCase):
             except:
                 localip = "127.0.0.1"
 
-            log("    req.useragent_ip: %s" % repr(req.useragent_ip))
+            log("    req.useragent_ip: {0!s}".format(repr(req.useragent_ip)))
             if not req.useragent_ip in ("127.0.0.1", localip):
                 self.fail("req.useragent_ip should be '127.0.0.1'")
 
-            log("    req.useragent_addr: %s" % repr(req.useragent_addr))
+            log("    req.useragent_addr: {0!s}".format(repr(req.useragent_addr)))
             if not req.useragent_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
                 self.fail("req.useragent_addr[0] should be '127.0.0.1' or '0.0.0.0'")
 
@@ -395,24 +395,24 @@ class SimpleTestCase(unittest.TestCase):
         req = self.req
         log = req.log_error
 
-        log("req.get_config(): %s" % repr(req.get_config()))
+        log("req.get_config(): {0!s}".format(repr(req.get_config())))
         if req.get_config()["PythonDebug"] != "1":
             self.fail("get_config return should show PythonDebug 1")
 
-        log("req.get_options(): %s" % repr(req.get_options()))
+        log("req.get_options(): {0!s}".format(repr(req.get_options())))
         if req.get_options() != apache.table({"testing":"123"}):
-            self.fail("get_options() should contain 'testing':'123', contains %s"%list(req.get_options().items()))
+            self.fail("get_options() should contain 'testing':'123', contains {0!s}".format(list(req.get_options().items())))
 
     def test_req_get_remote_host(self):
 
         # simulating this test for real is too complex...
         req = self.req
         log = req.log_error
-        log("req.get_get_remote_host(): %s" % repr(req.get_remote_host(apache.REMOTE_HOST)))
-        log("req.get_get_remote_host(): %s" % repr(req.get_remote_host()))
-        if (req.get_remote_host(apache.REMOTE_HOST) != None) or \
+        log("req.get_get_remote_host(): {0!s}".format(repr(req.get_remote_host(apache.REMOTE_HOST))))
+        log("req.get_get_remote_host(): {0!s}".format(repr(req.get_remote_host())))
+        if (req.get_remote_host(apache.REMOTE_HOST) is not None) or \
            (req.get_remote_host() != "127.0.0.1"):
-            self.fail("remote host test failed: %s" % req.get_remote_host())
+            self.fail("remote host test failed: {0!s}".format(req.get_remote_host()))
 
     def test_server_members(self):
 
@@ -422,80 +422,80 @@ class SimpleTestCase(unittest.TestCase):
 
         log("Examining server memebers:")
 
-        log("    server.defn_name: %s" % repr(server.defn_name))
+        log("    server.defn_name: {0!s}".format(repr(server.defn_name)))
         if server.defn_name[-9:] != "test.conf":
             self.fail("server.defn_name does not end in 'test.conf'")
 
-        log("    server.defn_line_number: %s" % repr(server.defn_line_number))
+        log("    server.defn_line_number: {0!s}".format(repr(server.defn_line_number)))
         if server.defn_line_number == 0:
             self.fail("server.defn_line_number should not be 0")
 
-        log("    server.server_admin: %s" % repr(server.server_admin))
+        log("    server.server_admin: {0!s}".format(repr(server.server_admin)))
         if server.server_admin != "serveradmin@somewhere.com":
             self.fail("server.server_admin must be 'serveradmin@somewhere.com'")
 
-        log("    server.server_hostname: %s" % repr(server.server_hostname))
+        log("    server.server_hostname: {0!s}".format(repr(server.server_hostname)))
         if server.server_hostname != "test_internal":
             self.fail("server.server_hostname must be 'test_internal'")
 
-        log("    server.port: %s" % repr(server.port))
+        log("    server.port: {0!s}".format(repr(server.port)))
         # hmm it really is 0...
         #if server.port == 0:
         #    self.fail("server.port should not be 0")
 
-        log("    server.error_fname: %s" % repr(server.error_fname))
+        log("    server.error_fname: {0!s}".format(repr(server.error_fname)))
         if server.error_fname != "logs/error_log":
             self.fail("server.error_fname should be 'logs/error_log'")
 
-        log("    server.loglevel: %s" % repr(server.loglevel))
+        log("    server.loglevel: {0!s}".format(repr(server.loglevel)))
         if server.loglevel != 7:
             self.fail("server.loglevel should be 7")
 
-        log("    server.is_virtual: %s" % repr(server.is_virtual))
+        log("    server.is_virtual: {0!s}".format(repr(server.is_virtual)))
         if server.is_virtual != 1:
             self.fail("server.is_virtual should be 1")
 
-        log("    server.timeout: %s" % repr(server.timeout))
+        log("    server.timeout: {0!s}".format(repr(server.timeout)))
         if not server.timeout in (5.0, 60.0):
             self.fail("server.timeout should be 5.0 or 60.0")
 
-        log("    server.keep_alive_timeout: %s" % repr(server.keep_alive_timeout))
+        log("    server.keep_alive_timeout: {0!s}".format(repr(server.keep_alive_timeout)))
         if server.keep_alive_timeout != 15.0:
             self.fail("server.keep_alive_timeout should be 15.0")
 
-        log("    server.keep_alive_max: %s" % repr(server.keep_alive_max))
+        log("    server.keep_alive_max: {0!s}".format(repr(server.keep_alive_max)))
         if server.keep_alive_max != 100:
             self.fail("server.keep_alive_max should be 100")
 
-        log("    server.keep_alive: %s" % repr(server.keep_alive))
+        log("    server.keep_alive: {0!s}".format(repr(server.keep_alive)))
         if server.keep_alive != 1:
             self.fail("server.keep_alive should be 1")
 
-        log("    server.path: %s" % repr(server.path))
+        log("    server.path: {0!s}".format(repr(server.path)))
         if server.path != "some/path":
             self.fail("server.path should be 'some/path'")
 
-        log("    server.pathlen: %s" % repr(server.pathlen))
+        log("    server.pathlen: {0!s}".format(repr(server.pathlen)))
         if server.pathlen != len('some/path'):
-            self.fail("server.pathlen should be %d" % len('some/path'))
+            self.fail("server.pathlen should be {0:d}".format(len('some/path')))
 
-        log("    server.limit_req_line: %s" % repr(server.limit_req_line))
+        log("    server.limit_req_line: {0!s}".format(repr(server.limit_req_line)))
         if server.limit_req_line != 8190:
             self.fail("server.limit_req_line should be 8190")
 
-        log("    server.limit_req_fieldsize: %s" % repr(server.limit_req_fieldsize))
+        log("    server.limit_req_fieldsize: {0!s}".format(repr(server.limit_req_fieldsize)))
         if server.limit_req_fieldsize != 8190:
             self.fail("server.limit_req_fieldsize should be 8190")
 
-        log("    server.limit_req_fields: %s" % repr(server.limit_req_fields))
+        log("    server.limit_req_fields: {0!s}".format(repr(server.limit_req_fields)))
         if server.limit_req_fields != 100:
             self.fail("server.limit_req_fields should be 100")
 
-        log("    server.names: %s" % repr(server.names))
+        log("    server.names: {0!s}".format(repr(server.names)))
         if server.names != ():
             self.fail("server.names should be an empty tuple")
 
-        log("    server.wild_names: %s" % repr(server.wild_names))
+        log("    server.wild_names: {0!s}".format(repr(server.wild_names)))
         if server.wild_names != ():
             self.fail("server.wild_names should be an empty tuple")
 
@@ -514,71 +514,71 @@ class SimpleTestCase(unittest.TestCase):
 
         log("Examining connection memebers:")
 
-        log("    connection.base_server: %s" % repr(conn.base_server))
+        log("    connection.base_server: {0!s}".format(repr(conn.base_server)))
         if type(conn.base_server) is not type(req.server):
             self.fail("conn.base_server should be same type as req.server")
 
-        log("    connection.local_addr: %s" % repr(conn.local_addr))
+        log("    connection.local_addr: {0!s}".format(repr(conn.local_addr)))
         if not conn.local_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
             self.fail("conn.local_addr[0] should be '127.0.0.1' or '0.0.0.0'")
 
         if apache.MODULE_MAGIC_NUMBER_MAJOR > 20111130:
 
-            log("    connection.client_addr: %s" % repr(conn.client_addr))
+            log("    connection.client_addr: {0!s}".format(repr(conn.client_addr)))
             if not conn.client_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
                 self.fail("conn.client_addr[0] should be '127.0.0.1' or '0.0.0.0'")
 
-            log("    connection.client_ip: %s" % repr(conn.client_ip))
+            log("    connection.client_ip: {0!s}".format(repr(conn.client_ip)))
             if not conn.client_ip in ("127.0.0.1", localip):
                 self.fail("conn.client_ip should be '127.0.0.1'")
 
         else:
 
-            log("    connection.remote_addr: %s" % repr(conn.remote_addr))
+            log("    connection.remote_addr: {0!s}".format(repr(conn.remote_addr)))
             if not conn.remote_addr[0] in ("127.0.0.1", "0.0.0.0", localip):
                 self.fail("conn.remote_addr[0] should be '127.0.0.1' or '0.0.0.0'")
 
-            log("    connection.remote_ip: %s" % repr(conn.remote_ip))
+            log("    connection.remote_ip: {0!s}".format(repr(conn.remote_ip)))
             if not conn.remote_ip in ("127.0.0.1", localip):
                 self.fail("conn.remote_ip should be '127.0.0.1'")
 
-        log("    connection.remote_host: %s" % repr(conn.remote_host))
+        log("    connection.remote_host: {0!s}".format(repr(conn.remote_host)))
         if conn.remote_host is not None:
             self.fail("conn.remote_host should be None")
 
-        log("    connection.remote_logname: %s" % repr(conn.remote_logname))
+        log("    connection.remote_logname: {0!s}".format(repr(conn.remote_logname)))
         if conn.remote_logname is not None:
             self.fail("conn.remote_logname should be None")
 
-        log("    connection.aborted: %s" % repr(conn.aborted))
+        log("    connection.aborted: {0!s}".format(repr(conn.aborted)))
         if conn.aborted != 0:
             self.fail("conn.aborted should be 0")
 
-        log("    connection.keepalive: %s" % repr(conn.keepalive))
+        log("    connection.keepalive: {0!s}".format(repr(conn.keepalive)))
         if conn.keepalive != 2:
             self.fail("conn.keepalive should be 2")
 
-        log("    connection.double_reverse: %s" % repr(conn.double_reverse))
+        log("    connection.double_reverse: {0!s}".format(repr(conn.double_reverse)))
         if conn.double_reverse != 0:
             self.fail("conn.double_reverse should be 0")
 
-        log("    connection.keepalives: %s" % repr(conn.keepalives))
+        log("    connection.keepalives: {0!s}".format(repr(conn.keepalives)))
         if conn.keepalives != 1:
             self.fail("conn.keepalives should be 1")
 
-        log("    connection.local_ip: %s" % repr(conn.local_ip))
+        log("    connection.local_ip: {0!s}".format(repr(conn.local_ip)))
         if not conn.local_ip in ("127.0.0.1", localip):
             self.fail("conn.local_ip should be '127.0.0.1'")
 
-        log("    connection.local_host: %s" % repr(conn.local_host))
+        log("    connection.local_host: {0!s}".format(repr(conn.local_host)))
         if conn.local_host is not None:
             self.fail("conn.local_host should be None")
 
-        log("    connection.id: %s" % repr(conn.id))
+        log("    connection.id: {0!s}".format(repr(conn.id)))
         if conn.id > 10000:
             self.fail("conn.id probably should not be this high?")
 
-        log("    connection.notes: %s" % repr(conn.notes))
+        log("    connection.notes: {0!s}".format(repr(conn.notes)))
         if repr(conn.notes) != '{}':
             self.fail("conn.notes should be {}")
 
@@ -654,9 +654,9 @@ def req_add_empty_handler_string(req):
 
 def req_add_handler_empty_phase(req):
     req.log_error("req_add_handler_empty_phase")
-    req.log_error("phase=%s" % req.phase)
-    req.log_error("interpreter=%s" % req.interpreter)
-    req.log_error("directory=%s" % req.hlist.directory)
+    req.log_error("phase={0!s}".format(req.phase))
+    req.log_error("interpreter={0!s}".format(req.interpreter))
+    req.log_error("directory={0!s}".format(req.hlist.directory))
     if req.phase != "PythonHandler":
         directory = os.path.dirname(__file__)
         req.add_handler("PythonHandler", "tests::req_add_handler_empty_phase", directory)
@@ -716,7 +716,7 @@ def req_get_basic_auth_pw(req):
         req.user == LATIN1_SPAM and pw == LATIN1_EGGS):
         req.write("test ok")
     else:
-        req.write("test failed, user %s, pw %s" % (repr(req.user), repr(pw)))
+        req.write("test failed, user {0!s}, pw {1!s}".format(repr(req.user), repr(pw)))
 
     return apache.OK
 
@@ -734,12 +734,12 @@ def req_auth_type(req):
     auth_type = req.auth_type()
     if auth_type != "dummy":
         req.log_error("auth_type check failed")
-        req.write("test failed, req.auth_type() returned: %s" % repr(auth_type))
+        req.write("test failed, req.auth_type() returned: {0!s}".format(repr(auth_type)))
         return apache.DONE
     auth_name = req.auth_name()
     if auth_name != "blah":
         req.log_error("auth_name check failed")
-        req.write("test failed, req.auth_name() returned: %s" % repr(auth_name))
+        req.write("test failed, req.auth_name() returned: {0!s}".format(repr(auth_name)))
         return apache.DONE
 
     if req.phase == "PythonAuthenHandler":
@@ -824,18 +824,18 @@ def req_discard_request_body(req):
 
     s = req.read(10)
     if s != b'1234567890':
-        req.log_error('read() #1 returned %s' % repr(s))
+        req.log_error('read() #1 returned {0!s}'.format(repr(s)))
         req.write('test failed')
         return apache.OK
 
     status = req.discard_request_body()
     if status != apache.OK:
-        req.log_error('discard_request_body() returned %d' % status)
+        req.log_error('discard_request_body() returned {0:d}'.format(status))
         return status
 
     s = req.read()
     if s:
-        req.log_error('read() #2 returned %s' % repr(s))
+        req.log_error('read() #2 returned {0!s}'.format(repr(s)))
         req.write('test failed')
         return apache.OK
 
@@ -909,7 +909,7 @@ def req_sendfile3(req):
     f = open(fname, "w")
     f.write("0123456789"*100);
     f.close()
-    fname_symlink =  '%s.lnk' % fname
+    fname_symlink =  '{0!s}.lnk'.format(fname)
     os.symlink(fname, fname_symlink)
     req.sendfile(fname_symlink)
     os.remove(fname_symlink)
@@ -1044,17 +1044,17 @@ def postreadrequest(req):
     req.subprocess_env['TEST1'] = "'"
     req.subprocess_env['TEST2'] = '"'
 
-    req.log_error('subprocess_env = %s' % req.subprocess_env)
-    req.log_error('subprocess_env.values() = %s' % list(req.subprocess_env.values()))
+    req.log_error('subprocess_env = {0!s}'.format(req.subprocess_env))
+    req.log_error('subprocess_env.values() = {0!s}'.format(list(req.subprocess_env.values())))
 
     for value in req.subprocess_env.values():
-        req.log_error('VALUE = %s' % value)
+        req.log_error('VALUE = {0!s}'.format(value))
 
     for item in req.subprocess_env.items():
-        req.log_error('ITEM = %s' % (item,))
+        req.log_error('ITEM = {0!s}'.format(item))
 
-    req.log_error('SCRIPT_FILENAME = %s' % req.subprocess_env.get('SCRIPT_FILENAME'))
-    req.log_error('SCRIPT_FILENAME = %s' % req.subprocess_env['SCRIPT_FILENAME'])
+    req.log_error('SCRIPT_FILENAME = {0!s}'.format(req.subprocess_env.get('SCRIPT_FILENAME')))
+    req.log_error('SCRIPT_FILENAME = {0!s}'.format(req.subprocess_env['SCRIPT_FILENAME']))
 
     req.write("test ok")
 
@@ -1254,7 +1254,7 @@ def phase_status_7(req):
 
 def phase_status_8(req):
     apache.log_error("phase_status_8")
-    apache.log_error("phases = %s" % req.phases)
+    apache.log_error("phases = {0!s}".format(req.phases))
     if req.phases != [1, 2, 5, 6, 7]:
         req.write("test failed")
     else:
@@ -1287,10 +1287,10 @@ def interpreter(req):
     return apache.DONE
 
 def index(req):
-    return "test ok, interpreter=%s" % req.interpreter
+    return "test ok, interpreter={0!s}".format(req.interpreter)
 
 def test_publisher(req):
-    return "test ok, interpreter=%s" % req.interpreter
+    return "test ok, interpreter={0!s}".format(req.interpreter)
 
 def test_publisher_auth_nested(req):
     def __auth__(req, user, password):
@@ -1302,7 +1302,7 @@ def test_publisher_auth_nested(req):
         return 1
     assert(int(req.notes.get("auth_called",0)))
     assert(int(req.notes.get("access_called",0)))
-    return "test ok, interpreter=%s" % req.interpreter
+    return "test ok, interpreter={0!s}".format(req.interpreter)
 
 class _test_publisher_auth_method_nested:
     def method(self, req):
@@ -1315,7 +1315,7 @@ class _test_publisher_auth_method_nested:
             return 1
         assert(int(req.notes.get("auth_called",0)))
         assert(int(req.notes.get("access_called",0)))
-        return "test ok, interpreter=%s" % req.interpreter
+        return "test ok, interpreter={0!s}".format(req.interpreter)
 
 test_publisher_auth_method_nested = _test_publisher_auth_method_nested()
 
@@ -1357,7 +1357,7 @@ class Mapping(object):
         self.name = name
 
     def __call__(self,req):
-        return "Called %s"%self.name
+        return "Called {0!s}".format(self.name)
 hierarchy_root = Mapping("root");
 hierarchy_root.page1 = Mapping("page1")
 hierarchy_root.page1.subpage1 = Mapping("subpage1")
@@ -1521,14 +1521,14 @@ def _test_table():
                 b = a.copy()
             for i in range(size):
                 ka, va = ta = a.popitem()
-                if va != ka: raise TestFailed("a.popitem: %s" % str(ta))
+                if va != ka: raise TestFailed("a.popitem: {0!s}".format(str(ta)))
                 kb, vb = tb = b.popitem()
-                if vb != kb: raise TestFailed("b.popitem: %s" % str(tb))
+                if vb != kb: raise TestFailed("b.popitem: {0!s}".format(str(tb)))
                 if copymode < 0 and ta != tb:
-                    raise TestFailed("a.popitem != b.popitem: %s, %s" % (
+                    raise TestFailed("a.popitem != b.popitem: {0!s}, {1!s}".format(
                         str(ta), str(tb)))
-            if a: raise TestFailed('a not empty after popitems: %s' % str(a))
-            if b: raise TestFailed('b not empty after popitems: %s' % str(b))
+            if a: raise TestFailed('a not empty after popitems: {0!s}'.format(str(a)))
+            if b: raise TestFailed('b not empty after popitems: {0!s}'.format(str(b)))
 
     # iteration (just make sure we can iterate without a segfault)
     d = apache.table({'a' : '1', 'b' : '2', 'c' : '3'})
@@ -1560,6 +1560,6 @@ def memory(req):
     ## check memory usage after
     after = list(map(int, open("/proc/self/statm").read().split()))
 
-    req.write("|%s|%s" % (before[0], after[0]))
+    req.write("|{0!s}|{1!s}".format(before[0], after[0]))
 
     return apache.OK
