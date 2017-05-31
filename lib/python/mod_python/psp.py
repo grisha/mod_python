@@ -271,7 +271,7 @@ class PSP:
                     psp.error_page.run({"exception": (et, ev, etb)}, flush)
                 else:
                     if PY2:
-                        raise et, ev, etb
+                        exec('raise et, ev, etb')
                     else:
                         raise et(ev).with_traceback(etb)
         finally:
