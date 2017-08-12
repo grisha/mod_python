@@ -145,6 +145,7 @@ Every handler can return:
     HTTP_UNSUPPORTED_MEDIA_TYPE       = 415
     HTTP_RANGE_NOT_SATISFIABLE        = 416
     HTTP_EXPECTATION_FAILED           = 417
+    HTTP_IM_A_TEAPOT                  = 418
     HTTP_UNPROCESSABLE_ENTITY         = 422
     HTTP_LOCKED                       = 423
     HTTP_FAILED_DEPENDENCY            = 424
