@@ -775,15 +775,25 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         /* disable user site directories */
         Py_NoUserSiteDirectory = 1;
 
-        /* Initialze the main interpreter. We do not want site.py to
+        /* Initialze the main interpreter. */
+#if PY_MAJOR_VERSION == 2 && \
+                (PY_MINOR_VERSION < 7 || (PY_MINOR_VERSION == 7 && PY_MICRO_VERSION < 14))
+        /*
+         * We do not want site.py to
          * be imported because as of Python 2.7.9 it would cause a
          * circular dependency related to _locale which breaks
          * graceful restart so we set Py_NoSiteFlag to 1 just for this
          * one time. (https://github.com/grisha/mod_python/issues/46)
          */
         Py_NoSiteFlag = 1;
+#endif
+
         Py_Initialize();
+
+#if PY_MAJOR_VERSION == 2 && \
+                (PY_MINOR_VERSION < 7 || (PY_MINOR_VERSION == 7 && PY_MICRO_VERSION < 14))
         Py_NoSiteFlag = 0;
+#endif
 
 #ifdef WITH_THREAD
         /* create and acquire the interpreter lock */
