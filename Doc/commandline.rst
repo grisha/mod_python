@@ -122,13 +122,10 @@ WSGI application which is located in ``/path/to/myapp`` and defined in
 
 The above example will create a Python-based configuration in
 ``/path/to/new/server_root/conf/http_conf.py`` which is a simple
-Pythong script. When executed, the output of the script becomes an
+Python script. When executed, the output of the script becomes an
 Apache configuration (``create`` will take care of generating the
-first Apache config for you). 
+first Apache config for you).
 
 You should be able to run this Apache instance by executing::
 
    mod_python start /path/to/new/server_root/conf/httpd.conf
-
-
-
