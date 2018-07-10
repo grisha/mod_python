@@ -74,6 +74,10 @@ class metaCookie(type):
         clsdict["_valid_attr"] = _valid_attr
         clsdict["__slots__"] = __slots__
 
+        return type.__new__(cls, clsname, bases, clsdict)
+
+    def __init__(cls, clsname, bases, clsdict):
+
         def set_expires(self, value):
 
             if type(value) == type(""):
@@ -96,9 +100,7 @@ class metaCookie(type):
         def get_expires(self):
             return self._expires
 
-        clsdict["expires"] = property(fget=get_expires, fset=set_expires)
-
-        return type.__new__(cls, clsname, bases, clsdict)
+        cls.expires = property(fget=get_expires, fset=set_expires)
 
 # metaclass= workaround, see
 # http://mikewatkins.ca/2008/11/29/python-2-and-3-metaclasses/#using-the-metaclass-in-python-2-x-and-3-x
