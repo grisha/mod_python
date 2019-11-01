@@ -853,7 +853,8 @@ PyObject *_apache_module_init()
 #else
     m = PyModule_Create(&_apache_moduledef);
     PyObject *name = PyUnicode_FromString("_apache");
-    _PyImport_FixupExtensionObject(m, name, name);
+    PyObject * modules = PyImport_GetModuleDict();
+    _PyImport_FixupExtensionObject(m, name, name, modules);
 #endif
     d = PyModule_GetDict(m);
     Mp_ServerReturn = PyErr_NewException("_apache.SERVER_RETURN", NULL, NULL);

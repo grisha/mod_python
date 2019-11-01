@@ -747,10 +747,10 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
                      "python_init: Python version mismatch, expected '%s', found '%s'.",
                      py_compile_version, py_dynamic_version);
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python executable found '%s'.",
+                     "python_init: Python executable found '%ls'.",
                      Py_GetProgramFullPath());
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python path being used '%s'.",
+                     "python_init: Python path being used '%ls'.",
                      Py_GetPath());
     }
 
