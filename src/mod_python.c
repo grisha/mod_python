@@ -44,6 +44,16 @@ static APR_OPTIONAL_FN_TYPE(ap_register_include_handler) *optfn_register_include
 static APR_OPTIONAL_FN_TYPE(ap_ssi_get_tag_and_value)    *optfn_ssi_get_tag_and_value;
 static APR_OPTIONAL_FN_TYPE(ap_ssi_parse_string)         *optfn_ssi_parse_string;
 
+/*
+ * Python3 uses wchar_t * for strings; Python2 uses char *.
+ * So for printing we need a different format string.
+ */
+#if PY_MAJOR_VERSION < 3
+# define PRIs "%s"
+#else
+# define PRIs "%ls"
+#endif
+
 /**
  ** make_obcallback
  **
@@ -747,10 +757,10 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
                      "python_init: Python version mismatch, expected '%s', found '%s'.",
                      py_compile_version, py_dynamic_version);
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python executable found '%s'.",
+                     "python_init: Python executable found '" PRIs "'.",
                      Py_GetProgramFullPath());
         ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python path being used '%s'.",
+                     "python_init: Python path being used '" PRIs "'.",
                      Py_GetPath());
     }
 
