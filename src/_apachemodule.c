@@ -24,7 +24,7 @@
 
 #include "mod_python.h"
 
-/* A referende to the _apache.SERVER_RETURN */
+/* A reference to the _apache.SERVER_RETURN */
 
 PyObject *Mp_ServerReturn;
 
