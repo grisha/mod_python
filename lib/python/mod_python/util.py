@@ -156,7 +156,10 @@ else:
         disp_options = None
 
         def __new__(self, value):
-            return bytes.__new__(self, str(value), "utf-8")
+            if PY2:
+                return bytes.__new__(self, value)
+            else:
+                return bytes.__new__(self, str(value), encoding = "utf-8")
 
         def __init__(self, value):
             self.value = value
