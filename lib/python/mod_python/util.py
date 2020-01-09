@@ -159,7 +159,8 @@ else:
             if PY2:
                 return bytes.__new__(self, value)
             else:
-                return bytes.__new__(self, str(value), encoding = "utf-8")
+                str_value = value.decode("utf-8") if isinstance(value, bytes) else value
+                return bytes.__new__(self, str(str_value), encoding="utf-8")
 
         def __init__(self, value):
             self.value = value
