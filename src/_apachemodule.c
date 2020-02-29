@@ -217,15 +217,15 @@ static PyObject *parse_qs(PyObject *self, PyObject *args)
                     // https://url.spec.whatwg.org/#percent-encoded-bytes
                     PyObject *list, *ukey, *uval;
                     ukey = PyUnicode_DecodeUTF8(ckey, strlen(ckey), NULL);
-                    uval = PyUnicode_DecodeUTF8(ckey, strlen(cval), NULL);
+                    uval = PyUnicode_DecodeUTF8(cval, strlen(cval), NULL);
                     list = PyDict_GetItem(dict, ukey);
                     if (list) {
                         PyList_Append(list, uval);
-                        Py_DECREF(uval);
+                        Py_XDECREF(uval);
                     } else {
                         list = Py_BuildValue("[O]", uval);
                         PyDict_SetItem(dict, ukey, list);
-                        Py_DECREF(ukey);
+                        Py_XDECREF(ukey);
                         Py_DECREF(list);
                     }
                 } else {
@@ -376,8 +376,8 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
                     ukey = PyUnicode_DecodeUTF8(ckey, strlen(ckey), NULL);
                     uval = PyUnicode_DecodeUTF8(cval, strlen(cval), NULL);
                     listitem = Py_BuildValue("(O,O)", ukey, uval);
-                    Py_DECREF(ukey);
-                    Py_DECREF(uval);
+                    Py_XDECREF(ukey);
+                    Py_XDECREF(uval);
                 } else
                     listitem = Py_BuildValue("(O,O)", key, val);
                 if(listitem) {
