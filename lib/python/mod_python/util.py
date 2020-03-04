@@ -249,7 +249,7 @@ class FieldStorage:
 
         # always process GET-style parameters
         if req.args:
-            pairs = parse_qsl(req.args, keep_blank_values)
+            pairs = self.parse_qsl_safely(req.args, keep_blank_values)
             for pair in pairs:
                 self.add_field(pair[0], pair[1])
 
@@ -274,7 +274,7 @@ class FieldStorage:
             v = req.read(clen)
             if not isinstance(v, bytes):
                 raise TypeError("req.read() must return bytes")
-            pairs = parse_qsl(v, keep_blank_values)
+            pairs = self.parse_qsl_safely(v, keep_blank_values)
             for pair in pairs:
                 self.add_field(pair[0], pair[1])
             return
@@ -396,6 +396,22 @@ class FieldStorage:
             field.disposition_options = disp_options
             field.headers = headers
             self.list.append(field)
+
+    def parse_qsl_safely(self, query_string, keep_blank_values):
+        """
+        This script calls urllib.parse.parse_qsl if there is exception in processing parse_qsl function
+
+        :param query_string: The query string which needs to be parsed
+        :type query_string: string
+        :param keep_blank_values: keep_blank_values is a flag indicating whether blank values in percent-encoded queries should be treated as blank strings.
+        :type keep_blank_values: int/boolean
+        """
+        try:
+            pairs = parse_qsl(query_string, keep_blank_values)
+        except SystemError as er:
+            import urllib.parse
+            pairs = urllib.parse.parse_qsl(query_string, keep_blank_values)
+        return pairs
 
     def add_field(self, key, value):
         """Insert a field as key/value pair"""
