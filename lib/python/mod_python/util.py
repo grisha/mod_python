@@ -399,17 +399,13 @@ class FieldStorage:
 
     def parse_qsl_safely(self, query_string, keep_blank_values):
         """
-        This Function checks whether this script is compiled with python2 or python3
-        if script is compiled with python2, then the script runs parse_qsl and returns the output 
-        if the script is compiled with python3, then it calls urllib.parse.parse_qsl if there is exception in processing parse_qsl function
+        This script calls urllib.parse.parse_qsl if there is exception in processing parse_qsl function
 
         :param query_string: The query string which needs to be parsed
         :type query_string: string
         :param keep_blank_values: keep_blank_values is a flag indicating whether blank values in percent-encoded queries should be treated as blank strings.
         :type keep_blank_values: int/boolean
         """
-        if PY2:
-            return parse_qsl(query_string, keep_blank_values)
         try:
             pairs = parse_qsl(query_string, keep_blank_values)
         except SystemError as er:
