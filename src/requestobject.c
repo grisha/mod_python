@@ -2251,7 +2251,7 @@ static PyGetSetDef request_getsets[] = {
     {"no_local_copy", (getter)getreq_recmbr, (setter)setreq_recmbr, "There is no local copy of the response", "no_local_copy"},
     {"unparsed_uri",  (getter)getreq_recmbr, NULL, "The URI without any parsing performed", "unparsed_uri"},
     {"filename",      (getter)getreq_recmbr, (setter)setreq_recmbr, "The file name on disk that this request corresponds to", "filename"},
-    {"canonical_filename", (getter)getreq_recmbr, (setter)setreq_recmbr, "The true filename (req.filename is canonicalized if they dont match)", "canonical_filename"},
+    {"canonical_filename", (getter)getreq_recmbr, (setter)setreq_recmbr, "The true filename (req.filename is canonicalized if they don't match)", "canonical_filename"},
     {"path_info",     (getter)getreq_recmbr, (setter)setreq_recmbr, "Path_info, if any", "path_info"},
     {"args",          (getter)getreq_recmbr, (setter)setreq_recmbr, "QUERY_ARGS, if any", "args"},
     {"finfo",         (getter)getreq_rec_fi, (setter)setreq_recmbr, "File information", "finfo"},
