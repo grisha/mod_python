@@ -24,7 +24,7 @@ import time
 import os
 import pdb
 import stat
-import imp
+import importlib
 import types
 import _apache
 try:
@@ -581,79 +581,63 @@ def import_module(module_name, autoreload=1, log=0, path=None):
 
     # nlehuen: this is a big lock, we'll have to refine it later to get better performance.
     # For now, we'll concentrate on thread-safety.
-    imp.acquire_lock()
-    try:
-        # (Re)import
-        if module_name in sys.modules:
+    # (Re)import
+    if module_name in sys.modules:
 
-            # The module has been imported already
-            module = sys.modules[module_name]
-            oldmtime, mtime  = 0, 0
+        # The module has been imported already
+        module = sys.modules[module_name]
+        oldmtime, mtime  = 0, 0
 
-            if autoreload:
+        if autoreload:
 
-                # but is it in the path?
-                try:
-                    file = module.__dict__["__file__"]
-                except KeyError:
-                    file = None
+            # but is it in the path?
+            try:
+                file = module.__dict__["__file__"]
+            except KeyError:
+                file = None
 
-                # the "and not" part of this condition is to prevent execution
-                # of arbitrary already imported modules, such as os. The
-                # reason we use startswith as opposed to exact match is that
-                # modules inside packages are actually in subdirectories.
+            # the "and not" part of this condition is to prevent execution
+            # of arbitrary already imported modules, such as os. The
+            # reason we use startswith as opposed to exact match is that
+            # modules inside packages are actually in subdirectories.
 
-                if not file or (path and not list(filter(file.startswith, path))):
-                    # there is a script by this name already imported, but it's in
-                    # a different directory, therefore it's a different script
-                    mtime, oldmtime = 0, -1 # trigger import
-                else:
-                    try:
-                        last_check = module.__dict__["__mtime_check__"]
-                    except KeyError:
-                        last_check = 0
-
-                    if (time.time() - last_check) > 1:
-                        oldmtime = module.__dict__.get("__mtime__", 0)
-                        mtime = module_mtime(module)
+            if not file or (path and not list(filter(file.startswith, path))):
+                # there is a script by this name already imported, but it's in
+                # a different directory, therefore it's a different script
+                mtime, oldmtime = 0, -1 # trigger import
             else:
-                pass
-        else:
-            mtime, oldmtime = 0, -1
-
-        if mtime != oldmtime:
-
-            # Import the module
-            if log:
-                if path:
-                    s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
-                else:
-                    s = "mod_python: (Re)importing module '%s'" % module_name
-                _apache.log_error(s, APLOG_NOTICE)
-
-            parent = None
-            parts = module_name.split('.')
-            for i in range(len(parts)):
-                f, p, d = imp.find_module(parts[i], path)
                 try:
-                    mname = ".".join(parts[:i+1])
-                    module = imp.load_module(mname, f, p, d)
-                    if parent:
-                        setattr(parent,parts[i],module)
-                    parent = module
-                finally:
-                    if f: f.close()
-                if hasattr(module, "__path__"):
-                    path = module.__path__
+                    last_check = module.__dict__["__mtime_check__"]
+                except KeyError:
+                    last_check = 0
 
-            if mtime == 0:
-                mtime = module_mtime(module)
+                if (time.time() - last_check) > 1:
+                    oldmtime = module.__dict__.get("__mtime__", 0)
+                    mtime = module_mtime(module)
+        else:
+            pass
+    else:
+        mtime, oldmtime = 0, -1
 
-            module.__mtime__ = mtime
+    if mtime != oldmtime:
 
-        return module
-    finally:
-        imp.release_lock()
+        # Import the module
+        if log:
+            if path:
+                s = "mod_python: (Re)importing module '%s' with path set to '%s'" % (module_name, path)
+            else:
+                s = "mod_python: (Re)importing module '%s'" % module_name
+            _apache.log_error(s, APLOG_NOTICE)
+
+        parent = None
+        module = importlib.import_module(module_name)
+
+        if mtime == 0:
+            mtime = module_mtime(module)
+
+        module.__mtime__ = mtime
+
+    return module
 
 def module_mtime(module):
     """Get modification time of module"""
