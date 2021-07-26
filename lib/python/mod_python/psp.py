@@ -25,9 +25,12 @@ import sys
 import os
 import marshal
 import types
-from cgi import escape
 import dbm, dbm
 import tempfile
+try:
+    from html import escape
+except:
+    from cgi import escape
 
 PY2 = sys.version[0] == '2'
 
