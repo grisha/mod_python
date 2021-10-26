@@ -59,7 +59,7 @@ class metaCookie(type):
 
         _valid_attr = (
             "version", "path", "domain", "secure",
-            "comment", "expires", "max_age",
+            "comment", "expires", "max_age", "samesite",
             # RFC 2965
             "commentURL", "discard", "port",
             # Microsoft Extension
