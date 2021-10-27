@@ -24,6 +24,7 @@ import time
 import os
 import pdb
 import stat
+import inspect
 import importlib
 import types
 import _apache
@@ -693,9 +694,9 @@ def resolve_object(module, obj_str, arg=None, silent=0):
 
         obj = getattr(obj, obj_str)
 
-        if hasattr(obj, "im_self") and not obj.__self__:
-            # this is an unbound method, its class
-            # needs to be instantiated
+        if inspect.isclass(parent):
+            # The parent of this object is a class,
+            # it needs to be instantiated
             instance = parent(arg)
             obj = getattr(instance, obj_str)
 
