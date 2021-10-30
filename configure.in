@@ -215,8 +215,21 @@ if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
         standard_lib=1) +"/config")'`
     LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
-    LDLIBS1=`${PYTHON_BIN} -c 'import distutils.sysconfig;\
-        print(distutils.sysconfig.get_config_var("LDLIBRARY"))'`
+    PYTHON_CODE=$(cat <<END
+import distutils.sysconfig
+lookingFor = "-lpython"
+ret = str(distutils.sysconfig.get_config_var("BLDLIBRARY"))
+if lookingFor not in ret:
+    cfg = distutils.sysconfig.get_config_vars()
+    for key in cfg:
+        if isinstance(cfg@<:@key@:>@, str) and lookingFor in cfg@<:@key@:>@:
+            ret = cfg@<:@key@:>@
+            break
+print(ret@<:@ret.find(lookingFor) if ret.find(lookingFor) != -1 else 0:@:>@)
+END
+)
+
+    LDLIBS1=`${PYTHON_BIN} -c "$PYTHON_CODE"`
     LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
         print(sysconfig.get_config_var("LIBS"))'`
 

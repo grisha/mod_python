@@ -3246,7 +3246,7 @@ print(ret[ret.find(lookingFor) if ret.find(lookingFor) != -1 else 0:])
 END
 )
 
-    LDLIBS1=`${PYTHON_BIN} -c "$PYTHON_CODE"` 
+    LDLIBS1=`${PYTHON_BIN} -c "$PYTHON_CODE"`
     LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
         print(sysconfig.get_config_var("LIBS"))'`
 
