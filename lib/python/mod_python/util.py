@@ -368,12 +368,12 @@ class FieldStorage:
             filename = None
             if b"filename" in disp_options:
                 filename = disp_options[b"filename"]
-                if file_callback and isinstance(file_callback, collections.Callable):
+                if file_callback and isinstance(file_callback, collections.abc.Callable):
                     file = file_callback(filename)
                 else:
                     file = tempfile.TemporaryFile("w+b")
             else:
-                if field_callback and isinstance(field_callback, collections.Callable):
+                if field_callback and isinstance(field_callback, collections.abc.Callable):
                     file = field_callback()
                 else:
                     file = BytesIO()
