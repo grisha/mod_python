@@ -315,7 +315,7 @@ static PyObject *filter_write(filterobject *self, PyObject *args)
 {
 
     char *buff;
-    int len;
+    Py_ssize_t len;
     apr_bucket *b;
     PyObject *s;
     conn_rec *c = self->request_obj->request_rec->connection;

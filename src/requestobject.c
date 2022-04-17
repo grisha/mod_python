@@ -1576,7 +1576,7 @@ static PyObject * req_update_mtime(requestobject *self, PyObject *args)
 
 static PyObject * req_write(requestobject *self, PyObject *args)
 {
-    int len;
+    Py_ssize_t len;
     int rc;
     char *buff;
     int flush=1;
