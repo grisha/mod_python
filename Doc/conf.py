@@ -26,9 +26,13 @@ copyright = '1990-%s, Apache Software Foundation, Gregory Trubetskoy' % time.str
 # release = '2.6a0'
 
 # version
-import commands
-v, r = commands.getoutput("../dist/version.sh").rsplit('.', 1)
+import subprocess
+v, r = subprocess.check_output(
+    os.path.dirname(__file__) + "/../dist/version.sh", encoding='ASCII'
+).rsplit('.', 1)
 version, release = v, v+'.'+r
+
+root_doc = 'contents'
 
 # Ignore .rst in Sphinx its self.
 exclude_trees = ['tools/sphinx']
