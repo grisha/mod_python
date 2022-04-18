@@ -32,8 +32,6 @@ v, r = subprocess.check_output(
 ).rsplit('.', 1)
 version, release = v, v+'.'+r
 
-root_doc = 'contents'
-
 # Ignore .rst in Sphinx its self.
 exclude_trees = ['tools/sphinx']
 
