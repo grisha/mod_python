@@ -167,9 +167,9 @@ fi
 
 # find out python version
 AC_MSG_CHECKING(Python version)
-PyVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version[:3])'`]
-PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version[:1])'`]
-PyMINVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version.split(".")[1])'`]
+PyVERSION=`$PYTHON_BIN -c ['import sys; print('{}.{}'.format(*sys.version_info))'`]
+PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version_info.major)'`]
+PyMINVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version_info.minor)'`]
 AC_MSG_RESULT($PyVERSION)
 
 # make sure Python version is >= 2.6 for 2 and >= 3.3 for 3

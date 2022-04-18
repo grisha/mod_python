@@ -232,7 +232,7 @@ static PyObject * conn_readline(connobject *self, PyObject *args)
 static PyObject * conn_write(connobject *self, PyObject *args)
 {
     char *buff;
-    int len;
+    Py_ssize_t len;
     apr_bucket_brigade *bb;
     apr_bucket *b;
     PyObject *s;

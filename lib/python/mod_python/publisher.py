@@ -51,8 +51,8 @@ def _callable(obj):
     if PY2:
         return callable(obj)
     else:
-        return (isinstance(obj, collections.Callable) or
-                (hasattr(obj, "__call__") and isinstance(obj.__call__, collections.Callable)))
+        return (isinstance(obj, collections.abc.Callable) or
+                (hasattr(obj, "__call__") and isinstance(obj.__call__, collections.abc.Callable)))
 
 ####################### The published page cache ##############################
 
