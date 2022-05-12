@@ -1293,15 +1293,15 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-apxs=NAME        name of the apxs executable [[apxs]]
---with-apache=DIR 	Path to Apache sources
---with-python=PATH	Path to specific Python binary
---with-mutex-dir=DIR	Mutex directory
---with-max-locks=INTEGER	Maximum number of locks
---with-flex=PATH	Path to specific flex binary.
-	Flex Version 2.5.31 or greater is required to regenerate psp_parser.c
-	from psp_parse.l. A prepared psp_parser.c file is included with the
-	source, so you will only need flex if you make changes to psp_parser.l
-    	See the README for more information.
+--with-apache=DIR  Path to Apache sources
+--with-python=PATH Path to specific Python binary
+--with-mutex-dir=DIR    Mutex directory
+--with-max-locks=INTEGER    Maximum number of locks
+--with-flex=PATH Path to specific flex binary.
+    Flex Version 2.5.31 or greater is required to regenerate psp_parser.c
+    from psp_parse.l. A prepared psp_parser.c file is included with the
+    source, so you will only need flex if you make changes to psp_parser.l
+        See the README for more information.
 
 Some influential environment variables:
   CC          C compiler command
@@ -3183,9 +3183,9 @@ fi
 # find out python version
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking Python version" >&5
 $as_echo_n "checking Python version... " >&6; }
-PyVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version[:3])'`
-PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version[:1])'`
-PyMINVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version.split(".")[1])'`
+PyVERSION=`$PYTHON_BIN -c 'import sys; print(str(sys.version_info[0])+"."+str(sys.version_info[1]))'`
+PyMAJVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version_info.major)'`
+PyMINVERSION=`$PYTHON_BIN -c 'import sys; print(sys.version_info.minor)'`
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PyVERSION" >&5
 $as_echo "$PyVERSION" >&6; }
 

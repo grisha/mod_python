@@ -112,7 +112,7 @@ AC_SUBST(AP_SRC_OWN)
 AC_SUBST(AP_SRC_GRP)
 ## static is disabled, thus no --with-apache
 ##AC_MSG_CHECKING(for --with-apache)
-AC_ARG_WITH(apache, [--with-apache=DIR 	Path to Apache sources],
+AC_ARG_WITH(apache, [--with-apache=DIR  Path to Apache sources],
 [
 
   # temporarily disable static on 2.0 until I figure out how to
@@ -150,7 +150,7 @@ fi
 
 AC_SUBST(PYTHON_BIN)
 AC_MSG_CHECKING(for --with-python)
-AC_ARG_WITH(python, [--with-python=PATH	Path to specific Python binary],
+AC_ARG_WITH(python, [--with-python=PATH Path to specific Python binary],
 [
   PYTHON_BIN="$withval"
   AC_MSG_RESULT($PYTHON_BIN)
@@ -167,7 +167,7 @@ fi
 
 # find out python version
 AC_MSG_CHECKING(Python version)
-PyVERSION=`$PYTHON_BIN -c ['import sys; print('{}.{}'.format(*sys.version_info))'`]
+PyVERSION=`$PYTHON_BIN -c ['import sys; print(str(sys.version_info[0])+"."+str(sys.version_info[1]))'`]
 PyMAJVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version_info.major)'`]
 PyMINVERSION=`$PYTHON_BIN -c ['import sys; print(sys.version_info.minor)'`]
 AC_MSG_RESULT($PyVERSION)
@@ -278,7 +278,7 @@ TEST_MOD_PYTHON_SO="`pwd`/src/mod_python.so"
 # configure the MUTEX_DIR for location of mutex locks
 AC_SUBST(MUTEX_DIR)
 AC_MSG_CHECKING(for --with-mutex-dir)
-AC_ARG_WITH(mutex-dir, [--with-mutex-dir=DIR	Mutex directory],
+AC_ARG_WITH(mutex-dir, [--with-mutex-dir=DIR    Mutex directory],
 [
   MUTEX_DIR="$withval"
   AC_MSG_RESULT($MUTEX_DIR)
@@ -294,7 +294,7 @@ AC_MSG_RESULT([Using MUTEX_DIR $MUTEX_DIR])
 # configure the MAX_LOCKS for number of mutex locks
 AC_SUBST(MAX_LOCKS)
 AC_MSG_CHECKING(for --with-max-locks)
-AC_ARG_WITH(max-locks, [--with-max-locks=INTEGER	Maximum number of locks],
+AC_ARG_WITH(max-locks, [--with-max-locks=INTEGER    Maximum number of locks],
 [
   MAX_LOCKS="$withval"
   AC_MSG_RESULT($MAX_LOCKS)
@@ -312,11 +312,11 @@ AC_MSG_RESULT([Using $MAX_LOCKS MAX_LOCKS.])
 AC_SUBST(LEX)
 
 AC_MSG_CHECKING(for --with-flex)
-AC_ARG_WITH(flex, [--with-flex=PATH	Path to specific flex binary.
-	Flex Version 2.5.31 or greater is required to regenerate psp_parser.c
-	from psp_parse.l. A prepared psp_parser.c file is included with the
-	source, so you will only need flex if you make changes to psp_parser.l
-    	See the README for more information.],
+AC_ARG_WITH(flex, [--with-flex=PATH Path to specific flex binary.
+    Flex Version 2.5.31 or greater is required to regenerate psp_parser.c
+    from psp_parse.l. A prepared psp_parser.c file is included with the
+    source, so you will only need flex if you make changes to psp_parser.l
+        See the README for more information.],
 [
   LEX="$withval"
   AC_MSG_RESULT($LEX)
