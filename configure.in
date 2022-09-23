@@ -81,7 +81,7 @@ else
   AC_MSG_RESULT($HTTPD_VERSION)
 
   # make sure version begins with 2
-  if test -z "`echo $HTTPD_VERSION | egrep \^2`"; then
+  if test -z "`echo $HTTPD_VERSION | grep -E \^2`"; then
     AC_MSG_ERROR([This version of mod_python only works with Apache 2. The one we have ($HTTPD) seems to be $HTTPD_VERSION.])
   fi
 
