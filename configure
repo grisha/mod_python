@@ -3040,7 +3040,7 @@ $as_echo_n "checking Apache version... " >&6; }
 $as_echo "$HTTPD_VERSION" >&6; }
 
   # make sure version begins with 2
-  if test -z "`echo $HTTPD_VERSION | egrep \^2`"; then
+  if test -z "`echo $HTTPD_VERSION | grep -E \^2`"; then
     as_fn_error $? "This version of mod_python only works with Apache 2. The one we have ($HTTPD) seems to be $HTTPD_VERSION." "$LINENO" 5
   fi
 
