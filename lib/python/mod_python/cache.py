@@ -369,7 +369,7 @@ class ModuleCache(FileCache):
         This module is not inserted into sys.modules.
     """
     def __init__(self, max_size=0):
-        FileCache.__init__(self, max_size, 'r')
+        FileCache.__init__(self, max_size, 'rb')
 
     def build(self, key, name, opened, entry):
         try:
@@ -377,7 +377,8 @@ class ModuleCache(FileCache):
                 opened_as_str = opened.read()
             module = types.ModuleType(re_not_word.sub('_',key))
             module.__file__ = key
-            exec(opened_as_str, module.__dict__)
+            code = compile(opened_as_str, key, 'exec')
+            exec(code, module.__dict__)
             return module
         finally:
             opened.close()
