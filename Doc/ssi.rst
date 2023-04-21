@@ -93,9 +93,9 @@ Global data constitutes variables as well as module imports, function and
 class definitions.::
 
    <!--#python exec="
-   import cgi, time, os
+   import html, time, os
    def _escape(object):
-       return cgi.escape(str(object))
+       return html.escape(str(object))
    now = time.time() 
    " -->
    <html>
@@ -149,10 +149,10 @@ within the page.::
 
    from mod_python import apache
 
-   import cgi, time
+   import html, time
 
    def _escape(object):
-      return cgi.escape(str(object))
+      return html.escape(str(object))
 
    def _header(filter):
       print >> filter, '...'
