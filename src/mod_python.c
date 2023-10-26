@@ -303,7 +303,7 @@ static void release_interpreter(interpreterdata *idata)
 {
     PyThreadState *tstate = PyThreadState_Get();
 #ifdef WITH_THREAD
-#if PY_MAJOR_VERSION <= 3 && PY_MINOR_VERSION < 10 
+#if PY_MAJOR_VERSION <= 3 && PY_MINOR_VERSION < 9 
     PyThreadState_Clear(tstate);
 #endif
     if (idata)
