@@ -710,7 +710,6 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     const char *userdata_key = "python_init";
     apr_status_t rc;
 
-    const char *py_compile_version = PY_VERSION;
     const char *py_dynamic_version = 0;
 
     /* The "initialized" flag is a fudge for Mac OS X. It
@@ -753,18 +752,6 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     ap_add_version_component(p, mp_version_component);
 
     py_dynamic_version = strtok((char *)Py_GetVersion(), " ");
-
-    if (strcmp(py_compile_version, py_dynamic_version) != 0) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python version mismatch, expected '%s', found '%s'.",
-                     py_compile_version, py_dynamic_version);
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python executable found '" PRIs "'.",
-                     Py_GetProgramFullPath());
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
-                     "python_init: Python path being used '" PRIs "'.",
-                     Py_GetPath());
-    }
 
     /* Python version */
     sprintf(buff, "Python/%.200s", py_dynamic_version);
