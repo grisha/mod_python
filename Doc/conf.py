@@ -57,11 +57,6 @@ html_last_updated_fmt = '%b %d, %Y'
 # typographically correct entities.
 html_use_smartypants = True
 
-# Custom sidebar templates, filenames relative to this file.
-html_sidebars = {
-    'index': 'indexsidebar.html',
-}
-
 # Output file base name for HTML help builder.                                                                                                                                                            
 htmlhelp_basename = 'mod_python' + release.replace('.', '')
 
