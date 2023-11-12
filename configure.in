@@ -17,7 +17,8 @@
  #
 
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(src/mod_python.c)
+AC_INIT
+AC_CONFIG_SRCDIR([src/mod_python.c])
 
 # includes
 INCLUDES="-I`pwd`/src/include"
@@ -42,14 +43,13 @@ AC_MSG_CHECKING(your blood pressure)
 AC_MSG_RESULT([a bit high, but we can proceed])
 
 ## The goal is to find apxs
-AC_CHECKING(whether apxs is available)
+AS_MESSAGE([checking whether apxs is available...])
 AC_SUBST(APXS)
 AC_SUBST(DSO)
 AC_SUBST(ALL)
 
 # check for --with-apxs
-AC_ARG_WITH(apxs, AC_HELP_STRING([--with-apxs=NAME],
-            [name of the apxs executable [[apxs]]]),
+AC_ARG_WITH(apxs, AS_HELP_STRING([--with-apxs=NAME],[name of the apxs executable [[apxs]]]),
             [APXS="$with_apxs"])
 
 if test -z "${APXS}"; then
