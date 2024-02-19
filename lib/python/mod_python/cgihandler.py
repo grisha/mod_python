@@ -18,7 +18,7 @@
  #
 
 from . import apache
-import imp
+import importlib.util
 import os
 import sys
 
@@ -88,22 +88,22 @@ def handler(req):
 
             try:
                 # we do not search the pythonpath (security reasons)
-                fd, path, desc = imp.find_module(module_name, [dir])
-            except ImportError:
+                spec = importlib.util.find_spec(module_name, dir)
+            except (ModuleNotFoundError, ValueError):
                 raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
-            # this executes the module
-            imp.load_module(module_name, fd, path, desc)
+            if spec is None:
+                raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
+
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
 
             return apache.OK
 
         finally:
             # unsimulate the cgi environment
             apache.restore_nocgi(env, si, so)
-            try:
-                fd.close()
-            except: pass
             os.chdir(cwd)
     finally:
         _lock.release()
-
