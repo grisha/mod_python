@@ -18,7 +18,7 @@
  #
 
 from . import apache
-import imp
+import importlib.util
 import os
 import sys
 
@@ -86,24 +86,35 @@ def handler(req):
             # simulate cgi environment
             env, si, so = apache.setup_cgi(req)
 
-            try:
-                # we do not search the pythonpath (security reasons)
-                fd, path, desc = imp.find_module(module_name, [dir])
-            except ImportError:
+            scriptPath = os.path.join(dir, file)
+
+            if not os.path.exists(scriptPath):
                 raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
-            # this executes the module
-            imp.load_module(module_name, fd, path, desc)
+            # avoid loading modules outside dir
+            # (e.g. shenaningans like ../../../../etc/passwd)
+            scriptPath = os.path.abspath(scriptPath)
+            if not scriptPath.startswith(dir):
+                raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
+
+            try:
+                # we do not search the pythonpath (security reasons)
+                spec = importlib.util.spec_from_file_location(module_name, scriptPath)
+            except (ModuleNotFoundError, ValueError):
+                raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
+
+            if spec is None:
+                raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
+
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
 
             return apache.OK
 
         finally:
             # unsimulate the cgi environment
             apache.restore_nocgi(env, si, so)
-            try:
-                fd.close()
-            except: pass
             os.chdir(cwd)
     finally:
         _lock.release()
-
