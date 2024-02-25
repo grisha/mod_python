@@ -34,7 +34,7 @@ from . import util
 import sys
 import os
 from os.path import exists, isabs, normpath, split, isfile, join, dirname
-import imp
+import importlib.machinery
 import re
 import base64
 
@@ -43,7 +43,7 @@ from types import *
 import collections
 
 
-imp_suffixes = " ".join([x[0][1:] for x in imp.get_suffixes()])
+imp_suffixes = " ".join(x[1:] for x in importlib.machinery.all_suffixes())
 
 # Python 2/3 compat workaround
 PY2 = sys.version[0] == '2'
