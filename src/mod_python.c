@@ -794,7 +794,8 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
         Py_NoSiteFlag = 0;
 #endif
 
-#ifdef WITH_THREAD
+        /* see https://docs.python.org/3/c-api/init.html#c.PyEval_InitThreads */
+#if defined (WITH_THREAD) && PY_VERSION_HEX < 0x03070000
         /* create and acquire the interpreter lock */
         PyEval_InitThreads();
 #endif
@@ -2635,7 +2636,12 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
     /* accordig Py C Docs we must do this after forking */
     PyEval_RestoreThread(global_tstate);
+
+#if PY_VERSION_HEX < 0x03070000
     PyOS_AfterFork();
+#else
+    PyOS_AfterFork_Child();
+#endif
 
     interpreterdata *idata = save_interpreter(MAIN_INTERPRETER, PyThreadState_Get());
     if (!idata)

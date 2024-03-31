@@ -159,10 +159,18 @@ AC_MSG_RESULT(no))
 
 # check for Python executable
 if test -z "$PYTHON_BIN"; then
-  AC_PATH_PROG(PYTHON_BIN, python)
-  if test -z "$PYTHON_BIN"; then
-    AC_MSG_ERROR(python binary not found in path)
+  for python in python3 python3.12 python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0 python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python; do
+  AC_PATH_PROG(PYTHON_BIN, [$python])
+  if test -n "$PYTHON_BIN"; then
+    break
   fi
+  done
+fi
+
+if test -z "$PYTHON_BIN"; then
+  AC_MSG_ERROR(python binary not found in path)
+else
+  AC_CHECK_FILE([${PYTHON_BIN}]-config, PYTHON_CONFIG=[${PYTHON_BIN}]-config)
 fi
 
 # find out python version
@@ -187,35 +195,39 @@ if test "$PyMAJVERSION" -eq "3"; then
   fi
 fi
 
-# calculate compiler options
-CPPFLAGS1=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print("-I" + sysconfig.get_config_var("INCLUDEPY"))'`
+if test -n "$PYTHON_CONFIG"; then
+  CPPFLAGS=`${PYTHON_CONFIG} --includes`
+  LDFLAGS=`${PYTHON_CONFIG} --ldflags --embed`
+  LDLIBS=""
+else
 
-CPPFLAGS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print(" ".join(filter(lambda x: x.startswith("-D"), \
-    sysconfig.get_config_var("CFLAGS").split())))'`
+  # calculate compiler options
+  CPPFLAGS1=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+      print("-I" + sysconfig.get_config_var("INCLUDEPY"))'`
 
-CPPFLAGS="${CPPFLAGS1} ${CPPFLAGS2}"
+  CPPFLAGS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+      print(" ".join(filter(lambda x: x.startswith("-D"), \
+      sysconfig.get_config_var("CFLAGS").split())))'`
 
-AC_SUBST(CPPFLAGS)
+  CPPFLAGS="${CPPFLAGS1} ${CPPFLAGS2}"
 
-PYTHONFRAMEWORKDIR=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print(sysconfig.get_config_var("PYTHONFRAMEWORKDIR"))'`
-PYTHONFRAMEWORKPREFIX=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print(sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"))'`
-PYTHONFRAMEWORK=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-    print(sysconfig.get_config_var("PYTHONFRAMEWORK"))'`
+  PYTHONFRAMEWORKDIR=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+      print(sysconfig.get_config_var("PYTHONFRAMEWORKDIR"))'`
+  PYTHONFRAMEWORKPREFIX=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+      print(sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"))'`
+  PYTHONFRAMEWORK=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+      print(sysconfig.get_config_var("PYTHONFRAMEWORK"))'`
 
-if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
-    # this directory may contain the .so library, our preference, list 1st
-    LDFLAGS1=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
-        print("-L" + distutils.sysconfig.get_config_var("LIBDIR"))'`
-    LDFLAGS2=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
-        print("-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
-        standard_lib=1) +"/config")'`
-    LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
+  if test "${PYTHONFRAMEWORKDIR}" = "no-framework"; then
+      # this directory may contain the .so library, our preference, list 1st
+      LDFLAGS1=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
+          print("-L" + distutils.sysconfig.get_config_var("LIBDIR"))'`
+      LDFLAGS2=`${PYTHON_BIN} -c 'import distutils.sysconfig; \
+          print("-L" + distutils.sysconfig.get_python_lib(plat_specific=1, \
+          standard_lib=1) +"/config")'`
+      LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
-    PYTHON_CODE=$(cat <<END
+      PYTHON_CODE=$(cat <<END
 import distutils.sysconfig
 lookingFor = "-lpython"
 ret = str(distutils.sysconfig.get_config_var("BLDLIBRARY"))
@@ -229,23 +241,24 @@ print(ret@<:@ret.find(lookingFor) if ret.find(lookingFor) != -1 else 0:@:>@)
 END
 )
 
-    LDLIBS1=`${PYTHON_BIN} -c "$PYTHON_CODE"`
-    LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-        print(sysconfig.get_config_var("LIBS"))'`
+      LDLIBS1=`${PYTHON_BIN} -c "$PYTHON_CODE"`
+      LDLIBS2=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+          print(sysconfig.get_config_var("LIBS"))'`
 
-    LDLIBS="${LDLIBS1} ${LDLIBS2}"
-else
-    LDFLAGS1="-Wl,-F${PYTHONFRAMEWORKPREFIX} -framework ${PYTHONFRAMEWORK}"
+      LDLIBS="${LDLIBS1} ${LDLIBS2}"
+  else
+      LDFLAGS1="-Wl,-F${PYTHONFRAMEWORKPREFIX} -framework ${PYTHONFRAMEWORK}"
 
-    STRING="${PYTHONFRAMEWORKDIR}/Versions/${PyVERSION}/${PYTHONFRAMEWORK}"
-    LDFLAGS2=`${PYTHON_BIN} -c "from distutils import sysconfig; \
-        print(sysconfig.get_config_var(\"LINKFORSHARED\").replace( \
-        \"${STRING}\", ''))"`
+      STRING="${PYTHONFRAMEWORKDIR}/Versions/${PyVERSION}/${PYTHONFRAMEWORK}"
+      LDFLAGS2=`${PYTHON_BIN} -c "from distutils import sysconfig; \
+          print(sysconfig.get_config_var(\"LINKFORSHARED\").replace( \
+          \"${STRING}\", ''))"`
 
-    LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
+      LDFLAGS="${LDFLAGS1} ${LDFLAGS2}"
 
-    LDLIBS=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
-        print(sysconfig.get_config_var("LIBS"))'`
+      LDLIBS=`${PYTHON_BIN} -c 'from distutils import sysconfig; \
+          print(sysconfig.get_config_var("LIBS"))'`
+  fi
 fi
 
 CFLAGS=""
@@ -260,6 +273,8 @@ if test -x /usr/bin/lipo; then
     done
     LDFLAGS="${LDFLAGS3} ${LDFLAGS}"
 fi
+
+AC_SUBST(CPPFLAGS)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(LDFLAGS)
@@ -333,18 +348,16 @@ if test "$LEX" && test -x "$LEX"; then
 
   AC_MSG_CHECKING(flex version)
   FlexVERSION=`$LEX --version | sed 's/version//g' | awk '/flex/ {print $2}'`
-  Flex_MAJOR=`echo $FlexVERSION| awk -F.  '{print $1}'`
-  Flex_MINOR=`echo $FlexVERSION| awk -F.  '{print $2}'`
-  Flex_PATCH=`echo $FlexVERSION| awk -F.  '{print $3}'`
 
-  if test "$Flex_MAJOR" -eq "2" && test "$Flex_MINOR" -eq "5" && test "$Flex_PATCH" -ge "31"; then
-    AC_MSG_RESULT([$FlexVERSION. Good])
-  else
+  AS_VERSION_COMPARE(${FlexVERSION}, "2.5.31", [warn=1], [warn=0], [warn=0])
+  if test "$warn" -eq "1"; then
     AC_MSG_WARN([Flex version $FlexVERSION found.
     Version 2.5.31 or greater is required.  You can generally ignore this
     warning unless you need to regenerate psp_parser.c from psp_parse.l.
     If you do need regenerate psp_parser.c, use --with-flex to specify the
     location of the correct flex version. See the README for more information.])
+  else
+    AC_MSG_RESULT([$FlexVERSION. Good])
   fi
 
 else
