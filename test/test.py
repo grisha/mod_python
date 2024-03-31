@@ -314,7 +314,8 @@ class HttpdCtrl:
             IfModule("!worker.c",
             IfModule("!perchild.c",
             IfModule("!mpm_winnt.c",
-                     LoadModule("mpm_prefork_module modules/mod_mpm_prefork.so"),
+                     LoadModule("mpm_prefork_module %s" %
+                                quote_if_space(os.path.join(modpath, "mod_mpm_prefork.so"))),
             )))),
             IfModule("prefork.c",
                      StartServers("3"),
@@ -2882,8 +2883,13 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         if "mod_python version mismatch" in log:
             self.fail("version mismatch found in logs, but versions should be same?")
 
-        from distutils.sysconfig import get_python_lib
-        version_path = os.path.join(get_python_lib(), "mod_python", "version.py")
+        if sys.version_info[0]*100 + sys.version_info[1] > 310:
+            from sysconfig import get_path
+            lib = get_path('platlib')
+        else:
+            from distutils.sysconfig import get_python_lib
+            lib = get_python_lib()
+        version_path = os.path.join(lib, "mod_python", "version.py")
 
         # the rest of this test requires write perms to site-packages/mod_python
         if os.access(version_path, os.W_OK):

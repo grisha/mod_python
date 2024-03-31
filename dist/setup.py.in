@@ -16,9 +16,16 @@
  #
  # $Id: setup.py.in 475516 2006-11-16 01:12:40Z grahamd $
 
-from distutils.core import setup, Extension
-
 import sys
+if sys.version_info[0]*100 + sys.version_info[1] > 310:
+    from setuptools import setup, Extension
+    import sysconfig
+else:
+    from distutils.core import setup, Extension
+    from distutils import sysconfig
+
+
+import string
 import re
 import os.path
 if sys.version[0] == '2':
@@ -182,9 +189,6 @@ else:
     scripts = []
     data_files = []
     ext_modules = [PSPModule]
-
-import string
-from distutils import sysconfig
 
 generate_version_py()
 
