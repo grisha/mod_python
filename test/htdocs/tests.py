@@ -1500,9 +1500,9 @@ def _test_table():
     log("    table.setdefault()")
     d = apache.table()
     d.setdefault('key0')
-    if d.setdefault('key0') is not "":
+    if d.setdefault('key0') != "":
         raise TestFailed('missing {} setdefault, no 2nd arg')
-    if d.setdefault('key0') is not "":
+    if d.setdefault('key0') != "":
         raise TestFailed('present {} setdefault, no 2nd arg')
     # dict.popitem()
     log("    table.popitem()")

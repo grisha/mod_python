@@ -21,7 +21,6 @@
 
 
 import sys, os, shutil
-import distutils.sysconfig
 
 def getApacheDirOptions():
     """find potential apache directories in the registry..."""
@@ -102,7 +101,13 @@ def askForApacheDir(apachediroptions):
 # if we're called during removal, just exit
 if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] != "-remove"):
 
-    mp = os.path.join(distutils.sysconfig.get_python_lib(), "mod_python_so.pyd")
+    if sys.version_info[0]*100 + sys.version_info[1] > 310:
+        import sysconfig
+        lib = get_path('platlib')
+    else:
+        import distutils.sysconfig
+        lib = distutils.sysconfig.get_python_lib()
+    mp = os.path.join(lib, "mod_python_so.pyd")
 
     apachediroptions = getApacheDirOptions()
 
