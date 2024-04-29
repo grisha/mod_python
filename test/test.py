@@ -728,7 +728,7 @@ class PerRequestTestCase(unittest.TestCase):
         server_hdr = response.getheader("Allow", "")
         conn.close()
 
-        self.failUnless(server_hdr.find("PYTHONIZE") > -1, "req.allow_methods() didn't work")
+        self.assertTrue(server_hdr.find("PYTHONIZE") > -1, "req.allow_methods() didn't work")
 
     def test_req_unauthorized_conf(self):
 
@@ -763,7 +763,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
-        auth = base64.encodestring(b"spam:eggs").strip()
+        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
@@ -779,7 +779,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
-        auth = base64.encodestring(b"spam:BAD PASSWD").strip()
+        auth = base64.encodebytes(b"spam:BAD PASSWD").strip()
         if PY2:
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
@@ -828,7 +828,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
-        auth = base64.encodestring(b"spam:eggs").strip()
+        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
@@ -851,7 +851,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
-        auth = base64.encodestring(b'sp\xe1m:\xe9ggs').strip()
+        auth = base64.encodebytes(b'sp\xe1m:\xe9ggs').strip()
         if PY2:
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
@@ -919,7 +919,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_requires", PORT))
-        auth = base64.encodestring(b"spam:eggs").strip()
+        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
@@ -2483,7 +2483,7 @@ class PerRequestTestCase(unittest.TestCase):
         #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_nested", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_nested", PORT))
-        auth = base64.encodestring(b"spam:eggs").strip()
+        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
@@ -2512,7 +2512,7 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_method_nested/method", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_method_nested", PORT))
-        auth = base64.encodestring(b"spam:eggs").strip()
+        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
@@ -2851,7 +2851,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         f = urlopen("http://127.0.0.1:%s/tests.py" % PORT)
         server_hdr = f.info()["Server"]
         f.close()
-        self.failUnless(server_hdr.find("Python") > -1,
+        self.assertTrue(server_hdr.find("Python") > -1,
                         "%s does not appear to load, Server header does not contain Python"
                         % MOD_PYTHON_SO)
 
@@ -3038,7 +3038,7 @@ class PerInstanceTestCase(unittest.TestCase, HttpdCtrl):
         tr = unittest.TextTestRunner()
         result = tr.run(perRequestSuite)
 
-        self.failUnless(result.wasSuccessful())
+        self.assertTrue(result.wasSuccessful())
 
     def test_srv_register_cleanup(self):
 
@@ -3152,4 +3152,3 @@ def suite():
 
 tr = unittest.TextTestRunner()
 tr.run(suite())
-

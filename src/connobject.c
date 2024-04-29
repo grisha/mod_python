@@ -279,6 +279,7 @@ static PyMemberDef conn_memberlist[] = {
     {"remote_ip",          T_STRING,    OFF(client_ip),          READONLY}, /* bw compat */
 #else
     {"remote_addr",        T_OBJECT,    0,                       READONLY},
+    {"client_ip",          T_STRING,    OFF(remote_ip),          READONLY},
     {"remote_ip",          T_STRING,    OFF(remote_ip),          READONLY},
 #endif
     {"remote_host",        T_STRING,    OFF(remote_host),        READONLY},
@@ -461,5 +462,3 @@ PyTypeObject MpConn_Type = {
     0,                               /* tp_as_mapping*/
     0,                               /* tp_hash*/
 };
-
-

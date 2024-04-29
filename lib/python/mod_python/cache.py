@@ -280,7 +280,7 @@ class FileCache(Cache):
 def parseRFC822Time(t):
     return mktime(parsedate(t))
 
-re_max_age=re.compile('max-age\s*=\s*(\d+)', re.I)
+re_max_age=re.compile(r'max-age\s*=\s*(\d+)', re.I)
 
 class HTTPEntity(object):
     def __init__(self, entity, metadata):

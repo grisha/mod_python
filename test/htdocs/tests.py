@@ -682,10 +682,10 @@ def test_req_add_handler_directory(req):
     if req.phase == "PythonFixupHandler":
         req.add_handler("PythonHandler", "tests::test_req_add_handler_directory", dir1)
     else:
-	# dir2 should only use forward slashes and
-	# should have a trailing forward slash added by
-	# call to req.add_handler(). When dir1 and dir2
-	# are normalised for current operating system,
+        # dir2 should only use forward slashes and
+        # should have a trailing forward slash added by
+        # call to req.add_handler(). When dir1 and dir2
+        # are normalised for current operating system,
         # they should be equivalent.
         dir2 = req.hlist.directory
         if dir2[-1] != '/' or dir2.count('\\') != 0:
@@ -1500,9 +1500,9 @@ def _test_table():
     log("    table.setdefault()")
     d = apache.table()
     d.setdefault('key0')
-    if d.setdefault('key0') is not "":
+    if d.setdefault('key0') != "":
         raise TestFailed('missing {} setdefault, no 2nd arg')
-    if d.setdefault('key0') is not "":
+    if d.setdefault('key0') != "":
         raise TestFailed('present {} setdefault, no 2nd arg')
     # dict.popitem()
     log("    table.popitem()")

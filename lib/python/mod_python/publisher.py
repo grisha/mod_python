@@ -255,10 +255,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 if name in names:
                     i = list(names).index(name)
             if i is not None:
-                if PY2:
-                    return (1, func_code.co_consts[i+1])
-                else:
-                    return (1, func_code.co_consts[1+i*2])
+                return (1, func_code.co_consts[i+1])
             return (0, None)
 
         (found_auth, __auth__) = lookup('__auth__')
@@ -296,7 +293,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                     s = base64.decodestring(s)
                 else:
                     s = req.headers_in["Authorization"][6:].encode()
-                    s = base64.decodestring(s).decode()
+                    s = base64.decodebytes(s).decode()
                 user, passwd = s.split(":", 1)
             except:
                 raise apache.SERVER_RETURN(apache.HTTP_BAD_REQUEST)

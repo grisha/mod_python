@@ -303,7 +303,7 @@ static void release_interpreter(interpreterdata *idata)
 {
     PyThreadState *tstate = PyThreadState_Get();
 #ifdef WITH_THREAD
-#if PY_MAJOR_VERSION <= 3 && PY_MINOR_VERSION < 9 
+#if PY_MAJOR_VERSION <= 3 && PY_MINOR_VERSION < 9
     PyThreadState_Clear(tstate);
 #endif
     if (idata)
@@ -1964,6 +1964,25 @@ static apr_status_t handle_python(include_ctx_t *ctx,
         return APR_SUCCESS;
     }
 
+    /* get configuration */
+    conf = (py_config *) ap_get_module_config(req->per_dir_config,
+                                              &python_module);
+
+    /* determine interpreter to use */
+    interp_name = select_interp_name(req, NULL, conf, NULL, NULL);
+
+    /* get/create interpreter */
+    idata = get_interpreter(interp_name);
+
+    if (!idata) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
+                      "handle_python: Can't get/create interpreter.");
+
+        Py_XDECREF(tagobject);
+        Py_XDECREF(codeobject);
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
     /* process tags */
     while (1) {
         optfn_ssi_get_tag_and_value(ctx, &tag, &tag_val, 1);
@@ -2015,25 +2034,6 @@ static apr_status_t handle_python(include_ctx_t *ctx,
 
         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
         return APR_SUCCESS;
-    }
-
-    /* get configuration */
-    conf = (py_config *) ap_get_module_config(req->per_dir_config,
-                                              &python_module);
-
-    /* determine interpreter to use */
-    interp_name = select_interp_name(req, NULL, conf, NULL, NULL);
-
-    /* get/create interpreter */
-    idata = get_interpreter(interp_name);
-
-    if (!idata) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, req,
-                      "handle_python: Can't get/create interpreter.");
-
-        Py_XDECREF(tagobject);
-        Py_XDECREF(codeobject);
-        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     /* create/acquire request object */
@@ -2979,11 +2979,3 @@ module python_module =
     python_commands,               /* command table */
     python_register_hooks          /* register hooks */
 };
-
-
-
-
-
-
-
-
