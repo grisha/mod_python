@@ -255,7 +255,11 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 if name in names:
                     i = list(names).index(name)
             if i is not None:
-                return (1, func_code.co_consts[i+1])
+                if PY2 or sys.hexversion >= 0x03120000:
+                    return (1, func_code.co_consts[i+1])
+                else:
+                    return (1, func_code.co_consts[1+i*2])
+
             return (0, None)
 
         (found_auth, __auth__) = lookup('__auth__')
