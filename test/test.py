@@ -763,10 +763,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
-        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
+            auth = base64.encodestring("spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
+            auth = base64.encodebytes("spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
@@ -779,10 +780,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_unauthorized", PORT))
-        auth = base64.encodebytes(b"spam:BAD PASSWD").strip()
         if PY2:
+            auth = base64.encodestring("spam:BAD PASSWD").strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
+            auth = base64.encodebytes(b"spam:BAD PASSWD").strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
@@ -828,10 +830,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
-        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
+            auth = base64.encodestring(b"spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
+            auth = base64.encodebytes(b"spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
@@ -851,10 +854,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_get_basic_auth_pw", PORT))
-        auth = base64.encodebytes(b'sp\xe1m:\xe9ggs').strip()
         if PY2:
+            auth = base64.encodestring('sp\xe1m:\xe9ggs').strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
+            auth = base64.encodebytes(b'sp\xe1m:\xe9ggs').strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
@@ -919,10 +923,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_req_requires", PORT))
-        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
+            auth = base64.encodestring("spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
+            auth = base64.encodebytes(b"spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
@@ -2483,10 +2488,11 @@ class PerRequestTestCase(unittest.TestCase):
         #conn.set_debuglevel(1000)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_nested", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_nested", PORT))
-        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
+            auth = base64.encodestring("spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
+            auth = base64.encodebytes(b"spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
@@ -2512,10 +2518,11 @@ class PerRequestTestCase(unittest.TestCase):
         conn = http_connection("127.0.0.1:%s" % PORT)
         conn.putrequest("GET", "/tests.py/test_publisher_auth_method_nested/method", skip_host=1)
         conn.putheader("Host", "%s:%s" % ("test_publisher_auth_method_nested", PORT))
-        auth = base64.encodebytes(b"spam:eggs").strip()
         if PY2:
+            auth = base64.encodestring("spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
+            auth = base64.encodebytes(b"spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()
