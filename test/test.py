@@ -728,7 +728,7 @@ class PerRequestTestCase(unittest.TestCase):
         server_hdr = response.getheader("Allow", "")
         conn.close()
 
-        self.assertTrue(server_hdr.find("PYTHONIZE") > -1, "req.allow_methods() didn't work")
+        self.assertTrue(server_hdr.find("MKWORKSPACE") > -1, "req.allow_methods() didn't work")
 
     def test_req_unauthorized_conf(self):
 
@@ -767,7 +767,7 @@ class PerRequestTestCase(unittest.TestCase):
             auth = base64.encodestring("spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth)
         else:
-            auth = base64.encodebytes("spam:eggs").strip()
+            auth = base64.encodebytes(b"spam:eggs").strip()
             conn.putheader("Authorization", "Basic %s" % auth.decode("latin1"))
         conn.endheaders()
         response = conn.getresponse()

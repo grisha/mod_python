@@ -22,7 +22,7 @@ import os
 import sys
 PY2 = sys.version[0] == '2'
 
-if PY2 or sys.hexversion < 0x03120000:
+if PY2 or sys.hexversion < 0x030c0000: # 3.12.0
     import imp
 else:
     import importlib.util
@@ -102,7 +102,7 @@ def handler(req):
             if not scriptPath.startswith(dir):
                 raise apache.SERVER_RETURN(apache.HTTP_NOT_FOUND)
 
-            if PY2 or sys.hexversion < 0x03120000:
+            if PY2 or sys.hexversion < 0x030c0000: # 3.12.0
 
                 try:
                     # we do not search the pythonpath (security reasons)

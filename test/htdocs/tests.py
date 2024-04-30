@@ -703,7 +703,7 @@ def test_req_add_handler_directory(req):
 
 def req_allow_methods(req):
 
-    req.allow_methods(["PYTHONIZE"])
+    req.allow_methods(["MKWORKSPACE"])
     return apache.HTTP_METHOD_NOT_ALLOWED
 
 def req_get_basic_auth_pw(req):
