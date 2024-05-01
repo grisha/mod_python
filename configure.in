@@ -195,7 +195,7 @@ if test "$PyMAJVERSION" -eq "3"; then
   fi
 fi
 
-if test -n "$PYTHON_CONFIG"; then
+if test -n "$PYTHON_CONFIG" -a "$PyMAJVERSION" -gt "2"; then # 2.7.18 python-config missies the -L and does not support --embed
   CPPFLAGS=`${PYTHON_CONFIG} --includes`
   LDFLAGS=`${PYTHON_CONFIG} --ldflags --embed`
   LDLIBS=""
