@@ -255,7 +255,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 if name in names:
                     i = list(names).index(name)
             if i is not None:
-                if PY2 or sys.hexversion >= 0x030c0000: # 3.12.0
+                if PY2 or sys.hexversion >= 0x030b0000: # 3.12.0
                     return (1, func_code.co_consts[i+1])
                 else:
                     return (1, func_code.co_consts[1+i*2])
