@@ -34,7 +34,6 @@ from . import util
 import sys
 import os
 from os.path import exists, isabs, normpath, split, isfile, join, dirname
-import importlib.machinery
 import re
 import base64
 
@@ -42,8 +41,6 @@ import types
 from types import *
 import collections
 
-
-imp_suffixes = " ".join(x[1:] for x in importlib.machinery.all_suffixes())
 
 # Python 2/3 compat workaround
 PY2 = sys.version[0] == '2'
@@ -258,10 +255,11 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 if name in names:
                     i = list(names).index(name)
             if i is not None:
-                if PY2:
+                if PY2 or sys.hexversion >= 0x030b0000: # 3.12.0
                     return (1, func_code.co_consts[i+1])
                 else:
                     return (1, func_code.co_consts[1+i*2])
+
             return (0, None)
 
         (found_auth, __auth__) = lookup('__auth__')
@@ -299,7 +297,7 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                     s = base64.decodestring(s)
                 else:
                     s = req.headers_in["Authorization"][6:].encode()
-                    s = base64.decodestring(s).decode()
+                    s = base64.decodebytes(s).decode()
                 user, passwd = s.split(":", 1)
             except:
                 raise apache.SERVER_RETURN(apache.HTTP_BAD_REQUEST)

@@ -13,7 +13,7 @@ if type git >/dev/null 2>&1; then
         # but not on a tag (which means this is a release)
         if test -z "`git log 'HEAD^!' --format=%d 2>/dev/null | grep 'tag: '`"; then
             # append git revision hash to version
-            GIT="+`git describe --always`"
+            GIT="+`git describe --always --exclude '*'`"
         fi
     fi
 fi
