@@ -751,7 +751,7 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     /* mod_python version */
     ap_add_version_component(p, mp_version_component);
 
-    py_dynamic_version = strtok((char *)Py_GetVersion(), " ");
+    py_dynamic_version = strtok(apr_pstrdup(p, Py_GetVersion()), " ");
 
     /* Python version */
     sprintf(buff, "Python/%.200s", py_dynamic_version);
