@@ -28,9 +28,6 @@
 #include "_pspmodule.h"
 #include "Python.h"
 
-/* calm down compile warning from psp_flex.h*/
-static int yy_init_globals (yyscan_t yyscanner ) {return 0;};
-
 static psp_parser_t *psp_parser_init(void)
 {
     psp_parser_t *parser;
@@ -134,7 +131,6 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
     char *c_str = NULL;
     yyscan_t scanner;
     psp_parser_t  *parser;
-    YY_BUFFER_STATE bs;
 
     if (!PyArg_ParseTuple(argv, "S", &str)) {
         return NULL;
@@ -154,7 +150,7 @@ static PyObject * _psp_module_parsestring(PyObject *self, PyObject *argv)
 
     if (!c_str) c_str = "UNICODE ERROR";
 
-    bs = yy_scan_string(c_str, scanner);
+    yy_scan_string(c_str, scanner);
     yylex(scanner);
 
     Py_XDECREF(latin);

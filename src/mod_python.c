@@ -770,10 +770,10 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
     if (initialized == 0 || !Py_IsInitialized())
     {
         initialized = 1;
-
+#if PY_VERSION_HEX < 0x030C0000
         /* disable user site directories */
         Py_NoUserSiteDirectory = 1;
-
+#endif
         /* Initialze the main interpreter. */
 #if PY_MAJOR_VERSION == 2 && \
                 (PY_MINOR_VERSION < 7 || (PY_MINOR_VERSION == 7 && PY_MICRO_VERSION < 14))
@@ -2411,8 +2411,10 @@ static const char *directive_PythonOption(cmd_parms *cmd, void * mconfig,
 
 static const char *directive_PythonOptimize(cmd_parms *cmd, void *mconfig,
                                             int val) {
+#if PY_VERSION_HEX < 0x030C0000
     if ((val) && (Py_OptimizeFlag != 2))
         Py_OptimizeFlag = 2;
+#endif
     return NULL;
 }
 

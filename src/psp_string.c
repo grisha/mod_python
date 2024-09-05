@@ -26,7 +26,7 @@
 #include "psp_string.h"
 
 #define psp_string_alloc(__pspstring, __length) \
-        if ((__length) > (__pspstring)->allocated) { \
+    if ((size_t)(__length) > (__pspstring)->allocated) {                \
                 (__pspstring)->blob = realloc((__pspstring)->blob, (__length) + PSP_STRING_BLOCK); \
                 (__pspstring)->allocated = (__length) + PSP_STRING_BLOCK; \
         }
