@@ -1,8 +1,8 @@
 %{
 /*
- * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ * Copyright (C) 2000, 2001, 2013, 2024 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -17,7 +17,7 @@
  *
  *
  * This file originally written by Sterling Hughes.
- * 
+ *
  */
 
 /* NOTE The seemingly unusual generated Python code (sometime using
@@ -47,14 +47,14 @@
 %%
 
 \r\n|\n {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
 
     yyless(0);
     BEGIN TEXT;
 }
 
 . {
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\"")); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
 
     yyless(0);
     BEGIN TEXT;
@@ -80,8 +80,8 @@
 }
 
 <TEXT>"<%" {     /* python code */
-    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0);")); 
-    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    psp_string_appendl(&PSP_PG(pycode), STATIC_STR("\"\"\",0);"));
+    CLEAR_WHITESPACE(&PSP_PG(whitespace));
     PSP_PG(seen_newline) = 0;
     BEGIN PYCODE;
 }
@@ -121,7 +121,7 @@
 
 <PYCODE>\r\n|\n|\r {
     psp_string_appendc(&PSP_PG(pycode), '\n');
-        
+
     PSP_PG(seen_newline) = 1;
     BEGIN INDENT;
 }
@@ -131,7 +131,7 @@
     if (PSP_PG(is_psp_echo)) {
         psp_string_appendl(&PSP_PG(pycode), STATIC_STR("),0); req.write(\"\"\""));
         PSP_PG(is_psp_echo) = 0;
-    } 
+    }
     else {
         if (!PSP_PG(seen_newline)) {
             /* this will happen is you have <%%> */
@@ -139,7 +139,7 @@
         }
 
         if (PSP_PG(after_colon)) {
-            /* this is dumb mistake-proof measure, if %> 
+            /* this is dumb mistake-proof measure, if %>
                is immediately following where there should be an indent */
             psp_string_appendc(&PSP_PG(whitespace), '\t');
             PSP_PG(after_colon) = 0;
@@ -147,7 +147,7 @@
         OUTPUT_WHITESPACE(&PSP_PG(whitespace));
         psp_string_appendl(&PSP_PG(pycode), STATIC_STR("req.write(\"\"\""));
     }
-    
+
     BEGIN TEXT;
 }
 
@@ -163,7 +163,7 @@
 
 <INDENT>^[\t ]* {
 
-    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    CLEAR_WHITESPACE(&PSP_PG(whitespace));
     psp_string_appendl(&PSP_PG(whitespace), yytext, yyleng);
     psp_string_appendl(&PSP_PG(pycode), yytext, yyleng);
 
@@ -176,13 +176,13 @@
 }
 
 <INDENT>\r\n|\n {
-    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    CLEAR_WHITESPACE(&PSP_PG(whitespace));
     yyless(0);
     BEGIN PYCODE;
 }
 
 <INDENT>. {
-    CLEAR_WHITESPACE(&PSP_PG(whitespace)); 
+    CLEAR_WHITESPACE(&PSP_PG(whitespace));
     yyless(0);
     BEGIN PYCODE;
 }
@@ -221,7 +221,7 @@
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
     }
     else {
-        yypush_buffer_state(yy_create_buffer(f, YY_BUF_SIZE, yyscanner), 
+        yypush_buffer_state(yy_create_buffer(f, YY_BUF_SIZE, yyscanner),
                             yyscanner);
         BEGIN(TEXT);
     }

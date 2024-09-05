@@ -1,5 +1,5 @@
  #
- # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ # Copyright (C) 2000, 2001, 2013, 2024 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
  #
  # Licensed under the Apache License, Version 2.0 (the "License"); you
@@ -22,6 +22,6 @@
 import sys
 if sys.version < '2.3':
     import builtins as hack
-    
+
     # Enumerate does not exists in Python 2.2
     hack.enumerate = lambda s : list(zip(list(range(len(s))),s))

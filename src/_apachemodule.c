@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ * Copyright (C) 2000, 2001, 2013, 2024 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
@@ -853,12 +853,12 @@ PyObject *_apache_module_init()
 #else
     m = PyModule_Create(&_apache_moduledef);
     PyObject *name = PyUnicode_FromString("_apache");
-    
+
     _PyImport_FixupExtensionObject(m, name, name
 #if PY_MINOR_VERSION >= 7
-				   ,PyImport_GetModuleDict()
+                   ,PyImport_GetModuleDict()
 #endif
-				   );
+                   );
 #endif
     d = PyModule_GetDict(m);
     Mp_ServerReturn = PyErr_NewException("_apache.SERVER_RETURN", NULL, NULL);

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ * Copyright (C) 2000, 2001, 2013, 2024 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License.  You
  * may obtain a copy of the License at
@@ -18,7 +18,7 @@
  *
  *
  *
- * See accompanying documentation and source code comments 
+ * See accompanying documentation and source code comments
  * for details.
  *
  */
@@ -31,7 +31,7 @@
                 (__pspstring)->allocated = (__length) + PSP_STRING_BLOCK; \
         }
 
-void 
+void
 psp_string_0(psp_string *s)
 {
         if (!s->length) {
@@ -49,7 +49,7 @@ psp_string_appendl(psp_string *s, char *text, size_t length)
         if (text == NULL) {
                 return;
         }
-        
+
         psp_string_alloc(s, newlen);
         memcpy(s->blob + s->length, text, length);
         s->length = newlen;
@@ -64,17 +64,17 @@ psp_string_append(psp_string *s, char *text)
         psp_string_appendl(s, text, strlen(text));
 }
 
-void 
+void
 psp_string_appendc(psp_string *s, char c)
 {
         int newlen = s->length + 1;
-        
+
         psp_string_alloc(s, newlen);
         s->blob[s->length] = c;
         s->length = newlen;
 }
 
-void 
+void
 psp_string_clear(psp_string *s)
 {
         memset(s->blob, 0, s->length);
@@ -88,4 +88,4 @@ psp_string_free(psp_string *s)
         s->blob = NULL;
         s->length = 0;
         s->allocated = 0;
-}               
+}

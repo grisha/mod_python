@@ -2,7 +2,7 @@
 #define Mp_MOD_PYTHON_H
 
 /*
- * Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ * Copyright (C) 2000, 2001, 2013, 2024 Gregory Trubetskoy
  * Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you
@@ -21,8 +21,6 @@
  *
  *
  * mod_python.h
- *
- * $Id: mod_python.h 231054 2005-08-09 15:37:04Z jgallacher $
  *
  * See accompanying documentation and source code comments
  * for details.

@@ -1,4 +1,4 @@
- # Copyright (C) 2000, 2001, 2013 Gregory Trubetskoy
+ # Copyright (C) 2000, 2001, 2013, 2024 Gregory Trubetskoy
  # Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007 Apache Software Foundation
  #
  #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,11 +20,11 @@ test:
 	$(PYTHON_BIN) test.py
 
 clean:
-	rm -f *.pyc *.pyo 
+	rm -f *.pyc *.pyo
 	cd conf && rm -f test.conf
 	cd htdocs && rm -f *pyc *pyo
 	rm -rf logs
 	rm -rf tmp
 
 distclean: clean
-	rm -f Makefile testconf.py 
+	rm -f Makefile testconf.py
