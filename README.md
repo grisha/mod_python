@@ -3,10 +3,8 @@ mod_python
 
 Documentation for mod_python is on http://www.modpython.org/
 
-Mod_python is going to be maintained on Github from here on. There is
-no plan for additional releases, the latest code is the master branch,
-which will be kept as stable as possible. For issues and questions
-please use Github.
+Mod_python is going to be maintained on GitHub from here on. For issues and questions
+please use GitHub.
 
 Quick Start
 -----------
