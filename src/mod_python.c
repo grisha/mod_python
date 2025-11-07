@@ -2643,7 +2643,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
 #if PY_VERSION_HEX < 0x03070000
     PyOS_AfterFork();
-#else
+#elif PY_VERSION_HEX < 0x030D0000
     PyOS_AfterFork_Child();
 #endif
 
