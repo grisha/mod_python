@@ -255,8 +255,16 @@ def process_auth(req, object, realm="unknown", user=None, passwd=None):
                 if name in names:
                     i = list(names).index(name)
             if i is not None:
-                if PY2 or sys.hexversion >= 0x030b0000: # 3.12.0
-                    return (1, func_code.co_consts[i+1])
+                # Python 3.11 moved qualified name into code object
+                # https://github.com/python/cpython/pull/26941
+                # commit 2f180ce2cb6e6a7e3c517495e0f4873d6aaf5f2f
+                if PY2 or sys.hexversion >= 0x030b0000:
+                    # Python 3.14 added CO_HAS_DOCSTRING (0x4000000)
+                    # https://github.com/python/cpython/issues/126072
+                    # https://github.com/python/cpython/pull/126101
+                    # commit 35df4eb959b3923c08aaaeff728c5ed1706f31cf
+                    offset = 1 if sys.hexversion < 0x030e0000 or (func_code.co_flags & 0x4000000) != 0 else 0
+                    return (1, func_code.co_consts[offset+i])
                 else:
                     return (1, func_code.co_consts[1+i*2])
 

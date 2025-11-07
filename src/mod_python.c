@@ -69,12 +69,6 @@ static PyObject * make_obcallback(const char *name)
     PyObject *m = NULL;
     PyObject *obCallBack = NULL;
 
-    /* This makes _apache appear imported, and subsequent
-     * >>> import _apache
-     * will not give an error.
-     */
-    _apache_module_init();
-
     /* Now execute the equivalent of
      * >>> import <module>
      * >>> <initstring>
@@ -785,6 +779,14 @@ static int python_init(apr_pool_t *p, apr_pool_t *ptemp,
          * one time. (https://github.com/grisha/mod_python/issues/46)
          */
         Py_NoSiteFlag = 1;
+#endif
+
+#if PY_MAJOR_VERSION == 2
+        PyMODINIT_FUNC init_apache(void);
+        PyImport_AppendInittab("_apache", &init_apache);
+#else
+        PyMODINIT_FUNC PyInit_apache(void);
+        PyImport_AppendInittab("_apache", &PyInit_apache);
 #endif
 
         Py_Initialize();
@@ -2641,7 +2643,7 @@ static void PythonChildInitHandler(apr_pool_t *p, server_rec *s)
 
 #if PY_VERSION_HEX < 0x03070000
     PyOS_AfterFork();
-#else
+#elif PY_VERSION_HEX < 0x030D0000
     PyOS_AfterFork_Child();
 #endif
 

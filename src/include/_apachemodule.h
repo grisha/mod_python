@@ -29,6 +29,5 @@
  */
 
 PyObject *get_ServerReturn(void);
-PyMODINIT_FUNC init_apache(void);
 
 #endif /* !Mp_APACHEMODULE_H */
