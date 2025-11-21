@@ -61,7 +61,7 @@ install_dso:	dso
 	@echo "Performing DSO installation."
 	@echo
 	$(INSTALL) -d $(DESTDIR)$(LIBEXECDIR)
-	$(INSTALL) src/mod_python.so $(DESTDIR)$(LIBEXECDIR)
+	$(INSTALL) -m 0644 src/mod_python.so $(DESTDIR)$(LIBEXECDIR)
 
 install_py_lib:
 	cd dist && $(MAKE) install_py_lib
