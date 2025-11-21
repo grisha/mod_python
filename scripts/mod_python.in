@@ -64,7 +64,9 @@ def cmd_genconfig():
     if len(args) != 1:
         parser.error("Must specify <src>")
 
-    execfile(args[0])
+    src = args[0]
+    with open(src, "rb") as fh:
+        exec(compile(fh.read(), src, "exec"))
 
 def cmd_create():
 
