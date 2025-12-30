@@ -1,3 +1,5 @@
+Dec  30 2025 -  3.5.0.6 Fix publisher query string bug
+
 Nov   8 2025 -  3.5.0.5 Compatibility with Python 3.13 and 3.14.
 
 Sep   5 2024 -  3.5.0.4 fix sys.version bug and quiet compiler warnings.
