@@ -370,6 +370,10 @@ static PyObject *parse_qsl(PyObject *self, PyObject *args)
             _PyBytes_Resize(&val, strlen(cval));
 
             if (key && val) {
+
+                ckey = PyBytes_AS_STRING(key);
+                cval = PyBytes_AS_STRING(val);
+
                 PyObject *listitem = NULL;
                 if (unicode) {
                     PyObject *ukey, *uval;
