@@ -1158,7 +1158,7 @@ static int table_init(tableobject *self, PyObject *args, PyObject *kwds)
     return result;
 }
 
-static long table_nohash(PyObject *self)
+static Py_hash_t table_nohash(PyObject *self)
 {
     TABLE_DEBUG("table_nohash");
 
